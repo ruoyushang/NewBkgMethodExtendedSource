@@ -139,7 +139,7 @@ def CommonSelection(tree):
 
 def ControlRegionHeightSelection(tree,elev):
     # best
-    width = 5.
+    width = 3.
     if elev>60:
         mean_height = 10.
         cut_upper = mean_height+width
@@ -536,12 +536,17 @@ def MeasureElectronComponent():
             GetAnttenuation('3C264','on',run,'anasum')
             GetAnttenuation('3C264','off',run,'anasum')
     
+    print 'Hist_OnData_Signal.GetEntries() = %s'%(Hist_OnData_Signal.GetEntries())
+    print 'Hist_OnData_Control.GetEntries() = %s'%(Hist_OnData_Control.GetEntries())
+    print 'Hist_OffData_Signal.GetEntries() = %s'%(Hist_OffData_Signal.GetEntries())
+    print 'Hist_OffData_Control.GetEntries() = %s'%(Hist_OffData_Control.GetEntries())
+
     Normalization_Factor_Signal = Hist_OnData_Signal.GetBinContent(len(MSCW_Bin)-1)
     Normalization_Factor_Signal = Normalization_Factor_Signal/Hist_OffData_Signal.GetBinContent(len(MSCW_Bin)-1)
-    print 'Normalization_Factor_Signal = %s'%(Normalization_Factor_Signal)
+    #print 'Normalization_Factor_Signal = %s'%(Normalization_Factor_Signal)
     Normalization_Factor_Control = Hist_OnData_Control.GetBinContent(len(MSCW_Bin)-1)
     Normalization_Factor_Control = Normalization_Factor_Control/Hist_OffData_Control.GetBinContent(len(MSCW_Bin)-1)
-    print 'Normalization_Factor_Control = %s'%(Normalization_Factor_Control)
+    #print 'Normalization_Factor_Control = %s'%(Normalization_Factor_Control)
     Hist_OffData_Signal.Scale(Normalization_Factor_Signal)
     Hist_OffData_Control.Scale(Normalization_Factor_Signal)
     
@@ -561,7 +566,6 @@ def MeasureElectronComponent():
         Hist_Gamma_Control.SetBinContent(b+1,Hist_OnData_Control.GetBinContent(b+1))
         Hist_Gamma_Control.SetBinError(b+1,Hist_OnData_Control.GetBinError(b+1))
     Hist_Gamma_Control.Add(Hist_OffData_Control,-1)
-    
     for b in range(0,Hist_Gamma_Attenuation.GetNbinsX()):
         Hist_Gamma_Attenuation.SetBinContent(b+1,Hist_Gamma_Control.GetBinContent(b+1))
         Hist_Gamma_Attenuation.SetBinError(b+1,Hist_Gamma_Control.GetBinError(b+1))
@@ -570,35 +574,48 @@ def MeasureElectronComponent():
     Err_Rate_Gamma_Attenuation = Hist_Gamma_Attenuation.GetBinError(Hist_Gamma_Attenuation.FindBin(0.5))
     print 'Rate_Gamma_Attenuation = %s +/- %s'%(Rate_Gamma_Attenuation,Err_Rate_Gamma_Attenuation)
     
+
     #N_signal (number of events in signal region) = N_egamma + N_CR
     #N_control (number of events in control region) = a*N_egamma + b*N_CR, a = gamma attenuation, b = CR attenuation
     #N_control - b*N_signal = (a-b)*N_egamma
     #N_egamma = (N_control-b*N_signal)/(a-b)
     #N_CR = N_signal-N_egamma
-    N_eGamma_Signal = (Hist_OnData_Control.GetBinContent(1)-Rate_CR_Attenuation*Hist_OnData_Signal.GetBinContent(1))/(Rate_Gamma_Attenuation-Rate_CR_Attenuation)
-    N_CR_Signal = Hist_OnData_Signal.GetBinContent(1)-N_eGamma_Signal
     for b in range(0,Hist_eGamma_Signal.GetNbinsX()):
         Hist_eGamma_Signal.SetBinContent(b+1,Hist_OnData_Control.GetBinContent(b+1))
         Hist_eGamma_Signal.SetBinError(b+1,Hist_OnData_Control.GetBinError(b+1))
     Hist_eGamma_Signal.Add(Hist_OnData_Signal,-1.*Rate_CR_Attenuation)
     Hist_eGamma_Signal.Scale(1./(Rate_Gamma_Attenuation-Rate_CR_Attenuation))
-    #print Hist_eGamma_Signal.Print("All")
+    for b in range(0,Hist_eGamma_Signal.GetNbinsX()):
+        Hist_eGamma_Signal.SetBinContent(b+1,max(0.,Hist_eGamma_Signal.GetBinContent(b+1)))
+    print Hist_eGamma_Signal.Print("All")
     for b in range(0,Hist_CR_Signal.GetNbinsX()):
         Hist_CR_Signal.SetBinContent(b+1,Hist_OnData_Signal.GetBinContent(b+1))
         Hist_CR_Signal.SetBinError(b+1,Hist_OnData_Signal.GetBinError(b+1))
     Hist_CR_Signal.Add(Hist_eGamma_Signal,-1.)
-    #print Hist_CR_Signal.Print("All")
-    for b in range(0,Hist_El_Signal.GetNbinsX()):
-        Hist_El_Signal.SetBinContent(b+1,Hist_OffData_Signal.GetBinContent(b+1))
-        Hist_El_Signal.SetBinError(b+1,Hist_OffData_Signal.GetBinError(b+1))
-    Hist_El_Signal.Add(Hist_CR_Signal,-1.)
+    for b in range(0,Hist_CR_Signal.GetNbinsX()):
+        Hist_CR_Signal.SetBinContent(b+1,max(0.,Hist_CR_Signal.GetBinContent(b+1)))
+    print Hist_CR_Signal.Print("All")
+    #for b in range(0,Hist_El_Signal.GetNbinsX()):
+    #    Hist_El_Signal.SetBinContent(b+1,Hist_eGamma_Signal.GetBinContent(b+1))
+    #    Hist_El_Signal.SetBinError(b+1,Hist_eGamma_Signal.GetBinError(b+1))
+    #Hist_El_Signal.Add(Hist_Gamma_Signal,-1.)
+    #for b in range(0,Hist_El_Signal.GetNbinsX()):
+    #    Hist_El_Signal.SetBinContent(b+1,max(0.,Hist_El_Signal.GetBinContent(b+1)))
     #print Hist_El_Signal.Print("All")
+    for b in range(0,Hist_El_Signal.GetNbinsX()):
+        Hist_El_Signal.SetBinContent(b+1,Hist_OffData_Control.GetBinContent(b+1))
+        Hist_El_Signal.SetBinError(b+1,Hist_OffData_Control.GetBinError(b+1))
+    Hist_El_Signal.Add(Hist_OffData_Signal,-1.*Rate_CR_Attenuation)
+    Hist_El_Signal.Scale(1./(Rate_Gamma_Attenuation-Rate_CR_Attenuation))
+    for b in range(0,Hist_El_Signal.GetNbinsX()):
+        Hist_El_Signal.SetBinContent(b+1,max(0.,Hist_El_Signal.GetBinContent(b+1)))
+    print Hist_El_Signal.Print("All")
     Err_N_CR = ROOT.Double(0.)
     Err_N_El = ROOT.Double(0.)
-    #N_CR = Hist_CR_Signal.IntegralAndError(1,Hist_CR_Signal.GetNbinsX(),Err_N_CR)
-    #N_El = Hist_El_Signal.IntegralAndError(1,Hist_El_Signal.GetNbinsX(),Err_N_El)
-    N_CR = Hist_CR_Signal.IntegralAndError(Hist_CR_Signal.FindBin(-0.5),Hist_CR_Signal.FindBin(1.5),Err_N_CR)
-    N_El = Hist_El_Signal.IntegralAndError(Hist_El_Signal.FindBin(-0.5),Hist_El_Signal.FindBin(1.5),Err_N_El)
+    N_CR = Hist_CR_Signal.IntegralAndError(1,Hist_CR_Signal.GetNbinsX(),Err_N_CR)
+    N_El = Hist_El_Signal.IntegralAndError(1,Hist_El_Signal.GetNbinsX(),Err_N_El)
+    #N_CR = Hist_CR_Signal.IntegralAndError(Hist_CR_Signal.FindBin(-0.5),Hist_CR_Signal.FindBin(1.5),Err_N_CR)
+    #N_El = Hist_El_Signal.IntegralAndError(Hist_El_Signal.FindBin(-0.5),Hist_El_Signal.FindBin(1.5),Err_N_El)
     Hist_Nel_temp = TH1D("Hist_Nel_temp","",1,0,1)
     Hist_Ncr_temp = TH1D("Hist_Ncr_temp","",1,0,1)
     Hist_e2p_temp = TH1D("Hist_e2p_temp","",1,0,1)
@@ -608,13 +625,12 @@ def MeasureElectronComponent():
     Hist_Ncr_temp.SetBinError(1,Err_N_CR)
     Hist_e2p_temp = Hist_Nel_temp.Clone()
     Hist_e2p_temp.Divide(Hist_Ncr_temp)
-    #N_CR = Hist_CR_Signal.IntegralAndError(Hist_CR_Signal.FindBin(-0.5),Hist_CR_Signal.FindBin(1.5),Err_N_CR)
-    #N_El = Hist_El_Signal.IntegralAndError(Hist_El_Signal.FindBin(-0.5),Hist_El_Signal.FindBin(1.5),Err_N_El)
     e2p_ratio_temp = Hist_e2p_temp.GetBinContent(1)
     err_e2p_ratio_temp = Hist_e2p_temp.GetBinError(1)
-    print 'OnData = %s'%(Hist_OnData_Signal.Integral(Hist_OnData_Signal.FindBin(-0.5),Hist_OnData_Signal.FindBin(1.5)))
-    print 'OffData = %s'%(Hist_OffData_Signal.Integral(Hist_OffData_Signal.FindBin(-0.5),Hist_OffData_Signal.FindBin(1.5)))
-    print 'N_CR = %s, N_EL = %s'%(N_CR,N_El)
+    #print 'OnData = %s'%(Hist_OnData_Signal.Integral(Hist_OnData_Signal.FindBin(-0.5),Hist_OnData_Signal.FindBin(1.5)))
+    #print 'OffData = %s'%(Hist_OffData_Signal.Integral(Hist_OffData_Signal.FindBin(-0.5),Hist_OffData_Signal.FindBin(1.5)))
+    print 'N_CR = %s +/- %s, N_EL = %s +/- %s'%(N_CR,Err_N_CR,N_El,Err_N_El)
+    print 'N_EL/N_CR = %s +/- %s'%(e2p_ratio_temp,err_e2p_ratio_temp)
 
     Hist_OnData_Signal.Reset()
     Hist_OnData_Control.Reset()
@@ -811,7 +827,8 @@ N_GammaMC_Fake = 0
 N_GammaData_ES = 0
 N_GammaMC_ES = 0
 
-MSCW_Bin = [-100,-1,0,1,2,3,100]  # the last bin has to be the CR normalization region!!
+#MSCW_Bin = [-100,-1,0,1,2,3,100]  # the last bin has to be the CR normalization region!!
+MSCW_Bin = [-100,2,100]  # the last bin has to be the CR normalization region!!
 Hist_OnData_Signal = TH1D("Hist_OnData_Signal","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
 Hist_OnData_Control = TH1D("Hist_OnData_Control","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
 Hist_OffData_Signal = TH1D("Hist_OffData_Signal","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
@@ -824,15 +841,10 @@ Hist_eGamma_Signal = TH1D("Hist_eGamma_Signal","",len(MSCW_Bin)-1,array('d',MSCW
 Hist_CR_Signal = TH1D("Hist_CR_Signal","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
 Hist_El_Signal = TH1D("Hist_El_Signal","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
 
-Hist_e2p_Ratio_LowE = TH1D("Hist_e2p_Ratio_LowE","",3,0,90)
-Hist_Gamma_Attenu_LowE = TH1D("Hist_Gamma_Attenu_LowE","",3,0,90)
-Hist_CR_Attenu_LowE = TH1D("Hist_CR_Attenu_LowE","",3,0,90)
-Hist_e2p_Ratio_MidE = TH1D("Hist_e2p_Ratio_MidE","",3,0,90)
-Hist_Gamma_Attenu_MidE = TH1D("Hist_Gamma_Attenu_MidE","",3,0,90)
-Hist_CR_Attenu_MidE = TH1D("Hist_CR_Attenu_MidE","",3,0,90)
-Hist_e2p_Ratio_HighE = TH1D("Hist_e2p_Ratio_HighE","",3,0,90)
-Hist_Gamma_Attenu_HighE = TH1D("Hist_Gamma_Attenu_HighE","",3,0,90)
-Hist_CR_Attenu_HighE = TH1D("Hist_CR_Attenu_HighE","",3,0,90)
+Elev_Bin = [40,50,60,70,80]
+Hist_e2p_Ratio_LowE = TH1D("Hist_e2p_Ratio_LowE","",len(Elev_Bin)-1,array('d',Elev_Bin))
+Hist_Gamma_Attenu_LowE = TH1D("Hist_Gamma_Attenu_LowE","",len(Elev_Bin)-1,array('d',Elev_Bin))
+Hist_CR_Attenu_LowE = TH1D("Hist_CR_Attenu_LowE","",len(Elev_Bin)-1,array('d',Elev_Bin))
 
 variable_bins = []
 b = -1
@@ -858,55 +870,22 @@ MSCL_cut_upper = 2
 Erec_cut_lower = 0.1
 Erec_cut_upper = 100
 
-energy_bins = [0.1,0.5,1.0,100]
+energy_bins = [0.1,0.5,1.0,1000]
+gamma_att = [0.1,0.1,0.19]
+cr_att = [0.95,0.6,0.45]
+e2p_ratio = [0.25,0.17,0.05]
 
 Fake_cut_MSCL = 0.
 Fake_cut_MSCW = 0.
 
 tag = ''
 
-#Do_e2p_Measurement = False
-Do_e2p_Measurement = True
+Do_e2p_Measurement = False
+#Do_e2p_Measurement = True
+Hist_e2p_Ratio = []
+Hist_Gamma_Attenu = []
+Hist_CR_Attenu = []
 if Do_e2p_Measurement:
-    for elev in range(1,3):
-        Elev_cut_lower = elev*30.
-        Elev_cut_upper = Elev_cut_lower+30.
-        Erec_cut_lower = energy_bins[0]
-        Erec_cut_upper = energy_bins[1]
-        MakeATag()
-        CR_attenu,err_CR_attenu,gamma_attenu,err_gamma_attenu,e2p_ratio,err_e2p_ratio = MeasureElectronComponent()
-        Hist_e2p_Ratio_LowE.SetBinContent(Hist_e2p_Ratio_LowE.FindBin(Elev_cut_lower),e2p_ratio)
-        Hist_e2p_Ratio_LowE.SetBinError(Hist_e2p_Ratio_LowE.FindBin(Elev_cut_lower),err_e2p_ratio)
-        Hist_Gamma_Attenu_LowE.SetBinContent(Hist_Gamma_Attenu_LowE.FindBin(Elev_cut_lower),gamma_attenu)
-        Hist_Gamma_Attenu_LowE.SetBinError(Hist_Gamma_Attenu_LowE.FindBin(Elev_cut_lower),err_gamma_attenu)
-        Hist_CR_Attenu_LowE.SetBinContent(Hist_CR_Attenu_LowE.FindBin(Elev_cut_lower),CR_attenu)
-        Hist_CR_Attenu_LowE.SetBinError(Hist_CR_Attenu_LowE.FindBin(Elev_cut_lower),err_CR_attenu)
-    for elev in range(1,3):
-        Elev_cut_lower = elev*30.
-        Elev_cut_upper = Elev_cut_lower+30.
-        Erec_cut_lower = energy_bins[1]
-        Erec_cut_upper = energy_bins[2]
-        MakeATag()
-        CR_attenu,err_CR_attenu,gamma_attenu,err_gamma_attenu,e2p_ratio,err_e2p_ratio = MeasureElectronComponent()
-        Hist_e2p_Ratio_MidE.SetBinContent(Hist_e2p_Ratio_MidE.FindBin(Elev_cut_lower),e2p_ratio)
-        Hist_e2p_Ratio_MidE.SetBinError(Hist_e2p_Ratio_MidE.FindBin(Elev_cut_lower),err_e2p_ratio)
-        Hist_Gamma_Attenu_MidE.SetBinContent(Hist_Gamma_Attenu_MidE.FindBin(Elev_cut_lower),gamma_attenu)
-        Hist_Gamma_Attenu_MidE.SetBinError(Hist_Gamma_Attenu_MidE.FindBin(Elev_cut_lower),err_gamma_attenu)
-        Hist_CR_Attenu_MidE.SetBinContent(Hist_CR_Attenu_MidE.FindBin(Elev_cut_lower),CR_attenu)
-        Hist_CR_Attenu_MidE.SetBinError(Hist_CR_Attenu_MidE.FindBin(Elev_cut_lower),err_CR_attenu)
-    for elev in range(1,3):
-        Elev_cut_lower = elev*30.
-        Elev_cut_upper = Elev_cut_lower+30.
-        Erec_cut_lower = energy_bins[2]
-        Erec_cut_upper = energy_bins[3]
-        MakeATag()
-        CR_attenu,err_CR_attenu,gamma_attenu,err_gamma_attenu,e2p_ratio,err_e2p_ratio = MeasureElectronComponent()
-        Hist_e2p_Ratio_HighE.SetBinContent(Hist_e2p_Ratio_HighE.FindBin(Elev_cut_lower),e2p_ratio)
-        Hist_e2p_Ratio_HighE.SetBinError(Hist_e2p_Ratio_HighE.FindBin(Elev_cut_lower),err_e2p_ratio)
-        Hist_Gamma_Attenu_HighE.SetBinContent(Hist_Gamma_Attenu_HighE.FindBin(Elev_cut_lower),gamma_attenu)
-        Hist_Gamma_Attenu_HighE.SetBinError(Hist_Gamma_Attenu_HighE.FindBin(Elev_cut_lower),err_gamma_attenu)
-        Hist_CR_Attenu_HighE.SetBinContent(Hist_CR_Attenu_HighE.FindBin(Elev_cut_lower),CR_attenu)
-        Hist_CR_Attenu_HighE.SetBinError(Hist_CR_Attenu_HighE.FindBin(Elev_cut_lower),err_CR_attenu)
     canvas2 = ROOT.TCanvas("canvas2","canvas2", 200, 10, 600, 600)
     pad2 = ROOT.TPad("pad2","pad2",0.1,0.8,1,1)
     pad2.SetBottomMargin(0.0)
@@ -925,96 +904,92 @@ if Do_e2p_Measurement:
     legend.SetFillColor(0)
     legend.SetFillStyle(0)
     legend.SetLineColor(0)
+    for energy in range(0,len(energy_bins)-1):
+        Hist_e2p_Ratio += [Hist_e2p_Ratio_LowE.Clone()]
+        Hist_Gamma_Attenu += [Hist_Gamma_Attenu_LowE.Clone()]
+        Hist_CR_Attenu += [Hist_CR_Attenu_LowE.Clone()]
+        for elev in range(1,Hist_e2p_Ratio_LowE.GetNbinsX()+1):
+            Elev_cut_lower = Hist_e2p_Ratio_LowE.GetBinLowEdge(elev)
+            Elev_cut_upper = Hist_e2p_Ratio_LowE.GetBinLowEdge(elev+1)
+            Erec_cut_lower = energy_bins[energy]
+            Erec_cut_upper = energy_bins[energy+1]
+            #Erec_cut_upper = 1000.
+            MakeATag()
+            print '++++++++++++++++++++++++++++++++++++++++++++++'
+            print 'selection = %s'%(tag)
+            CR_attenu,err_CR_attenu,gamma_attenu,err_gamma_attenu,e2p_ratio,err_e2p_ratio = MeasureElectronComponent()
+            Hist_e2p_Ratio[energy].SetBinContent(Hist_e2p_Ratio_LowE.FindBin(Elev_cut_lower),e2p_ratio)
+            Hist_e2p_Ratio[energy].SetBinError(Hist_e2p_Ratio_LowE.FindBin(Elev_cut_lower),err_e2p_ratio)
+            Hist_Gamma_Attenu[energy].SetBinContent(Hist_Gamma_Attenu_LowE.FindBin(Elev_cut_lower),gamma_attenu)
+            Hist_Gamma_Attenu[energy].SetBinError(Hist_Gamma_Attenu_LowE.FindBin(Elev_cut_lower),err_gamma_attenu)
+            Hist_CR_Attenu[energy].SetBinContent(Hist_CR_Attenu_LowE.FindBin(Elev_cut_lower),CR_attenu)
+            Hist_CR_Attenu[energy].SetBinError(Hist_CR_Attenu_LowE.FindBin(Elev_cut_lower),err_CR_attenu)
     pad1.cd()
     #f_LowE = ROOT.TF1("f_LowE","[0]",30,90)
     #Hist_e2p_Ratio_LowE.Fit("f_LowE","R")
     #f_LowE.SetLineColor(4)
-    #f_MidE = ROOT.TF1("f_MidE","[0]",30,90)
-    #Hist_e2p_Ratio_MidE.Fit("f_MidE","R")
-    #f_MidE.SetLineColor(3)
-    #f_HighE = ROOT.TF1("f_HighE","[0]",30,90)
-    #Hist_e2p_Ratio_HighE.Fit("f_HighE","R")
-    #f_HighE.SetLineColor(2)
-    Hist_e2p_Ratio_LowE.GetXaxis().SetTitle('Tel Elevation')
-    Hist_e2p_Ratio_LowE.GetYaxis().SetTitle('e/p ratio')
-    Hist_e2p_Ratio_LowE.SetLineColor(4)
-    #Hist_e2p_Ratio_LowE.SetMaximum(1)
-    #Hist_e2p_Ratio_LowE.SetMinimum(0)
-    Hist_e2p_Ratio_LowE.Draw("E")
-    Hist_e2p_Ratio_MidE.SetLineColor(3)
-    Hist_e2p_Ratio_MidE.Draw("E same")
-    Hist_e2p_Ratio_HighE.SetLineColor(2)
-    Hist_e2p_Ratio_HighE.Draw("E same")
+    Hist_e2p_Ratio[0].GetXaxis().SetTitle('Tel Elevation')
+    Hist_e2p_Ratio[0].GetYaxis().SetTitle('e/p ratio')
+    maxContent = 0.
+    for energy in range(0,len(energy_bins)-1):
+        maxContent = max(Hist_e2p_Ratio[energy].GetMaximum(),maxContent)
+    Hist_e2p_Ratio[0].SetMaximum(1.2*maxContent)
+    Hist_e2p_Ratio[0].SetMinimum(0)
+    Hist_e2p_Ratio[0].Draw("E TEXT")
+    for energy in range(0,len(energy_bins)-1):
+        Hist_e2p_Ratio[energy].SetLineColor(energy+2)
+        Hist_e2p_Ratio[energy].Draw("E TEXT same")
     #f_LowE.Draw("same")
-    #f_MidE.Draw("same")
-    #f_HighE.Draw("same")
     pad2.cd()
     legend.Clear()
-    legend.AddEntry(Hist_e2p_Ratio_LowE,'E %s-%s TeV'%(energy_bins[0],energy_bins[1]),"pl")
-    legend.AddEntry(Hist_e2p_Ratio_MidE,'E %s-%s TeV'%(energy_bins[1],energy_bins[2]),"pl")
-    legend.AddEntry(Hist_e2p_Ratio_HighE,'E > %s TeV'%(energy_bins[2]),"pl")
+    for energy in range(0,len(energy_bins)-1):
+        legend.AddEntry(Hist_e2p_Ratio[energy],'E %s-%s TeV'%(energy_bins[energy],energy_bins[energy+1]),"pl")
     legend.Draw("SAME")
-    canvas2.SaveAs('output/e2p_Ratio.pdf')
+    canvas2.SaveAs('output/e2p_Ratio_%s.pdf'%(source))
     pad1.cd()
     #f_LowE = ROOT.TF1("f_LowE","[0]",30,90)
     #Hist_Gamma_Attenu_LowE.Fit("f_LowE","R")
     #f_LowE.SetLineColor(4)
-    #f_MidE = ROOT.TF1("f_MidE","[0]",30,90)
-    #Hist_Gamma_Attenu_MidE.Fit("f_MidE","R")
-    #f_MidE.SetLineColor(3)
-    #f_HighE = ROOT.TF1("f_HighE","[0]",30,90)
-    #Hist_Gamma_Attenu_HighE.Fit("f_HighE","R")
-    #f_HighE.SetLineColor(2)
-    Hist_Gamma_Attenu_LowE.GetXaxis().SetTitle('Tel Elevation')
-    Hist_Gamma_Attenu_LowE.GetYaxis().SetTitle('e/#gamma attenuation')
-    Hist_Gamma_Attenu_LowE.SetLineColor(4)
-    Hist_Gamma_Attenu_LowE.SetMaximum(0.2)
-    Hist_Gamma_Attenu_LowE.SetMinimum(0)
-    Hist_Gamma_Attenu_LowE.Draw("E")
-    Hist_Gamma_Attenu_MidE.SetLineColor(3)
-    Hist_Gamma_Attenu_MidE.Draw("E same")
-    Hist_Gamma_Attenu_HighE.SetLineColor(2)
-    Hist_Gamma_Attenu_HighE.Draw("E same")
+    Hist_Gamma_Attenu[0].GetXaxis().SetTitle('Tel Elevation')
+    Hist_Gamma_Attenu[0].GetYaxis().SetTitle('#gamma attenuation')
+    maxContent = 0.
+    for energy in range(0,len(energy_bins)-1):
+        maxContent = max(Hist_Gamma_Attenu[energy].GetMaximum(),maxContent)
+    Hist_Gamma_Attenu[0].SetMaximum(1.2*maxContent)
+    Hist_Gamma_Attenu[0].SetMinimum(0)
+    Hist_Gamma_Attenu[0].Draw("E TEXT")
+    for energy in range(0,len(energy_bins)-1):
+        Hist_Gamma_Attenu[energy].SetLineColor(energy+2)
+        Hist_Gamma_Attenu[energy].Draw("E TEXT same")
     #f_LowE.Draw("same")
-    #f_MidE.Draw("same")
-    #f_HighE.Draw("same")
     pad2.cd()
     legend.Clear()
-    legend.AddEntry(Hist_Gamma_Attenu_LowE,'E %s-%s TeV'%(energy_bins[0],energy_bins[1]),"pl")
-    legend.AddEntry(Hist_Gamma_Attenu_MidE,'E %s-%s TeV'%(energy_bins[1],energy_bins[2]),"pl")
-    legend.AddEntry(Hist_Gamma_Attenu_HighE,'E > %s TeV'%(energy_bins[2]),"pl")
+    for energy in range(0,len(energy_bins)-1):
+        legend.AddEntry(Hist_Gamma_Attenu[energy],'E %s-%s TeV'%(energy_bins[energy],energy_bins[energy+1]),"pl")
     legend.Draw("SAME")
-    canvas2.SaveAs('output/Gamma_Attenu.pdf')
+    canvas2.SaveAs('output/Gamma_Attenu_%s.pdf'%(source))
     pad1.cd()
-    #f_LowE = ROOT.TF1("f_LowE","[0]",40,90)
+    #f_LowE = ROOT.TF1("f_LowE","[0]",30,90)
     #Hist_CR_Attenu_LowE.Fit("f_LowE","R")
     #f_LowE.SetLineColor(4)
-    #f_MidE = ROOT.TF1("f_MidE","[0]",40,90)
-    #Hist_CR_Attenu_MidE.Fit("f_MidE","R")
-    #f_MidE.SetLineColor(3)
-    #f_HighE = ROOT.TF1("f_HighE","[0]",40,90)
-    #Hist_CR_Attenu_HighE.Fit("f_HighE","R")
-    #f_HighE.SetLineColor(2)
-    Hist_CR_Attenu_LowE.GetXaxis().SetTitle('Tel Elevation')
-    Hist_CR_Attenu_LowE.GetYaxis().SetTitle('CR attenuation')
-    Hist_CR_Attenu_LowE.SetLineColor(4)
-    Hist_CR_Attenu_LowE.SetMaximum(1)
-    Hist_CR_Attenu_LowE.SetMinimum(0)
-    Hist_CR_Attenu_LowE.Draw("E")
-    Hist_CR_Attenu_MidE.SetLineColor(3)
-    Hist_CR_Attenu_MidE.Draw("E same")
-    Hist_CR_Attenu_HighE.SetLineColor(2)
-    Hist_CR_Attenu_HighE.Draw("E same")
+    Hist_CR_Attenu[0].GetXaxis().SetTitle('Tel Elevation')
+    Hist_CR_Attenu[0].GetYaxis().SetTitle('CR attenuation')
+    maxContent = 0.
+    for energy in range(0,len(energy_bins)-1):
+        maxContent = max(Hist_CR_Attenu[energy].GetMaximum(),maxContent)
+    Hist_CR_Attenu[0].SetMaximum(1.2*maxContent)
+    Hist_CR_Attenu[0].SetMinimum(0)
+    Hist_CR_Attenu[0].Draw("E TEXT")
+    for energy in range(0,len(energy_bins)-1):
+        Hist_CR_Attenu[energy].SetLineColor(energy+2)
+        Hist_CR_Attenu[energy].Draw("E TEXT same")
     #f_LowE.Draw("same")
-    #f_MidE.Draw("same")
-    #f_HighE.Draw("same")
     pad2.cd()
     legend.Clear()
-    legend.AddEntry(Hist_CR_Attenu_LowE,'E %s-%s TeV'%(energy_bins[0],energy_bins[1]),"pl")
-    legend.AddEntry(Hist_CR_Attenu_MidE,'E %s-%s TeV'%(energy_bins[1],energy_bins[2]),"pl")
-    legend.AddEntry(Hist_CR_Attenu_HighE,'E > %s TeV'%(energy_bins[2]),"pl")
+    for energy in range(0,len(energy_bins)-1):
+        legend.AddEntry(Hist_CR_Attenu[energy],'E %s-%s TeV'%(energy_bins[energy],energy_bins[energy+1]),"pl")
     legend.Draw("SAME")
-    canvas2.SaveAs('output/CR_Attenu.pdf')
+    canvas2.SaveAs('output/CR_Attenu_%s.pdf'%(source))
 
 RW_method = ''
 Fake_Removal = ''
@@ -1028,42 +1003,27 @@ Height_cut = ''
 source = 'Crab'
 #source = 'PKS1424'
 #source = '3C264'
-#field = 'off'
-field = 'on'
+field = 'off'
+#field = 'on'
 
-Elev_cut_lower = 30
+Elev_cut_lower = 40
 Elev_cut_upper = 90
 #MSCL_cut_lower = -2
 #MSCL_cut_upper = 2
 
-#Erec_cut_lower = energy_bins[0]
-#Erec_cut_upper = energy_bins[1]
-#gamma_att = 0.12
-#cr_att = 0.86
-#e2p_ratio = 0.48
-#MakeATag()
-#RunExtendedSourceAnalysis(e2p_ratio,cr_att,gamma_att)
-#
-#Erec_cut_lower = energy_bins[1]
-#Erec_cut_upper = energy_bins[2]
-#gamma_att = 0.8
-#cr_att = 0.55
-#e2p_ratio = 0.3
-#MakeATag()
-#RunExtendedSourceAnalysis(e2p_ratio,cr_att,gamma_att)
-#
-#Erec_cut_lower = energy_bins[2]
-#Erec_cut_upper = energy_bins[3]
-#gamma_att = 0.17
-#cr_att = 0.36
-#e2p_ratio = 0.
-#MakeATag()
-#RunExtendedSourceAnalysis(e2p_ratio,cr_att,gamma_att)
-#
-#Erec_cut_lower = energy_bins[0]
-#Erec_cut_upper = energy_bins[3]
-#MakeATag()
-#MakeStackPlot(Hist_MSCW_Data_Sum,Hist_MSCW_CR_Sum,Hist_MSCW_ES_Sum,Hist_MSCW_Fake_Sum,Hist_MSCW_Ring_Sum,'MSCW')
-#MakeStackPlot(Hist_Erec_Data_Sum,Hist_Erec_CR_Sum,Hist_Erec_ES_Sum,Hist_Erec_Fake_Sum,Hist_Erec_Ring_Sum,'Erec')
+#Do_analysis = False
+Do_analysis = True
+if Do_analysis:
+    for energy in range(0,len(energy_bins)-1):
+        Erec_cut_lower = energy_bins[energy]
+        Erec_cut_upper = energy_bins[energy+1]
+        MakeATag()
+        RunExtendedSourceAnalysis(e2p_ratio[energy],cr_att[energy],gamma_att[energy])
+    
+    Erec_cut_lower = energy_bins[0]
+    Erec_cut_upper = energy_bins[len(energy_bins)-1]
+    MakeATag()
+    MakeStackPlot(Hist_MSCW_Data_Sum,Hist_MSCW_CR_Sum,Hist_MSCW_ES_Sum,Hist_MSCW_Fake_Sum,Hist_MSCW_Ring_Sum,'MSCW')
+    MakeStackPlot(Hist_Erec_Data_Sum,Hist_Erec_CR_Sum,Hist_Erec_ES_Sum,Hist_Erec_Fake_Sum,Hist_Erec_Ring_Sum,'Erec')
 
 
