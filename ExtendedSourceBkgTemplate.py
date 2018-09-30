@@ -6,9 +6,12 @@ from math import *
 from ROOT import *
 from array import *
 
+import runlist
+from runlist import *
+
 ROOT.gStyle.SetOptStat(0)
 ROOT.TH1.SetDefaultSumw2()
-ROOT.gStyle.SetPaintTextFormat("0.2f")
+ROOT.gStyle.SetPaintTextFormat("0.3f")
 
 def set_histStyle( hist , color):
     hist.SetFillColor(color)
@@ -139,15 +142,19 @@ def CommonSelection(tree):
 
 def ControlRegionHeightSelection(tree,elev):
     # best
-    width = 3.
-    if elev>60:
-        mean_height = 10.
-        cut_upper = mean_height+width
-        cut_lower = mean_height-width
-    else:
-        mean_height = -0.5*(elev-20.)+30
-        cut_upper = mean_height+(width+(mean_height-10.)*0.15)
-        cut_lower = mean_height-(width+(mean_height-10.)*0.15)
+    #width = 3.
+    #if elev>60:
+    #    mean_height = 10.
+    #    cut_upper = mean_height+width
+    #    cut_lower = mean_height-width
+    #else:
+    #    mean_height = -0.5*(elev-20.)+30
+    #    cut_upper = mean_height+(width+(mean_height-10.)*0.15)
+    #    cut_lower = mean_height-(width+(mean_height-10.)*0.15)
+
+    # best
+    cut_upper = 3.0+10.+10.*pow((elev-90)/47.,4)-(1+log10(tree.Erec))
+    cut_lower = -3.0+10.+10.*pow((elev-90)/53.,4)-(1+log10(tree.Erec))
 
     if Height_cut=='simple':
         cut_upper = 13.
@@ -308,12 +315,14 @@ def SingleRunAnalysis(source,region,run,data_type):
         #print Hist_TelElev_RW_Factor.Print("All")
         for i in range(0,anasum_tree.GetEntries()):
             anasum_tree.GetEntry(i)
-            if not CommonSelection(anasum_tree): continue
-            #if (anasum_tree.MSCW<3): continue
             elevation = hist_Ele_vs_time.GetBinContent(hist_Ele_vs_time.FindBin(anasum_tree.Time))
             azimuth = hist_Azi_vs_time.GetBinContent(hist_Azi_vs_time.FindBin(anasum_tree.Time))
-            if (anasum_tree.MSCW<1):
+            Hist_TelElev_Counts.Fill(elevation)
+            if not CommonSelection(anasum_tree): continue
+            #if (anasum_tree.MSCW<3): continue
+            if (anasum_tree.MSCW<1 and anasum_tree.MSCL<1):
                 TProf_TelElev_vs_EmissionHeight_Data.Fill(elevation,anasum_tree.EmissionHeight)
+                Hist2D_TelElev_vs_EmissionHeight_Data.Fill(elevation,anasum_tree.EmissionHeight)
             if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
             Hist2D_Erec_vs_EmissionHeight_Data.Fill(anasum_tree.Erec,anasum_tree.EmissionHeight)
             scale = Hist_TelElev_RW_Factor.GetBinContent(Hist_TelElev_RW_Factor.FindBin(elevation))
@@ -321,7 +330,6 @@ def SingleRunAnalysis(source,region,run,data_type):
             scale = scale*Hist_Erec_RW_Factor.GetBinContent(Hist_Erec_RW_Factor.FindBin(anasum_tree.Erec))
             if RW_method=='NoRW': 
                 scale = 1
-            Hist2D_TelElev_vs_EmissionHeight_Data.Fill(elevation,anasum_tree.EmissionHeight)
             if ControlRegionHeightSelection(anasum_tree,elevation):
                 Hist_MSCW_CR.Fill(anasum_tree.MSCW,scale)
                 Hist_MSCW_CR_Raw.Fill(anasum_tree.MSCW,1.)
@@ -420,15 +428,15 @@ def RunExtendedSourceAnalysis(e2p_ratio,CR_attenu,gamma_attenu):
     #N_CR = N_signal-N_egamma
 
     if not Fake_Removal=='NoFakeRemoved':
-        CR_attenu = Hist_MSCW_CR_Raw.Integral(Hist_MSCW_CR_Raw.FindBin(3),Hist_MSCW_CR_Raw.FindBin(100))
-        CR_attenu = CR_attenu/Hist_MSCW_Data.Integral(Hist_MSCW_Data.FindBin(3),Hist_MSCW_Data.FindBin(100))
+        #CR_attenu = Hist_MSCW_CR_Raw.Integral(Hist_MSCW_CR_Raw.FindBin(3),Hist_MSCW_CR_Raw.FindBin(100))
+        #CR_attenu = CR_attenu/Hist_MSCW_Data.Integral(Hist_MSCW_Data.FindBin(3),Hist_MSCW_Data.FindBin(100))
         #for b in range(0,Hist_MSCW_CR_Raw.GetNbinsX()):
-        for b in range(Hist_MSCW_CR_Raw.FindBin(-1.5),Hist_MSCW_CR_Raw.FindBin(2.5)):
+        for b in range(Hist_MSCW_CR_Raw.FindBin(-2.5),Hist_MSCW_CR_Raw.FindBin(2.5)):
             N_egamma = (Hist_MSCW_CR_Raw.GetBinContent(b+1)-CR_attenu*Hist_MSCW_Data.GetBinContent(b+1))
             N_egamma = N_egamma/(gamma_attenu-CR_attenu)
             if N_egamma>0:
                 #Hist_MSCW_CR.SetBinContent(b+1,(Hist_MSCW_Data.GetBinContent(b+1)-N_egamma)*Normalization_Factor)
-                Hist_MSCW_CR.SetBinContent(b+1,(Hist_MSCW_Data.GetBinContent(b+1)-N_egamma))
+                Hist_MSCW_CR.SetBinContent(b+1,max(0,Hist_MSCW_Data.GetBinContent(b+1)-N_egamma))
                 Hist_MSCW_Fake.SetBinContent(b+1,N_egamma*gamma_attenu*Normalization_Factor)
         #Hist_MSCW_CR.Add(Hist_MSCW_Fake,-1.)
         for b in range(0,Hist_Erec_CR_Raw.GetNbinsX()):
@@ -436,7 +444,7 @@ def RunExtendedSourceAnalysis(e2p_ratio,CR_attenu,gamma_attenu):
             N_egamma = N_egamma/(gamma_attenu-CR_attenu)
             if N_egamma>0:
                 #Hist_Erec_CR.SetBinContent(b+1,(Hist_Erec_Data.GetBinContent(b+1)-N_egamma)*Normalization_Factor)
-                Hist_Erec_CR.SetBinContent(b+1,(Hist_Erec_Data.GetBinContent(b+1)-N_egamma))
+                Hist_Erec_CR.SetBinContent(b+1,max(0,Hist_Erec_Data.GetBinContent(b+1)-N_egamma))
                 Hist_Erec_Fake.SetBinContent(b+1,N_egamma*gamma_attenu*Normalization_Factor)
         #Hist_Erec_CR.Add(Hist_Erec_Fake,-1.)
     
@@ -472,9 +480,25 @@ def RunExtendedSourceAnalysis(e2p_ratio,CR_attenu,gamma_attenu):
     #Hist2D_MSCW_vs_EmissionHeight_Data.Draw("CONT3 same")
     #canvas.SetLogz()
     #canvas.SaveAs('output/MSCW_vs_EmissionHeight_%s.pdf'%(tag))
-    TProf_TelElev_vs_EmissionHeight_Data.GetYaxis().SetTitle('EmissionHeight')
-    TProf_TelElev_vs_EmissionHeight_Data.GetXaxis().SetTitle('Tel. elevation')
-    TProf_TelElev_vs_EmissionHeight_Data.Draw("E")
+    Hist2D_TelElev_vs_EmissionHeight_Data.GetYaxis().SetTitle('EmissionHeight')
+    Hist2D_TelElev_vs_EmissionHeight_Data.GetXaxis().SetTitle('Tel. elevation')
+    Hist2D_TelElev_vs_EmissionHeight_Data.Draw("COL4Z")
+    for b in range(0,Hist1D_TelElev_vs_EmissionHeight_Data.GetNbinsX()):
+        hist_temp = Hist2D_TelElev_vs_EmissionHeight_Data.ProjectionY("hist_temp",b+1,b+1)
+        Hist1D_TelElev_vs_EmissionHeight_Data.SetBinContent(b+1,hist_temp.GetMean())
+        Hist1D_TelElev_vs_EmissionHeight_Data.SetBinError(b+1,hist_temp.GetRMS())
+    Hist1D_TelElev_vs_EmissionHeight_Data.Draw("E same")
+    f_cut_mean = ROOT.TF1("f_cut_mean","10.+10.*pow((x-90)/50.,4)",0,90)
+    f_cut_mean.SetLineColor(2)
+    f_cut_mean.SetLineStyle(2)
+    f_cut_mean.Draw("same")
+    f_cut_upper = ROOT.TF1("f_cut_upper","3.0+10.+10.*pow((x-90)/47.,4)",0,90)
+    f_cut_upper.SetLineColor(2)
+    f_cut_upper.Draw("same")
+    f_cut_lower = ROOT.TF1("f_cut_lower","-3.0+10.+10.*pow((x-90)/53.,4)",0,90)
+    f_cut_lower.SetLineColor(2)
+    f_cut_lower.Draw("same")
+    canvas.SetLogz()
     canvas.SaveAs('output/TelElev_vs_EmissionHeight_%s.pdf'%(tag))
     #Hist2D_Erec_vs_EmissionHeight_Data.GetYaxis().SetTitle('EmissionHeight')
     #Hist2D_Erec_vs_EmissionHeight_Data.GetXaxis().SetTitle('Erec')
@@ -501,6 +525,8 @@ def RunExtendedSourceAnalysis(e2p_ratio,CR_attenu,gamma_attenu):
     Hist_Erec_Ring.Reset()
     Hist2D_MSCW_vs_EmissionHeight_Data.Reset()
     TProf_TelElev_vs_EmissionHeight_Data.Reset()
+    Hist1D_TelElev_vs_EmissionHeight_Data.Reset()
+    Hist2D_TelElev_vs_EmissionHeight_Data.Reset()
     Hist2D_Erec_vs_EmissionHeight_Data.Reset()
 
 def MakeATag():
@@ -588,20 +614,7 @@ def MeasureElectronComponent():
     for b in range(0,Hist_eGamma_Signal.GetNbinsX()):
         Hist_eGamma_Signal.SetBinContent(b+1,max(0.,Hist_eGamma_Signal.GetBinContent(b+1)))
     print Hist_eGamma_Signal.Print("All")
-    for b in range(0,Hist_CR_Signal.GetNbinsX()):
-        Hist_CR_Signal.SetBinContent(b+1,Hist_OnData_Signal.GetBinContent(b+1))
-        Hist_CR_Signal.SetBinError(b+1,Hist_OnData_Signal.GetBinError(b+1))
-    Hist_CR_Signal.Add(Hist_eGamma_Signal,-1.)
-    for b in range(0,Hist_CR_Signal.GetNbinsX()):
-        Hist_CR_Signal.SetBinContent(b+1,max(0.,Hist_CR_Signal.GetBinContent(b+1)))
-    print Hist_CR_Signal.Print("All")
-    #for b in range(0,Hist_El_Signal.GetNbinsX()):
-    #    Hist_El_Signal.SetBinContent(b+1,Hist_eGamma_Signal.GetBinContent(b+1))
-    #    Hist_El_Signal.SetBinError(b+1,Hist_eGamma_Signal.GetBinError(b+1))
-    #Hist_El_Signal.Add(Hist_Gamma_Signal,-1.)
-    #for b in range(0,Hist_El_Signal.GetNbinsX()):
-    #    Hist_El_Signal.SetBinContent(b+1,max(0.,Hist_El_Signal.GetBinContent(b+1)))
-    #print Hist_El_Signal.Print("All")
+
     for b in range(0,Hist_El_Signal.GetNbinsX()):
         Hist_El_Signal.SetBinContent(b+1,Hist_OffData_Control.GetBinContent(b+1))
         Hist_El_Signal.SetBinError(b+1,Hist_OffData_Control.GetBinError(b+1))
@@ -610,6 +623,15 @@ def MeasureElectronComponent():
     for b in range(0,Hist_El_Signal.GetNbinsX()):
         Hist_El_Signal.SetBinContent(b+1,max(0.,Hist_El_Signal.GetBinContent(b+1)))
     print Hist_El_Signal.Print("All")
+
+    for b in range(0,Hist_CR_Signal.GetNbinsX()):
+        Hist_CR_Signal.SetBinContent(b+1,Hist_OffData_Signal.GetBinContent(b+1))
+        Hist_CR_Signal.SetBinError(b+1,Hist_OffData_Signal.GetBinError(b+1))
+    Hist_CR_Signal.Add(Hist_El_Signal,-1.)
+    for b in range(0,Hist_CR_Signal.GetNbinsX()):
+        Hist_CR_Signal.SetBinContent(b+1,max(0.,Hist_CR_Signal.GetBinContent(b+1)))
+    print Hist_CR_Signal.Print("All")
+
     Err_N_CR = ROOT.Double(0.)
     Err_N_El = ROOT.Double(0.)
     N_CR = Hist_CR_Signal.IntegralAndError(1,Hist_CR_Signal.GetNbinsX(),Err_N_CR)
@@ -646,138 +668,9 @@ def MeasureElectronComponent():
 
     return Rate_CR_Attenuation,Err_Rate_CR_Attenuation,Rate_Gamma_Attenuation,Err_Rate_Gamma_Attenuation,e2p_ratio_temp,err_e2p_ratio_temp
 
-Crab_runlist = []
-Crab_runlist += ["85232"]
-Crab_runlist += ["85244"]
-Crab_runlist += ["85245"]
-Crab_runlist += ["85329"]
-Crab_runlist += ["85373"]
-Crab_runlist += ["85374"]
-Crab_runlist += ["85375"]
-Crab_runlist += ["85386"]
-Crab_runlist += ["85387"]
-Crab_runlist += ["85414"]
-Crab_runlist += ["85415"]
-Crab_runlist += ["85648"]
-Crab_runlist += ["85649"]
-Crab_runlist += ["88627"]
-Crab_runlist += ["88726"]
-Crab_runlist += ["88727"]
-Crab_runlist += ["88728"]
-Crab_runlist += ["88753"]
-Crab_runlist += ["88754"]
-Crab_runlist += ["89030"]
-Crab_runlist += ["89031"]
-Crab_runlist += ["89032"]
-Crab_runlist += ["89403"]
-Crab_runlist += ["88690"]
-Crab_runlist += ["88714"]
-Crab_runlist += ["88715"]
-Crab_runlist += ["88716"]
-Crab_runlist += ["88719"]
-Crab_runlist += ["88720"]
-Crab_runlist += ["88742"]
-Crab_runlist += ["88746"]
-Crab_runlist += ["88747"]
-Crab_runlist += ["88772"]
-Crab_runlist += ["88796"]
 
-PKS1424_runlist = []
-PKS1424_runlist += ["89252"]
-PKS1424_runlist += ["89291"]
-PKS1424_runlist += ["89342"]
-PKS1424_runlist += ["89358"]
-PKS1424_runlist += ["89359"]
-PKS1424_runlist += ["89360"]
-PKS1424_runlist += ["89560"]
-PKS1424_runlist += ["89561"]
-PKS1424_runlist += ["89562"]
-PKS1424_runlist += ["89563"]
-PKS1424_runlist += ["89764"]
-PKS1424_runlist += ["89765"]
-PKS1424_runlist += ["89945"]
-PKS1424_runlist += ["89946"]
-PKS1424_runlist += ["90082"]
-PKS1424_runlist += ["90083"]
-PKS1424_runlist += ["90228"]
-PKS1424_runlist += ["90229"]
-PKS1424_runlist += ["90230"]
-PKS1424_runlist += ["90231"]
-PKS1424_runlist += ["90232"]
-PKS1424_runlist += ["90357"]
-PKS1424_runlist += ["90432"]
-PKS1424_runlist += ["90433"]
-
-runlist_3C264 = []
-runlist_3C264 += ["89177"]
-runlist_3C264 += ["89178"]
-runlist_3C264 += ["89181"]
-runlist_3C264 += ["89200"]
-runlist_3C264 += ["89201"]
-runlist_3C264 += ["89202"]
-runlist_3C264 += ["89312"]
-runlist_3C264 += ["89531"]
-runlist_3C264 += ["89532"]
-runlist_3C264 += ["89534"]
-runlist_3C264 += ["89535"]
-runlist_3C264 += ["89537"]
-runlist_3C264 += ["89538"]
-runlist_3C264 += ["89554"]
-runlist_3C264 += ["89555"]
-runlist_3C264 += ["89557"]
-runlist_3C264 += ["89558"]
-runlist_3C264 += ["89559"]
-runlist_3C264 += ["89577"]
-runlist_3C264 += ["89590"]
-runlist_3C264 += ["89591"]
-runlist_3C264 += ["89592"]
-runlist_3C264 += ["89599"]
-runlist_3C264 += ["89600"]
-runlist_3C264 += ["89601"]
-runlist_3C264 += ["89648"]
-runlist_3C264 += ["89649"]
-runlist_3C264 += ["89650"]
-runlist_3C264 += ["89662"]
-runlist_3C264 += ["89684"]
-runlist_3C264 += ["89685"]
-runlist_3C264 += ["89692"]
-runlist_3C264 += ["89700"]
-runlist_3C264 += ["89701"]
-runlist_3C264 += ["89707"]
-runlist_3C264 += ["89708"]
-runlist_3C264 += ["89755"]
-runlist_3C264 += ["89756"]
-runlist_3C264 += ["89761"]
-runlist_3C264 += ["89762"]
-runlist_3C264 += ["89779"]
-runlist_3C264 += ["89780"]
-runlist_3C264 += ["89781"]
-runlist_3C264 += ["89782"]
-runlist_3C264 += ["89816"]
-runlist_3C264 += ["89817"]
-runlist_3C264 += ["89818"]
-runlist_3C264 += ["89819"]
-runlist_3C264 += ["89827"]
-runlist_3C264 += ["89828"]
-runlist_3C264 += ["89840"]
-runlist_3C264 += ["89841"]
-runlist_3C264 += ["89846"]
-runlist_3C264 += ["89847"]
-runlist_3C264 += ["89848"]
-runlist_3C264 += ["89878"]
-runlist_3C264 += ["89879"]
-runlist_3C264 += ["89880"]
-runlist_3C264 += ["89915"]
-runlist_3C264 += ["89916"]
-runlist_3C264 += ["89935"]
-runlist_3C264 += ["89936"]
-
-Hist2D_MSCW_vs_EmissionHeight_Data = TH2D("Hist2D_MSCW_vs_EmissionHeight_Data","",24,-4,20,40,0,40)
-Hist2D_TelElev_vs_EmissionHeight_Data = TH2D("Hist2D_TelElev_vs_EmissionHeight_Data","",18,0,90,40,0,40)
-TProf_TelElev_vs_EmissionHeight_Data = TProfile("TProf_TelElev_vs_EmissionHeight_Data","",18,0,90,0,40)
-
-TelElev_Bin = [0,10,20,30,40,50,90]
-#TelElev_Bin = [0,10,20,30,40,50,60,70,80,90]
+#TelElev_Bin = [0,10,20,30,40,50,90]
+TelElev_Bin = [0,10,20,30,40,50,60,70,80,90]
 Hist_TelElev_RW_Factor = TH1D("Hist_TelElev_RW_Factor","",len(TelElev_Bin)-1,array('d',TelElev_Bin))
 Hist_TelElev_Signal = TH1D("Hist_TelElev_Signal","",len(TelElev_Bin)-1,array('d',TelElev_Bin))
 Hist_TelElev_Control = TH1D("Hist_TelElev_Control","",len(TelElev_Bin)-1,array('d',TelElev_Bin))
@@ -789,6 +682,11 @@ Erec_Bin = [0,0.5,1,2,3,5,10,100]
 Hist_Erec_RW_Factor = TH1D("Hist_Erec_RW_Factor","",len(Erec_Bin)-1,array('d',Erec_Bin))
 Hist_Erec_Signal = TH1D("Hist_Erec_Signal","",len(Erec_Bin)-1,array('d',Erec_Bin))
 Hist_Erec_Control = TH1D("Hist_Erec_Control","",len(Erec_Bin)-1,array('d',Erec_Bin))
+
+Hist2D_MSCW_vs_EmissionHeight_Data = TH2D("Hist2D_MSCW_vs_EmissionHeight_Data","",24,-4,20,40,0,40)
+Hist2D_TelElev_vs_EmissionHeight_Data = TH2D("Hist2D_TelElev_vs_EmissionHeight_Data","",18,0,90,40,0,40)
+Hist1D_TelElev_vs_EmissionHeight_Data = TH1D("Hist1D_TelElev_vs_EmissionHeight_Data","",18,0,90)
+TProf_TelElev_vs_EmissionHeight_Data = TProfile("TProf_TelElev_vs_EmissionHeight_Data","",18,0,90,0,40)
 
 nbins = 12
 Hist_MSCW_CR = TH1D("Hist_MSCW_CR","",nbins,-5,19)
@@ -808,7 +706,7 @@ variable_bins = []
 b = -1
 while (b<2):
     variable_bins += [pow(10,b)]
-    b += 0.2
+    b += 0.5
 Hist_Erec_CR = TH1D("Hist_Erec_CR","",len(variable_bins)-1,array('d',variable_bins))
 Hist_Erec_CR_Raw = TH1D("Hist_Erec_CR_Raw","",len(variable_bins)-1,array('d',variable_bins))
 Hist_Erec_Fake = TH1D("Hist_Erec_Fake","",len(variable_bins)-1,array('d',variable_bins))
@@ -827,8 +725,7 @@ N_GammaMC_Fake = 0
 N_GammaData_ES = 0
 N_GammaMC_ES = 0
 
-#MSCW_Bin = [-100,-1,0,1,2,3,100]  # the last bin has to be the CR normalization region!!
-MSCW_Bin = [-100,2,100]  # the last bin has to be the CR normalization region!!
+MSCW_Bin = [-100,3,100]  # the last bin has to be the CR normalization region!!
 Hist_OnData_Signal = TH1D("Hist_OnData_Signal","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
 Hist_OnData_Control = TH1D("Hist_OnData_Control","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
 Hist_OffData_Signal = TH1D("Hist_OffData_Signal","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
@@ -841,10 +738,13 @@ Hist_eGamma_Signal = TH1D("Hist_eGamma_Signal","",len(MSCW_Bin)-1,array('d',MSCW
 Hist_CR_Signal = TH1D("Hist_CR_Signal","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
 Hist_El_Signal = TH1D("Hist_El_Signal","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
 
-Elev_Bin = [40,50,60,70,80]
+#Elev_Bin = [75,90]
+Elev_Bin = [50,55,60,65,70,75,80,85]
 Hist_e2p_Ratio_LowE = TH1D("Hist_e2p_Ratio_LowE","",len(Elev_Bin)-1,array('d',Elev_Bin))
 Hist_Gamma_Attenu_LowE = TH1D("Hist_Gamma_Attenu_LowE","",len(Elev_Bin)-1,array('d',Elev_Bin))
 Hist_CR_Attenu_LowE = TH1D("Hist_CR_Attenu_LowE","",len(Elev_Bin)-1,array('d',Elev_Bin))
+
+Hist_TelElev_Counts = TH1D("Hist_TelElev_Counts","",45,0,90)
 
 variable_bins = []
 b = -1
@@ -866,22 +766,22 @@ Height_cut = ''
 Elev_cut_lower = 0
 Elev_cut_upper = 90
 MSCL_cut_lower = -2
-MSCL_cut_upper = 2
+MSCL_cut_upper = 1
 Erec_cut_lower = 0.1
 Erec_cut_upper = 100
 
-energy_bins = [0.1,0.5,1.0,1000]
-gamma_att = [0.1,0.1,0.19]
-cr_att = [0.95,0.6,0.45]
-e2p_ratio = [0.25,0.17,0.05]
+energy_bins = [0.1,0.3,1.0,1000]
+#gamma_att = [0.094,0.084,0.092]
+#cr_att = [0.81,0.52,0.36]
+#e2p_ratio = [0.68,0.36,0.07]
 
 Fake_cut_MSCL = 0.
 Fake_cut_MSCW = 0.
 
 tag = ''
 
-Do_e2p_Measurement = False
-#Do_e2p_Measurement = True
+#Do_e2p_Measurement = False
+Do_e2p_Measurement = True
 Hist_e2p_Ratio = []
 Hist_Gamma_Attenu = []
 Hist_CR_Attenu = []
@@ -1003,13 +903,13 @@ Height_cut = ''
 source = 'Crab'
 #source = 'PKS1424'
 #source = '3C264'
-field = 'off'
-#field = 'on'
+#field = 'off'
+field = 'on'
 
-Elev_cut_lower = 40
+Elev_cut_lower = 60
 Elev_cut_upper = 90
 #MSCL_cut_lower = -2
-#MSCL_cut_upper = 2
+#MSCL_cut_upper = 1
 
 #Do_analysis = False
 Do_analysis = True
@@ -1018,7 +918,11 @@ if Do_analysis:
         Erec_cut_lower = energy_bins[energy]
         Erec_cut_upper = energy_bins[energy+1]
         MakeATag()
-        RunExtendedSourceAnalysis(e2p_ratio[energy],cr_att[energy],gamma_att[energy])
+        #RunExtendedSourceAnalysis(e2p_ratio[energy],cr_att[energy],gamma_att[energy])
+        e2p_ratio = Hist_e2p_Ratio[energy].GetBinContent(Hist_e2p_Ratio[energy].FindBin(70.))
+        cr_att = Hist_CR_Attenu[energy].GetBinContent(Hist_CR_Attenu[energy].FindBin(70.))
+        gamma_att = Hist_Gamma_Attenu[energy].GetBinContent(Hist_Gamma_Attenu[energy].FindBin(70.))
+        RunExtendedSourceAnalysis(e2p_ratio,cr_att,gamma_att)
     
     Erec_cut_lower = energy_bins[0]
     Erec_cut_upper = energy_bins[len(energy_bins)-1]
@@ -1026,4 +930,8 @@ if Do_analysis:
     MakeStackPlot(Hist_MSCW_Data_Sum,Hist_MSCW_CR_Sum,Hist_MSCW_ES_Sum,Hist_MSCW_Fake_Sum,Hist_MSCW_Ring_Sum,'MSCW')
     MakeStackPlot(Hist_Erec_Data_Sum,Hist_Erec_CR_Sum,Hist_Erec_ES_Sum,Hist_Erec_Fake_Sum,Hist_Erec_Ring_Sum,'Erec')
 
+canvas = ROOT.TCanvas("canvas","canvas", 200, 10, 600, 600)
+Hist_TelElev_Counts.GetXaxis().SetTitle('Tel. elevation')
+Hist_TelElev_Counts.Draw("E")
+canvas.SaveAs('output/TelElev_Counts_%s.pdf'%(tag))
 
