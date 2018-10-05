@@ -24,6 +24,7 @@ def ControlRegionHeightSelection(tree,elev):
     cut_lower = 10.-control_width
 
     if (tree.EmissionHeight<cut_upper and tree.EmissionHeight>cut_lower): return False
+    #if (tree.EmissionHeight>(cut_upper+1.) or tree.EmissionHeight<(cut_lower-1.)): return False
     return True
 
 def SignalRegionHeightSelection(tree,elev):
@@ -46,7 +47,7 @@ def MakeATag():
     tag = ''
     tag += '_Elev%sto%s'%(Elev_cut_lower,Elev_cut_upper)
     tag += '_MSCL%sto%s'%(MSCL_cut_lower,MSCL_cut_upper)
-    tag += '_Erec%sto%s'%(Erec_cut_lower,Erec_cut_upper)
+    #tag += '_Erec%sto%s'%(Erec_cut_lower,Erec_cut_upper)
     tag += '_'+Height_cut
     tag += '_'+RW_method
     tag += '_'+Fake_Removal
@@ -281,11 +282,11 @@ def SingleRunAnalysis(source,region,run,data_type):
             scale = 1
             if ControlRegionHeightSelection(anasum_tree,elevation):
                 if (anasum_tree.MSCW<1.):
-                    Hist_Erec_CR.Fill(anasum_tree.Erec,scale)
-                    Hist_Erec_CR_Raw.Fill(anasum_tree.Erec,1.)
+                    Hist_Erec_CR.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec),scale)
+                    Hist_Erec_CR_Raw.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec),1.)
             if SignalRegionHeightSelection(anasum_tree,elevation):
                 if (anasum_tree.MSCW<1.):
-                    Hist_Erec_Data.Fill(anasum_tree.Erec)
+                    Hist_Erec_Data.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec))
                 if (anasum_tree.MSCW>3.):
                     Hist_Norm_Data.Fill(0)
 
@@ -298,7 +299,7 @@ def SingleRunAnalysis(source,region,run,data_type):
             if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
             if SignalRegionHeightSelection(ring_tree,elevation):
                 if (ring_tree.MSCW<1.):
-                    Hist_Erec_Ring.Fill(ring_tree.Erec)
+                    Hist_Erec_Ring.Fill(min(energy_bins[len(energy_bins)-2],ring_tree.Erec))
                 if (ring_tree.MSCW>3.):
                     Hist_Norm_Ring.Fill(0)
 
@@ -363,12 +364,242 @@ def RunExtendedSourceAnalysis(CR_attenu,gamma_attenu):
     Hist_Erec_Data.Reset()
     Hist_Erec_Ring.Reset()
 
+def AttenuationRateAtDifferentHeight():
+
+    global Erec_cut_lower
+    global Erec_cut_upper
+    global MSCL_cut_lower
+    global MSCL_cut_upper
+    global control_width
+    global Hist_Gamma_Attenu
+    global Hist_CR_Attenu
+    global Hist_Inflation
+
+    for energy in range(0,len(energy_bins)-1):
+        Hist_Gamma_Attenu += [Hist_ControlWidth_Bins.Clone()]
+        Hist_CR_Attenu += [Hist_ControlWidth_Bins.Clone()]
+        Hist_Inflation += [Hist_ControlWidth_Bins.Clone()]
+        for width in range(1,Hist_ControlWidth_Bins.GetNbinsX()+1):
+            control_width = Hist_ControlWidth_Bins.GetBinLowEdge(width)
+            Erec_cut_lower = energy_bins[energy]
+            Erec_cut_upper = energy_bins[energy+1]
+            #Erec_cut_upper = 1000.
+            MakeATag()
+            print '++++++++++++++++++++++++++++++++++++++++++++++'
+            print 'selection = %s, control region = %s'%(tag, control_width)
+            CR_attenu,err_CR_attenu,gamma_attenu,err_gamma_attenu = MeasureAttenuation()
+            Hist_Gamma_Attenu[energy].SetBinContent(Hist_ControlWidth_Bins.FindBin(control_width),gamma_attenu)
+            Hist_Gamma_Attenu[energy].SetBinError(Hist_ControlWidth_Bins.FindBin(control_width),err_gamma_attenu)
+            Hist_CR_Attenu[energy].SetBinContent(Hist_ControlWidth_Bins.FindBin(control_width),CR_attenu)
+            Hist_CR_Attenu[energy].SetBinError(Hist_ControlWidth_Bins.FindBin(control_width),err_CR_attenu)
+            inflation = pow(1+gamma_attenu/CR_attenu,0.5)/(1-gamma_attenu/CR_attenu)
+            inflation = inflation/pow(CR_attenu,0.5)
+            print 'inflation = %s'%(inflation)
+            Hist_Inflation[energy].SetBinContent(Hist_ControlWidth_Bins.FindBin(control_width),inflation)
+
+    canvas2 = ROOT.TCanvas("canvas2","canvas2", 200, 10, 600, 600)
+    pad2 = ROOT.TPad("pad2","pad2",0.1,0.8,1,1)
+    pad2.SetBottomMargin(0.0)
+    pad2.SetTopMargin(0.03)
+    pad2.SetBorderMode(1)
+    pad1 = ROOT.TPad("pad1","pad1",0.1,0,1,0.8)
+    pad1.SetBottomMargin(0.2)
+    pad1.SetTopMargin(0.0)
+    pad1.SetBorderMode(0)
+    pad1.Draw()
+    pad2.Draw()
+    legend = ROOT.TLegend(0.2,0.1,0.7,0.9)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.15)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+
+    pad1.cd()
+    Hist_Gamma_Attenu[0].GetXaxis().SetTitle('Emmission Height of Control Region')
+    Hist_Gamma_Attenu[0].GetYaxis().SetTitle('#gamma attenuation')
+    maxContent = 0.
+    for energy in range(0,len(energy_bins)-1):
+        maxContent = max(Hist_Gamma_Attenu[energy].GetMaximum(),maxContent)
+    Hist_Gamma_Attenu[0].SetMaximum(1.2*maxContent)
+    Hist_Gamma_Attenu[0].SetMinimum(0)
+    Hist_Gamma_Attenu[0].Draw("E")
+    for energy in range(0,len(energy_bins)-1):
+        Hist_Gamma_Attenu[energy].SetLineColor(energy+2)
+        Hist_Gamma_Attenu[energy].Draw("E same")
+    pad2.cd()
+    legend.Clear()
+    for energy in range(0,len(energy_bins)-1):
+        legend.AddEntry(Hist_Gamma_Attenu[energy],'E %s-%s TeV'%(energy_bins[energy],energy_bins[energy+1]),"pl")
+    legend.Draw("SAME")
+    canvas2.SaveAs('output/Gamma_Attenu_%s.pdf'%(tag))
+
+    pad1.cd()
+    Hist_CR_Attenu[0].GetXaxis().SetTitle('Emmission Height of Control Region')
+    Hist_CR_Attenu[0].GetYaxis().SetTitle('Bkg attenuation')
+    maxContent = 0.
+    for energy in range(0,len(energy_bins)-1):
+        maxContent = max(Hist_CR_Attenu[energy].GetMaximum(),maxContent)
+    Hist_CR_Attenu[0].SetMaximum(1.2*maxContent)
+    Hist_CR_Attenu[0].SetMinimum(0)
+    Hist_CR_Attenu[0].Draw("E")
+    for energy in range(0,len(energy_bins)-1):
+        Hist_CR_Attenu[energy].SetLineColor(energy+2)
+        Hist_CR_Attenu[energy].Draw("E same")
+    pad2.cd()
+    legend.Clear()
+    for energy in range(0,len(energy_bins)-1):
+        legend.AddEntry(Hist_CR_Attenu[energy],'E %s-%s TeV'%(energy_bins[energy],energy_bins[energy+1]),"pl")
+    legend.Draw("SAME")
+    canvas2.SaveAs('output/CR_Attenu_%s.pdf'%(tag))
+
+    pad1.cd()
+    Hist_Inflation[0].GetXaxis().SetTitle('Emmission Height of Control Region')
+    Hist_Inflation[0].GetYaxis().SetTitle('Unc. inflation factor')
+    maxContent = 0.
+    for energy in range(0,len(energy_bins)-1):
+        maxContent = max(Hist_Inflation[energy].GetMaximum(),maxContent)
+    Hist_Inflation[0].SetMaximum(1.2*maxContent)
+    Hist_Inflation[0].SetMinimum(0)
+    Hist_Inflation[0].Draw("E")
+    for energy in range(0,len(energy_bins)-1):
+        Hist_Inflation[energy].SetLineColor(energy+2)
+        Hist_Inflation[energy].Draw("E same")
+    pad2.cd()
+    legend.Clear()
+    for energy in range(0,len(energy_bins)-1):
+        legend.AddEntry(Hist_Inflation[energy],'E %s-%s TeV'%(energy_bins[energy],energy_bins[energy+1]),"pl")
+    legend.Draw("SAME")
+    canvas2.SaveAs('output/Inflation_%s.pdf'%(tag))
+
+def set_histStyle( hist , color):
+    hist.SetFillColor(color)
+    #hist.SetLineColor(1)
+    hist.SetLineColor(color)
+    hist.SetMarkerColor(color)
+    hist.SetFillStyle(1001)
+    pass
+
+def MakeStackPlot(Hist_Data,Hist_CR,Hist_Ring,title):
+    
+    c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
+    pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
+    pad3.SetBottomMargin(0.0)
+    pad3.SetTopMargin(0.03)
+    pad3.SetBorderMode(1)
+    pad1 = ROOT.TPad("pad1","pad1",0,0.3,1,0.8)
+    pad1.SetBottomMargin(0.0)
+    pad1.SetTopMargin(0.0)
+    pad1.SetBorderMode(0)
+    pad2 = ROOT.TPad("pad2","pad2",0,0,1,0.3)
+    pad2.SetBottomMargin(0.39)
+    pad2.SetTopMargin(0.0)
+    pad2.SetBorderMode(0)
+    pad2.Draw()
+    pad1.Draw()
+    pad3.Draw()
+
+    pad1.cd()
+    Hist_Data.SetLineColor(1)
+    Hist_Data.SetLineWidth(3)
+    set_histStyle( Hist_CR , 30)
+    stack = ROOT.THStack("stack", "")
+    stack.Add( Hist_CR )
+    if Hist_Data.GetMaximum()>stack.GetMaximum():
+        if Hist_Data.GetMinimum()>stack.GetMinimum():
+            Hist_Data.SetMinimum(max(1.,stack.GetMinimum()/2.))
+        Hist_Data.Draw("E")
+    else:
+        if Hist_Data.GetMinimum()<stack.GetMinimum():
+            stack.SetMinimum(max(1.,Hist_Data.GetMinimum()/2.))
+        stack.Draw("hist")
+    stack.Draw("hist same")
+    Hist_Data.Draw("E same")
+    if not Hist_Ring.Integral()==0:
+        Hist_Ring.SetLineColor(2)
+        Hist_Ring.SetLineWidth(2)
+        Hist_Ring.Draw("E same")
+    Hist_All = Hist_CR.Clone()
+    Hist_All.SetFillColor(kBlack)
+    Hist_All.SetFillStyle(3004)
+    Hist_All.SetMarkerSize(0)
+    Hist_All.Draw("e2 same")
+    pad3.cd()
+    legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.2)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+    legend.Clear()
+    legend.AddEntry(Hist_Data,'Data',"pl")
+    legend.AddEntry(Hist_CR,'Background',"f")
+    if not Hist_Ring.Integral()==0:
+        legend.AddEntry(Hist_Ring,'Ring model',"pl")
+    legend.Draw("SAME")
+    lumilab1 = ROOT.TLatex(0.15,0.75,'   ' )
+    lumilab1.SetNDC()
+    lumilab1.SetTextSize(0.15)
+    lumilab1.Draw()
+    lumilab2 = ROOT.TLatex(0.15,0.6,'%0.2f < Tel elev. < %0.2f'%(Elev_cut_lower,Elev_cut_upper) )
+    lumilab2.SetNDC()
+    lumilab2.SetTextSize(0.15)
+    lumilab2.Draw()
+    lumilab3 = ROOT.TLatex(0.15,0.45,'%0.2f < MSCL < %0.2f'%(MSCL_cut_lower,MSCL_cut_upper) )
+    lumilab3.SetNDC()
+    lumilab3.SetTextSize(0.15)
+    lumilab3.Draw()
+    lumilab4 = ROOT.TLatex(0.15,0.3,'%0.2f < MSCW < %0.2f'%(MSCL_cut_lower,MSCL_cut_upper) )
+    lumilab4.SetNDC()
+    lumilab4.SetTextSize(0.15)
+    lumilab4.Draw()
+    pad2.cd()
+    Hist_Band = Hist_All.Clone()
+    Hist_Band.Divide(Hist_All)
+    Hist_Band.SetFillColor(kBlack)
+    Hist_Band.SetFillStyle(3004)
+    Hist_Band.SetMarkerSize(0)
+    Hist_Band.GetXaxis().SetTitle(title)
+    Hist_Band.GetXaxis().SetTitleOffset(1.1)
+    Hist_Band.GetXaxis().SetTitleSize(0.13)
+    Hist_Band.GetXaxis().SetLabelSize(0.1)
+    Hist_Band.GetYaxis().SetLabelSize(0.1)
+    Hist_Band.GetYaxis().SetTitleOffset(0.3)
+    if not Hist_Ring.Integral()==0:
+        Hist_Band.GetYaxis().SetTitle("Ring/Bkg")
+    else:
+        Hist_Band.GetYaxis().SetTitle("Data/Bkg")
+    Hist_Band.GetYaxis().SetTitleSize(0.13)
+    Hist_Band.SetMaximum(2.5)
+    Hist_Band.SetMinimum(0)
+    Hist_Band.Draw("e2")
+    if not Hist_Ring.Integral()==0:
+        Hist_Ratio = Hist_Ring.Clone()
+    else:
+        Hist_Ratio = Hist_Data.Clone()
+    Hist_Ratio.Divide(Hist_All)
+    Hist_Ratio.Draw("E same")
+    if title=='Erec':
+        pad1.SetLogy()
+        pad1.SetLogx()
+        pad2.SetLogx()
+    c_both.SaveAs('output/%s_%s.pdf'%(title,tag))
+    pad1.SetLogy(0)
+    pad1.SetLogx(0)
+    pad2.SetLogx(0)
+
 Hist_Norm_Data = TH1D("Hist_Norm_Data","",1,0,1)
 Hist_Norm_Ring = TH1D("Hist_Norm_Ring","",1,0,1)
 
 Elev_Bin = [55,85]
 #Elev_Bin = [30,40,50,60,70,80,90]
 Hist_Elev_Bins = TH1D("Hist_Elev_Bins","",len(Elev_Bin)-1,array('d',Elev_Bin))
+
+ControlWidth_Bin = [4,10]
+#ControlWidth_Bin = [1,2,3,4,5,6,7,8,9,10]
+Hist_ControlWidth_Bins = TH1D("Hist_ControlWidth_Bins","",len(ControlWidth_Bin)-1,array('d',ControlWidth_Bin))
 
 MSCW_Bin = [-100,1,3,100]  # the last bin has to be the CR normalization region!!
 Hist_OnData_Signal = TH1D("Hist_OnData_Signal","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
@@ -380,7 +611,7 @@ Hist_Gamma_Control = TH1D("Hist_Gamma_Control","",len(MSCW_Bin)-1,array('d',MSCW
 Hist_CR_Attenuation = TH1D("Hist_CR_Attenuation","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
 Hist_Gamma_Attenuation = TH1D("Hist_Gamma_Attenuation","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
 
-energy_bins = [0.1,0.2,0.3,1000]
+energy_bins = [pow(10,-1),pow(10,-0.8),pow(10,-0.6),pow(10,-0.4),pow(10,-0.2),pow(10,0),pow(10,0.2)]
 
 Hist_Erec_CR = TH1D("Hist_Erec_CR","",len(energy_bins)-1,array('d',energy_bins))
 Hist_Erec_CR_Raw = TH1D("Hist_Erec_CR_Raw","",len(energy_bins)-1,array('d',energy_bins))
@@ -396,10 +627,10 @@ field = 'on'
 
 #target = 'Crab'
 #target = '2ndCrab'
-target = '3C264'
-#target = 'PKS1424'
-#target_field = 'on'
-target_field = 'off'
+#target = '3C264'
+target = 'PKS1424'
+target_field = 'on'
+#target_field = 'off'
 
 Height_cut = ''
 RW_method = ''
@@ -409,42 +640,24 @@ Height_cut = ''
 #Fake_Removal = 'NoFakeRemoved'
 
 
-Elev_cut_lower = 60
-Elev_cut_upper = 90
+Elev_cut_lower = Elev_Bin[0]
+Elev_cut_upper = Elev_Bin[len(Elev_Bin)-1]
 MSCL_cut_lower = -2
 MSCL_cut_upper = 1
 Erec_cut_lower = 0.1
 Erec_cut_upper = 1000
-signal_width = 1000.0
-control_width = 4.0
 
-tag = ''
-Hist_e2p_Ratio = []
 Hist_Gamma_Attenu = []
 Hist_CR_Attenu = []
-for energy in range(0,len(energy_bins)-1):
-    Hist_Gamma_Attenu += [Hist_Elev_Bins.Clone()]
-    Hist_CR_Attenu += [Hist_Elev_Bins.Clone()]
-    for elev in range(1,Hist_Elev_Bins.GetNbinsX()+1):
-        Elev_cut_lower = Hist_Elev_Bins.GetBinLowEdge(elev)
-        Elev_cut_upper = Hist_Elev_Bins.GetBinLowEdge(elev+1)
-        Erec_cut_lower = energy_bins[energy]
-        Erec_cut_upper = energy_bins[energy+1]
-        #Erec_cut_upper = 1000.
-        MakeATag()
-        print '++++++++++++++++++++++++++++++++++++++++++++++'
-        print 'selection = %s'%(tag)
-        CR_attenu,err_CR_attenu,gamma_attenu,err_gamma_attenu = MeasureAttenuation()
-        Hist_Gamma_Attenu[energy].SetBinContent(Hist_Elev_Bins.FindBin(Elev_cut_lower),gamma_attenu)
-        Hist_Gamma_Attenu[energy].SetBinError(Hist_Elev_Bins.FindBin(Elev_cut_lower),err_gamma_attenu)
-        Hist_CR_Attenu[energy].SetBinContent(Hist_Elev_Bins.FindBin(Elev_cut_lower),CR_attenu)
-        Hist_CR_Attenu[energy].SetBinError(Hist_Elev_Bins.FindBin(Elev_cut_lower),err_CR_attenu)
+Hist_Inflation = []
+
+signal_width = 1000.0
+control_width = 2.0
+AttenuationRateAtDifferentHeight()
 
 source = target
 field = target_field
 
-Elev_cut_lower = Elev_Bin[0]
-Elev_cut_upper = Elev_Bin[len(Elev_Bin)-1]
 
 #Do_analysis = False
 Do_analysis = True
@@ -456,6 +669,7 @@ if Do_analysis:
         cr_att = 1
         gamma_att = 0
         if not Fake_Removal=='NoFakeRemoved':
-            cr_att = Hist_CR_Attenu[energy].GetBinContent(Hist_CR_Attenu[energy].FindBin(70.))
-            gamma_att = Hist_Gamma_Attenu[energy].GetBinContent(Hist_Gamma_Attenu[energy].FindBin(70.))
+            cr_att = Hist_CR_Attenu[energy].GetBinContent(Hist_CR_Attenu[energy].FindBin(4.))
+            gamma_att = Hist_Gamma_Attenu[energy].GetBinContent(Hist_Gamma_Attenu[energy].FindBin(4.))
         RunExtendedSourceAnalysis(cr_att,gamma_att)
+    MakeStackPlot(Hist_Erec_Data_Sum,Hist_Erec_CR_Sum,Hist_Erec_Ring_Sum,'Erec')
