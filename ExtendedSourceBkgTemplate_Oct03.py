@@ -65,6 +65,8 @@ def GetAnttenuationHistogram(source,region,run,data_type):
             anasum_file = ROOT.TFile.Open("$VERITAS_USER_DATA_DIR/PKS1424_V6_Moderate-TMVA-BDT.RB.%s.root"%(run))
         if source == '3C264':
             anasum_file = ROOT.TFile.Open("$VERITAS_USER_DATA_DIR/3C264_V6_Moderate-TMVA-BDT.RB.%s.root"%(run))
+        if source == 'H1426':
+            anasum_file = ROOT.TFile.Open("$VERITAS_USER_DATA_DIR/H1426_V6_Moderate-TMVA-BDT.RB.%s.root"%(run))
         if region == 'on':
             anasum_tree = anasum_file.Get("run_%s/stereo/data_on"%(run))
             ring_tree = anasum_file.Get("run_%s/stereo/data_off"%(run))
@@ -82,16 +84,22 @@ def GetAnttenuationHistogram(source,region,run,data_type):
     time_end = pointing_tree.Time
     hist_Ele_vs_time = ROOT.TProfile("hist_Ele_vs_time","",100,time_begin,time_end+0.01*(time_end-time_begin),0,100)
     hist_Azi_vs_time = ROOT.TProfile("hist_Azi_vs_time","",100,time_begin,time_end+0.01*(time_end-time_begin),-400,400)
+    hist_RA_vs_time = ROOT.TProfile("hist_RA_vs_time","",100,time_begin,time_end+0.01*(time_end-time_begin),0,100)
+    hist_Dec_vs_time = ROOT.TProfile("hist_Dec_vs_time","",100,time_begin,time_end+0.01*(time_end-time_begin),0,100)
     for i in range(0,pointing_tree.GetEntries()):
         pointing_tree.GetEntry(i)
         hist_Ele_vs_time.Fill(pointing_tree.Time,pointing_tree.TelElevation)
         hist_Azi_vs_time.Fill(pointing_tree.Time,pointing_tree.TelAzimuth)
+        hist_RA_vs_time.Fill(pointing_tree.Time,pointing_tree.TelRAJ2000)
+        hist_Dec_vs_time.Fill(pointing_tree.Time,pointing_tree.TelDecJ2000)
 
     for i in range(0,anasum_tree.GetEntries()):
         anasum_tree.GetEntry(i)
         if not CommonSelection(anasum_tree): continue
         elevation = hist_Ele_vs_time.GetBinContent(hist_Ele_vs_time.FindBin(anasum_tree.Time))
         azimuth = hist_Azi_vs_time.GetBinContent(hist_Azi_vs_time.FindBin(anasum_tree.Time))
+        RA = hist_RA_vs_time.GetBinContent(hist_RA_vs_time.FindBin(anasum_tree.Time))
+        Dec = hist_Dec_vs_time.GetBinContent(hist_Dec_vs_time.FindBin(anasum_tree.Time))
         if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
         scale = Hist_TelElev_Counts_scale.GetBinContent(Hist_TelElev_Counts_scale.FindBin(elevation))
         if RW_method=='NoRW': 
@@ -117,6 +125,8 @@ def GetSourceElevation(run):
         anasum_file = ROOT.TFile.Open("$VERITAS_USER_DATA_DIR/PKS1424_V6_Moderate-TMVA-BDT.RB.%s.root"%(run))
     if source == '3C264':
         anasum_file = ROOT.TFile.Open("$VERITAS_USER_DATA_DIR/3C264_V6_Moderate-TMVA-BDT.RB.%s.root"%(run))
+    if source == 'H1426':
+        anasum_file = ROOT.TFile.Open("$VERITAS_USER_DATA_DIR/H1426_V6_Moderate-TMVA-BDT.RB.%s.root"%(run))
     pointing_tree = anasum_file.Get("run_%s/stereo/pointingDataReduced"%(run))
 
     for i in range(0,pointing_tree.GetEntries()):
@@ -133,6 +143,8 @@ def GetTargetElevation(run):
         target_file = ROOT.TFile.Open("$VERITAS_USER_DATA_DIR/PKS1424_V6_Moderate-TMVA-BDT.RB.%s.root"%(run))
     if target == '3C264':
         target_file = ROOT.TFile.Open("$VERITAS_USER_DATA_DIR/3C264_V6_Moderate-TMVA-BDT.RB.%s.root"%(run))
+    if target == 'H1426':
+        target_file = ROOT.TFile.Open("$VERITAS_USER_DATA_DIR/H1426_V6_Moderate-TMVA-BDT.RB.%s.root"%(run))
     target_pointing_tree = target_file.Get("run_%s/stereo/pointingDataReduced"%(run))
 
     for i in range(0,target_pointing_tree.GetEntries()):
@@ -162,6 +174,9 @@ def MeasureAttenuation():
     if target == '3C264':
         for run in runlist_3C264:
             GetTargetElevation(run)
+    if target == 'H1426':
+        for run in runlist_H1426:
+            GetTargetElevation(run)
     #print Hist_TelElev_Counts_target.Print('All')
     for b in range(0,Hist_TelElev_Counts_scale.GetNbinsX()):
         Hist_TelElev_Counts_scale.SetBinContent(b+1,Hist_TelElev_Counts_target.GetBinContent(b+1))
@@ -187,16 +202,18 @@ def MeasureAttenuation():
     print 'Hist_OnData_Control.Integral() = %s'%(Hist_OnData_Control.GetBinContent(Hist_OnData_Signal.FindBin(0)))
     print 'Hist_OffData_Signal.Integral() = %s'%(Hist_OffData_Signal.GetBinContent(Hist_OnData_Signal.FindBin(0)))
 
-    if Hist_OffData_Signal.GetBinContent(len(MSCW_Bin)-1)<10:
-        return 0,0,0,0,0,0
-    if Hist_OffData_Control.GetBinContent(len(MSCW_Bin)-1)<10:
-        return 0,0,0,0,0,0
+    #if Hist_OffData_Signal.GetBinContent(len(MSCW_Bin)-1)<1:
+    #    return 0,0,0,0
+    #if Hist_OffData_Control.GetBinContent(len(MSCW_Bin)-1)<1:
+    #    return 0,0,0,0
     Normalization_Factor_Signal = Hist_OnData_Signal.GetBinContent(len(MSCW_Bin)-1)
     Normalization_Factor_Signal = Normalization_Factor_Signal/Hist_OffData_Signal.GetBinContent(len(MSCW_Bin)-1)
-    Normalization_Factor_Control = Hist_OnData_Control.GetBinContent(len(MSCW_Bin)-1)
-    Normalization_Factor_Control = Normalization_Factor_Control/Hist_OffData_Control.GetBinContent(len(MSCW_Bin)-1)
     Hist_OffData_Signal.Scale(Normalization_Factor_Signal)
     Hist_OffData_Control.Scale(Normalization_Factor_Signal)
+    #Normalization_Factor_Control = Hist_OnData_Control.GetBinContent(len(MSCW_Bin)-1)
+    #Normalization_Factor_Control = Normalization_Factor_Control/Hist_OffData_Control.GetBinContent(len(MSCW_Bin)-1)
+    #Hist_OffData_Signal.Scale(Normalization_Factor_Control)
+    #Hist_OffData_Control.Scale(Normalization_Factor_Control)
     
     for b in range(0,Hist_CR_Attenuation.GetNbinsX()):
         Hist_CR_Attenuation.SetBinContent(b+1,Hist_OffData_Control.GetBinContent(b+1))
@@ -249,6 +266,8 @@ def SingleRunAnalysis(source,region,run,data_type):
             anasum_file = ROOT.TFile.Open("$VERITAS_USER_DATA_DIR/PKS1424_V6_Moderate-TMVA-BDT.RB.%s.root"%(run))
         if source == '3C264':
             anasum_file = ROOT.TFile.Open("$VERITAS_USER_DATA_DIR/3C264_V6_Moderate-TMVA-BDT.RB.%s.root"%(run))
+        if source == 'H1426':
+            anasum_file = ROOT.TFile.Open("$VERITAS_USER_DATA_DIR/H1426_V6_Moderate-TMVA-BDT.RB.%s.root"%(run))
         if region == 'on':
             anasum_tree = anasum_file.Get("run_%s/stereo/data_on"%(run))
             ring_tree = anasum_file.Get("run_%s/stereo/data_off"%(run))
@@ -258,7 +277,7 @@ def SingleRunAnalysis(source,region,run,data_type):
     else:
         anasum_file = ROOT.TFile.Open("$VERITAS_USER_DATA_DIR/analysis/Results/%s.mscw.root"%(run))
         anasum_tree = anasum_file.Get("data")
-        pointing_tree = anasum_file.Get("data")
+        pointing_tree = anasum_file.Get("pointingDataReduced")
 
     if not source=="MC":
         pointing_tree.GetEntry(0)
@@ -267,64 +286,92 @@ def SingleRunAnalysis(source,region,run,data_type):
         time_end = pointing_tree.Time
         hist_Ele_vs_time = ROOT.TProfile("hist_Ele_vs_time","",100,time_begin,time_end+0.01*(time_end-time_begin),0,100)
         hist_Azi_vs_time = ROOT.TProfile("hist_Azi_vs_time","",100,time_begin,time_end+0.01*(time_end-time_begin),-400,400)
+        hist_RA_vs_time = ROOT.TProfile("hist_RA_vs_time","",100,time_begin,time_end+0.01*(time_end-time_begin),0,100)
+        hist_Dec_vs_time = ROOT.TProfile("hist_Dec_vs_time","",100,time_begin,time_end+0.01*(time_end-time_begin),0,100)
         for i in range(0,pointing_tree.GetEntries()):
             pointing_tree.GetEntry(i)
             hist_Ele_vs_time.Fill(pointing_tree.Time,pointing_tree.TelElevation)
             hist_Azi_vs_time.Fill(pointing_tree.Time,pointing_tree.TelAzimuth)
+            hist_RA_vs_time.Fill(pointing_tree.Time,pointing_tree.TelRAJ2000)
+            hist_Dec_vs_time.Fill(pointing_tree.Time,pointing_tree.TelDecJ2000)
 
         for i in range(0,anasum_tree.GetEntries()):
             anasum_tree.GetEntry(i)
             elevation = hist_Ele_vs_time.GetBinContent(hist_Ele_vs_time.FindBin(anasum_tree.Time))
             azimuth = hist_Azi_vs_time.GetBinContent(hist_Azi_vs_time.FindBin(anasum_tree.Time))
+            RA = hist_RA_vs_time.GetBinContent(hist_RA_vs_time.FindBin(anasum_tree.Time))
+            Dec = hist_Dec_vs_time.GetBinContent(hist_Dec_vs_time.FindBin(anasum_tree.Time))
             Hist_TelElev_Counts.Fill(elevation)
             if not CommonSelection(anasum_tree): continue
+            if (anasum_tree.MSCW<1.):
+                Hist2D_TelElev_vs_EmissionHeight_Data_All.Fill(elevation,anasum_tree.EmissionHeight)
             if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
+            if (anasum_tree.MSCW<1.):
+                Hist2D_Erec_vs_EmissionHeight_Data_All.Fill(anasum_tree.Erec,anasum_tree.EmissionHeight)
             scale = 1
+            Xoff_derot = anasum_tree.Xoff_derot
+            Yoff_derot = anasum_tree.Yoff_derot
+            Xcore = anasum_tree.Xcore
+            Ycore = anasum_tree.Ycore
             if ControlRegionHeightSelection(anasum_tree,elevation):
                 if (anasum_tree.MSCW<1.):
-                    Hist_Erec_CR.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec),scale)
-                    Hist_Erec_CR_Raw.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec),1.)
+                    if (anasum_tree.theta2<0.05):
+                        Hist_Erec_CR_Raw.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec),1.)
+		    Hist2D_Xoff_vs_Yoff_CR_Raw.Fill(anasum_tree.Xoff_derot,anasum_tree.Yoff_derot)
+		    Hist_theta2_CR_Raw.Fill(anasum_tree.theta2)
             if SignalRegionHeightSelection(anasum_tree,elevation):
                 if (anasum_tree.MSCW<1.):
-                    Hist_Erec_Data.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec))
+                    if (anasum_tree.theta2<0.05):
+                        Hist_Erec_Data.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec))
+                    elif (anasum_tree.theta2>0.1 and anasum_tree.theta2<0.5):
+                        Hist_Erec_Ring.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec))
+		    Hist2D_Xoff_vs_Yoff_Data.Fill(anasum_tree.Xoff_derot,anasum_tree.Yoff_derot)
+		    Hist_theta2_Data.Fill(anasum_tree.theta2)
                 if (anasum_tree.MSCW>3.):
-                    Hist_Norm_Data.Fill(0)
+                    if (anasum_tree.theta2<0.05):
+                        Hist_Norm_Data.Fill(0)
+                    elif (anasum_tree.theta2>0.1 and anasum_tree.theta2<0.5):
+                        Hist_Norm_Ring.Fill(0)
 
-    if region == 'on':
-        for i in range(0,ring_tree.GetEntries()):
-            ring_tree.GetEntry(i)
-            if not CommonSelection(ring_tree): continue
-            elevation = hist_Ele_vs_time.GetBinContent(hist_Ele_vs_time.FindBin(ring_tree.Time))
-            azimuth = hist_Azi_vs_time.GetBinContent(hist_Azi_vs_time.FindBin(ring_tree.Time))
-            if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
-            if SignalRegionHeightSelection(ring_tree,elevation):
-                if (ring_tree.MSCW<1.):
-                    Hist_Erec_Ring.Fill(min(energy_bins[len(energy_bins)-2],ring_tree.Erec))
-                if (ring_tree.MSCW>3.):
-                    Hist_Norm_Ring.Fill(0)
+    #if region == 'on' and data_type=='anasum':
+    #    for i in range(0,ring_tree.GetEntries()):
+    #        ring_tree.GetEntry(i)
+    #        if not CommonSelection(ring_tree): continue
+    #        elevation = hist_Ele_vs_time.GetBinContent(hist_Ele_vs_time.FindBin(ring_tree.Time))
+    #        azimuth = hist_Azi_vs_time.GetBinContent(hist_Azi_vs_time.FindBin(ring_tree.Time))
+    #        if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
+    #        if SignalRegionHeightSelection(ring_tree,elevation):
+    #            if (ring_tree.MSCW<1.):
+    #                Hist_Erec_Ring.Fill(min(energy_bins[len(energy_bins)-2],ring_tree.Erec))
+    #            if (ring_tree.MSCW>3.):
+    #                Hist_Norm_Ring.Fill(0)
 
-def RunExtendedSourceAnalysis(CR_attenu,gamma_attenu):
+def RunExtendedSourceAnalysis(data_type,CR_attenu,gamma_attenu):
 
-    print '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
     print 'Erec_cut_lower = %s, Erec_cut_upper = %s'%(Erec_cut_lower,Erec_cut_upper)
     print 'CR_attenu = %s, gamma_attenu = %s'%(CR_attenu,gamma_attenu)
 
     if source == 'Crab':
         for run in Crab_runlist:
-            SingleRunAnalysis('Crab',field,run,'anasum')
+            SingleRunAnalysis('Crab',field,run,data_type)
     if source == '2ndCrab':
         for run in SecondCrab_runlist:
-            SingleRunAnalysis('Crab',field,run,'anasum')
+            SingleRunAnalysis('Crab',field,run,data_type)
     if source == 'PKS1424':
         for run in PKS1424_runlist:
-            SingleRunAnalysis('PKS1424',field,run,'anasum')
+            SingleRunAnalysis('PKS1424',field,run,data_type)
     if source == '3C264':
         for run in runlist_3C264:
-            SingleRunAnalysis('3C264',field,run,'anasum')
+            SingleRunAnalysis('3C264',field,run,data_type)
+    if source == 'H1426':
+        for run in runlist_H1426:
+            SingleRunAnalysis('H1426',field,run,data_type)
     
-    if field == 'on':
-        Normalization_Factor_Ring = Hist_Norm_Data.Integral()
-        Normalization_Factor_Ring = Normalization_Factor_Ring/Hist_Norm_Ring.Integral()
+    if field == 'on' and data_type=='anasum':
+        Normalization_Factor_Ring = 0
+        if not Hist_Norm_Ring.Integral()==0:
+            Normalization_Factor_Ring = Hist_Norm_Data.Integral()
+            Normalization_Factor_Ring = Normalization_Factor_Ring/Hist_Norm_Ring.Integral()
         Hist_Erec_Ring.Scale(Normalization_Factor_Ring)
 
     #N_signal (number of events in signal region) = N_egamma + N_CR
@@ -342,20 +389,34 @@ def RunExtendedSourceAnalysis(CR_attenu,gamma_attenu):
         Hist_Erec_CR.Scale(1./(1.-gamma_attenu/CR_attenu))
         Hist_Erec_CR.Scale(-1.)
         Hist_Erec_CR.Add(Hist_Erec_Data)
-        #Hist_Erec_CR.Reset()
-        #Hist_Erec_CR.Add(Hist_Erec_CR_Raw)
-        #Hist_Erec_CR.Add(Hist_Erec_Data,-CR_attenu)
-        #Hist_Erec_CR.Scale(1./(CR_attenu-gamma_attenu))
-        #Hist_Erec_CR.Add(Hist_Erec_Data)
+        Hist2D_Xoff_vs_Yoff_CR.Reset()
+        Hist2D_Xoff_vs_Yoff_CR.Add(Hist2D_Xoff_vs_Yoff_Data)
+        Hist2D_Xoff_vs_Yoff_CR.Add(Hist2D_Xoff_vs_Yoff_CR_Raw,-1./CR_attenu)
+        Hist2D_Xoff_vs_Yoff_CR.Scale(1./(1.-gamma_attenu/CR_attenu))
+        Hist2D_Xoff_vs_Yoff_CR.Scale(-1.)
+        Hist2D_Xoff_vs_Yoff_CR.Add(Hist2D_Xoff_vs_Yoff_Data)
+        Hist_theta2_CR.Reset()
+        Hist_theta2_CR.Add(Hist_theta2_Data)
+        Hist_theta2_CR.Add(Hist_theta2_CR_Raw,-1./CR_attenu)
+        Hist_theta2_CR.Scale(1./(1.-gamma_attenu/CR_attenu))
+        Hist_theta2_CR.Scale(-1.)
+        Hist_theta2_CR.Add(Hist_theta2_Data)
     Err_N_CR = ROOT.Double(0.)
     N_CR = Hist_Erec_CR.IntegralAndError(1,Hist_Erec_CR.GetNbinsX(),Err_N_CR)
     print 'Hist_Erec_CR.Integral() = (CR_raw - gamma_att*data)/(CR_att-gamma_att) = %s +/- %s'%(N_CR,Err_N_CR)
     print 'Hist_Erec_Ring.Integral() = %s'%(Hist_Erec_Ring.Integral())
+    #print Hist_theta2_CR_Raw.Print("All")
+    #print Hist_theta2_CR.Print("All")
     
     
     Hist_Erec_Data_Sum.Add(Hist_Erec_Data)
     Hist_Erec_Ring_Sum.Add(Hist_Erec_Ring)
     Hist_Erec_CR_Sum.Add(Hist_Erec_CR)
+
+    Hist2D_Xoff_vs_Yoff_Data_Sum.Add(Hist2D_Xoff_vs_Yoff_Data)
+    Hist2D_Xoff_vs_Yoff_CR_Sum.Add(Hist2D_Xoff_vs_Yoff_CR)
+    Hist_theta2_Data_Sum.Add(Hist_theta2_Data)
+    Hist_theta2_CR_Sum.Add(Hist_theta2_CR)
 
     Hist_Norm_Data.Reset()
     Hist_Norm_Ring.Reset()
@@ -363,6 +424,12 @@ def RunExtendedSourceAnalysis(CR_attenu,gamma_attenu):
     Hist_Erec_CR_Raw.Reset()
     Hist_Erec_Data.Reset()
     Hist_Erec_Ring.Reset()
+    Hist2D_Xoff_vs_Yoff_Data.Reset()
+    Hist2D_Xoff_vs_Yoff_CR.Reset()
+    Hist2D_Xoff_vs_Yoff_CR_Raw.Reset()
+    Hist_theta2_Data.Reset()
+    Hist_theta2_CR.Reset()
+    Hist_theta2_CR_Raw.Reset()
 
 def AttenuationRateAtDifferentHeight():
 
@@ -383,7 +450,7 @@ def AttenuationRateAtDifferentHeight():
             control_width = Hist_ControlWidth_Bins.GetBinLowEdge(width)
             Erec_cut_lower = energy_bins[energy]
             Erec_cut_upper = energy_bins[energy+1]
-            #Erec_cut_upper = 1000.
+            if energy==len(energy_bins)-2: Erec_cut_upper = 1e10
             MakeATag()
             print '++++++++++++++++++++++++++++++++++++++++++++++'
             print 'selection = %s, control region = %s'%(tag, control_width)
@@ -597,7 +664,8 @@ Elev_Bin = [55,85]
 #Elev_Bin = [30,40,50,60,70,80,90]
 Hist_Elev_Bins = TH1D("Hist_Elev_Bins","",len(Elev_Bin)-1,array('d',Elev_Bin))
 
-ControlWidth_Bin = [4,10]
+#ControlWidth_Bin = [3,10]
+ControlWidth_Bin = [3,4,5,6]
 #ControlWidth_Bin = [1,2,3,4,5,6,7,8,9,10]
 Hist_ControlWidth_Bins = TH1D("Hist_ControlWidth_Bins","",len(ControlWidth_Bin)-1,array('d',ControlWidth_Bin))
 
@@ -611,7 +679,10 @@ Hist_Gamma_Control = TH1D("Hist_Gamma_Control","",len(MSCW_Bin)-1,array('d',MSCW
 Hist_CR_Attenuation = TH1D("Hist_CR_Attenuation","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
 Hist_Gamma_Attenuation = TH1D("Hist_Gamma_Attenuation","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
 
+#energy_bins = [0.3,5.0]
+#ControlWidthAtThisEnergy = [3,4]
 energy_bins = [pow(10,-1),pow(10,-0.8),pow(10,-0.6),pow(10,-0.4),pow(10,-0.2),pow(10,0),pow(10,0.2)]
+ControlWidthAtThisEnergy = [3,3,4,4,5,5,5]
 
 Hist_Erec_CR = TH1D("Hist_Erec_CR","",len(energy_bins)-1,array('d',energy_bins))
 Hist_Erec_CR_Raw = TH1D("Hist_Erec_CR_Raw","",len(energy_bins)-1,array('d',energy_bins))
@@ -621,14 +692,40 @@ Hist_Erec_Data_Sum = TH1D("Hist_Erec_Data_Sum","",len(energy_bins)-1,array('d',e
 Hist_Erec_Ring_Sum = TH1D("Hist_Erec_Ring_Sum","",len(energy_bins)-1,array('d',energy_bins))
 Hist_Erec_CR_Sum = TH1D("Hist_Erec_CR_Sum","",len(energy_bins)-1,array('d',energy_bins))
 
+Xcenter = 0
+Ycenter = 0
+Window = 2.
+Hist2D_Xoff_vs_Yoff_Data = TH2D("Hist2D_Xoff_vs_Yoff_Data","",40,Xcenter-Window,Xcenter+Window,40,Ycenter-Window,Ycenter+Window)
+Hist2D_Xoff_vs_Yoff_CR = TH2D("Hist2D_Xoff_vs_Yoff_CR","",40,Xcenter-Window,Xcenter+Window,40,Ycenter-Window,Ycenter+Window)
+Hist2D_Xoff_vs_Yoff_CR_Raw = TH2D("Hist2D_Xoff_vs_Yoff_CR_Raw","",40,Xcenter-Window,Xcenter+Window,40,Ycenter-Window,Ycenter+Window)
+Hist2D_Xoff_vs_Yoff_Data_Sum = TH2D("Hist2D_Xoff_vs_Yoff_Data_Sum","",40,Xcenter-Window,Xcenter+Window,40,Ycenter-Window,Ycenter+Window)
+Hist2D_Xoff_vs_Yoff_CR_Sum = TH2D("Hist2D_Xoff_vs_Yoff_CR_Sum","",40,Xcenter-Window,Xcenter+Window,40,Ycenter-Window,Ycenter+Window)
+Hist2D_Xoff_vs_Yoff_Sig = TH2D("Hist2D_Xoff_vs_Yoff_Sig","",40,Xcenter-Window,Xcenter+Window,40,Ycenter-Window,Ycenter+Window)
+Hist_theta2_Data = TH1D("Hist_theta2_Data","",20,0,0.5)
+Hist_theta2_CR = TH1D("Hist_theta2_CR","",20,0,0.5)
+Hist_theta2_CR_Raw = TH1D("Hist_theta2_CR_Raw","",20,0,0.5)
+Hist_theta2_Data_Sum = TH1D("Hist_theta2_Data_Sum","",20,0,0.5)
+Hist_theta2_CR_Sum = TH1D("Hist_theta2_CR_Sum","",20,0,0.5)
+Hist_theta2_Ring_Sum = TH1D("Hist_theta2_Ring_Sum","",20,0,0.5)
+
+variable_bins = []
+b = -1
+while (b<2):
+    variable_bins += [pow(10,b)]
+    b += 0.2
+Hist2D_Erec_vs_EmissionHeight_Data_All = TH2D("Hist2D_Erec_vs_EmissionHeight_Data_All","",len(variable_bins)-1,array('d',variable_bins),40,0,40)
+Hist1D_Erec_vs_EmissionHeight_Data_All = TH1D("Hist1D_Erec_vs_EmissionHeight_Data_All","",len(variable_bins)-1,array('d',variable_bins))
+Hist2D_TelElev_vs_EmissionHeight_Data_All = TH2D("Hist2D_TelElev_vs_EmissionHeight_Data_All","",18,0,90,40,0,40)
+Hist1D_TelElev_vs_EmissionHeight_Data_All = TH1D("Hist1D_TelElev_vs_EmissionHeight_Data_All","",18,0,90)
 
 source = 'Crab'
 field = 'on'
 
 #target = 'Crab'
-#target = '2ndCrab'
+target = '2ndCrab'
 #target = '3C264'
-target = 'PKS1424'
+#target = 'PKS1424'
+#target = 'H1426'
 target_field = 'on'
 #target_field = 'off'
 
@@ -665,11 +762,72 @@ if Do_analysis:
     for energy in range(0,len(energy_bins)-1):
         Erec_cut_lower = energy_bins[energy]
         Erec_cut_upper = energy_bins[energy+1]
+        if energy==len(energy_bins)-2: Erec_cut_upper = 1e10
         MakeATag()
         cr_att = 1
         gamma_att = 0
-        if not Fake_Removal=='NoFakeRemoved':
-            cr_att = Hist_CR_Attenu[energy].GetBinContent(Hist_CR_Attenu[energy].FindBin(4.))
-            gamma_att = Hist_Gamma_Attenu[energy].GetBinContent(Hist_Gamma_Attenu[energy].FindBin(4.))
-        RunExtendedSourceAnalysis(cr_att,gamma_att)
+        control_width = ControlWidthAtThisEnergy[energy]
+        cr_att = Hist_CR_Attenu[energy].GetBinContent(Hist_CR_Attenu[energy].FindBin(control_width))
+        gamma_att = Hist_Gamma_Attenu[energy].GetBinContent(Hist_Gamma_Attenu[energy].FindBin(control_width))
+        print '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+        print 'control region = %s'%(control_width)
+        inflation = pow(1+gamma_att/cr_att,0.5)/(1-gamma_att/cr_att)
+        inflation = inflation/pow(cr_att,0.5)
+        print 'inflation = %s'%(inflation)
+        RunExtendedSourceAnalysis('anasum',cr_att,gamma_att)
     MakeStackPlot(Hist_Erec_Data_Sum,Hist_Erec_CR_Sum,Hist_Erec_Ring_Sum,'Erec')
+    MakeStackPlot(Hist_theta2_Data_Sum,Hist_theta2_CR_Sum,Hist_theta2_Ring_Sum,'theta2')
+    #print Hist_theta2_CR_Sum.Print("All")
+
+    canvas = ROOT.TCanvas("canvas","canvas", 200, 10, 600, 600)
+    Hist2D_TelElev_vs_EmissionHeight_Data_All.GetYaxis().SetTitle('EmissionHeight')
+    Hist2D_TelElev_vs_EmissionHeight_Data_All.GetXaxis().SetTitle('Tel. elevation')
+    Hist2D_TelElev_vs_EmissionHeight_Data_All.Draw("COL4Z")
+    for b in range(0,Hist1D_TelElev_vs_EmissionHeight_Data_All.GetNbinsX()):
+        hist_temp = Hist2D_TelElev_vs_EmissionHeight_Data_All.ProjectionY("hist_temp",b+1,b+1)
+        Hist1D_TelElev_vs_EmissionHeight_Data_All.SetBinContent(b+1,hist_temp.GetMean())
+        Hist1D_TelElev_vs_EmissionHeight_Data_All.SetBinError(b+1,hist_temp.GetRMS())
+    Hist1D_TelElev_vs_EmissionHeight_Data_All.SetLineColor(2)
+    Hist1D_TelElev_vs_EmissionHeight_Data_All.Draw("E same")
+    #f_cut_mean = ROOT.TF1("f_cut_mean","10.+10.*pow((x-90)/50.,4)",0,90)
+    #f_cut_mean.SetLineColor(2)
+    #f_cut_mean.SetLineStyle(2)
+    #f_cut_mean.Draw("same")
+    #f_cut_upper = ROOT.TF1("f_cut_upper","3.0+10.+10.*pow((x-90)/47.,4)",0,90)
+    #f_cut_upper.SetLineColor(2)
+    #f_cut_upper.Draw("same")
+    #f_cut_lower = ROOT.TF1("f_cut_lower","-3.0+10.+10.*pow((x-90)/53.,4)",0,90)
+    #f_cut_lower.SetLineColor(2)
+    #f_cut_lower.Draw("same")
+    canvas.SetLogz()
+    canvas.SaveAs('output/TelElev_vs_EmissionHeight_All_%s.pdf'%(tag))
+
+    Hist2D_Erec_vs_EmissionHeight_Data_All.GetYaxis().SetTitle('EmissionHeight')
+    Hist2D_Erec_vs_EmissionHeight_Data_All.GetXaxis().SetTitle('Erec')
+    Hist2D_Erec_vs_EmissionHeight_Data_All.Draw("COL4Z")
+    for b in range(0,Hist1D_Erec_vs_EmissionHeight_Data_All.GetNbinsX()):
+        hist_temp = Hist2D_Erec_vs_EmissionHeight_Data_All.ProjectionY("hist_temp",b+1,b+1)
+        Hist1D_Erec_vs_EmissionHeight_Data_All.SetBinContent(b+1,hist_temp.GetMean())
+        Hist1D_Erec_vs_EmissionHeight_Data_All.SetBinError(b+1,hist_temp.GetRMS())
+    Hist1D_Erec_vs_EmissionHeight_Data_All.SetLineColor(2)
+    Hist1D_Erec_vs_EmissionHeight_Data_All.Draw("E same")
+    canvas.SetLogz()
+    canvas.SetLogx()
+    canvas.SaveAs('output/Erec_vs_EmissionHeight_All_%s.pdf'%(tag))
+
+    canvas.SetLogz(0)
+    canvas.SetLogx(0)
+    canvas.SetLogy(0)
+    for bx in range(0,Hist2D_Xoff_vs_Yoff_Sig.GetNbinsX()):
+        for by in range(0,Hist2D_Xoff_vs_Yoff_Sig.GetNbinsY()):
+            this_data = Hist2D_Xoff_vs_Yoff_Data_Sum.GetBinContent(bx,by)
+            this_bkg = Hist2D_Xoff_vs_Yoff_CR_Sum.GetBinContent(bx,by)
+            this_bkg_err = Hist2D_Xoff_vs_Yoff_CR_Sum.GetBinError(bx,by)
+            value = 0
+            if not this_bkg_err==0:
+                value = (this_data-this_bkg)/this_bkg_err
+            Hist2D_Xoff_vs_Yoff_Sig.SetBinContent(bx,by,value)
+    Hist2D_Xoff_vs_Yoff_Sig.GetYaxis().SetTitle('EmissionHeight')
+    Hist2D_Xoff_vs_Yoff_Sig.GetXaxis().SetTitle('Erec')
+    Hist2D_Xoff_vs_Yoff_Sig.Draw("COL4Z")
+    canvas.SaveAs('output/Xoff_vs_Yoff_All_%s.pdf'%(tag))
