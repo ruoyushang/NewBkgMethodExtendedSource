@@ -303,10 +303,10 @@ def SingleRunAnalysis(source,region,run,data_type):
             Dec = hist_Dec_vs_time.GetBinContent(hist_Dec_vs_time.FindBin(anasum_tree.Time))
             Hist_TelElev_Counts.Fill(elevation)
             if not CommonSelection(anasum_tree): continue
-            if (anasum_tree.MSCW<1.):
+            if (anasum_tree.MSCW<MSCW_cut_upper):
                 Hist2D_TelElev_vs_EmissionHeight_Data_All.Fill(elevation,anasum_tree.EmissionHeight)
             if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
-            if (anasum_tree.MSCW<1.):
+            if (anasum_tree.MSCW<MSCW_cut_upper):
                 Hist2D_Erec_vs_EmissionHeight_Data_All.Fill(anasum_tree.Erec,anasum_tree.EmissionHeight)
             scale = 1
             Xoff_derot = anasum_tree.Xoff_derot
@@ -314,13 +314,13 @@ def SingleRunAnalysis(source,region,run,data_type):
             Xcore = anasum_tree.Xcore
             Ycore = anasum_tree.Ycore
             if ControlRegionHeightSelection(anasum_tree,elevation):
-                if (anasum_tree.MSCW<1.):
+                if (anasum_tree.MSCW<MSCW_cut_upper):
                     if (anasum_tree.theta2<0.05):
                         Hist_Erec_CR_Raw.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec),1.)
 		    Hist2D_Xoff_vs_Yoff_CR_Raw.Fill(anasum_tree.Xoff_derot,anasum_tree.Yoff_derot)
 		    Hist_theta2_CR_Raw.Fill(anasum_tree.theta2)
             if SignalRegionHeightSelection(anasum_tree,elevation):
-                if (anasum_tree.MSCW<1.):
+                if (anasum_tree.MSCW<MSCW_cut_upper):
                     if (anasum_tree.theta2<0.05):
                         Hist_Erec_Data.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec))
                     elif (anasum_tree.theta2>0.1 and anasum_tree.theta2<0.5):
@@ -350,6 +350,7 @@ def RunExtendedSourceAnalysis(data_type,CR_attenu,gamma_attenu):
 
     print 'Erec_cut_lower = %s, Erec_cut_upper = %s'%(Erec_cut_lower,Erec_cut_upper)
     print 'CR_attenu = %s, gamma_attenu = %s'%(CR_attenu,gamma_attenu)
+    if gamma_attenu<0: gamma_attenu = 0
 
     if source == 'Crab':
         for run in Crab_runlist:
@@ -722,10 +723,10 @@ source = 'Crab'
 field = 'on'
 
 #target = 'Crab'
-target = '2ndCrab'
+#target = '2ndCrab'
 #target = '3C264'
 #target = 'PKS1424'
-#target = 'H1426'
+target = 'H1426'
 target_field = 'on'
 #target_field = 'off'
 
@@ -740,7 +741,9 @@ Height_cut = ''
 Elev_cut_lower = Elev_Bin[0]
 Elev_cut_upper = Elev_Bin[len(Elev_Bin)-1]
 MSCL_cut_lower = -2
-MSCL_cut_upper = 1
+MSCL_cut_upper = 0.7
+MSCW_cut_lower = -2
+MSCW_cut_upper = 0.7
 Erec_cut_lower = 0.1
 Erec_cut_upper = 1000
 
