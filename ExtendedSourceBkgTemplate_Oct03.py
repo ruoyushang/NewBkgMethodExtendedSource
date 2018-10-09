@@ -315,20 +315,20 @@ def SingleRunAnalysis(source,region,run,data_type):
             Ycore = anasum_tree.Ycore
             if ControlRegionHeightSelection(anasum_tree,elevation):
                 if (anasum_tree.MSCW<MSCW_cut_upper):
-                    if (anasum_tree.theta2<0.05):
+                    if (anasum_tree.theta2<0.02):
                         Hist_Erec_CR_Raw.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec),1.)
-		    Hist2D_Xoff_vs_Yoff_CR_Raw.Fill(anasum_tree.Xoff_derot,anasum_tree.Yoff_derot)
+		    Hist2D_Xoff_vs_Yoff_CR_Raw.Fill(anasum_tree.ra,anasum_tree.dec)
 		    Hist_theta2_CR_Raw.Fill(anasum_tree.theta2)
             if SignalRegionHeightSelection(anasum_tree,elevation):
                 if (anasum_tree.MSCW<MSCW_cut_upper):
-                    if (anasum_tree.theta2<0.05):
+                    if (anasum_tree.theta2<0.02):
                         Hist_Erec_Data.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec))
                     elif (anasum_tree.theta2>0.1 and anasum_tree.theta2<0.5):
                         Hist_Erec_Ring.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec))
-		    Hist2D_Xoff_vs_Yoff_Data.Fill(anasum_tree.Xoff_derot,anasum_tree.Yoff_derot)
+		    Hist2D_Xoff_vs_Yoff_Data.Fill(anasum_tree.ra,anasum_tree.dec)
 		    Hist_theta2_Data.Fill(anasum_tree.theta2)
                 if (anasum_tree.MSCW>3.):
-                    if (anasum_tree.theta2<0.05):
+                    if (anasum_tree.theta2<0.02):
                         Hist_Norm_Data.Fill(0)
                     elif (anasum_tree.theta2>0.1 and anasum_tree.theta2<0.5):
                         Hist_Norm_Ring.Fill(0)
@@ -680,10 +680,10 @@ Hist_Gamma_Control = TH1D("Hist_Gamma_Control","",len(MSCW_Bin)-1,array('d',MSCW
 Hist_CR_Attenuation = TH1D("Hist_CR_Attenuation","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
 Hist_Gamma_Attenuation = TH1D("Hist_Gamma_Attenuation","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
 
-#energy_bins = [0.3,5.0]
-#ControlWidthAtThisEnergy = [3,4]
 energy_bins = [pow(10,-1),pow(10,-0.8),pow(10,-0.6),pow(10,-0.4),pow(10,-0.2),pow(10,0),pow(10,0.2)]
 ControlWidthAtThisEnergy = [3,3,4,4,5,5,5]
+#energy_bins = [pow(10,-0.6),pow(10,-0.4),pow(10,-0.2),pow(10,0),pow(10,0.2)]
+#ControlWidthAtThisEnergy = [4,4,5,5,5]
 
 Hist_Erec_CR = TH1D("Hist_Erec_CR","",len(energy_bins)-1,array('d',energy_bins))
 Hist_Erec_CR_Raw = TH1D("Hist_Erec_CR_Raw","",len(energy_bins)-1,array('d',energy_bins))
@@ -727,6 +727,7 @@ field = 'on'
 #target = '3C264'
 #target = 'PKS1424'
 target = 'H1426'
+#target = 'Ton599'
 target_field = 'on'
 #target_field = 'off'
 

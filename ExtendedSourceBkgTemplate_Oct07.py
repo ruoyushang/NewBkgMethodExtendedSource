@@ -269,22 +269,24 @@ def SingleRunAnalysis(source,region,run,data_type):
             scale = 1
             Xoff_derot = anasum_tree.Xoff_derot
             Yoff_derot = anasum_tree.Yoff_derot
+            Xoff = anasum_tree.Xoff
+            Yoff = anasum_tree.Yoff
             Xcore = anasum_tree.Xcore
             Ycore = anasum_tree.Ycore
             if ControlRegionMSCWSelection(anasum_tree,elevation):
-                if (anasum_tree.theta2<0.05):
+                if (anasum_tree.theta2<0.02):
                     Hist_Erec_CR_Raw.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec),1.)
-		Hist2D_Xoff_vs_Yoff_CR_Raw.Fill(anasum_tree.Xoff_derot,anasum_tree.Yoff_derot)
+		Hist2D_Xoff_vs_Yoff_CR_Raw.Fill(anasum_tree.ra,anasum_tree.dec)
 		Hist_theta2_CR_Raw.Fill(anasum_tree.theta2)
             if SignalRegionMSCWSelection(anasum_tree,elevation):
-                if (anasum_tree.theta2<0.05):
+                if (anasum_tree.theta2<0.02):
                     Hist_Erec_Data.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec))
                 elif (anasum_tree.theta2>0.1 and anasum_tree.theta2<0.5):
                     Hist_Erec_Ring.Fill(min(energy_bins[len(energy_bins)-2],anasum_tree.Erec))
-		Hist2D_Xoff_vs_Yoff_Data.Fill(anasum_tree.Xoff_derot,anasum_tree.Yoff_derot)
+		Hist2D_Xoff_vs_Yoff_Data.Fill(anasum_tree.ra,anasum_tree.dec)
 		Hist_theta2_Data.Fill(anasum_tree.theta2)
             if (anasum_tree.MSCW>3.):
-                if (anasum_tree.theta2<0.05):
+                if (anasum_tree.theta2<0.02):
                     Hist_Norm_Data.Fill(0)
                 elif (anasum_tree.theta2>0.1 and anasum_tree.theta2<0.5):
                     Hist_Norm_Ring.Fill(0)
@@ -581,8 +583,8 @@ Hist_OffData_Signal = TH1D("Hist_OffData_Signal","",len(MSCW_Bin)-1,array('d',MS
 Hist_OffData_Control = TH1D("Hist_OffData_Control","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
 Hist_CR_Efficiency = TH1D("Hist_CR_Efficiency","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
 
-energy_bins = [pow(10,-1),pow(10,-0.8),pow(10,-0.6),pow(10,-0.4),pow(10,-0.2),pow(10,0),pow(10,0.2),pow(10,0.4),pow(10,0.6)]
-ControlWidthAtThisEnergy = [3,3,3,3,3,3,3,3,3]
+energy_bins = [pow(10,0),pow(10,0.2),pow(10,0.4),pow(10,0.6),pow(10,0.8),pow(10,1.0)]
+ControlWidthAtThisEnergy = [3,3,3,3,3,3]
 
 Hist_Erec_CR = TH1D("Hist_Erec_CR","",len(energy_bins)-1,array('d',energy_bins))
 Hist_Erec_CR_Raw = TH1D("Hist_Erec_CR_Raw","",len(energy_bins)-1,array('d',energy_bins))
@@ -623,10 +625,10 @@ field = 'on'
 
 #target = 'Crab'
 #target = '2ndCrab'
-target = '3C264'
+#target = '3C264'
 #target = 'PKS1424'
 #target = 'H1426'
-#target = 'Ton599'
+target = 'Ton599'
 target_field = 'on'
 #target_field = 'off'
 
@@ -726,7 +728,15 @@ if Do_analysis:
             if not this_bkg_err==0:
                 value = (this_data-this_bkg)/this_bkg_err
             Hist2D_Xoff_vs_Yoff_Sig.SetBinContent(bx,by,value)
-    Hist2D_Xoff_vs_Yoff_Sig.GetYaxis().SetTitle('EmissionHeight')
-    Hist2D_Xoff_vs_Yoff_Sig.GetXaxis().SetTitle('Erec')
+    Hist2D_Xoff_vs_Yoff_Sig.GetYaxis().SetTitle('Yoff')
+    Hist2D_Xoff_vs_Yoff_Sig.GetXaxis().SetTitle('Xoff')
     Hist2D_Xoff_vs_Yoff_Sig.Draw("COL4Z")
-    canvas.SaveAs('output/Xoff_vs_Yoff_All_%s.pdf'%(tag))
+    canvas.SaveAs('output/Xoff_vs_Yoff_Sig_%s.pdf'%(tag))
+    Hist2D_Xoff_vs_Yoff_Data_Sum.GetYaxis().SetTitle('Yoff')
+    Hist2D_Xoff_vs_Yoff_Data_Sum.GetXaxis().SetTitle('Xoff')
+    Hist2D_Xoff_vs_Yoff_Data_Sum.Draw("COL4Z")
+    canvas.SaveAs('output/Xoff_vs_Yoff_Data_%s.pdf'%(tag))
+    Hist2D_Xoff_vs_Yoff_CR_Sum.GetYaxis().SetTitle('Yoff')
+    Hist2D_Xoff_vs_Yoff_CR_Sum.GetXaxis().SetTitle('Xoff')
+    Hist2D_Xoff_vs_Yoff_CR_Sum.Draw("COL4Z")
+    canvas.SaveAs('output/_SumXoff_vs_Yoff_CR_%s.pdf'%(tag))
