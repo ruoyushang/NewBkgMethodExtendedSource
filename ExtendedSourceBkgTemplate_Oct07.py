@@ -597,12 +597,12 @@ Hist_Erec_CR_Sum = TH1D("Hist_Erec_CR_Sum","",len(energy_bins)-1,array('d',energ
 Xcenter = 0
 Ycenter = 0
 Window = 2.
-Hist2D_Xoff_vs_Yoff_Data = TH2D("Hist2D_Xoff_vs_Yoff_Data","",40,Xcenter-Window,Xcenter+Window,40,Ycenter-Window,Ycenter+Window)
-Hist2D_Xoff_vs_Yoff_CR = TH2D("Hist2D_Xoff_vs_Yoff_CR","",40,Xcenter-Window,Xcenter+Window,40,Ycenter-Window,Ycenter+Window)
-Hist2D_Xoff_vs_Yoff_CR_Raw = TH2D("Hist2D_Xoff_vs_Yoff_CR_Raw","",40,Xcenter-Window,Xcenter+Window,40,Ycenter-Window,Ycenter+Window)
-Hist2D_Xoff_vs_Yoff_Data_Sum = TH2D("Hist2D_Xoff_vs_Yoff_Data_Sum","",40,Xcenter-Window,Xcenter+Window,40,Ycenter-Window,Ycenter+Window)
-Hist2D_Xoff_vs_Yoff_CR_Sum = TH2D("Hist2D_Xoff_vs_Yoff_CR_Sum","",40,Xcenter-Window,Xcenter+Window,40,Ycenter-Window,Ycenter+Window)
-Hist2D_Xoff_vs_Yoff_Sig = TH2D("Hist2D_Xoff_vs_Yoff_Sig","",40,Xcenter-Window,Xcenter+Window,40,Ycenter-Window,Ycenter+Window)
+Hist2D_Xoff_vs_Yoff_Data = TH2D("Hist2D_Xoff_vs_Yoff_Data","",20,Xcenter-Window,Xcenter+Window,20,Ycenter-Window,Ycenter+Window)
+Hist2D_Xoff_vs_Yoff_CR = TH2D("Hist2D_Xoff_vs_Yoff_CR","",20,Xcenter-Window,Xcenter+Window,20,Ycenter-Window,Ycenter+Window)
+Hist2D_Xoff_vs_Yoff_CR_Raw = TH2D("Hist2D_Xoff_vs_Yoff_CR_Raw","",20,Xcenter-Window,Xcenter+Window,20,Ycenter-Window,Ycenter+Window)
+Hist2D_Xoff_vs_Yoff_Data_Sum = TH2D("Hist2D_Xoff_vs_Yoff_Data_Sum","",20,Xcenter-Window,Xcenter+Window,20,Ycenter-Window,Ycenter+Window)
+Hist2D_Xoff_vs_Yoff_CR_Sum = TH2D("Hist2D_Xoff_vs_Yoff_CR_Sum","",20,Xcenter-Window,Xcenter+Window,20,Ycenter-Window,Ycenter+Window)
+Hist2D_Xoff_vs_Yoff_Sig = TH2D("Hist2D_Xoff_vs_Yoff_Sig","",20,Xcenter-Window,Xcenter+Window,20,Ycenter-Window,Ycenter+Window)
 Hist_theta2_Data = TH1D("Hist_theta2_Data","",20,0,0.5)
 Hist_theta2_CR = TH1D("Hist_theta2_CR","",20,0,0.5)
 Hist_theta2_CR_Raw = TH1D("Hist_theta2_CR_Raw","",20,0,0.5)
@@ -625,10 +625,10 @@ field = 'on'
 
 #target = 'Crab'
 #target = '2ndCrab'
-#target = '3C264'
+target = '3C264'
 #target = 'PKS1424'
 #target = 'H1426'
-target = 'Ton599'
+#target = 'Ton599'
 target_field = 'on'
 #target_field = 'off'
 
@@ -722,11 +722,12 @@ if Do_analysis:
     for bx in range(0,Hist2D_Xoff_vs_Yoff_Sig.GetNbinsX()):
         for by in range(0,Hist2D_Xoff_vs_Yoff_Sig.GetNbinsY()):
             this_data = Hist2D_Xoff_vs_Yoff_Data_Sum.GetBinContent(bx,by)
+            this_data_err = Hist2D_Xoff_vs_Yoff_Data_Sum.GetBinError(bx,by)
             this_bkg = Hist2D_Xoff_vs_Yoff_CR_Sum.GetBinContent(bx,by)
             this_bkg_err = Hist2D_Xoff_vs_Yoff_CR_Sum.GetBinError(bx,by)
             value = 0
             if not this_bkg_err==0:
-                value = (this_data-this_bkg)/this_bkg_err
+                value = (this_data-this_bkg)/pow(this_bkg_err*this_bkg_err+this_data_err*this_data_err,0.5)
             Hist2D_Xoff_vs_Yoff_Sig.SetBinContent(bx,by,value)
     Hist2D_Xoff_vs_Yoff_Sig.GetYaxis().SetTitle('Yoff')
     Hist2D_Xoff_vs_Yoff_Sig.GetXaxis().SetTitle('Xoff')
@@ -739,4 +740,4 @@ if Do_analysis:
     Hist2D_Xoff_vs_Yoff_CR_Sum.GetYaxis().SetTitle('Yoff')
     Hist2D_Xoff_vs_Yoff_CR_Sum.GetXaxis().SetTitle('Xoff')
     Hist2D_Xoff_vs_Yoff_CR_Sum.Draw("COL4Z")
-    canvas.SaveAs('output/_SumXoff_vs_Yoff_CR_%s.pdf'%(tag))
+    canvas.SaveAs('output/Xoff_vs_Yoff_CR_%s.pdf'%(tag))

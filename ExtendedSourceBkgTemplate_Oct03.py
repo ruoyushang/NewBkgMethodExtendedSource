@@ -723,10 +723,10 @@ source = 'Crab'
 field = 'on'
 
 #target = 'Crab'
-#target = '2ndCrab'
+target = '2ndCrab'
 #target = '3C264'
 #target = 'PKS1424'
-target = 'H1426'
+#target = 'H1426'
 #target = 'Ton599'
 target_field = 'on'
 #target_field = 'off'
@@ -825,13 +825,22 @@ if Do_analysis:
     for bx in range(0,Hist2D_Xoff_vs_Yoff_Sig.GetNbinsX()):
         for by in range(0,Hist2D_Xoff_vs_Yoff_Sig.GetNbinsY()):
             this_data = Hist2D_Xoff_vs_Yoff_Data_Sum.GetBinContent(bx,by)
+            this_data_err = Hist2D_Xoff_vs_Yoff_Data_Sum.GetBinError(bx,by)
             this_bkg = Hist2D_Xoff_vs_Yoff_CR_Sum.GetBinContent(bx,by)
             this_bkg_err = Hist2D_Xoff_vs_Yoff_CR_Sum.GetBinError(bx,by)
             value = 0
             if not this_bkg_err==0:
-                value = (this_data-this_bkg)/this_bkg_err
+                value = (this_data-this_bkg)/pow(this_bkg_err*this_bkg_err+this_data_err*this_data_err,0.5)
             Hist2D_Xoff_vs_Yoff_Sig.SetBinContent(bx,by,value)
-    Hist2D_Xoff_vs_Yoff_Sig.GetYaxis().SetTitle('EmissionHeight')
-    Hist2D_Xoff_vs_Yoff_Sig.GetXaxis().SetTitle('Erec')
+    Hist2D_Xoff_vs_Yoff_Sig.GetYaxis().SetTitle('Yoff')
+    Hist2D_Xoff_vs_Yoff_Sig.GetXaxis().SetTitle('Xoff')
     Hist2D_Xoff_vs_Yoff_Sig.Draw("COL4Z")
-    canvas.SaveAs('output/Xoff_vs_Yoff_All_%s.pdf'%(tag))
+    canvas.SaveAs('output/Xoff_vs_Yoff_Sig_%s.pdf'%(tag))
+    Hist2D_Xoff_vs_Yoff_Data_Sum.GetYaxis().SetTitle('Yoff')
+    Hist2D_Xoff_vs_Yoff_Data_Sum.GetXaxis().SetTitle('Xoff')
+    Hist2D_Xoff_vs_Yoff_Data_Sum.Draw("COL4Z")
+    canvas.SaveAs('output/Xoff_vs_Yoff_Data_%s.pdf'%(tag))
+    Hist2D_Xoff_vs_Yoff_CR_Sum.GetYaxis().SetTitle('Yoff')
+    Hist2D_Xoff_vs_Yoff_CR_Sum.GetXaxis().SetTitle('Xoff')
+    Hist2D_Xoff_vs_Yoff_CR_Sum.Draw("COL4Z")
+    canvas.SaveAs('output/Xoff_vs_Yoff_CR_%s.pdf'%(tag))
