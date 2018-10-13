@@ -11,5 +11,6 @@ EfficiencyRateAtDifferentHeight()
 #Do_analysis = False
 Do_analysis = True
 if Do_analysis:
-    EnergySpectrum("MSCW")
+    #EnergySpectrum("MSCW")
+    SensitivityVsTime("MSCW")
 
