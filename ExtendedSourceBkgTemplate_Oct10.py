@@ -121,7 +121,7 @@ def GetAnttenuationHistogram(source,region,run,data_type):
     for i in range(0,pointing_tree.GetEntries()):
         pointing_tree.GetEntry(i)
         hist_Ele_vs_time.Fill(pointing_tree.Time,pointing_tree.TelElevation)
-        hist_Azi_vs_time.Fill(pointing_tree.Time,AzimuthConverter(pointing_tree.TelAzimuth))
+        hist_Azi_vs_time.Fill(pointing_tree.Time,pointing_tree.TelAzimuth)
         hist_RA_vs_time.Fill(pointing_tree.Time,pointing_tree.TelRAJ2000)
         hist_Dec_vs_time.Fill(pointing_tree.Time,pointing_tree.TelDecJ2000)
 
@@ -141,7 +141,7 @@ def GetAnttenuationHistogram(source,region,run,data_type):
         if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
         scale_elev = Hist_TelElev_Counts_scale.GetBinContent(Hist_TelElev_Counts_scale.FindBin(elevation))
         scale_azim = Hist_TelAzim_Counts_scale.GetBinContent(Hist_TelAzim_Counts_scale.FindBin(AzimuthConverter(azimuth)))
-        scale = scale_elev
+        scale = scale_azim
         if RW_method=='NoRW': 
             scale = 1
         if region == 'off':
@@ -199,9 +199,6 @@ def MeasureAttenuation():
     Rate_Gamma_Attenuation = 0
     Err_Rate_Gamma_Attenuation = 0
     
-    if source == 'Crab':
-        for run in Crab_runlist:
-            GetSourceElevation(run)
     if target == '2ndCrab':
         for run in SecondCrab_runlist:
             GetTargetElevation(run)
@@ -221,6 +218,9 @@ def MeasureAttenuation():
         for run in runlist_IC443:
             GetTargetElevation(run)
     #print Hist_TelElev_Counts_target.Print('All')
+    if source == 'Crab':
+        for run in Crab_runlist:
+            GetSourceElevation(run)
     for b in range(0,Hist_TelElev_Counts_scale.GetNbinsX()):
         Hist_TelElev_Counts_scale.SetBinContent(b+1,Hist_TelElev_Counts_target.GetBinContent(b+1))
     Hist_TelElev_Counts_scale.Divide(Hist_TelElev_Counts_source)
@@ -326,7 +326,7 @@ def GenerateExtendedSignalMSCW(source,region,run,data_type,scale):
     for i in range(0,pointing_tree.GetEntries()):
         pointing_tree.GetEntry(i)
         hist_Ele_vs_time.Fill(pointing_tree.Time,pointing_tree.TelElevation)
-        hist_Azi_vs_time.Fill(pointing_tree.Time,AzimuthConverter(pointing_tree.TelAzimuth))
+        hist_Azi_vs_time.Fill(pointing_tree.Time,pointing_tree.TelAzimuth)
         hist_RA_vs_time.Fill(pointing_tree.Time,pointing_tree.TelRAJ2000)
         hist_Dec_vs_time.Fill(pointing_tree.Time,pointing_tree.TelDecJ2000)
 
@@ -345,7 +345,7 @@ def GenerateExtendedSignalMSCW(source,region,run,data_type,scale):
         if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
         elev_weight = Hist_TelElev_Counts_scale.GetBinContent(Hist_TelElev_Counts_scale.FindBin(elevation))
         azim_weight = Hist_TelAzim_Counts_scale.GetBinContent(Hist_TelAzim_Counts_scale.FindBin(AzimuthConverter(azimuth)))
-        pointing_weight = elev_weight
+        pointing_weight = azim_weight
         if RW_method=='NoRW': 
             pointing_weight = 1
         signal_ra = MyRandom.Gaus(0.,0.2)
@@ -389,7 +389,7 @@ def GenerateExtendedSignal(source,region,run,data_type,scale):
     for i in range(0,pointing_tree.GetEntries()):
         pointing_tree.GetEntry(i)
         hist_Ele_vs_time.Fill(pointing_tree.Time,pointing_tree.TelElevation)
-        hist_Azi_vs_time.Fill(pointing_tree.Time,AzimuthConverter(pointing_tree.TelAzimuth))
+        hist_Azi_vs_time.Fill(pointing_tree.Time,pointing_tree.TelAzimuth)
         hist_RA_vs_time.Fill(pointing_tree.Time,pointing_tree.TelRAJ2000)
         hist_Dec_vs_time.Fill(pointing_tree.Time,pointing_tree.TelDecJ2000)
 
@@ -408,7 +408,7 @@ def GenerateExtendedSignal(source,region,run,data_type,scale):
         if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
         elev_weight = Hist_TelElev_Counts_scale.GetBinContent(Hist_TelElev_Counts_scale.FindBin(elevation))
         azim_weight = Hist_TelAzim_Counts_scale.GetBinContent(Hist_TelAzim_Counts_scale.FindBin(AzimuthConverter(azimuth)))
-        pointing_weight = elev_weight
+        pointing_weight = azim_weight
         if RW_method=='NoRW': 
             pointing_weight = 1
         signal_ra = MyRandom.Gaus(0.,0.2)
@@ -472,7 +472,7 @@ def SingleRunAnalysisMSCW(source,region,run,data_type):
         for i in range(0,pointing_tree.GetEntries()):
             pointing_tree.GetEntry(i)
             hist_Ele_vs_time.Fill(pointing_tree.Time,pointing_tree.TelElevation)
-            hist_Azi_vs_time.Fill(pointing_tree.Time,AzimuthConverter(pointing_tree.TelAzimuth))
+            hist_Azi_vs_time.Fill(pointing_tree.Time,pointing_tree.TelAzimuth)
             hist_RA_vs_time.Fill(pointing_tree.Time,pointing_tree.TelRAJ2000)
             hist_Dec_vs_time.Fill(pointing_tree.Time,pointing_tree.TelDecJ2000)
 
@@ -570,7 +570,7 @@ def SingleRunAnalysis(source,region,run,data_type):
         for i in range(0,pointing_tree.GetEntries()):
             pointing_tree.GetEntry(i)
             hist_Ele_vs_time.Fill(pointing_tree.Time,pointing_tree.TelElevation)
-            hist_Azi_vs_time.Fill(pointing_tree.Time,AzimuthConverter(pointing_tree.TelAzimuth))
+            hist_Azi_vs_time.Fill(pointing_tree.Time,pointing_tree.TelAzimuth)
             hist_RA_vs_time.Fill(pointing_tree.Time,pointing_tree.TelRAJ2000)
             hist_Dec_vs_time.Fill(pointing_tree.Time,pointing_tree.TelDecJ2000)
 
@@ -1114,7 +1114,7 @@ def GetEfficiencyHistogram(source,region,run,data_type):
     for i in range(0,pointing_tree.GetEntries()):
         pointing_tree.GetEntry(i)
         hist_Ele_vs_time.Fill(pointing_tree.Time,pointing_tree.TelElevation)
-        hist_Azi_vs_time.Fill(pointing_tree.Time,AzimuthConverter(pointing_tree.TelAzimuth))
+        hist_Azi_vs_time.Fill(pointing_tree.Time,pointing_tree.TelAzimuth)
         hist_RA_vs_time.Fill(pointing_tree.Time,pointing_tree.TelRAJ2000)
         hist_Dec_vs_time.Fill(pointing_tree.Time,pointing_tree.TelDecJ2000)
 
@@ -1128,7 +1128,7 @@ def GetEfficiencyHistogram(source,region,run,data_type):
         if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
         elev_scale = Hist_TelElev_Counts_scale.GetBinContent(Hist_TelElev_Counts_scale.FindBin(elevation))
         azim_scale = Hist_TelAzim_Counts_scale.GetBinContent(Hist_TelAzim_Counts_scale.FindBin(AzimuthConverter(azimuth)))
-        scale = elev_scale
+        scale = azim_scale
         if RW_method=='NoRW': 
             scale = 1
         if region == 'off':
@@ -1145,9 +1145,6 @@ def MeasureEfficiency():
     Rate_CR_Efficiency = 0
     Err_Rate_CR_Efficiency = 0
     
-    if source == 'Crab':
-        for run in Crab_runlist:
-            GetSourceElevation(run)
     if target == 'Crab':
         for run in Crab_runlist:
             GetTargetElevation(run)
@@ -1170,6 +1167,9 @@ def MeasureEfficiency():
         for run in runlist_IC443:
             GetTargetElevation(run)
     #print Hist_TelElev_Counts_target.Print('All')
+    if source == 'Crab':
+        for run in Crab_runlist:
+            GetSourceElevation(run)
     for b in range(0,Hist_TelElev_Counts_scale.GetNbinsX()):
         Hist_TelElev_Counts_scale.SetBinContent(b+1,Hist_TelElev_Counts_target.GetBinContent(b+1))
     Hist_TelElev_Counts_scale.Divide(Hist_TelElev_Counts_source)
