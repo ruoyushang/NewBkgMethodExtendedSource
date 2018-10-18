@@ -141,7 +141,9 @@ def GetAnttenuationHistogram(source,region,run,data_type):
         if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
         scale_elev = Hist_TelElev_Counts_scale.GetBinContent(Hist_TelElev_Counts_scale.FindBin(elevation))
         scale_azim = Hist_TelAzim_Counts_scale.GetBinContent(Hist_TelAzim_Counts_scale.FindBin(AzimuthConverter(azimuth)))
-        scale = scale_azim
+        scale_elevazim = Hist_TelElevAzim_Counts_scale.GetBinContent(Hist_TelElevAzim_Counts_scale.FindBin(elevation,AzimuthConverter(azimuth)))
+        #scale = scale_azim*scale_elev
+        scale = scale_elevazim
         if RW_method=='NoRW': 
             scale = 1
         if region == 'off':
@@ -159,6 +161,17 @@ def GetAnttenuationHistogram(source,region,run,data_type):
             else:
                 Hist_OffData_Signal.Fill(anasum_tree.MSCW,scale)
 
+def GetSourceAzimuth(run):
+
+    if source == 'Crab':
+        anasum_file = ROOT.TFile.Open("$VERITAS_USER_DATA_DIR/Crab_V6_Moderate-TMVA-BDT.RB.%s.root"%(run))
+    pointing_tree = anasum_file.Get("run_%s/stereo/pointingDataReduced"%(run))
+
+    for i in range(0,pointing_tree.GetEntries()):
+        pointing_tree.GetEntry(i)
+        Hist_TelAzim_Counts_source.Fill(AzimuthConverter(pointing_tree.TelAzimuth))
+        Hist_TelElevAzim_Counts_source.Fill(pointing_tree.TelElevation,AzimuthConverter(pointing_tree.TelAzimuth))
+
 def GetSourceElevation(run):
 
     if source == 'Crab':
@@ -167,8 +180,8 @@ def GetSourceElevation(run):
 
     for i in range(0,pointing_tree.GetEntries()):
         pointing_tree.GetEntry(i)
-        Hist_TelElev_Counts_source.Fill(pointing_tree.TelElevation)
-        Hist_TelAzim_Counts_source.Fill(AzimuthConverter(pointing_tree.TelAzimuth))
+        scale = Hist_TelAzim_Counts_scale.GetBinContent(Hist_TelAzim_Counts_scale.FindBin(AzimuthConverter(pointing_tree.TelAzimuth)))
+        Hist_TelElev_Counts_source.Fill(pointing_tree.TelElevation,scale)
 
 def GetTargetElevation(run):
 
@@ -190,6 +203,7 @@ def GetTargetElevation(run):
         target_pointing_tree.GetEntry(i)
         Hist_TelElev_Counts_target.Fill(target_pointing_tree.TelElevation)
         Hist_TelAzim_Counts_target.Fill(AzimuthConverter(target_pointing_tree.TelAzimuth))
+        Hist_TelElevAzim_Counts_target.Fill(target_pointing_tree.TelElevation,AzimuthConverter(target_pointing_tree.TelAzimuth))
 
 
 def MeasureAttenuation():
@@ -220,13 +234,20 @@ def MeasureAttenuation():
     #print Hist_TelElev_Counts_target.Print('All')
     if source == 'Crab':
         for run in Crab_runlist:
+            GetSourceAzimuth(run)
+    for b in range(0,Hist_TelAzim_Counts_scale.GetNbinsX()):
+        Hist_TelAzim_Counts_scale.SetBinContent(b+1,Hist_TelAzim_Counts_target.GetBinContent(b+1))
+    Hist_TelAzim_Counts_scale.Divide(Hist_TelAzim_Counts_source)
+    if source == 'Crab':
+        for run in Crab_runlist:
             GetSourceElevation(run)
     for b in range(0,Hist_TelElev_Counts_scale.GetNbinsX()):
         Hist_TelElev_Counts_scale.SetBinContent(b+1,Hist_TelElev_Counts_target.GetBinContent(b+1))
     Hist_TelElev_Counts_scale.Divide(Hist_TelElev_Counts_source)
-    for b in range(0,Hist_TelAzim_Counts_scale.GetNbinsX()):
-        Hist_TelAzim_Counts_scale.SetBinContent(b+1,Hist_TelAzim_Counts_target.GetBinContent(b+1))
-    Hist_TelAzim_Counts_scale.Divide(Hist_TelAzim_Counts_source)
+    for bx in range(0,Hist_TelElevAzim_Counts_scale.GetNbinsX()):
+        for by in range(0,Hist_TelElevAzim_Counts_scale.GetNbinsY()):
+            Hist_TelElevAzim_Counts_scale.SetBinContent(bx+1,by+1,Hist_TelElevAzim_Counts_target.GetBinContent(bx+1,by+1))
+    Hist_TelElevAzim_Counts_scale.Divide(Hist_TelElevAzim_Counts_source)
     #print Hist_TelElev_Counts_scale.Print('All')
     if source == 'Crab':
         for run in Crab_runlist:
@@ -242,6 +263,9 @@ def MeasureAttenuation():
     Hist_TelAzim_Counts_scale.Reset()
     Hist_TelAzim_Counts_source.Reset()
     Hist_TelAzim_Counts_target.Reset()
+    Hist_TelElevAzim_Counts_scale.Reset()
+    Hist_TelElevAzim_Counts_source.Reset()
+    Hist_TelElevAzim_Counts_target.Reset()
     
     print 'Hist_OnData_Signal.GetEntries() = %s'%(Hist_OnData_Signal.GetEntries())
     print 'Hist_OnData_Control.GetEntries() = %s'%(Hist_OnData_Control.GetEntries())
@@ -345,7 +369,9 @@ def GenerateExtendedSignalMSCW(source,region,run,data_type,scale):
         if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
         elev_weight = Hist_TelElev_Counts_scale.GetBinContent(Hist_TelElev_Counts_scale.FindBin(elevation))
         azim_weight = Hist_TelAzim_Counts_scale.GetBinContent(Hist_TelAzim_Counts_scale.FindBin(AzimuthConverter(azimuth)))
-        pointing_weight = azim_weight
+        elevazim_weight = Hist_TelElevAzim_Counts_scale.GetBinContent(Hist_TelElevAzim_Counts_scale.FindBin(elevation,AzimuthConverter(azimuth)))
+        #pointing_weight = azim_weight*elev_weight
+        pointing_weight = elevazim_weight
         if RW_method=='NoRW': 
             pointing_weight = 1
         signal_ra = MyRandom.Gaus(0.,0.2)
@@ -408,7 +434,9 @@ def GenerateExtendedSignal(source,region,run,data_type,scale):
         if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
         elev_weight = Hist_TelElev_Counts_scale.GetBinContent(Hist_TelElev_Counts_scale.FindBin(elevation))
         azim_weight = Hist_TelAzim_Counts_scale.GetBinContent(Hist_TelAzim_Counts_scale.FindBin(AzimuthConverter(azimuth)))
-        pointing_weight = azim_weight
+        elevazim_weight = Hist_TelElevAzim_Counts_scale.GetBinContent(Hist_TelElevAzim_Counts_scale.FindBin(elevation,AzimuthConverter(azimuth)))
+        #pointing_weight = azim_weight*elev_weight
+        pointing_weight = elevazim_weight
         if RW_method=='NoRW': 
             pointing_weight = 1
         signal_ra = MyRandom.Gaus(0.,0.2)
@@ -1128,7 +1156,9 @@ def GetEfficiencyHistogram(source,region,run,data_type):
         if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
         elev_scale = Hist_TelElev_Counts_scale.GetBinContent(Hist_TelElev_Counts_scale.FindBin(elevation))
         azim_scale = Hist_TelAzim_Counts_scale.GetBinContent(Hist_TelAzim_Counts_scale.FindBin(AzimuthConverter(azimuth)))
-        scale = azim_scale
+        elevazim_scale = Hist_TelElevAzim_Counts_scale.GetBinContent(Hist_TelElevAzim_Counts_scale.FindBin(elevation,AzimuthConverter(azimuth)))
+        #scale = azim_scale*elev_scale
+        scale = elevazim_scale
         if RW_method=='NoRW': 
             scale = 1
         if region == 'off':
@@ -1169,13 +1199,20 @@ def MeasureEfficiency():
     #print Hist_TelElev_Counts_target.Print('All')
     if source == 'Crab':
         for run in Crab_runlist:
+            GetSourceAzimuth(run)
+    for b in range(0,Hist_TelAzim_Counts_scale.GetNbinsX()):
+        Hist_TelAzim_Counts_scale.SetBinContent(b+1,Hist_TelAzim_Counts_target.GetBinContent(b+1))
+    Hist_TelAzim_Counts_scale.Divide(Hist_TelAzim_Counts_source)
+    if source == 'Crab':
+        for run in Crab_runlist:
             GetSourceElevation(run)
     for b in range(0,Hist_TelElev_Counts_scale.GetNbinsX()):
         Hist_TelElev_Counts_scale.SetBinContent(b+1,Hist_TelElev_Counts_target.GetBinContent(b+1))
     Hist_TelElev_Counts_scale.Divide(Hist_TelElev_Counts_source)
-    for b in range(0,Hist_TelAzim_Counts_scale.GetNbinsX()):
-        Hist_TelAzim_Counts_scale.SetBinContent(b+1,Hist_TelAzim_Counts_target.GetBinContent(b+1))
-    Hist_TelAzim_Counts_scale.Divide(Hist_TelAzim_Counts_source)
+    for bx in range(0,Hist_TelElevAzim_Counts_scale.GetNbinsX()):
+        for by in range(0,Hist_TelElevAzim_Counts_scale.GetNbinsY()):
+            Hist_TelElevAzim_Counts_scale.SetBinContent(bx+1,by+1,Hist_TelElevAzim_Counts_target.GetBinContent(bx+1,by+1))
+    Hist_TelElevAzim_Counts_scale.Divide(Hist_TelElevAzim_Counts_source)
     #print Hist_TelElev_Counts_scale.Print('All')
     if source == 'Crab':
         for run in Crab_runlist:
@@ -1189,6 +1226,9 @@ def MeasureEfficiency():
     Hist_TelAzim_Counts_scale.Reset()
     Hist_TelAzim_Counts_source.Reset()
     Hist_TelAzim_Counts_target.Reset()
+    Hist_TelElevAzim_Counts_scale.Reset()
+    Hist_TelElevAzim_Counts_source.Reset()
+    Hist_TelElevAzim_Counts_target.Reset()
     
     print 'Hist_OffData_Signal.GetEntries() = %s'%(Hist_OffData_Signal.GetEntries())
     print 'Hist_OffData_Control.GetEntries() = %s'%(Hist_OffData_Control.GetEntries())
