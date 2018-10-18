@@ -5,7 +5,7 @@ import MSCWMethodConfig
 from MSCWMethodConfig import *
 
 MakeATag()
-EfficiencyRateAtDifferentHeight()
+EfficiencyRateAtDifferentMSCW()
 
 
 #Do_analysis = False

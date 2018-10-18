@@ -10,12 +10,19 @@ ROOT.gStyle.SetOptStat(0)
 ROOT.TH1.SetDefaultSumw2()
 ROOT.gStyle.SetPaintTextFormat("0.3f")
 
-Hist_TelElev_Counts = TH1D("Hist_TelElev_Counts","",45,0,90)
-Hist_TelElev_Counts_target = TH1D("Hist_TelElev_Counts_target","",45,0,90)
-Hist_TelElev_Counts_source = TH1D("Hist_TelElev_Counts_source","",45,0,90)
-Hist_TelElev_Counts_scale = TH1D("Hist_TelElev_Counts_scale","",45,0,90)
+Hist_TelElev_Counts_target = TH1D("Hist_TelElev_Counts_target","",9,0,90)
+Hist_TelElev_Counts_source = TH1D("Hist_TelElev_Counts_source","",9,0,90)
+Hist_TelElev_Counts_scale = TH1D("Hist_TelElev_Counts_scale","",9,0,90)
+Hist_TelAzim_Counts_target = TH1D("Hist_TelAzim_Counts_target","",18,0,180)
+Hist_TelAzim_Counts_source = TH1D("Hist_TelAzim_Counts_source","",18,0,180)
+Hist_TelAzim_Counts_scale = TH1D("Hist_TelAzim_Counts_scale","",18,0,180)
+Hist_TelElev_Counts_target_Sum = TH1D("Hist_TelElev_Counts_target_Sum","",9,0,90)
+Hist_TelElev_Counts_source_Sum = TH1D("Hist_TelElev_Counts_source_Sum","",9,0,90)
+Hist_TelAzim_Counts_target_Sum = TH1D("Hist_TelAzim_Counts_target_Sum","",18,0,180)
+Hist_TelAzim_Counts_source_Sum = TH1D("Hist_TelAzim_Counts_source_Sum","",18,0,180)
 
 tag = ''
+tag_method = 'MSCW'
 
 FOV = 1.0
 Ring_Inner = FOV+0.5
@@ -40,9 +47,15 @@ Hist_Sensitivity_vs_Time_Other = TH1D("Hist_Sensitivity_vs_Time_Other","",len(ti
 ControlWidth_Bin = [3,4]
 Hist_ControlWidth_Bins = TH1D("Hist_ControlWidth_Bins","",len(ControlWidth_Bin)-1,array('d',ControlWidth_Bin))
 
-energy_bins = [pow(10,0),pow(10,0.1),pow(10,0.2),pow(10,0.3),pow(10,0.4),pow(10,0.5)]
-ControlWidthAtThisEnergy = [3,3,3,3,3,3]
-#energy_bins = [pow(10,0),pow(10,0.2)]
+energy_bins = []
+ControlWidthAtThisEnergy = []
+#energy_bins += [pow(10,-0.9),pow(10,-0.8),pow(10,-0.7),pow(10,-0.6),pow(10,-0.5),pow(10,-0.4),pow(10,-0.3),pow(10,-0.2),pow(10,-0.1)]
+#ControlWidthAtThisEnergy += [3,3,3,3,3,3,3,3,3]
+energy_bins += [pow(10,0),pow(10,0.1),pow(10,0.2),pow(10,0.3),pow(10,0.4),pow(10,0.5)]
+ControlWidthAtThisEnergy += [3,3,3,3,3,3]
+#energy_bins = [pow(10,-0.7),pow(10,-0.6)]
+#ControlWidthAtThisEnergy = [3,3]
+#energy_bins = [pow(10,0),pow(10,0.1)]
 #ControlWidthAtThisEnergy = [3,3]
 
 MSCW_Bin = [0,1]
@@ -87,15 +100,15 @@ Hist_theta2_Data_Sum_AddSignal = TH1D("Hist_theta2_Data_Sum_AddSignal","",20,0,4
 Hist_theta2_CR_Sum = TH1D("Hist_theta2_CR_Sum","",20,0,4.0)
 Hist_theta2_Ring_Sum = TH1D("Hist_theta2_Ring_Sum","",20,0,4.0)
 
-Hist_theta2_zoomin_Data = TH1D("Hist_theta2_zoomin_Data","",40,0,0.4)
-Hist_theta2_zoomin_Data_AddSignal = TH1D("Hist_theta2_zoomin_Data_AddSignal","",40,0,0.4)
-Hist_theta2_zoomin_CR = TH1D("Hist_theta2_zoomin_CR","",40,0,0.4)
-Hist_theta2_zoomin_CR_Raw = TH1D("Hist_theta2_zoomin_CR_Raw","",40,0,0.4)
-Hist_theta2_zoomin_CR_Raw_AddSignal = TH1D("Hist_theta2_zoomin_CR_Raw_AddSignal","",40,0,0.4)
-Hist_theta2_zoomin_Data_Sum = TH1D("Hist_theta2_zoomin_Data_Sum","",40,0,0.4)
-Hist_theta2_zoomin_Data_Sum_AddSignal = TH1D("Hist_theta2_zoomin_Data_Sum_AddSignal","",40,0,0.4)
-Hist_theta2_zoomin_CR_Sum = TH1D("Hist_theta2_zoomin_CR_Sum","",40,0,0.4)
-Hist_theta2_zoomin_Ring_Sum = TH1D("Hist_theta2_zoomin_Ring_Sum","",40,0,0.4)
+Hist_theta2_zoomin_Data = TH1D("Hist_theta2_zoomin_Data","",20,0,0.4)
+Hist_theta2_zoomin_Data_AddSignal = TH1D("Hist_theta2_zoomin_Data_AddSignal","",20,0,0.4)
+Hist_theta2_zoomin_CR = TH1D("Hist_theta2_zoomin_CR","",20,0,0.4)
+Hist_theta2_zoomin_CR_Raw = TH1D("Hist_theta2_zoomin_CR_Raw","",20,0,0.4)
+Hist_theta2_zoomin_CR_Raw_AddSignal = TH1D("Hist_theta2_zoomin_CR_Raw_AddSignal","",20,0,0.4)
+Hist_theta2_zoomin_Data_Sum = TH1D("Hist_theta2_zoomin_Data_Sum","",20,0,0.4)
+Hist_theta2_zoomin_Data_Sum_AddSignal = TH1D("Hist_theta2_zoomin_Data_Sum_AddSignal","",20,0,0.4)
+Hist_theta2_zoomin_CR_Sum = TH1D("Hist_theta2_zoomin_CR_Sum","",20,0,0.4)
+Hist_theta2_zoomin_Ring_Sum = TH1D("Hist_theta2_zoomin_Ring_Sum","",20,0,0.4)
 
 variable_bins = []
 b = -1
@@ -120,8 +133,8 @@ add_signal = False
 target = 'H1426'
 #target = 'Ton599'
 #target = 'IC443'
-target_field = 'on'
-#target_field = 'off'
+#target_field = 'on'
+target_field = 'off'
 
 Height_cut = ''
 RW_method = ''
