@@ -16,6 +16,9 @@ Hist_TelElev_Counts_scale = TH1D("Hist_TelElev_Counts_scale","",9,0,90)
 Hist_TelAzim_Counts_target = TH1D("Hist_TelAzim_Counts_target","",18,0,180)
 Hist_TelAzim_Counts_source = TH1D("Hist_TelAzim_Counts_source","",18,0,180)
 Hist_TelAzim_Counts_scale = TH1D("Hist_TelAzim_Counts_scale","",18,0,180)
+Hist_TelElevAzim_Counts_target = TH2D("Hist_TelElevAzim_Counts_target","",9,0,90,18,0,180)
+Hist_TelElevAzim_Counts_source = TH2D("Hist_TelElevAzim_Counts_source","",9,0,90,18,0,180)
+Hist_TelElevAzim_Counts_scale = TH2D("Hist_TelElevAzim_Counts_scale","",9,0,90,18,0,180)
 Hist_TelElev_Counts_target_Sum = TH1D("Hist_TelElev_Counts_target_Sum","",9,0,90)
 Hist_TelElev_Counts_source_Sum = TH1D("Hist_TelElev_Counts_source_Sum","",9,0,90)
 Hist_TelAzim_Counts_target_Sum = TH1D("Hist_TelAzim_Counts_target_Sum","",18,0,180)
@@ -33,9 +36,12 @@ MyRandom = TRandom()
 Hist_Norm_Data = TH1D("Hist_Norm_Data","",1,0,1)
 Hist_Norm_Ring = TH1D("Hist_Norm_Ring","",1,0,1)
 
-Elev_Bin = [55,85]
-#Elev_Bin = [30,40,50,60,70,80,90]
+Elev_Bin = [50,60,70,80,90]
+#Elev_Bin = [70,80]
 Hist_Elev_Bins = TH1D("Hist_Elev_Bins","",len(Elev_Bin)-1,array('d',Elev_Bin))
+Azim_Bin = [0,20,40,60,80]
+#Azim_Bin = [40,60]
+Hist_Azim_Bins = TH1D("Hist_Azim_Bins","",len(Azim_Bin)-1,array('d',Azim_Bin))
 
 time_bins = [1,2,3,4,5]
 Hist_NData_vs_Time = TH1D("Hist_NData_vs_Time","",len(time_bins)-1,array('d',time_bins))
@@ -49,14 +55,15 @@ Hist_ControlWidth_Bins = TH1D("Hist_ControlWidth_Bins","",len(ControlWidth_Bin)-
 
 energy_bins = []
 ControlWidthAtThisEnergy = []
-#energy_bins += [pow(10,-0.9),pow(10,-0.8),pow(10,-0.7),pow(10,-0.6),pow(10,-0.5),pow(10,-0.4),pow(10,-0.3),pow(10,-0.2),pow(10,-0.1)]
-#ControlWidthAtThisEnergy += [3,3,3,3,3,3,3,3,3]
-energy_bins += [pow(10,0),pow(10,0.1),pow(10,0.2),pow(10,0.3),pow(10,0.4),pow(10,0.5)]
-ControlWidthAtThisEnergy += [3,3,3,3,3,3]
-#energy_bins = [pow(10,-0.7),pow(10,-0.6)]
-#ControlWidthAtThisEnergy = [3,3]
-#energy_bins = [pow(10,0),pow(10,0.1)]
-#ControlWidthAtThisEnergy = [3,3]
+#energy_bins += [pow(10,-0.9),pow(10,-0.8),pow(10,-0.7),pow(10,-0.6)]
+#ControlWidthAtThisEnergy += [3,3,3,3]
+#energy_bins += [pow(10,-0.5),pow(10,-0.4),pow(10,-0.3),pow(10,-0.2)]
+#ControlWidthAtThisEnergy += [3,3,3,3]
+#energy_bins += [pow(10,-0.1),pow(10,0),pow(10,0.1),pow(10,0.2),pow(10,0.3),pow(10,0.4),pow(10,0.5)]
+#ControlWidthAtThisEnergy += [3,3,3,3,3,3,3]
+
+energy_bins = [0.6,0.8,1,1.25]
+ControlWidthAtThisEnergy = [3,3,3,3]
 
 MSCW_Bin = [0,1]
 Hist_OffData_Signal = TH1D("Hist_OffData_Signal","",len(MSCW_Bin)-1,array('d',MSCW_Bin))
@@ -119,6 +126,8 @@ Hist2D_Erec_vs_EmissionHeight_Data_All = TH2D("Hist2D_Erec_vs_EmissionHeight_Dat
 Hist1D_Erec_vs_EmissionHeight_Data_All = TH1D("Hist1D_Erec_vs_EmissionHeight_Data_All","",len(variable_bins)-1,array('d',variable_bins))
 Hist2D_TelElev_vs_EmissionHeight_Data_All = TH2D("Hist2D_TelElev_vs_EmissionHeight_Data_All","",18,0,90,40,0,40)
 Hist1D_TelElev_vs_EmissionHeight_Data_All = TH1D("Hist1D_TelElev_vs_EmissionHeight_Data_All","",18,0,90)
+Hist2D_TelAzim_vs_EmissionHeight_Data_All = TH2D("Hist2D_TelAzim_vs_EmissionHeight_Data_All","",18,0,180,40,0,40)
+Hist1D_TelAzim_vs_EmissionHeight_Data_All = TH1D("Hist1D_TelAzim_vs_EmissionHeight_Data_All","",18,0,180)
 
 source = 'Crab'
 field = 'on'
@@ -140,7 +149,7 @@ Height_cut = ''
 RW_method = ''
 Fake_Removal = ''
 Height_cut = ''
-#RW_method = 'NoRW'
+RW_method = 'NoRW'
 #Fake_Removal = 'NoFakeRemoved'
 
 

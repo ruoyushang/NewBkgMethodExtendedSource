@@ -2,10 +2,10 @@
 import sys
 import runlist
 from runlist import *
-import EmissionHeightMethodConfig
-from EmissionHeightMethodConfig import *
-#import MSCWMethodConfig
-#from MSCWMethodConfig import *
+#import EmissionHeightMethodConfig
+#from EmissionHeightMethodConfig import *
+import MSCWMethodConfig
+from MSCWMethodConfig import *
 
 ROOT.gStyle.SetOptStat(0)
 ROOT.TH1.SetDefaultSumw2()
@@ -790,7 +790,6 @@ def RunExtendedSourceAnalysis(data_type,CR_attenu,err_CR_attenu,gamma_attenu,err
     #print Hist_theta2_CR_Raw.Print("All")
     #print Hist_theta2_CR.Print("All")
     
-    
     Hist_Erec_Data_Sum.Add(Hist_Erec_Data)
     if add_signal: 
         Hist_Erec_Data_Sum_AddSignal.Add(Hist_Erec_Data_AddSignal)
@@ -812,6 +811,7 @@ def RunExtendedSourceAnalysis(data_type,CR_attenu,err_CR_attenu,gamma_attenu,err
         Hist_theta2_zoomin_Data_Sum_AddSignal.Add(Hist_theta2_zoomin_Data_AddSignal)
     Hist_theta2_zoomin_CR_Sum.Add(Hist_theta2_zoomin_CR)
 
+    #MakePlots()
 
     Hist_Norm_Data.Reset()
     Hist_Norm_Ring.Reset()
@@ -836,6 +836,46 @@ def RunExtendedSourceAnalysis(data_type,CR_attenu,err_CR_attenu,gamma_attenu,err
     Hist_theta2_zoomin_CR.Reset()
     Hist_theta2_zoomin_CR_Raw.Reset()
     Hist_theta2_zoomin_CR_Raw_AddSignal.Reset()
+
+def MakeEfficiencyPlot(this_tag,xtitle):
+
+    canvas2 = ROOT.TCanvas("canvas2","canvas2", 200, 10, 600, 600)
+    pad2 = ROOT.TPad("pad2","pad2",0.1,0.8,1,1)
+    pad2.SetBottomMargin(0.0)
+    pad2.SetTopMargin(0.03)
+    pad2.SetBorderMode(1)
+    pad1 = ROOT.TPad("pad1","pad1",0.1,0,1,0.8)
+    pad1.SetBottomMargin(0.2)
+    pad1.SetTopMargin(0.0)
+    pad1.SetBorderMode(0)
+    pad1.Draw()
+    pad2.Draw()
+    legend = ROOT.TLegend(0.2,0.1,0.7,0.9)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.15)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+
+    pad1.cd()
+    Hist_CR_Efficiency_list[0].GetXaxis().SetTitle(xtitle)
+    Hist_CR_Efficiency_list[0].GetYaxis().SetTitle('Bkg efficiency')
+    maxContent = 0.
+    for energy in range(0,len(energy_bins)-1):
+        maxContent = max(Hist_CR_Efficiency_list[energy].GetMaximum(),maxContent)
+    Hist_CR_Efficiency_list[0].SetMaximum(1.2*maxContent)
+    Hist_CR_Efficiency_list[0].SetMinimum(0)
+    Hist_CR_Efficiency_list[0].Draw("E")
+    for energy in range(0,len(energy_bins)-1):
+        Hist_CR_Efficiency_list[energy].SetLineColor(energy+2)
+        Hist_CR_Efficiency_list[energy].Draw("E same")
+    pad2.cd()
+    legend.Clear()
+    for energy in range(0,len(energy_bins)-1):
+        legend.AddEntry(Hist_CR_Efficiency_list[energy],'E %s-%s TeV'%(energy_bins[energy],energy_bins[energy+1]),"pl")
+    legend.Draw("SAME")
+    canvas2.SaveAs('output/CR_Efficiency_%s.pdf'%(this_tag))
 
 def MakeAttenuationPlot(this_tag,xtitle):
 
@@ -896,6 +936,92 @@ def MakeAttenuationPlot(this_tag,xtitle):
     legend.Draw("SAME")
     canvas2.SaveAs('output/CR_Attenu_%s.pdf'%(this_tag))
 
+def EfficiencyRateAtDifferentTelElev():
+
+    global Erec_cut_lower
+    global Erec_cut_upper
+    global Elev_cut_lower
+    global Elev_cut_upper
+    global Azim_cut_lower
+    global Azim_cut_upper
+    global MSCL_cut_lower
+    global MSCL_cut_upper
+    global MSCW_cut_lower
+    global MSCW_cut_upper
+    global control_width
+    global Hist_CR_Efficiency_list
+    global Hist_Inflation
+
+    Hist_CR_Efficiency_list = []
+    Hist_Inflation = []
+    for energy in range(0,len(energy_bins)-1):
+        Hist_CR_Efficiency_list += [Hist_Elev_Bins.Clone()]
+        Hist_Inflation += [Hist_Elev_Bins.Clone()]
+        Azim_cut_lower = Azim_Bin[0]
+        Azim_cut_upper = Azim_Bin[len(Azim_Bin)-1]
+        for elev_bin in range(0,len(Elev_Bin)-1):
+            Elev_cut_lower = Elev_Bin[elev_bin]
+            Elev_cut_upper = Elev_Bin[elev_bin+1]
+            Erec_cut_lower = energy_bins[energy]
+            Erec_cut_upper = energy_bins[energy+1]
+            #if energy==len(energy_bins)-2: Erec_cut_upper = 1000
+            control_width = ControlWidthAtThisEnergy[energy]
+            MakeATag()
+            print '++++++++++++++++++++++++++++++++++++++++++++++'
+            print 'selection = %s, elevation = %s-%s'%(tag, Elev_cut_lower, Elev_cut_upper)
+            CR_Efficiency,err_CR_Efficiency = MeasureEfficiency()
+            if CR_Efficiency<0: CR_Efficiency = 0
+            Hist_CR_Efficiency_list[energy].SetBinContent(elev_bin+1,CR_Efficiency)
+            Hist_CR_Efficiency_list[energy].SetBinError(elev_bin+1,err_CR_Efficiency)
+            inflation = 1./(CR_Efficiency)
+            print 'inflation = %s'%(inflation)
+            Hist_Inflation[energy].SetBinContent(elev_bin+1,inflation)
+
+    MakeEfficiencyPlot('vs_elev','Tel. elevation')
+
+def EfficiencyRateAtDifferentTelAzim():
+
+    global Erec_cut_lower
+    global Erec_cut_upper
+    global Elev_cut_lower
+    global Elev_cut_upper
+    global Azim_cut_lower
+    global Azim_cut_upper
+    global MSCL_cut_lower
+    global MSCL_cut_upper
+    global MSCW_cut_lower
+    global MSCW_cut_upper
+    global control_width
+    global Hist_CR_Efficiency_list
+    global Hist_Inflation
+
+    Hist_CR_Efficiency_list = []
+    Hist_Inflation = []
+    for energy in range(0,len(energy_bins)-1):
+        Hist_CR_Efficiency_list += [Hist_Azim_Bins.Clone()]
+        Hist_Inflation += [Hist_Azim_Bins.Clone()]
+        Elev_cut_lower = Elev_Bin[0]
+        Elev_cut_upper = Elev_Bin[len(Elev_Bin)-1]
+        for azim_bin in range(0,len(Azim_Bin)-1):
+            Azim_cut_lower = Azim_Bin[azim_bin]
+            Azim_cut_upper = Azim_Bin[azim_bin+1]
+            Erec_cut_lower = energy_bins[energy]
+            Erec_cut_upper = energy_bins[energy+1]
+            #if energy==len(energy_bins)-2: Erec_cut_upper = 1000
+            control_width = ControlWidthAtThisEnergy[energy]
+            MakeATag()
+            print '++++++++++++++++++++++++++++++++++++++++++++++'
+            print 'selection = %s, azimuth = %s-%s'%(tag, Azim_cut_lower, Azim_cut_upper)
+            CR_Efficiency,err_CR_Efficiency = MeasureEfficiency()
+            if CR_Efficiency<0: CR_Efficiency = 0
+            Hist_CR_Efficiency_list[energy].SetBinContent(azim_bin+1,CR_Efficiency)
+            Hist_CR_Efficiency_list[energy].SetBinError(azim_bin+1,err_CR_Efficiency)
+            inflation = 1./(CR_Efficiency)
+            print 'inflation = %s'%(inflation)
+            Hist_Inflation[energy].SetBinContent(azim_bin+1,inflation)
+
+    MakeEfficiencyPlot('vs_azim','Tel. azimuth')
+
 def AttenuationRateAtDifferentTelAzim():
 
     global Erec_cut_lower
@@ -927,7 +1053,7 @@ def AttenuationRateAtDifferentTelAzim():
             Azim_cut_upper = Azim_Bin[azim_bin+1]
             Erec_cut_lower = energy_bins[energy]
             Erec_cut_upper = energy_bins[energy+1]
-            #if energy==len(energy_bins)-2: Erec_cut_upper = 1e10
+            #if energy==len(energy_bins)-2: Erec_cut_upper = 1000
             control_width = ControlWidthAtThisEnergy[energy]
             MakeATag()
             print '++++++++++++++++++++++++++++++++++++++++++++++'
@@ -977,7 +1103,7 @@ def AttenuationRateAtDifferentTelElev():
             Elev_cut_upper = Elev_Bin[elev_bin+1]
             Erec_cut_lower = energy_bins[energy]
             Erec_cut_upper = energy_bins[energy+1]
-            #if energy==len(energy_bins)-2: Erec_cut_upper = 1e10
+            #if energy==len(energy_bins)-2: Erec_cut_upper = 1000
             control_width = ControlWidthAtThisEnergy[energy]
             MakeATag()
             print '++++++++++++++++++++++++++++++++++++++++++++++'
@@ -1015,7 +1141,7 @@ def AttenuationRateAtDifferentHeight():
             control_width = Hist_ControlWidth_Bins.GetBinLowEdge(width)
             Erec_cut_lower = energy_bins[energy]
             Erec_cut_upper = energy_bins[energy+1]
-            #if energy==len(energy_bins)-2: Erec_cut_upper = 1e10
+            #if energy==len(energy_bins)-2: Erec_cut_upper = 1000
             MakeATag()
             print '++++++++++++++++++++++++++++++++++++++++++++++'
             print 'selection = %s, control region = %s'%(tag, control_width)
@@ -1448,7 +1574,6 @@ def RunExtendedSourceAnalysisMSCWMethod(data_type,CR_Efficiency,err_CR_Efficienc
     #print Hist_theta2_CR_Raw.Print("All")
     #print Hist_theta2_CR.Print("All")
     
-    
     Hist_Erec_Data_Sum.Add(Hist_Erec_Data)
     if add_signal: 
         Hist_Erec_Data_Sum_AddSignal.Add(Hist_Erec_Data)
@@ -1474,6 +1599,8 @@ def RunExtendedSourceAnalysisMSCWMethod(data_type,CR_Efficiency,err_CR_Efficienc
         Hist_theta2_zoomin_Data_Sum_AddSignal.Add(Hist_theta2_zoomin_Data_AddSignal)
     Hist_theta2_zoomin_CR_Sum.Add(Hist_theta2_zoomin_CR)
 
+    #MakePlots()
+    
     Hist_Norm_Data.Reset()
     Hist_Norm_Ring.Reset()
     Hist_Erec_CR.Reset()
@@ -1508,6 +1635,8 @@ def EfficiencyRateAtDifferentMSCW():
     global Hist_CR_Efficiency_list
     global Hist_Inflation
 
+    Hist_CR_Efficiency_list = []
+    Hist_Inflation = []
     for energy in range(0,len(energy_bins)-1):
         Hist_CR_Efficiency_list += [Hist_ControlWidth_Bins.Clone()]
         Hist_Inflation += [Hist_ControlWidth_Bins.Clone()]
@@ -1515,7 +1644,7 @@ def EfficiencyRateAtDifferentMSCW():
             control_width = Hist_ControlWidth_Bins.GetBinLowEdge(width)
             Erec_cut_lower = energy_bins[energy]
             Erec_cut_upper = energy_bins[energy+1]
-            #if energy==len(energy_bins)-2: Erec_cut_upper = 1e10
+            #if energy==len(energy_bins)-2: Erec_cut_upper = 1000
             MakeATag()
             print '++++++++++++++++++++++++++++++++++++++++++++++'
             print 'selection = %s, control region = %s'%(tag, control_width)
@@ -1594,18 +1723,22 @@ def EnergySpectrum(method):
     global control_width
     global observation_time
 
-    for energy in range(0,len(energy_bins)-1):
-        observation_time = 0
-        Erec_cut_lower = energy_bins[energy]
-        Erec_cut_upper = energy_bins[energy+1]
-        #if energy==len(energy_bins)-2: Erec_cut_upper = 1000
-        MakeATag()
-        for elev in range(0,len(Elev_Bin)-1):
-            Elev_cut_lower = Elev_Bin[elev]
-            Elev_cut_upper = Elev_Bin[elev+1]
-            for azim in range(0,len(Azim_Bin)-1):
-                Azim_cut_lower = Azim_Bin[azim]
-                Azim_cut_upper = Azim_Bin[azim+1]
+    for elev in range(0,len(Elev_Bin)-1):
+        Elev_cut_lower = Elev_Bin[elev]
+        Elev_cut_upper = Elev_Bin[elev+1]
+        for azim in range(0,len(Azim_Bin)-1):
+            Azim_cut_lower = Azim_Bin[azim]
+            Azim_cut_upper = Azim_Bin[azim+1]
+            for energy in range(0,len(energy_bins)-1):
+                observation_time = 0
+                #Erec_cut_lower = energy_bins[energy]
+                #Erec_cut_upper = energy_bins[energy+1]
+                #if energy==len(energy_bins)-2: Erec_cut_upper = 1000
+                Erec_cut_lower = energy_bins[len(energy_bins)-2-energy]
+                Erec_cut_upper = energy_bins[len(energy_bins)-1-energy]
+                #if energy==0: Erec_cut_upper = 1000
+                MakeATag()
+
                 cr_eff = 1
                 control_width = ControlWidthAtThisEnergy[energy]
                 print '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
@@ -1623,6 +1756,7 @@ def EnergySpectrum(method):
                         inflation = pow(1+gamma_att/cr_att,0.5)/(1-gamma_att/cr_att)
                         inflation = inflation/pow(cr_att,0.5)
                         print 'inflation = %s'%(inflation)
+                    if cr_att==0: continue
                     RunExtendedSourceAnalysis('anasum',cr_att,err_cr_att,gamma_att,err_gamma_att)
                 if method == "MSCW":
                     cr_eff = 1
@@ -1631,6 +1765,7 @@ def EnergySpectrum(method):
                     if not cr_eff==0:
                         inflation = 1./cr_eff
                         print 'inflation = %s'%(inflation)
+                    if cr_eff==0: continue
                     RunExtendedSourceAnalysisMSCWMethod('anasum',cr_eff,err_cr_eff)
                 N_CR = Hist_Erec_CR_Sum.GetBinContent(energy+1)
                 Err_N_CR = Hist_Erec_CR_Sum.GetBinError(energy+1)
@@ -1640,9 +1775,10 @@ def EnergySpectrum(method):
                     Hist_Sensitivity_vs_Erec.SetBinContent(energy+1,5.*Err_N_CR/N_CR)
                 if not N_Data==0:
                     Hist_Sensitivity_vs_Erec_Other.SetBinContent(energy+1,5.*pow(2,0.5)*Err_N_Data/N_Data)
+            MakeSumPlots()
     Erec_cut_lower = energy_bins[0]
     MakeATag()
-    MakePlots()
+    MakeSumPlots()
 
 def SensitivityVsTime(method):
 
@@ -1691,6 +1827,52 @@ def SensitivityVsTime(method):
     canvas.SaveAs('output/Sensitivity_vs_ObsTime_%s.pdf'%(tag))
 
 def MakePlots():
+
+    MakeStackPlot(Hist_theta2_Data_Sum,Hist_theta2_CR_Sum,Hist_theta2_Ring_Sum,'theta2')
+
+    canvas = ROOT.TCanvas("canvas","canvas", 200, 10, 600, 600)
+    pad1 = ROOT.TPad("pad1","pad1",0,0,1,1)
+    pad1.SetBottomMargin(0.15)
+    pad1.SetRightMargin(0.15)
+    pad1.SetLeftMargin(0.15)
+    pad1.SetTopMargin(0.15)
+    pad1.SetBorderMode(0)
+    pad1.Draw()
+    pad1.cd()
+
+    pad1.SetLogz(0)
+    pad1.SetLogx(0)
+    pad1.SetLogy(0)
+    for bx in range(0,Hist2D_Xoff_vs_Yoff_Sig.GetNbinsX()):
+        for by in range(0,Hist2D_Xoff_vs_Yoff_Sig.GetNbinsY()):
+            this_data = Hist2D_Xoff_vs_Yoff_Data_Sum.GetBinContent(bx,by)
+            this_data_err = Hist2D_Xoff_vs_Yoff_Data_Sum.GetBinError(bx,by)
+            if add_signal: 
+                this_data = Hist2D_Xoff_vs_Yoff_Data_Sum_AddSignal.GetBinContent(bx,by)
+                this_data_err = Hist2D_Xoff_vs_Yoff_Data_Sum_AddSignal.GetBinError(bx,by)
+            this_bkg = Hist2D_Xoff_vs_Yoff_CR_Sum.GetBinContent(bx,by)
+            this_bkg_err = Hist2D_Xoff_vs_Yoff_CR_Sum.GetBinError(bx,by)
+            value = 0
+            if not this_bkg_err==0:
+                value = (this_data-this_bkg)/pow(this_bkg_err*this_bkg_err+this_data_err*this_data_err,0.5)
+            Hist2D_Xoff_vs_Yoff_Sig.SetBinContent(bx,by,value)
+    Hist2D_Xoff_vs_Yoff_Sig.GetYaxis().SetTitle('Yoff')
+    Hist2D_Xoff_vs_Yoff_Sig.GetXaxis().SetTitle('Xoff')
+    Hist2D_Xoff_vs_Yoff_Sig.GetZaxis().SetTitle('Significance')
+    Hist2D_Xoff_vs_Yoff_Sig.SetMaximum(5)
+    Hist2D_Xoff_vs_Yoff_Sig.SetMinimum(-3)
+    Hist2D_Xoff_vs_Yoff_Sig.Draw("COL4Z")
+    canvas.SaveAs('output/Xoff_vs_Yoff_Sig_%s.pdf'%(tag))
+    Hist2D_Xoff_vs_Yoff_Data_Sum.GetYaxis().SetTitle('Yoff')
+    Hist2D_Xoff_vs_Yoff_Data_Sum.GetXaxis().SetTitle('Xoff')
+    Hist2D_Xoff_vs_Yoff_Data_Sum.Draw("COL4Z")
+    canvas.SaveAs('output/Xoff_vs_Yoff_Data_%s.pdf'%(tag))
+    Hist2D_Xoff_vs_Yoff_CR_Sum.GetYaxis().SetTitle('Yoff')
+    Hist2D_Xoff_vs_Yoff_CR_Sum.GetXaxis().SetTitle('Xoff')
+    Hist2D_Xoff_vs_Yoff_CR_Sum.Draw("COL4Z")
+    canvas.SaveAs('output/Xoff_vs_Yoff_CR_%s.pdf'%(tag))
+
+def MakeSumPlots():
     MakeStackPlot(Hist_Erec_Data_Sum,Hist_Erec_CR_Sum,Hist_Erec_Ring_Sum,'Erec')
     MakeStackPlot(Hist_theta2_Data_Sum,Hist_theta2_CR_Sum,Hist_theta2_Ring_Sum,'theta2')
     MakeStackPlot(Hist_theta2_zoomin_Data_Sum,Hist_theta2_zoomin_CR_Sum,Hist_theta2_zoomin_Ring_Sum,'theta2_zoomin')
@@ -1793,7 +1975,10 @@ def MakePlots():
     Hist_TelElev_Counts_target_Sum.SetLineColor(2)
     numerator = Hist_TelElev_Counts_target_Sum.Integral()
     denominator = Hist_TelElev_Counts_source_Sum.Integral()
-    scale = numerator/denominator
+    if not denominator==0:
+        scale = numerator/denominator
+    else:
+        scale = 0
     Hist_TelElev_Counts_source_Sum.Scale(scale)
     if Hist_TelElev_Counts_target_Sum.GetMaximum()>Hist_TelElev_Counts_source_Sum.GetMaximum():
         Hist_TelElev_Counts_target_Sum.Draw("L")
@@ -1808,7 +1993,10 @@ def MakePlots():
     Hist_TelAzim_Counts_target_Sum.SetLineColor(2)
     numerator = Hist_TelAzim_Counts_target_Sum.Integral()
     denominator = Hist_TelAzim_Counts_source_Sum.Integral()
-    scale = numerator/denominator
+    if not denominator==0:
+        scale = numerator/denominator
+    else:
+        scale = 0
     Hist_TelAzim_Counts_source_Sum.Scale(scale)
     if Hist_TelAzim_Counts_target_Sum.GetMaximum()>Hist_TelAzim_Counts_source_Sum.GetMaximum():
         Hist_TelAzim_Counts_target_Sum.Draw("L")
