@@ -11,7 +11,6 @@ ROOT.gStyle.SetOptStat(0)
 ROOT.TH1.SetDefaultSumw2()
 ROOT.gStyle.SetPaintTextFormat("0.3f")
 
-NoSignalAssumption = False
 
 target = sys.argv[1]
 
@@ -19,14 +18,16 @@ Elev_cut_lower = 0
 Elev_cut_upper = 0
 Azim_cut_lower = 0
 Azim_cut_upper = 0
+NoSignalAssumption = False
 MSCL_cut_lower = -2
 MSCL_cut_upper = 0.7
 MSCW_cut_lower = -2
 MSCW_cut_upper = 0.7
-#MSCL_cut_lower = 2.
-#MSCL_cut_upper = 3.
-#MSCW_cut_lower = 2.
-#MSCW_cut_upper = 3.
+#NoSignalAssumption = True
+#MSCL_cut_lower = -2
+#MSCL_cut_upper = 0.7
+#MSCW_cut_lower = 3.
+#MSCW_cut_upper = 5.
 Erec_cut_lower = 0.1
 Erec_cut_upper = 1000
 
@@ -78,17 +79,16 @@ def MakeATag():
     global tag
     tag = ''
     tag += '_Elev%sto%s'%(Elev_cut_lower,Elev_cut_upper)
+    tag += '_Azim%sto%s'%(Azim_cut_lower,Azim_cut_upper)
     tag += '_MSCL%sto%s'%(MSCL_cut_lower,MSCL_cut_upper)
+    tag += '_MSCW%sto%s'%(MSCW_cut_lower,MSCW_cut_upper)
     tag += '_Erec%0.1fto%0.1f'%(Erec_cut_lower,Erec_cut_upper)
-    #tag += '_Time%s'%(time_cut/(60.*60.))
-    tag += '_'+Height_cut
     tag += '_'+RW_method
-    tag += '_'+Fake_Removal
     tag += '_'+target+'_'+target_field
     tag += '_'+tag_method
 
 
-def GetAnttenuationHistogram(source,region,run,data_type):
+def GetAttenuationHistogram(source,region,run,data_type):
 
     if data_type=='anasum':
         if source == 'Crab':
@@ -133,7 +133,8 @@ def GetAnttenuationHistogram(source,region,run,data_type):
         if (anasum_tree.MSCL<MSCL_cut_lower): continue
         if (anasum_tree.MSCL>MSCL_cut_upper): continue
         if (anasum_tree.MSCW<MSCW_cut_lower): continue
-        if (anasum_tree.MSCW>MSCW_cut_upper and anasum_tree.MSCW<3.): continue # MSCW>3 is for normalization of off region
+        #if (anasum_tree.MSCW>MSCW_cut_upper and anasum_tree.MSCW<3.): continue # MSCW>3 is for normalization of off region
+        if (anasum_tree.MSCW>MSCW_cut_upper): continue
         if (anasum_tree.Erec<Erec_cut_lower): continue
         if (anasum_tree.Erec>Erec_cut_upper): continue
         elevation = hist_Ele_vs_time.GetBinContent(hist_Ele_vs_time.FindBin(anasum_tree.Time))
@@ -265,12 +266,12 @@ def MeasureAttenuation():
     
     if source == 'Crab':
         for run in Crab_runlist:
-            GetAnttenuationHistogram('Crab','on',run,'anasum')
-            GetAnttenuationHistogram('Crab','off',run,'anasum')
+            GetAttenuationHistogram('Crab','on',run,'anasum')
+            GetAttenuationHistogram('Crab','off',run,'anasum')
     if source == '2ndCrab':
         for run in SecondCrab_runlist:
-            GetAnttenuationHistogram('Crab','on',run,'anasum')
-            GetAnttenuationHistogram('Crab','off',run,'anasum')
+            GetAttenuationHistogram('Crab','on',run,'anasum')
+            GetAttenuationHistogram('Crab','off',run,'anasum')
     
     print 'Hist_OnData_Signal.GetEntries() = %s'%(Hist_OnData_Signal.GetEntries())
     print 'Hist_OnData_Control.GetEntries() = %s'%(Hist_OnData_Control.GetEntries())
@@ -515,6 +516,7 @@ def SingleRunAnalysisMSCW(source,region,run,data_type):
                 if anasum_tree.theta2<0.1: continue
             if (anasum_tree.MSCW>MSCW_cut_lower and anasum_tree.MSCW<MSCW_cut_upper):
                 Hist2D_TelElev_vs_EmissionHeight_Data_All.Fill(elevation,anasum_tree.EmissionHeight)
+                Hist2D_TelAzim_vs_EmissionHeight_Data_All.Fill(AzimuthConverter(azimuth),anasum_tree.EmissionHeight)
             if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
             if AzimuthConverter(azimuth)<Azim_cut_lower or AzimuthConverter(azimuth)>Azim_cut_upper: continue
             if (anasum_tree.MSCW>MSCW_cut_lower and anasum_tree.MSCW<MSCW_cut_upper):
@@ -613,6 +615,7 @@ def SingleRunAnalysis(source,region,run,data_type):
                 if anasum_tree.theta2<0.1: continue
             if (anasum_tree.MSCW>MSCW_cut_lower and anasum_tree.MSCW<MSCW_cut_upper):
                 Hist2D_TelElev_vs_EmissionHeight_Data_All.Fill(elevation,anasum_tree.EmissionHeight)
+                Hist2D_TelAzim_vs_EmissionHeight_Data_All.Fill(AzimuthConverter(azimuth),anasum_tree.EmissionHeight)
             if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
             if AzimuthConverter(azimuth)<Azim_cut_lower or AzimuthConverter(azimuth)>Azim_cut_upper: continue
             if (anasum_tree.MSCW>MSCW_cut_lower and anasum_tree.MSCW<MSCW_cut_upper):
@@ -834,6 +837,165 @@ def RunExtendedSourceAnalysis(data_type,CR_attenu,err_CR_attenu,gamma_attenu,err
     Hist_theta2_zoomin_CR_Raw.Reset()
     Hist_theta2_zoomin_CR_Raw_AddSignal.Reset()
 
+def MakeAttenuationPlot(this_tag,xtitle):
+
+    canvas2 = ROOT.TCanvas("canvas2","canvas2", 200, 10, 600, 600)
+    pad2 = ROOT.TPad("pad2","pad2",0.1,0.8,1,1)
+    pad2.SetBottomMargin(0.0)
+    pad2.SetTopMargin(0.03)
+    pad2.SetBorderMode(1)
+    pad1 = ROOT.TPad("pad1","pad1",0.1,0,1,0.8)
+    pad1.SetBottomMargin(0.2)
+    pad1.SetTopMargin(0.0)
+    pad1.SetBorderMode(0)
+    pad1.Draw()
+    pad2.Draw()
+    legend = ROOT.TLegend(0.2,0.1,0.7,0.9)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.15)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+
+    pad1.cd()
+    Hist_Gamma_Attenu[0].GetXaxis().SetTitle(xtitle)
+    Hist_Gamma_Attenu[0].GetYaxis().SetTitle('#gamma attenuation')
+    maxContent = 0.
+    for energy in range(0,len(energy_bins)-1):
+        maxContent = max(Hist_Gamma_Attenu[energy].GetMaximum(),maxContent)
+    Hist_Gamma_Attenu[0].SetMaximum(1.2*maxContent)
+    Hist_Gamma_Attenu[0].SetMinimum(0)
+    Hist_Gamma_Attenu[0].Draw("E")
+    for energy in range(0,len(energy_bins)-1):
+        Hist_Gamma_Attenu[energy].SetLineColor(energy+2)
+        Hist_Gamma_Attenu[energy].Draw("E same")
+    pad2.cd()
+    legend.Clear()
+    for energy in range(0,len(energy_bins)-1):
+        legend.AddEntry(Hist_Gamma_Attenu[energy],'E %s-%s TeV'%(energy_bins[energy],energy_bins[energy+1]),"pl")
+    legend.Draw("SAME")
+    canvas2.SaveAs('output/Gamma_Attenu_%s.pdf'%(this_tag))
+
+    pad1.cd()
+    Hist_CR_Attenu[0].GetXaxis().SetTitle(xtitle)
+    Hist_CR_Attenu[0].GetYaxis().SetTitle('Bkg attenuation')
+    maxContent = 0.
+    for energy in range(0,len(energy_bins)-1):
+        maxContent = max(Hist_CR_Attenu[energy].GetMaximum(),maxContent)
+    Hist_CR_Attenu[0].SetMaximum(1.2*maxContent)
+    Hist_CR_Attenu[0].SetMinimum(0)
+    Hist_CR_Attenu[0].Draw("E")
+    for energy in range(0,len(energy_bins)-1):
+        Hist_CR_Attenu[energy].SetLineColor(energy+2)
+        Hist_CR_Attenu[energy].Draw("E same")
+    pad2.cd()
+    legend.Clear()
+    for energy in range(0,len(energy_bins)-1):
+        legend.AddEntry(Hist_CR_Attenu[energy],'E %s-%s TeV'%(energy_bins[energy],energy_bins[energy+1]),"pl")
+    legend.Draw("SAME")
+    canvas2.SaveAs('output/CR_Attenu_%s.pdf'%(this_tag))
+
+def AttenuationRateAtDifferentTelAzim():
+
+    global Erec_cut_lower
+    global Erec_cut_upper
+    global Elev_cut_lower
+    global Elev_cut_upper
+    global Azim_cut_lower
+    global Azim_cut_upper
+    global MSCL_cut_lower
+    global MSCL_cut_upper
+    global MSCW_cut_lower
+    global MSCW_cut_upper
+    global control_width
+    global Hist_Gamma_Attenu
+    global Hist_CR_Attenu
+    global Hist_Inflation
+
+    Hist_Gamma_Attenu = []
+    Hist_CR_Attenu = []
+    Hist_Inflation = []
+    for energy in range(0,len(energy_bins)-1):
+        Hist_Gamma_Attenu += [Hist_Azim_Bins.Clone()]
+        Hist_CR_Attenu += [Hist_Azim_Bins.Clone()]
+        Hist_Inflation += [Hist_Azim_Bins.Clone()]
+        Elev_cut_lower = Elev_Bin[0]
+        Elev_cut_upper = Elev_Bin[len(Elev_Bin)-1]
+        for azim_bin in range(0,len(Azim_Bin)-1):
+            Azim_cut_lower = Azim_Bin[azim_bin]
+            Azim_cut_upper = Azim_Bin[azim_bin+1]
+            Erec_cut_lower = energy_bins[energy]
+            Erec_cut_upper = energy_bins[energy+1]
+            #if energy==len(energy_bins)-2: Erec_cut_upper = 1e10
+            control_width = ControlWidthAtThisEnergy[energy]
+            MakeATag()
+            print '++++++++++++++++++++++++++++++++++++++++++++++'
+            print 'selection = %s, azimuth = %s-%s'%(tag, Azim_cut_lower, Azim_cut_upper)
+            CR_attenu,err_CR_attenu,gamma_attenu,err_gamma_attenu = MeasureAttenuation()
+            if CR_attenu<0: CR_attenu = 0
+            if gamma_attenu<0: gamma_attenu = 0
+            Hist_Gamma_Attenu[energy].SetBinContent(azim_bin+1,gamma_attenu)
+            Hist_Gamma_Attenu[energy].SetBinError(azim_bin+1,err_gamma_attenu)
+            Hist_CR_Attenu[energy].SetBinContent(azim_bin+1,CR_attenu)
+            Hist_CR_Attenu[energy].SetBinError(azim_bin+1,err_CR_attenu)
+            inflation = pow(1+gamma_attenu/CR_attenu,0.5)/(1-gamma_attenu/CR_attenu)
+            inflation = inflation/pow(CR_attenu,0.5)
+            print 'inflation = %s'%(inflation)
+            Hist_Inflation[energy].SetBinContent(azim_bin+1,inflation)
+
+    MakeAttenuationPlot('vs_azim','Tel. azimuth')
+
+def AttenuationRateAtDifferentTelElev():
+
+    global Erec_cut_lower
+    global Erec_cut_upper
+    global Elev_cut_lower
+    global Elev_cut_upper
+    global Azim_cut_lower
+    global Azim_cut_upper
+    global MSCL_cut_lower
+    global MSCL_cut_upper
+    global MSCW_cut_lower
+    global MSCW_cut_upper
+    global control_width
+    global Hist_Gamma_Attenu
+    global Hist_CR_Attenu
+    global Hist_Inflation
+
+    Hist_Gamma_Attenu = []
+    Hist_CR_Attenu = []
+    Hist_Inflation = []
+    for energy in range(0,len(energy_bins)-1):
+        Hist_Gamma_Attenu += [Hist_Elev_Bins.Clone()]
+        Hist_CR_Attenu += [Hist_Elev_Bins.Clone()]
+        Hist_Inflation += [Hist_Elev_Bins.Clone()]
+        Azim_cut_lower = Azim_Bin[0]
+        Azim_cut_upper = Azim_Bin[len(Azim_Bin)-1]
+        for elev_bin in range(0,len(Elev_Bin)-1):
+            Elev_cut_lower = Elev_Bin[elev_bin]
+            Elev_cut_upper = Elev_Bin[elev_bin+1]
+            Erec_cut_lower = energy_bins[energy]
+            Erec_cut_upper = energy_bins[energy+1]
+            #if energy==len(energy_bins)-2: Erec_cut_upper = 1e10
+            control_width = ControlWidthAtThisEnergy[energy]
+            MakeATag()
+            print '++++++++++++++++++++++++++++++++++++++++++++++'
+            print 'selection = %s, elevation = %s-%s'%(tag, Elev_cut_lower, Elev_cut_upper)
+            CR_attenu,err_CR_attenu,gamma_attenu,err_gamma_attenu = MeasureAttenuation()
+            if CR_attenu<0: CR_attenu = 0
+            if gamma_attenu<0: gamma_attenu = 0
+            Hist_Gamma_Attenu[energy].SetBinContent(elev_bin+1,gamma_attenu)
+            Hist_Gamma_Attenu[energy].SetBinError(elev_bin+1,err_gamma_attenu)
+            Hist_CR_Attenu[energy].SetBinContent(elev_bin+1,CR_attenu)
+            Hist_CR_Attenu[energy].SetBinError(elev_bin+1,err_CR_attenu)
+            inflation = pow(1+gamma_attenu/CR_attenu,0.5)/(1-gamma_attenu/CR_attenu)
+            inflation = inflation/pow(CR_attenu,0.5)
+            print 'inflation = %s'%(inflation)
+            Hist_Inflation[energy].SetBinContent(elev_bin+1,inflation)
+
+    MakeAttenuationPlot('vs_elev','Tel. elevation')
+
 def AttenuationRateAtDifferentHeight():
 
     global Erec_cut_lower
@@ -1019,15 +1181,19 @@ def MakeStackPlot(Hist_Data,Hist_CR,Hist_Ring,title):
     lumilab1.SetNDC()
     lumilab1.SetTextSize(0.15)
     lumilab1.Draw()
-    lumilab2 = ROOT.TLatex(0.15,0.6,'%0.2f < Tel elev. < %0.2f'%(Elev_cut_lower,Elev_cut_upper) )
+    lumilab2 = ROOT.TLatex(0.15,0.65,'%0.2f < Tel elev. < %0.2f'%(Elev_cut_lower,Elev_cut_upper) )
     lumilab2.SetNDC()
     lumilab2.SetTextSize(0.15)
     lumilab2.Draw()
-    lumilab3 = ROOT.TLatex(0.15,0.45,'%0.2f < MSCL < %0.2f'%(MSCL_cut_lower,MSCL_cut_upper) )
+    lumilab5 = ROOT.TLatex(0.15,0.50,'%0.2f < Tel azim. < %0.2f'%(Azim_cut_lower,Azim_cut_upper) )
+    lumilab5.SetNDC()
+    lumilab5.SetTextSize(0.15)
+    lumilab5.Draw()
+    lumilab3 = ROOT.TLatex(0.15,0.35,'%0.2f < MSCL < %0.2f'%(MSCL_cut_lower,MSCL_cut_upper) )
     lumilab3.SetNDC()
     lumilab3.SetTextSize(0.15)
     lumilab3.Draw()
-    lumilab4 = ROOT.TLatex(0.15,0.3,'%0.2f < MSCW < %0.2f'%(MSCL_cut_lower,MSCL_cut_upper) )
+    lumilab4 = ROOT.TLatex(0.15,0.20,'%0.2f < MSCW < %0.2f'%(MSCW_cut_lower,MSCW_cut_upper) )
     lumilab4.SetNDC()
     lumilab4.SetTextSize(0.15)
     lumilab4.Draw()
@@ -1451,6 +1617,8 @@ def EnergySpectrum(method):
                     err_gamma_att = 0
                     control_width = ControlWidthAtThisEnergy[energy]
                     cr_att,err_cr_att,gamma_att,err_gamma_att = MeasureAttenuation()
+                    gamma_att = max(0,gamma_att)
+                    cr_att = max(0,cr_att)
                     if not cr_att==0:
                         inflation = pow(1+gamma_att/cr_att,0.5)/(1-gamma_att/cr_att)
                         inflation = inflation/pow(cr_att,0.5)
@@ -1541,6 +1709,7 @@ def MakePlots():
     pad1.SetBorderMode(0)
     pad1.Draw()
     pad1.cd()
+
     Hist2D_TelElev_vs_EmissionHeight_Data_All.GetYaxis().SetTitle('EmissionHeight')
     Hist2D_TelElev_vs_EmissionHeight_Data_All.GetXaxis().SetTitle('Tel. elevation')
     Hist2D_TelElev_vs_EmissionHeight_Data_All.Draw("COL4Z")
@@ -1550,18 +1719,20 @@ def MakePlots():
         Hist1D_TelElev_vs_EmissionHeight_Data_All.SetBinError(b+1,hist_temp.GetRMS())
     Hist1D_TelElev_vs_EmissionHeight_Data_All.SetLineColor(2)
     Hist1D_TelElev_vs_EmissionHeight_Data_All.Draw("E same")
-    #f_cut_mean = ROOT.TF1("f_cut_mean","10.+10.*pow((x-90)/50.,4)",0,90)
-    #f_cut_mean.SetLineColor(2)
-    #f_cut_mean.SetLineStyle(2)
-    #f_cut_mean.Draw("same")
-    #f_cut_upper = ROOT.TF1("f_cut_upper","3.0+10.+10.*pow((x-90)/47.,4)",0,90)
-    #f_cut_upper.SetLineColor(2)
-    #f_cut_upper.Draw("same")
-    #f_cut_lower = ROOT.TF1("f_cut_lower","-3.0+10.+10.*pow((x-90)/53.,4)",0,90)
-    #f_cut_lower.SetLineColor(2)
-    #f_cut_lower.Draw("same")
     pad1.SetLogz()
     canvas.SaveAs('output/TelElev_vs_EmissionHeight_All_%s.pdf'%(tag))
+
+    Hist2D_TelAzim_vs_EmissionHeight_Data_All.GetYaxis().SetTitle('EmissionHeight')
+    Hist2D_TelAzim_vs_EmissionHeight_Data_All.GetXaxis().SetTitle('Tel. Azimuth')
+    Hist2D_TelAzim_vs_EmissionHeight_Data_All.Draw("COL4Z")
+    for b in range(0,Hist1D_TelAzim_vs_EmissionHeight_Data_All.GetNbinsX()):
+        hist_temp = Hist2D_TelAzim_vs_EmissionHeight_Data_All.ProjectionY("hist_temp",b+1,b+1)
+        Hist1D_TelAzim_vs_EmissionHeight_Data_All.SetBinContent(b+1,hist_temp.GetMean())
+        Hist1D_TelAzim_vs_EmissionHeight_Data_All.SetBinError(b+1,hist_temp.GetRMS())
+    Hist1D_TelAzim_vs_EmissionHeight_Data_All.SetLineColor(2)
+    Hist1D_TelAzim_vs_EmissionHeight_Data_All.Draw("E same")
+    pad1.SetLogz()
+    canvas.SaveAs('output/TelAzim_vs_EmissionHeight_All_%s.pdf'%(tag))
 
     Hist2D_Erec_vs_EmissionHeight_Data_All.GetYaxis().SetTitle('EmissionHeight')
     Hist2D_Erec_vs_EmissionHeight_Data_All.GetXaxis().SetTitle('Erec')
