@@ -2,10 +2,10 @@
 import sys
 import runlist
 from runlist import *
-#import EmissionHeightMethodConfig
-#from EmissionHeightMethodConfig import *
-import MSCWMethodConfig
-from MSCWMethodConfig import *
+import EmissionHeightMethodConfig
+from EmissionHeightMethodConfig import *
+#import MSCWMethodConfig
+#from MSCWMethodConfig import *
 
 ROOT.gStyle.SetOptStat(0)
 ROOT.TH1.SetDefaultSumw2()
@@ -309,10 +309,14 @@ def MeasureAttenuation():
         Hist_Gamma_Signal.SetBinContent(b+1,Hist_OnData_Signal.GetBinContent(b+1))
         Hist_Gamma_Signal.SetBinError(b+1,Hist_OnData_Signal.GetBinError(b+1))
     Hist_Gamma_Signal.Add(Hist_OffData_Signal,-1)
+    for b in range(0,Hist_Gamma_Signal.GetNbinsX()):
+        Hist_Gamma_Signal.SetBinContent(b+1,max(0,Hist_Gamma_Signal.GetBinContent(b+1)))
     for b in range(0,Hist_Gamma_Control.GetNbinsX()):
         Hist_Gamma_Control.SetBinContent(b+1,Hist_OnData_Control.GetBinContent(b+1))
         Hist_Gamma_Control.SetBinError(b+1,Hist_OnData_Control.GetBinError(b+1))
     Hist_Gamma_Control.Add(Hist_OffData_Control,-1)
+    for b in range(0,Hist_Gamma_Control.GetNbinsX()):
+        Hist_Gamma_Control.SetBinContent(b+1,max(0,Hist_Gamma_Control.GetBinContent(b+1)))
     for b in range(0,Hist_Gamma_Attenuation.GetNbinsX()):
         Hist_Gamma_Attenuation.SetBinContent(b+1,Hist_Gamma_Control.GetBinContent(b+1))
         Hist_Gamma_Attenuation.SetBinError(b+1,Hist_Gamma_Control.GetBinError(b+1))
@@ -796,6 +800,12 @@ def RunExtendedSourceAnalysis(data_type,CR_attenu,err_CR_attenu,gamma_attenu,err
     Hist_Erec_Ring_Sum.Add(Hist_Erec_Ring)
     Hist_Erec_CR_Sum.Add(Hist_Erec_CR)
 
+    Hist_Erec_Data_SumE.Add(Hist_Erec_Data)
+    if add_signal: 
+        Hist_Erec_Data_SumE_AddSignal.Add(Hist_Erec_Data_AddSignal)
+    Hist_Erec_Ring_SumE.Add(Hist_Erec_Ring)
+    Hist_Erec_CR_SumE.Add(Hist_Erec_CR)
+
     Hist2D_Xoff_vs_Yoff_Data_Sum.Add(Hist2D_Xoff_vs_Yoff_Data)
     if add_signal: 
         Hist2D_Xoff_vs_Yoff_Data_Sum_AddSignal.Add(Hist2D_Xoff_vs_Yoff_Data_AddSignal)
@@ -806,12 +816,16 @@ def RunExtendedSourceAnalysis(data_type,CR_attenu,err_CR_attenu,gamma_attenu,err
         Hist_theta2_Data_Sum_AddSignal.Add(Hist_theta2_Data_AddSignal)
     Hist_theta2_CR_Sum.Add(Hist_theta2_CR)
 
+    Hist_theta2_Data_SumE.Add(Hist_theta2_Data)
+    if add_signal: 
+        Hist_theta2_Data_SumE_AddSignal.Add(Hist_theta2_Data_AddSignal)
+    Hist_theta2_CR_SumE.Add(Hist_theta2_CR)
+
     Hist_theta2_zoomin_Data_Sum.Add(Hist_theta2_zoomin_Data)
     if add_signal: 
         Hist_theta2_zoomin_Data_Sum_AddSignal.Add(Hist_theta2_zoomin_Data_AddSignal)
     Hist_theta2_zoomin_CR_Sum.Add(Hist_theta2_zoomin_CR)
 
-    #MakePlots()
 
     Hist_Norm_Data.Reset()
     Hist_Norm_Ring.Reset()
@@ -1581,6 +1595,13 @@ def RunExtendedSourceAnalysisMSCWMethod(data_type,CR_Efficiency,err_CR_Efficienc
     Hist_Erec_Ring_Sum.Add(Hist_Erec_Ring)
     Hist_Erec_CR_Sum.Add(Hist_Erec_CR)
 
+    Hist_Erec_Data_SumE.Add(Hist_Erec_Data)
+    if add_signal: 
+        Hist_Erec_Data_SumE_AddSignal.Add(Hist_Erec_Data)
+        Hist_Erec_Data_SumE_AddSignal.Add(Hist_Erec_Data_AddSignal)
+    Hist_Erec_Ring_SumE.Add(Hist_Erec_Ring)
+    Hist_Erec_CR_SumE.Add(Hist_Erec_CR)
+
     Hist2D_Xoff_vs_Yoff_Data_Sum.Add(Hist2D_Xoff_vs_Yoff_Data)
     if add_signal: 
         Hist2D_Xoff_vs_Yoff_Data_Sum_AddSignal.Add(Hist2D_Xoff_vs_Yoff_Data)
@@ -1593,13 +1614,18 @@ def RunExtendedSourceAnalysisMSCWMethod(data_type,CR_Efficiency,err_CR_Efficienc
         Hist_theta2_Data_Sum_AddSignal.Add(Hist_theta2_Data_AddSignal)
     Hist_theta2_CR_Sum.Add(Hist_theta2_CR)
 
+    Hist_theta2_Data_SumE.Add(Hist_theta2_Data)
+    if add_signal: 
+        Hist_theta2_Data_SumE_AddSignal.Add(Hist_theta2_Data)
+        Hist_theta2_Data_SumE_AddSignal.Add(Hist_theta2_Data_AddSignal)
+    Hist_theta2_CR_SumE.Add(Hist_theta2_CR)
+
     Hist_theta2_zoomin_Data_Sum.Add(Hist_theta2_zoomin_Data)
     if add_signal: 
         Hist_theta2_zoomin_Data_Sum_AddSignal.Add(Hist_theta2_zoomin_Data)
         Hist_theta2_zoomin_Data_Sum_AddSignal.Add(Hist_theta2_zoomin_Data_AddSignal)
     Hist_theta2_zoomin_CR_Sum.Add(Hist_theta2_zoomin_CR)
 
-    #MakePlots()
     
     Hist_Norm_Data.Reset()
     Hist_Norm_Ring.Reset()
@@ -1767,16 +1793,32 @@ def EnergySpectrum(method):
                         print 'inflation = %s'%(inflation)
                     if cr_eff==0: continue
                     RunExtendedSourceAnalysisMSCWMethod('anasum',cr_eff,err_cr_eff)
-                N_CR = Hist_Erec_CR_Sum.GetBinContent(energy+1)
-                Err_N_CR = Hist_Erec_CR_Sum.GetBinError(energy+1)
-                N_Data = Hist_Erec_Data_Sum.GetBinContent(energy+1)
-                Err_N_Data = Hist_Erec_Data_Sum.GetBinError(energy+1)
-                if not N_CR==0:
-                    Hist_Sensitivity_vs_Erec.SetBinContent(energy+1,5.*Err_N_CR/N_CR)
-                if not N_Data==0:
-                    Hist_Sensitivity_vs_Erec_Other.SetBinContent(energy+1,5.*pow(2,0.5)*Err_N_Data/N_Data)
-            MakeSumPlots()
+            Erec_cut_lower = energy_bins[0]
+            Erec_cut_upper = energy_bins[len(energy_bins)-1]
+            MakeATag()
+            MakePlots()
+            Hist_Erec_CR_SumE.Reset()
+            Hist_Erec_Data_SumE.Reset()
+            Hist_Erec_Ring_SumE.Reset()
+            Hist_theta2_CR_SumE.Reset()
+            Hist_theta2_Data_SumE.Reset()
+            Hist_theta2_Ring_SumE.Reset()
+
+    for energy in range(0,len(energy_bins)-1):
+        N_CR = Hist_Erec_CR_Sum.GetBinContent(energy+1)
+        Err_N_CR = Hist_Erec_CR_Sum.GetBinError(energy+1)
+        N_Data = Hist_Erec_Data_Sum.GetBinContent(energy+1)
+        Err_N_Data = Hist_Erec_Data_Sum.GetBinError(energy+1)
+        if not N_CR==0:
+            Hist_Sensitivity_vs_Erec.SetBinContent(energy+1,5.*Err_N_CR/N_CR)
+        if not N_Data==0:
+            Hist_Sensitivity_vs_Erec_Other.SetBinContent(energy+1,5.*pow(2,0.5)*Err_N_Data/N_Data)
     Erec_cut_lower = energy_bins[0]
+    Erec_cut_upper = energy_bins[len(energy_bins)-1]
+    Elev_cut_lower = Elev_Bin[0]
+    Elev_cut_upper = Elev_Bin[len(Elev_Bin)-1]
+    Azim_cut_lower = Azim_Bin[0]
+    Azim_cut_upper = Azim_Bin[len(Azim_Bin)-1]
     MakeATag()
     MakeSumPlots()
 
@@ -1828,49 +1870,10 @@ def SensitivityVsTime(method):
 
 def MakePlots():
 
-    MakeStackPlot(Hist_theta2_Data_Sum,Hist_theta2_CR_Sum,Hist_theta2_Ring_Sum,'theta2')
+    if not (Hist_Erec_Data_SumE.Integral()==0 and Hist_Erec_CR_SumE.Integral()==0):
+        MakeStackPlot(Hist_theta2_Data_SumE,Hist_theta2_CR_SumE,Hist_theta2_Ring_SumE,'theta2')
+        MakeStackPlot(Hist_Erec_Data_SumE,Hist_Erec_CR_SumE,Hist_Erec_Ring_SumE,'Erec')
 
-    canvas = ROOT.TCanvas("canvas","canvas", 200, 10, 600, 600)
-    pad1 = ROOT.TPad("pad1","pad1",0,0,1,1)
-    pad1.SetBottomMargin(0.15)
-    pad1.SetRightMargin(0.15)
-    pad1.SetLeftMargin(0.15)
-    pad1.SetTopMargin(0.15)
-    pad1.SetBorderMode(0)
-    pad1.Draw()
-    pad1.cd()
-
-    pad1.SetLogz(0)
-    pad1.SetLogx(0)
-    pad1.SetLogy(0)
-    for bx in range(0,Hist2D_Xoff_vs_Yoff_Sig.GetNbinsX()):
-        for by in range(0,Hist2D_Xoff_vs_Yoff_Sig.GetNbinsY()):
-            this_data = Hist2D_Xoff_vs_Yoff_Data_Sum.GetBinContent(bx,by)
-            this_data_err = Hist2D_Xoff_vs_Yoff_Data_Sum.GetBinError(bx,by)
-            if add_signal: 
-                this_data = Hist2D_Xoff_vs_Yoff_Data_Sum_AddSignal.GetBinContent(bx,by)
-                this_data_err = Hist2D_Xoff_vs_Yoff_Data_Sum_AddSignal.GetBinError(bx,by)
-            this_bkg = Hist2D_Xoff_vs_Yoff_CR_Sum.GetBinContent(bx,by)
-            this_bkg_err = Hist2D_Xoff_vs_Yoff_CR_Sum.GetBinError(bx,by)
-            value = 0
-            if not this_bkg_err==0:
-                value = (this_data-this_bkg)/pow(this_bkg_err*this_bkg_err+this_data_err*this_data_err,0.5)
-            Hist2D_Xoff_vs_Yoff_Sig.SetBinContent(bx,by,value)
-    Hist2D_Xoff_vs_Yoff_Sig.GetYaxis().SetTitle('Yoff')
-    Hist2D_Xoff_vs_Yoff_Sig.GetXaxis().SetTitle('Xoff')
-    Hist2D_Xoff_vs_Yoff_Sig.GetZaxis().SetTitle('Significance')
-    Hist2D_Xoff_vs_Yoff_Sig.SetMaximum(5)
-    Hist2D_Xoff_vs_Yoff_Sig.SetMinimum(-3)
-    Hist2D_Xoff_vs_Yoff_Sig.Draw("COL4Z")
-    canvas.SaveAs('output/Xoff_vs_Yoff_Sig_%s.pdf'%(tag))
-    Hist2D_Xoff_vs_Yoff_Data_Sum.GetYaxis().SetTitle('Yoff')
-    Hist2D_Xoff_vs_Yoff_Data_Sum.GetXaxis().SetTitle('Xoff')
-    Hist2D_Xoff_vs_Yoff_Data_Sum.Draw("COL4Z")
-    canvas.SaveAs('output/Xoff_vs_Yoff_Data_%s.pdf'%(tag))
-    Hist2D_Xoff_vs_Yoff_CR_Sum.GetYaxis().SetTitle('Yoff')
-    Hist2D_Xoff_vs_Yoff_CR_Sum.GetXaxis().SetTitle('Xoff')
-    Hist2D_Xoff_vs_Yoff_CR_Sum.Draw("COL4Z")
-    canvas.SaveAs('output/Xoff_vs_Yoff_CR_%s.pdf'%(tag))
 
 def MakeSumPlots():
     MakeStackPlot(Hist_Erec_Data_Sum,Hist_Erec_CR_Sum,Hist_Erec_Ring_Sum,'Erec')
