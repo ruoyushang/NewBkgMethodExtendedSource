@@ -2,10 +2,10 @@
 import sys
 import runlist
 from runlist import *
-#import EmissionHeightMethodConfig
-#from EmissionHeightMethodConfig import *
-import MSCWMethodConfig
-from MSCWMethodConfig import *
+import EmissionHeightMethodConfig
+from EmissionHeightMethodConfig import *
+#import MSCWMethodConfig
+#from MSCWMethodConfig import *
 
 ROOT.gStyle.SetOptStat(0)
 ROOT.TH1.SetDefaultSumw2()
@@ -1852,6 +1852,10 @@ def EnergySpectrum(method):
                         print 'inflation = %s'%(inflation)
                     if cr_eff==0: continue
                     RunExtendedSourceAnalysisMSCWMethod('anasum',cr_eff,err_cr_eff)
+            Err_N_CR = ROOT.Double(0.)
+            N_CR = Hist_Erec_CR_SumE.IntegralAndError(1,Hist_Erec_CR_SumE.GetNbinsX(),Err_N_CR)
+            if not N_CR==0:
+                Hist2D_Sensitivity_vs_ElevAzim.SetBinContent(elev+1,azim+1,pow(Err_N_CR*Err_N_CR+N_CR,0.5)/N_CR)
             Erec_cut_lower = energy_bins[0]
             Erec_cut_upper = energy_bins[len(energy_bins)-1]
             MakeATag()
@@ -1869,9 +1873,9 @@ def EnergySpectrum(method):
         N_Data = Hist_Erec_Data_Sum.GetBinContent(energy+1)
         Err_N_Data = Hist_Erec_Data_Sum.GetBinError(energy+1)
         if not N_CR==0:
-            Hist_Sensitivity_vs_Erec.SetBinContent(energy+1,5.*Err_N_CR/N_CR)
+            Hist_Sensitivity_vs_Erec.SetBinContent(energy+1,5.*pow(Err_N_CR*Err_N_CR+Err_N_Data*Err_N_Data,0.5)/N_CR)
         if not N_Data==0:
-            Hist_Sensitivity_vs_Erec_Other.SetBinContent(energy+1,5.*pow(2,0.5)*Err_N_Data/N_Data)
+            Hist_Sensitivity_vs_Erec_Other.SetBinContent(energy+1,5.*pow(2,0.5)*pow(2.*Err_N_Data*Err_N_Data,0.5)/N_Data)
     Erec_cut_lower = energy_bins[0]
     Erec_cut_upper = energy_bins[len(energy_bins)-1]
     Elev_cut_lower = Elev_Bin[0]
@@ -2022,6 +2026,10 @@ def MakeSumPlots():
     Hist2D_Xoff_vs_Yoff_CR_Sum.GetXaxis().SetTitle('Xoff')
     Hist2D_Xoff_vs_Yoff_CR_Sum.Draw("COL4Z")
     canvas.SaveAs('output/Xoff_vs_Yoff_CR_%s.pdf'%(tag))
+    Hist2D_Sensitivity_vs_ElevAzim.GetYaxis().SetTitle('Tel. azimuth')
+    Hist2D_Sensitivity_vs_ElevAzim.GetXaxis().SetTitle('Tel. elevation')
+    Hist2D_Sensitivity_vs_ElevAzim.Draw("COL4Z TEXT0")
+    canvas.SaveAs('output/Sensitivity_vs_ElevAzim_%s.pdf'%(tag))
 
     Hist_Sensitivity_vs_Erec.GetYaxis().SetTitle('Signal flux excluded (Bg unit.)')
     Hist_Sensitivity_vs_Erec.GetXaxis().SetTitle('Erec')
@@ -2038,7 +2046,7 @@ def MakeSumPlots():
     Hist_TelElevAzim_Counts_source.GetYaxis().SetTitle('Tel. azimuth')
     Hist_TelElevAzim_Counts_source.Draw("COL4Z")
     Hist_TelElevAzim_Counts_target.SetLineColor(2)
-    Hist_TelElevAzim_Counts_target.Draw("CONT3")
+    Hist_TelElevAzim_Counts_target.Draw("CONT3 same")
     canvas.SaveAs('output/Source_vs_target_TelElevAzim_%s.pdf'%(tag))
     pad1.SetLogx(0)
     pad1.SetLogy(0)

@@ -6,7 +6,7 @@ from EmissionHeightMethodConfig import *
 
 MakeATag()
 #AttenuationRateAtDifferentHeight()
+EnergySpectrum("Height")
 #AttenuationRateAtDifferentTelElev()
 #AttenuationRateAtDifferentTelAzim()
-EnergySpectrum("Height")
 #SensitivityVsTime("Height")

@@ -36,12 +36,14 @@ MyRandom = TRandom()
 Hist_Norm_Data = TH1D("Hist_Norm_Data","",1,0,1)
 Hist_Norm_Ring = TH1D("Hist_Norm_Ring","",1,0,1)
 
-Elev_Bin = [50,60,70,80,90]
+Elev_Bin = [60,70,80,90]
 #Elev_Bin = [70,80]
 Hist_Elev_Bins = TH1D("Hist_Elev_Bins","",len(Elev_Bin)-1,array('d',Elev_Bin))
-Azim_Bin = [0,20,40,60,80]
+Azim_Bin = [0,20,40,60,80,100]
 #Azim_Bin = [40,60]
 Hist_Azim_Bins = TH1D("Hist_Azim_Bins","",len(Azim_Bin)-1,array('d',Azim_Bin))
+
+Hist2D_Sensitivity_vs_ElevAzim = TH2D("Hist2D_Sensitivity_vs_ElevAzim","",len(Elev_Bin)-1,array('d',Elev_Bin),len(Azim_Bin)-1,array('d',Azim_Bin))
 
 time_bins = [1,2,3,4,5]
 Hist_NData_vs_Time = TH1D("Hist_NData_vs_Time","",len(time_bins)-1,array('d',time_bins))
