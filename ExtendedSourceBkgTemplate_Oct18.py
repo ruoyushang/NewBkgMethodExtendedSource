@@ -81,11 +81,10 @@ def MakeATag():
     tag = ''
     tag += '_Elev%sto%s'%(Elev_cut_lower,Elev_cut_upper)
     tag += '_Azim%sto%s'%(Azim_cut_lower,Azim_cut_upper)
-    tag += '_MSCL%sto%s'%(MSCL_cut_lower,MSCL_cut_upper)
-    tag += '_MSCW%sto%s'%(MSCW_cut_lower,MSCW_cut_upper)
-    tag += '_Erec%0.1fto%0.1f'%(Erec_cut_lower,Erec_cut_upper)
-    tag += '_'+RW_method
-    tag += '_'+target+'_'+target_field
+    #tag += '_MSCL%sto%s'%(MSCL_cut_lower,MSCL_cut_upper)
+    #tag += '_MSCW%sto%s'%(MSCW_cut_lower,MSCW_cut_upper)
+    tag += '_Erec%dto%d'%(Erec_cut_lower*1000.,Erec_cut_upper*1000.)
+    tag += '_'+target
     tag += '_'+tag_method
 
 def GetEmissionHeightHistogram(source,region,run,data_type):
@@ -880,6 +879,17 @@ def RunExtendedSourceAnalysis(data_type,CR_attenu,err_CR_attenu,gamma_attenu,err
         Hist_theta2_zoomin_Data_Sum_AddSignal.Add(Hist_theta2_zoomin_Data_AddSignal)
     Hist_theta2_zoomin_CR_Sum.Add(Hist_theta2_zoomin_CR)
 
+    MakeATag()
+    OutputFile = ROOT.TFile("output/Histograms_%s_%s.root"%(target,tag_method),"update")
+    Hist_Erec_CR.Write("Hist_Erec_CR_%s"%(tag))
+    Hist_Erec_Data.Write("Hist_Erec_Data_%s"%(tag))
+    Hist_theta2_CR.Write("Hist_theta2_CR_%s"%(tag))
+    Hist_theta2_Data.Write("Hist_theta2_Data_%s"%(tag))
+    Hist_theta2_zoomin_CR.Write("Hist_theta2_zoomin_CR_%s"%(tag))
+    Hist_theta2_zoomin_Data.Write("Hist_theta2_zoomin_Data_%s"%(tag))
+    Hist2D_Xoff_vs_Yoff_CR.Write("Hist2D_Xoff_vs_Yoff_CR_%s"%(tag))
+    Hist2D_Xoff_vs_Yoff_Data.Write("Hist2D_Xoff_vs_Yoff_Data_%s"%(tag))
+    OutputFile.Close()
 
     Hist_Norm_Data.Reset()
     Hist_Norm_Ring.Reset()
@@ -1806,6 +1816,9 @@ def EnergySpectrum(method):
     global Azim_cut_upper
     global control_width
     global observation_time
+
+    OutputFile = ROOT.TFile("output/Histograms_%s_%s.root"%(target,tag_method),"recreate")
+    OutputFile.Close()
 
     for elev in range(0,len(Elev_Bin)-1):
         Elev_cut_lower = Elev_Bin[elev]
