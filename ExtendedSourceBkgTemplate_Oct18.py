@@ -2,10 +2,12 @@
 import sys
 import runlist
 from runlist import *
-import EmissionHeightMethodConfig
-from EmissionHeightMethodConfig import *
+#import EmissionHeightMethodConfig
+#from EmissionHeightMethodConfig import *
 #import MSCWMethodConfig
 #from MSCWMethodConfig import *
+import Config
+from Config import *
 
 ROOT.gStyle.SetOptStat(0)
 ROOT.TH1.SetDefaultSumw2()
@@ -26,8 +28,8 @@ MSCW_cut_upper = 0.7
 #NoSignalAssumption = True
 #MSCL_cut_lower = -2
 #MSCL_cut_upper = 0.7
-#MSCW_cut_lower = 3.
-#MSCW_cut_upper = 5.
+#MSCW_cut_lower = 2
+#MSCW_cut_upper = 3
 Erec_cut_lower = 0.1
 Erec_cut_upper = 1000
 
@@ -179,14 +181,14 @@ def GetAttenuationHistogram(source,region,run,data_type):
         azimuth = hist_Azi_vs_time.GetBinContent(hist_Azi_vs_time.FindBin(anasum_tree.Time))
         RA = hist_RA_vs_time.GetBinContent(hist_RA_vs_time.FindBin(anasum_tree.Time))
         Dec = hist_Dec_vs_time.GetBinContent(hist_Dec_vs_time.FindBin(anasum_tree.Time))
+        scale = 1
+        Hist_TelElev_Counts_source_Sum.Fill(elevation,scale)
+        Hist_TelAzim_Counts_source_Sum.Fill(azimuth,scale)
+        Hist_TelElevAzim_Counts_source.Fill(elevation,azimuth,scale)
         if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
         if AzimuthConverter(azimuth)<Azim_cut_lower or AzimuthConverter(azimuth)>Azim_cut_upper: continue
-        scale = 1
         if region == 'off':
             Hist_EmissionHeight_Source.Fill(anasum_tree.EmissionHeight,scale)
-            Hist_TelElev_Counts_source_Sum.Fill(elevation,scale)
-            Hist_TelAzim_Counts_source_Sum.Fill(AzimuthConverter(azimuth),scale)
-            Hist_TelElevAzim_Counts_source.Fill(elevation,AzimuthConverter(azimuth),scale)
         if ControlRegionHeightSelection(anasum_tree,elevation):
             if region == 'on':
                 Hist_OnData_Control.Fill(anasum_tree.MSCW,scale)
@@ -286,9 +288,9 @@ def GetTargetElevation(run):
         if not CommonSelection(anasum_tree): continue
         if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
         if AzimuthConverter(azimuth)<Azim_cut_lower or AzimuthConverter(azimuth)>Azim_cut_upper: continue
-        Hist_TelAzim_Counts_target.Fill(AzimuthConverter(azimuth))
+        Hist_TelAzim_Counts_target.Fill(azimuth)
         Hist_TelElev_Counts_target.Fill(elevation)
-        Hist_TelElevAzim_Counts_target.Fill(elevation,AzimuthConverter(azimuth))
+        Hist_TelElevAzim_Counts_target.Fill(elevation,azimuth)
 
 def MeasureEmissionHeightPeak():
 
@@ -569,6 +571,9 @@ def SingleRunAnalysisMSCW(source,region,run,data_type):
             if not CommonSelection(anasum_tree): continue
             #if region=="off":
             #    if anasum_tree.theta2<0.1: continue
+            Hist_TelElev_Counts_target_Sum.Fill(elevation)
+            Hist_TelAzim_Counts_target_Sum.Fill(azimuth)
+            Hist_TelElevAzim_Counts_target.Fill(elevation,azimuth)
             if (anasum_tree.MSCW>MSCW_cut_lower and anasum_tree.MSCW<MSCW_cut_upper):
                 Hist2D_TelElev_vs_EmissionHeight_Data_All.Fill(elevation,anasum_tree.EmissionHeight)
                 Hist2D_TelAzim_vs_EmissionHeight_Data_All.Fill(AzimuthConverter(azimuth),anasum_tree.EmissionHeight)
@@ -577,9 +582,6 @@ def SingleRunAnalysisMSCW(source,region,run,data_type):
             Hist_MSCW_Target.Fill(anasum_tree.MSCW)
             if (anasum_tree.MSCW>MSCW_cut_lower and anasum_tree.MSCW<MSCW_cut_upper):
                 Hist2D_Erec_vs_EmissionHeight_Data_All.Fill(anasum_tree.Erec,anasum_tree.EmissionHeight)
-                Hist_TelElev_Counts_target_Sum.Fill(elevation)
-                Hist_TelAzim_Counts_target_Sum.Fill(AzimuthConverter(azimuth))
-                Hist_TelElevAzim_Counts_target.Fill(elevation,AzimuthConverter(azimuth))
             scale = 1
             Xoff_derot = anasum_tree.Xoff_derot
             Yoff_derot = anasum_tree.Yoff_derot
@@ -669,6 +671,9 @@ def SingleRunAnalysis(source,region,run,data_type):
             if not CommonSelection(anasum_tree): continue
             #if region=="off":
             #    if anasum_tree.theta2<0.1: continue
+            Hist_TelElev_Counts_target_Sum.Fill(elevation)
+            Hist_TelAzim_Counts_target_Sum.Fill(azimuth)
+            Hist_TelElevAzim_Counts_target.Fill(elevation,azimuth)
             if (anasum_tree.MSCW>MSCW_cut_lower and anasum_tree.MSCW<MSCW_cut_upper):
                 Hist2D_TelElev_vs_EmissionHeight_Data_All.Fill(elevation,anasum_tree.EmissionHeight)
                 Hist2D_TelAzim_vs_EmissionHeight_Data_All.Fill(AzimuthConverter(azimuth),anasum_tree.EmissionHeight)
@@ -677,9 +682,6 @@ def SingleRunAnalysis(source,region,run,data_type):
             if (anasum_tree.MSCW>MSCW_cut_lower and anasum_tree.MSCW<MSCW_cut_upper):
                 Hist2D_Erec_vs_EmissionHeight_Data_All.Fill(anasum_tree.Erec,anasum_tree.EmissionHeight)
                 Hist_EmissionHeight_Target.Fill(anasum_tree.EmissionHeight)
-                Hist_TelElev_Counts_target_Sum.Fill(elevation)
-                Hist_TelAzim_Counts_target_Sum.Fill(AzimuthConverter(azimuth))
-                Hist_TelElevAzim_Counts_target.Fill(elevation,AzimuthConverter(azimuth))
             scale = 1
             Xoff_derot = anasum_tree.Xoff_derot
             Yoff_derot = anasum_tree.Yoff_derot
@@ -881,14 +883,14 @@ def RunExtendedSourceAnalysis(data_type,CR_attenu,err_CR_attenu,gamma_attenu,err
 
     MakeATag()
     OutputFile = ROOT.TFile("output/Histograms_%s_%s.root"%(target,tag_method),"update")
-    Hist_Erec_CR.Write("Hist_Erec_CR_%s"%(tag))
-    Hist_Erec_Data.Write("Hist_Erec_Data_%s"%(tag))
+    Hist_Erec_CR.Write("Hist_Energy_CR_%s"%(tag))
+    Hist_Erec_Data.Write("Hist_Energy_Data_%s"%(tag))
     Hist_theta2_CR.Write("Hist_theta2_CR_%s"%(tag))
     Hist_theta2_Data.Write("Hist_theta2_Data_%s"%(tag))
-    Hist_theta2_zoomin_CR.Write("Hist_theta2_zoomin_CR_%s"%(tag))
-    Hist_theta2_zoomin_Data.Write("Hist_theta2_zoomin_Data_%s"%(tag))
-    Hist2D_Xoff_vs_Yoff_CR.Write("Hist2D_Xoff_vs_Yoff_CR_%s"%(tag))
-    Hist2D_Xoff_vs_Yoff_Data.Write("Hist2D_Xoff_vs_Yoff_Data_%s"%(tag))
+    Hist_theta2_zoomin_CR.Write("Hist_theta2zoomin_CR_%s"%(tag))
+    Hist_theta2_zoomin_Data.Write("Hist_theta2zoomin_Data_%s"%(tag))
+    Hist2D_Xoff_vs_Yoff_CR.Write("Hist2D_XoffVsYoff_CR_%s"%(tag))
+    Hist2D_Xoff_vs_Yoff_Data.Write("Hist2D_XoffVsYoff_Data_%s"%(tag))
     OutputFile.Close()
 
     Hist_Norm_Data.Reset()
@@ -1526,14 +1528,14 @@ def GetEfficiencyHistogram(source,region,run,data_type):
         azimuth = hist_Azi_vs_time.GetBinContent(hist_Azi_vs_time.FindBin(anasum_tree.Time))
         RA = hist_RA_vs_time.GetBinContent(hist_RA_vs_time.FindBin(anasum_tree.Time))
         Dec = hist_Dec_vs_time.GetBinContent(hist_Dec_vs_time.FindBin(anasum_tree.Time))
+        scale = 1
+        Hist_TelElev_Counts_source_Sum.Fill(elevation,scale)
+        Hist_TelAzim_Counts_source_Sum.Fill(azimuth,scale)
+        Hist_TelElevAzim_Counts_source.Fill(elevation,azimuth,scale)
         if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
         if AzimuthConverter(azimuth)<Azim_cut_lower or AzimuthConverter(azimuth)>Azim_cut_upper: continue
-        scale = 1
         if region == 'off':
             Hist_MSCW_Source.Fill(anasum_tree.MSCW,scale)
-            Hist_TelElev_Counts_source_Sum.Fill(elevation,scale)
-            Hist_TelAzim_Counts_source_Sum.Fill(AzimuthConverter(azimuth),scale)
-            Hist_TelElevAzim_Counts_source.Fill(elevation,AzimuthConverter(azimuth),scale)
         if ControlRegionMSCWSelection(anasum_tree,elevation):
             Hist_OffData_Control.Fill(0,scale)
         if SignalRegionMSCWSelection(anasum_tree,elevation):
@@ -1694,6 +1696,17 @@ def RunExtendedSourceAnalysisMSCWMethod(data_type,CR_Efficiency,err_CR_Efficienc
         Hist_theta2_zoomin_Data_Sum_AddSignal.Add(Hist_theta2_zoomin_Data_AddSignal)
     Hist_theta2_zoomin_CR_Sum.Add(Hist_theta2_zoomin_CR)
 
+    MakeATag()
+    OutputFile = ROOT.TFile("output/Histograms_%s_%s.root"%(target,tag_method),"update")
+    Hist_Erec_CR.Write("Hist_Energy_CR_%s"%(tag))
+    Hist_Erec_Data.Write("Hist_Energy_Data_%s"%(tag))
+    Hist_theta2_CR.Write("Hist_theta2_CR_%s"%(tag))
+    Hist_theta2_Data.Write("Hist_theta2_Data_%s"%(tag))
+    Hist_theta2_zoomin_CR.Write("Hist_theta2zoomin_CR_%s"%(tag))
+    Hist_theta2_zoomin_Data.Write("Hist_theta2zoomin_Data_%s"%(tag))
+    Hist2D_Xoff_vs_Yoff_CR.Write("Hist2D_XoffVsYoff_CR_%s"%(tag))
+    Hist2D_Xoff_vs_Yoff_Data.Write("Hist2D_XoffVsYoff_Data_%s"%(tag))
+    OutputFile.Close()
     
     Hist_Norm_Data.Reset()
     Hist_Norm_Ring.Reset()
@@ -1816,6 +1829,9 @@ def EnergySpectrum(method):
     global Azim_cut_upper
     global control_width
     global observation_time
+    global tag_method
+
+    tag_method = method
 
     OutputFile = ROOT.TFile("output/Histograms_%s_%s.root"%(target,tag_method),"recreate")
     OutputFile.Close()
@@ -2057,7 +2073,8 @@ def MakeSumPlots():
     pad1.SetLogz()
     Hist_TelElevAzim_Counts_source.GetXaxis().SetTitle('Tel. elevation')
     Hist_TelElevAzim_Counts_source.GetYaxis().SetTitle('Tel. azimuth')
-    Hist_TelElevAzim_Counts_source.Draw("COL4Z")
+    Hist_TelElevAzim_Counts_source.SetLineColor(4)
+    Hist_TelElevAzim_Counts_source.Draw("CONT3")
     Hist_TelElevAzim_Counts_target.SetLineColor(2)
     Hist_TelElevAzim_Counts_target.Draw("CONT3 same")
     canvas.SaveAs('output/Source_vs_target_TelElevAzim_%s.pdf'%(tag))
