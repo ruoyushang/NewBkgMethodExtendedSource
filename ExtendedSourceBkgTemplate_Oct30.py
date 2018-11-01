@@ -20,16 +20,16 @@ Elev_cut_lower = 0
 Elev_cut_upper = 0
 Azim_cut_lower = 0
 Azim_cut_upper = 0
-#NoSignalAssumption = False
-#MSCL_cut_lower = -2
-#MSCL_cut_upper = 0.7
-#MSCW_cut_lower = -2
-#MSCW_cut_upper = 0.7
-NoSignalAssumption = True
+NoSignalAssumption = False
 MSCL_cut_lower = -2
 MSCL_cut_upper = 0.7
-MSCW_cut_lower = 2
-MSCW_cut_upper = 3
+MSCW_cut_lower = -2
+MSCW_cut_upper = 0.7
+#NoSignalAssumption = True
+#MSCL_cut_lower = -2
+#MSCL_cut_upper = 0.7
+#MSCW_cut_lower = 2
+#MSCW_cut_upper = 3
 Erec_cut_lower = 0.1
 Erec_cut_upper = 1000
 
@@ -180,14 +180,14 @@ def GetAttenuationHistogram(source,region,run,data_type):
             Hist_EmissionHeight_Source.Fill(anasum_tree.EmissionHeight,scale)
         if ControlRegionHeightSelection(anasum_tree,elevation):
             if region == 'on':
-                Hist_OnData_Control.Fill(anasum_tree.MSCW,scale)
+                Hist_OnData_Control.Fill(0,scale)
             else:
-                Hist_OffData_Control.Fill(anasum_tree.MSCW,scale)
+                Hist_OffData_Control.Fill(0,scale)
         if SignalRegionSelection(anasum_tree,elevation):
             if region == 'on':
-                Hist_OnData_Signal.Fill(anasum_tree.MSCW,scale)
+                Hist_OnData_Signal.Fill(0,scale)
             else:
-                Hist_OffData_Signal.Fill(anasum_tree.MSCW,scale)
+                Hist_OffData_Signal.Fill(0,scale)
 
 def GetSourceAzimuth(run):
 
@@ -897,18 +897,6 @@ def SingleRunAnalysis(source,region,run,data_type):
     observation_time += observation_time_this_run
     #print 'current observation time = %s min.'%(observation_time/60.)
 
-    #if region == 'on' and data_type=='anasum':
-    #    for i in range(0,ring_tree.GetEntries()):
-    #        ring_tree.GetEntry(i)
-    #        if not CommonSelection(ring_tree): continue
-    #        elevation = hist_Ele_vs_time.GetBinContent(hist_Ele_vs_time.FindBin(ring_tree.Time))
-    #        azimuth = hist_Azi_vs_time.GetBinContent(hist_Azi_vs_time.FindBin(ring_tree.Time))
-    #        if elevation<Elev_cut_lower or elevation>Elev_cut_upper: continue
-    #        if SignalRegionHeightSelection(ring_tree,elevation):
-    #            if (ring_tree.MSCW<1.):
-    #                Hist_Erec_Ring.Fill(min(energy_bins[len(energy_bins)-2],ring_tree.Erec))
-    #            if (ring_tree.MSCW>3.):
-    #                Hist_Norm_Ring.Fill(0)
 
 def CalculateBkgMSCWMethod(Hist_CR,Hist_Data,Hist_CR_Raw,CR_attenu,err_CR_attenu):
 
@@ -1068,7 +1056,7 @@ def RunExtendedSourceAnalysis(data_type,CR_attenu,err_CR_attenu,gamma_attenu,err
 
     MakeATag()
     if NoSignalAssumption:
-        OutputFile = ROOT.TFile("output/Histograms_%s_%s_VR.root"%(target,tag_method),"recreate")
+        OutputFile = ROOT.TFile("output/Histograms_%s_%s_VR.root"%(target,tag_method),"update")
     else:
         OutputFile = ROOT.TFile("output/Histograms_%s_%s.root"%(target,tag_method),"update")
     Hist_Erec_CR.Write("Hist_Energy_CR_%s"%(tag))
@@ -1978,7 +1966,7 @@ def RunExtendedSourceAnalysisMSCLMethod(data_type,CR_Efficiency,err_CR_Efficienc
 
     MakeATag()
     if NoSignalAssumption:
-        OutputFile = ROOT.TFile("output/Histograms_%s_%s_VR.root"%(target,tag_method),"recreate")
+        OutputFile = ROOT.TFile("output/Histograms_%s_%s_VR.root"%(target,tag_method),"update")
     else:
         OutputFile = ROOT.TFile("output/Histograms_%s_%s.root"%(target,tag_method),"update")
     Hist_Erec_CR.Write("Hist_Energy_CR_%s"%(tag))
@@ -2138,7 +2126,7 @@ def RunExtendedSourceAnalysisMSCWMethod(data_type,CR_Efficiency,err_CR_Efficienc
 
     MakeATag()
     if NoSignalAssumption:
-        OutputFile = ROOT.TFile("output/Histograms_%s_%s_VR.root"%(target,tag_method),"recreate")
+        OutputFile = ROOT.TFile("output/Histograms_%s_%s_VR.root"%(target,tag_method),"update")
     else:
         OutputFile = ROOT.TFile("output/Histograms_%s_%s.root"%(target,tag_method),"update")
     Hist_Erec_CR.Write("Hist_Energy_CR_%s"%(tag))
