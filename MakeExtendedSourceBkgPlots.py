@@ -32,14 +32,16 @@ ErecS_upper_cut = 1e10
 MSCL_lower_cut = -1.0
 MSCL_upper_cut = 1.0
 
-Variable = '_ErecS_'
-xtitle = 'E [GeV]'
-#Variable = '_Theta2_'
-#xtitle = '#theta^{2}'
-#Variable = '_theta2zoomin_'
-#xtitle = '#theta^{2}'
-#Variable = '_XoffVsYoff_'
-#xtitle = ''
+Variable = ''
+xtitle = ''
+variable_list = []
+xtitle_list = []
+variable_list += ['_ErecS_']
+xtitle_list += ['E [GeV]']
+variable_list += ['_Theta2_']
+xtitle_list += ['#theta^{2}']
+variable_list += ['_Theta2ZoomIn_']
+xtitle_list += ['#theta^{2}']
 
 AddSyst = True
 #AddSyst = False
@@ -54,7 +56,7 @@ IncludeMSCLMethod = False
 IncludeDepthUpperMethod = True
 #IncludeDepthLowerMethod = True
 IncludeMSCWMethod = True
-#IncludeMSCLMethod = True
+IncludeMSCLMethod = True
 
 def set_histStyle( hist , color):
     hist.SetFillColor(color)
@@ -347,330 +349,271 @@ def SelectDiagnosticaHistograms(folder,method,isSR,var):
 
 for s in source_list:
     source = s
-    if IncludeDepthUpperMethod:
-        Hist_Loose_SlantDepth_Crab_On = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Loose_SlantDepth_Crab_On')
-        Hist_Loose_SlantDepth_Crab_Off = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Loose_SlantDepth_Crab_Off')
-        Hist_Loose_SlantDepth_Target_On = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Loose_SlantDepth_Target_On')
-        MakeDiagnosticPlot(Hist_Loose_SlantDepth_Crab_On,Hist_Loose_SlantDepth_Crab_Off,Hist_Loose_SlantDepth_Target_On,'Slant Depth [1000 kg/m^{2}]','Loose_SlantDepth_Upper')
-        Hist_Loose_SlantDepth_Crab_On_TeV = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Loose_SlantDepth_Crab_On_TeV')
-        Hist_Loose_SlantDepth_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Loose_SlantDepth_Crab_Off_TeV')
-        Hist_Loose_SlantDepth_Target_On_TeV = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Loose_SlantDepth_Target_On_TeV')
-        MakeDiagnosticPlot(Hist_Loose_SlantDepth_Crab_On_TeV,Hist_Loose_SlantDepth_Crab_Off_TeV,Hist_Loose_SlantDepth_Target_On_TeV,'Slant Depth [1000 kg/m^{2}]','Loose_SlantDepth_TeV_Upper')
-        Hist_Tight_SlantDepth_Crab_On = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Tight_SlantDepth_Crab_On')
-        Hist_Tight_SlantDepth_Crab_Off = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Tight_SlantDepth_Crab_Off')
-        Hist_Tight_SlantDepth_Target_On = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Tight_SlantDepth_Target_On')
-        MakeDiagnosticPlot(Hist_Tight_SlantDepth_Crab_On,Hist_Tight_SlantDepth_Crab_Off,Hist_Tight_SlantDepth_Target_On,'Slant Depth [1000 kg/m^{2}]','Tight_SlantDepth_Upper')
-        Hist_Tight_SlantDepth_Crab_On_TeV = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Tight_SlantDepth_Crab_On_TeV')
-        Hist_Tight_SlantDepth_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Tight_SlantDepth_Crab_Off_TeV')
-        Hist_Tight_SlantDepth_Target_On_TeV = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Tight_SlantDepth_Target_On_TeV')
-        MakeDiagnosticPlot(Hist_Tight_SlantDepth_Crab_On_TeV,Hist_Tight_SlantDepth_Crab_Off_TeV,Hist_Tight_SlantDepth_Target_On_TeV,'Slant Depth [1000 kg/m^{2}]','Tight_SlantDepth_TeV_Upper')
-    if IncludeDepthLowerMethod:
-        Hist_Loose_SlantDepth_Crab_On = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Loose_SlantDepth_Crab_On')
-        Hist_Loose_SlantDepth_Crab_Off = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Loose_SlantDepth_Crab_Off')
-        Hist_Loose_SlantDepth_Target_On = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Loose_SlantDepth_Target_On')
-        MakeDiagnosticPlot(Hist_Loose_SlantDepth_Crab_On,Hist_Loose_SlantDepth_Crab_Off,Hist_Loose_SlantDepth_Target_On,'Slant Depth [1000 kg/m^{2}]','Loose_SlantDepth_Lower')
-        Hist_Loose_SlantDepth_Crab_On_TeV = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Loose_SlantDepth_Crab_On_TeV')
-        Hist_Loose_SlantDepth_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Loose_SlantDepth_Crab_Off_TeV')
-        Hist_Loose_SlantDepth_Target_On_TeV = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Loose_SlantDepth_Target_On_TeV')
-        MakeDiagnosticPlot(Hist_Loose_SlantDepth_Crab_On_TeV,Hist_Loose_SlantDepth_Crab_Off_TeV,Hist_Loose_SlantDepth_Target_On_TeV,'Slant Depth [1000 kg/m^{2}]','Loose_SlantDepth_TeV_Lower')
-        Hist_Tight_SlantDepth_Crab_On = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Tight_SlantDepth_Crab_On')
-        Hist_Tight_SlantDepth_Crab_Off = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Tight_SlantDepth_Crab_Off')
-        Hist_Tight_SlantDepth_Target_On = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Tight_SlantDepth_Target_On')
-        MakeDiagnosticPlot(Hist_Tight_SlantDepth_Crab_On,Hist_Tight_SlantDepth_Crab_Off,Hist_Tight_SlantDepth_Target_On,'Slant Depth [1000 kg/m^{2}]','Tight_SlantDepth_Lower')
-        Hist_Tight_SlantDepth_Crab_On_TeV = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Tight_SlantDepth_Crab_On_TeV')
-        Hist_Tight_SlantDepth_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Tight_SlantDepth_Crab_Off_TeV')
-        Hist_Tight_SlantDepth_Target_On_TeV = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Tight_SlantDepth_Target_On_TeV')
-        MakeDiagnosticPlot(Hist_Tight_SlantDepth_Crab_On_TeV,Hist_Tight_SlantDepth_Crab_Off_TeV,Hist_Tight_SlantDepth_Target_On_TeV,'Slant Depth [1000 kg/m^{2}]','Tight_SlantDepth_TeV_Lower')
-    if IncludeMSCWMethod:
-        Hist_Loose_MSCW_Crab_On = SelectDiagnosticaHistograms(folder,'MSCW','SR','Loose_MSCW_Crab_On')
-        Hist_Loose_MSCW_Crab_Off = SelectDiagnosticaHistograms(folder,'MSCW','SR','Loose_MSCW_Crab_Off')
-        Hist_Loose_MSCW_Target_On = SelectDiagnosticaHistograms(folder,'MSCW','SR','Loose_MSCW_Target_On')
-        MakeDiagnosticPlot(Hist_Loose_MSCW_Crab_On,Hist_Loose_MSCW_Crab_Off,Hist_Loose_MSCW_Target_On,'MSCW','Loose_MSCW')
-        Hist_Loose_MSCW_Crab_On_TeV = SelectDiagnosticaHistograms(folder,'MSCW','SR','Loose_MSCW_Crab_On_TeV')
-        Hist_Loose_MSCW_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'MSCW','SR','Loose_MSCW_Crab_Off_TeV')
-        Hist_Loose_MSCW_Target_On_TeV = SelectDiagnosticaHistograms(folder,'MSCW','SR','Loose_MSCW_Target_On_TeV')
-        MakeDiagnosticPlot(Hist_Loose_MSCW_Crab_On_TeV,Hist_Loose_MSCW_Crab_Off_TeV,Hist_Loose_MSCW_Target_On_TeV,'MSCW','Loose_MSCW_TeV')
-        Hist_Tight_MSCW_Crab_On = SelectDiagnosticaHistograms(folder,'MSCW','SR','Tight_MSCW_Crab_On')
-        Hist_Tight_MSCW_Crab_Off = SelectDiagnosticaHistograms(folder,'MSCW','SR','Tight_MSCW_Crab_Off')
-        Hist_Tight_MSCW_Target_On = SelectDiagnosticaHistograms(folder,'MSCW','SR','Tight_MSCW_Target_On')
-        MakeDiagnosticPlot(Hist_Tight_MSCW_Crab_On,Hist_Tight_MSCW_Crab_Off,Hist_Tight_MSCW_Target_On,'MSCW','Tight_MSCW')
-        Hist_Tight_MSCW_Crab_On_TeV = SelectDiagnosticaHistograms(folder,'MSCW','SR','Tight_MSCW_Crab_On_TeV')
-        Hist_Tight_MSCW_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'MSCW','SR','Tight_MSCW_Crab_Off_TeV')
-        Hist_Tight_MSCW_Target_On_TeV = SelectDiagnosticaHistograms(folder,'MSCW','SR','Tight_MSCW_Target_On_TeV')
-        MakeDiagnosticPlot(Hist_Tight_MSCW_Crab_On_TeV,Hist_Tight_MSCW_Crab_Off_TeV,Hist_Tight_MSCW_Target_On_TeV,'MSCW','Tight_MSCW_TeV')
-    
-    if MSCW_upper_cut<=1:
-        if IncludeHeightMethod:
-            Hist_Data_Height = SelectHistograms(folder,'Height','SR','SR')
-            Hist_CR_Height = SelectHistograms(folder,'Height','Bkg','SR')
-            Hist_Temp = Hist_Data_Height.Clone()
-        if IncludeMSCWMethod:
-            Hist_Data_MSCW = SelectHistograms(folder,'MSCW','SR','SR')
-            Hist_CR_MSCW = SelectHistograms(folder,'MSCW','Bkg','SR')
-            Hist_Temp = Hist_Data_MSCW.Clone()
-        if IncludeMSCLMethod:
-            Hist_Data_MSCL = SelectHistograms(folder,'MSCL','SR','SR')
-            Hist_CR_MSCL = SelectHistograms(folder,'MSCL','Bkg','SR')
-            Hist_Temp = Hist_Data_MSCL.Clone()
+    for v in range(0,len(variable_list)):
+        Variable = variable_list[v]
+        xtitle = xtitle_list[v]
         if IncludeDepthUpperMethod:
-            Hist_Data_DepthUpper = SelectHistograms(folder,'DepthUpper','SR','SR')
-            Hist_CR_DepthUpper = SelectHistograms(folder,'DepthUpper','Bkg','SR')
-            Hist_Temp = Hist_Data_DepthUpper.Clone()
+            Hist_Loose_SlantDepth_Crab_On = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Loose_SlantDepth_Crab_On')
+            Hist_Loose_SlantDepth_Crab_Off = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Loose_SlantDepth_Crab_Off')
+            Hist_Loose_SlantDepth_Target_On = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Loose_SlantDepth_Target_On')
+            MakeDiagnosticPlot(Hist_Loose_SlantDepth_Crab_On,Hist_Loose_SlantDepth_Crab_Off,Hist_Loose_SlantDepth_Target_On,'Slant Depth [1000 kg/m^{2}]','Loose_SlantDepth_Upper')
+            Hist_Loose_SlantDepth_Crab_On_TeV = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Loose_SlantDepth_Crab_On_TeV')
+            Hist_Loose_SlantDepth_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Loose_SlantDepth_Crab_Off_TeV')
+            Hist_Loose_SlantDepth_Target_On_TeV = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Loose_SlantDepth_Target_On_TeV')
+            MakeDiagnosticPlot(Hist_Loose_SlantDepth_Crab_On_TeV,Hist_Loose_SlantDepth_Crab_Off_TeV,Hist_Loose_SlantDepth_Target_On_TeV,'Slant Depth [1000 kg/m^{2}]','Loose_SlantDepth_TeV_Upper')
+            Hist_Tight_SlantDepth_Crab_On = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Tight_SlantDepth_Crab_On')
+            Hist_Tight_SlantDepth_Crab_Off = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Tight_SlantDepth_Crab_Off')
+            Hist_Tight_SlantDepth_Target_On = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Tight_SlantDepth_Target_On')
+            MakeDiagnosticPlot(Hist_Tight_SlantDepth_Crab_On,Hist_Tight_SlantDepth_Crab_Off,Hist_Tight_SlantDepth_Target_On,'Slant Depth [1000 kg/m^{2}]','Tight_SlantDepth_Upper')
+            Hist_Tight_SlantDepth_Crab_On_TeV = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Tight_SlantDepth_Crab_On_TeV')
+            Hist_Tight_SlantDepth_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Tight_SlantDepth_Crab_Off_TeV')
+            Hist_Tight_SlantDepth_Target_On_TeV = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Tight_SlantDepth_Target_On_TeV')
+            MakeDiagnosticPlot(Hist_Tight_SlantDepth_Crab_On_TeV,Hist_Tight_SlantDepth_Crab_Off_TeV,Hist_Tight_SlantDepth_Target_On_TeV,'Slant Depth [1000 kg/m^{2}]','Tight_SlantDepth_TeV_Upper')
         if IncludeDepthLowerMethod:
-            Hist_Data_DepthLower = SelectHistograms(folder,'DepthLower','SR','SR')
-            Hist_CR_DepthLower = SelectHistograms(folder,'DepthLower','Bkg','SR')
-            Hist_Temp = Hist_Data_DepthLower.Clone()
-    else:
-        if IncludeHeightMethod:
-            Hist_Data_Height = SelectHistograms(folder,'Height','SR','VR')
-            Hist_CR_Height = SelectHistograms(folder,'Height','Bkg','VR')
-            Hist_Temp = Hist_Data_Height.Clone()
+            Hist_Loose_SlantDepth_Crab_On = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Loose_SlantDepth_Crab_On')
+            Hist_Loose_SlantDepth_Crab_Off = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Loose_SlantDepth_Crab_Off')
+            Hist_Loose_SlantDepth_Target_On = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Loose_SlantDepth_Target_On')
+            MakeDiagnosticPlot(Hist_Loose_SlantDepth_Crab_On,Hist_Loose_SlantDepth_Crab_Off,Hist_Loose_SlantDepth_Target_On,'Slant Depth [1000 kg/m^{2}]','Loose_SlantDepth_Lower')
+            Hist_Loose_SlantDepth_Crab_On_TeV = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Loose_SlantDepth_Crab_On_TeV')
+            Hist_Loose_SlantDepth_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Loose_SlantDepth_Crab_Off_TeV')
+            Hist_Loose_SlantDepth_Target_On_TeV = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Loose_SlantDepth_Target_On_TeV')
+            MakeDiagnosticPlot(Hist_Loose_SlantDepth_Crab_On_TeV,Hist_Loose_SlantDepth_Crab_Off_TeV,Hist_Loose_SlantDepth_Target_On_TeV,'Slant Depth [1000 kg/m^{2}]','Loose_SlantDepth_TeV_Lower')
+            Hist_Tight_SlantDepth_Crab_On = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Tight_SlantDepth_Crab_On')
+            Hist_Tight_SlantDepth_Crab_Off = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Tight_SlantDepth_Crab_Off')
+            Hist_Tight_SlantDepth_Target_On = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Tight_SlantDepth_Target_On')
+            MakeDiagnosticPlot(Hist_Tight_SlantDepth_Crab_On,Hist_Tight_SlantDepth_Crab_Off,Hist_Tight_SlantDepth_Target_On,'Slant Depth [1000 kg/m^{2}]','Tight_SlantDepth_Lower')
+            Hist_Tight_SlantDepth_Crab_On_TeV = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Tight_SlantDepth_Crab_On_TeV')
+            Hist_Tight_SlantDepth_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Tight_SlantDepth_Crab_Off_TeV')
+            Hist_Tight_SlantDepth_Target_On_TeV = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Tight_SlantDepth_Target_On_TeV')
+            MakeDiagnosticPlot(Hist_Tight_SlantDepth_Crab_On_TeV,Hist_Tight_SlantDepth_Crab_Off_TeV,Hist_Tight_SlantDepth_Target_On_TeV,'Slant Depth [1000 kg/m^{2}]','Tight_SlantDepth_TeV_Lower')
         if IncludeMSCWMethod:
-            Hist_Data_MSCW = SelectHistograms(folder,'MSCW','SR','VR')
-            Hist_CR_MSCW = SelectHistograms(folder,'MSCW','Bkg','VR')
-            Hist_Temp = Hist_Data_MSCW.Clone()
-        if IncludeMSCLMethod:
-            Hist_Data_MSCL = SelectHistograms(folder,'MSCL','SR','VR')
-            Hist_CR_MSCL = SelectHistograms(folder,'MSCL','Bkg','VR')
-            Hist_Temp = Hist_Data_MSCL.Clone()
-        if IncludeDepthUpperMethod:
-            Hist_Data_DepthUpper = SelectHistograms(folder,'DepthUpper','SR','VR')
-            Hist_CR_DepthUpper = SelectHistograms(folder,'DepthUpper','Bkg','VR')
-            Hist_Temp = Hist_Data_DepthUpper.Clone()
-        if IncludeDepthLowerMethod:
-            Hist_Data_DepthLower = SelectHistograms(folder,'DepthLower','SR','VR')
-            Hist_CR_DepthLower = SelectHistograms(folder,'DepthLower','Bkg','VR')
-            Hist_Temp = Hist_Data_DepthLower.Clone()
-    
-    if AddSyst:
-        if IncludeHeightMethod:
-            Hist_VR_Data_Height = SelectHistograms(folder,'Height','SR','VR')
-            Hist_VR_CR_Height = SelectHistograms(folder,'Height','Bkg','VR')
-            Hist_Syst_Height = Hist_VR_Data_Height.Clone()
-            Hist_Syst_Height.Add(Hist_VR_CR_Height,-1)
-            Hist_Syst_Height.Divide(Hist_VR_CR_Height)
-        if IncludeDepthUpperMethod:
-            Hist_VR_Data_DepthUpper = SelectHistograms(folder,'DepthUpper','SR','VR')
-            Hist_VR_CR_DepthUpper = SelectHistograms(folder,'DepthUpper','Bkg','VR')
-            Hist_Syst_DepthUpper = Hist_VR_Data_DepthUpper.Clone()
-            Hist_Syst_DepthUpper.Add(Hist_VR_CR_DepthUpper,-1)
-            Hist_Syst_DepthUpper.Divide(Hist_VR_CR_DepthUpper)
-        if IncludeDepthLowerMethod:
-            Hist_VR_Data_DepthLower = SelectHistograms(folder,'DepthLower','SR','VR')
-            Hist_VR_CR_DepthLower = SelectHistograms(folder,'DepthLower','Bkg','VR')
-            Hist_Syst_DepthLower = Hist_VR_Data_DepthLower.Clone()
-            Hist_Syst_DepthLower.Add(Hist_VR_CR_DepthLower,-1)
-            Hist_Syst_DepthLower.Divide(Hist_VR_CR_DepthLower)
-        if IncludeMSCWMethod:
-            Hist_VR_Data_MSCW = SelectHistograms(folder,'MSCW','SR','VR')
-            Hist_VR_CR_MSCW = SelectHistograms(folder,'MSCW','Bkg','VR')
-            Hist_Syst_MSCW = Hist_VR_Data_MSCW.Clone()
-            Hist_Syst_MSCW.Add(Hist_VR_CR_MSCW,-1)
-            Hist_Syst_MSCW.Divide(Hist_VR_CR_MSCW)
-            #Hist_Syst_MSCW.Scale(2)
-        if IncludeMSCLMethod:
-            Hist_VR_Data_MSCL = SelectHistograms(folder,'MSCL','SR','VR')
-            Hist_VR_CR_MSCL = SelectHistograms(folder,'MSCL','Bkg','VR')
-            Hist_Syst_MSCL = Hist_VR_Data_MSCL.Clone()
-            Hist_Syst_MSCL.Add(Hist_VR_CR_MSCL,-1)
-            Hist_Syst_MSCL.Divide(Hist_VR_CR_MSCL)
-            #Hist_Syst_MSCL.Scale(2)
-    
-    if IncludeHeightMethod:
-        for b in range(0,Hist_CR_Height.GetNbinsX()):
-            CR_Height = Hist_CR_Height.GetBinContent(b+1)
-            ErrCR_Height = Hist_CR_Height.GetBinError(b+1)
-            if AddSyst:
-                SystCR_Height = (Hist_Syst_Height.GetBinContent(b+1)*Hist_CR_Height.GetBinContent(b+1))
-                ErrCR_Height = pow(ErrCR_Height*ErrCR_Height+SystCR_Height*SystCR_Height,0.5)
-                Hist_CR_Height.SetBinError(b+1,ErrCR_Height)
-                Hist_CR_Height.SetBinContent(b+1,SystCR_Height+Hist_CR_Height.GetBinContent(b+1))
-    if IncludeDepthUpperMethod:
-        for b in range(0,Hist_CR_DepthUpper.GetNbinsX()):
-            CR_DepthUpper = Hist_CR_DepthUpper.GetBinContent(b+1)
-            ErrCR_DepthUpper = Hist_CR_DepthUpper.GetBinError(b+1)
-            if AddSyst:
-                SystCR_DepthUpper = (Hist_Syst_DepthUpper.GetBinContent(b+1)*Hist_CR_DepthUpper.GetBinContent(b+1))
-                ErrCR_DepthUpper = pow(ErrCR_DepthUpper*ErrCR_DepthUpper+SystCR_DepthUpper*SystCR_DepthUpper,0.5)
-                Hist_CR_DepthUpper.SetBinError(b+1,ErrCR_DepthUpper)
-                Hist_CR_DepthUpper.SetBinContent(b+1,SystCR_DepthUpper+Hist_CR_DepthUpper.GetBinContent(b+1))
-    if IncludeDepthLowerMethod:
-        for b in range(0,Hist_CR_DepthLower.GetNbinsX()):
-            CR_DepthLower = Hist_CR_DepthLower.GetBinContent(b+1)
-            ErrCR_DepthLower = Hist_CR_DepthLower.GetBinError(b+1)
-            if AddSyst:
-                SystCR_DepthLower = (Hist_Syst_DepthLower.GetBinContent(b+1)*Hist_CR_DepthLower.GetBinContent(b+1))
-                ErrCR_DepthLower = pow(ErrCR_DepthLower*ErrCR_DepthLower+SystCR_DepthLower*SystCR_DepthLower,0.5)
-                Hist_CR_DepthLower.SetBinError(b+1,ErrCR_DepthLower)
-                Hist_CR_DepthLower.SetBinContent(b+1,SystCR_DepthLower+Hist_CR_DepthLower.GetBinContent(b+1))
-    if IncludeMSCWMethod:
-        for b in range(0,Hist_CR_MSCW.GetNbinsX()):
-            CR_MSCW = Hist_CR_MSCW.GetBinContent(b+1)
-            ErrCR_MSCW = Hist_CR_MSCW.GetBinError(b+1)
-            if AddSyst:
-                SystCR_MSCW = (Hist_Syst_MSCW.GetBinContent(b+1)*Hist_CR_MSCW.GetBinContent(b+1))
-                ErrCR_MSCW = pow(ErrCR_MSCW*ErrCR_MSCW+SystCR_MSCW*SystCR_MSCW,0.5)
-                Hist_CR_MSCW.SetBinError(b+1,ErrCR_MSCW)
-                Hist_CR_MSCW.SetBinContent(b+1,SystCR_MSCW+Hist_CR_MSCW.GetBinContent(b+1))
-    if IncludeMSCLMethod:
-        for b in range(0,Hist_CR_MSCL.GetNbinsX()):
-            CR_MSCL = Hist_CR_MSCL.GetBinContent(b+1)
-            ErrCR_MSCL = Hist_CR_MSCL.GetBinError(b+1)
-            if AddSyst:
-                SystCR_MSCL = (Hist_Syst_MSCL.GetBinContent(b+1)*Hist_CR_MSCL.GetBinContent(b+1))
-                ErrCR_MSCL = pow(ErrCR_MSCL*ErrCR_MSCL+SystCR_MSCL*SystCR_MSCL,0.5)
-                Hist_CR_MSCL.SetBinError(b+1,ErrCR_MSCL)
-                Hist_CR_MSCL.SetBinContent(b+1,SystCR_MSCL+Hist_CR_MSCL.GetBinContent(b+1))
-    
-    if IncludeHeightMethod:
-        print 'Hist_Data_Height.Integral() = %s'%(Hist_Data_Height.Integral())
-    if IncludeDepthUpperMethod:
-        print 'Hist_Data_DepthUpper.Integral() = %s'%(Hist_Data_DepthUpper.Integral())
-    if IncludeDepthLowerMethod:
-        print 'Hist_Data_DepthLower.Integral() = %s'%(Hist_Data_DepthLower.Integral())
-    if IncludeMSCWMethod:
-        print 'Hist_Data_MSCW.Integral() = %s'%(Hist_Data_MSCW.Integral())
-    if IncludeMSCLMethod:
-        print 'Hist_Data_MSCL.Integral() = %s'%(Hist_Data_MSCL.Integral())
-    
-    if IncludeHeightMethod:
-        tag = Variable.strip('_')
-        tag += '_%s'%(source)
-        tag += '_%s'%('EmissionHeight')
-        if MSCW_lower_cut>1:
-            tag += '_Validation'
-        if AddSyst:
-            tag += '_Syst'
-        if Variable == '_XoffVsYoff_':
-            Make2DPlot(Hist_Data_Height,Hist_CR_Height,xtitle,tag)
-        else:
-            MakeStackPlot(Hist_Data_Height,Hist_CR_Height,xtitle,tag)
+            Hist_Loose_MSCW_Crab_On = SelectDiagnosticaHistograms(folder,'MSCW','SR','Loose_MSCW_Crab_On')
+            Hist_Loose_MSCW_Crab_Off = SelectDiagnosticaHistograms(folder,'MSCW','SR','Loose_MSCW_Crab_Off')
+            Hist_Loose_MSCW_Target_On = SelectDiagnosticaHistograms(folder,'MSCW','SR','Loose_MSCW_Target_On')
+            MakeDiagnosticPlot(Hist_Loose_MSCW_Crab_On,Hist_Loose_MSCW_Crab_Off,Hist_Loose_MSCW_Target_On,'MSCW','Loose_MSCW')
+            Hist_Loose_MSCW_Crab_On_TeV = SelectDiagnosticaHistograms(folder,'MSCW','SR','Loose_MSCW_Crab_On_TeV')
+            Hist_Loose_MSCW_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'MSCW','SR','Loose_MSCW_Crab_Off_TeV')
+            Hist_Loose_MSCW_Target_On_TeV = SelectDiagnosticaHistograms(folder,'MSCW','SR','Loose_MSCW_Target_On_TeV')
+            MakeDiagnosticPlot(Hist_Loose_MSCW_Crab_On_TeV,Hist_Loose_MSCW_Crab_Off_TeV,Hist_Loose_MSCW_Target_On_TeV,'MSCW','Loose_MSCW_TeV')
+            Hist_Tight_MSCW_Crab_On = SelectDiagnosticaHistograms(folder,'MSCW','SR','Tight_MSCW_Crab_On')
+            Hist_Tight_MSCW_Crab_Off = SelectDiagnosticaHistograms(folder,'MSCW','SR','Tight_MSCW_Crab_Off')
+            Hist_Tight_MSCW_Target_On = SelectDiagnosticaHistograms(folder,'MSCW','SR','Tight_MSCW_Target_On')
+            MakeDiagnosticPlot(Hist_Tight_MSCW_Crab_On,Hist_Tight_MSCW_Crab_Off,Hist_Tight_MSCW_Target_On,'MSCW','Tight_MSCW')
+            Hist_Tight_MSCW_Crab_On_TeV = SelectDiagnosticaHistograms(folder,'MSCW','SR','Tight_MSCW_Crab_On_TeV')
+            Hist_Tight_MSCW_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'MSCW','SR','Tight_MSCW_Crab_Off_TeV')
+            Hist_Tight_MSCW_Target_On_TeV = SelectDiagnosticaHistograms(folder,'MSCW','SR','Tight_MSCW_Target_On_TeV')
+            MakeDiagnosticPlot(Hist_Tight_MSCW_Crab_On_TeV,Hist_Tight_MSCW_Crab_Off_TeV,Hist_Tight_MSCW_Target_On_TeV,'MSCW','Tight_MSCW_TeV')
         
-    if IncludeDepthUpperMethod:
-        tag = Variable.strip('_')
-        tag += '_%s'%(source)
-        tag += '_%s'%('SlantDepthUpper')
-        if MSCW_lower_cut>1:
-            tag += '_Validation'
-        if AddSyst:
-            tag += '_Syst'
-        if Variable == '_XoffVsYoff_':
-            Make2DPlot(Hist_Data_DepthUpper,Hist_CR_DepthUpper,xtitle,tag)
+        if MSCW_upper_cut<=1:
+            if IncludeHeightMethod:
+                Hist_Data_Height = SelectHistograms(folder,'Height','SR','SR')
+                Hist_CR_Height = SelectHistograms(folder,'Height','Bkg','SR')
+                Hist_Temp = Hist_Data_Height.Clone()
+            if IncludeMSCWMethod:
+                Hist_Data_MSCW = SelectHistograms(folder,'MSCW','SR','SR')
+                Hist_CR_MSCW = SelectHistograms(folder,'MSCW','Bkg','SR')
+                Hist_Temp = Hist_Data_MSCW.Clone()
+            if IncludeMSCLMethod:
+                Hist_Data_MSCL = SelectHistograms(folder,'MSCL','SR','SR')
+                Hist_CR_MSCL = SelectHistograms(folder,'MSCL','Bkg','SR')
+                Hist_Temp = Hist_Data_MSCL.Clone()
+            if IncludeDepthUpperMethod:
+                Hist_Data_DepthUpper = SelectHistograms(folder,'DepthUpper','SR','SR')
+                Hist_CR_DepthUpper = SelectHistograms(folder,'DepthUpper','Bkg','SR')
+                Hist_Temp = Hist_Data_DepthUpper.Clone()
+            if IncludeDepthLowerMethod:
+                Hist_Data_DepthLower = SelectHistograms(folder,'DepthLower','SR','SR')
+                Hist_CR_DepthLower = SelectHistograms(folder,'DepthLower','Bkg','SR')
+                Hist_Temp = Hist_Data_DepthLower.Clone()
         else:
-            MakeStackPlot(Hist_Data_DepthUpper,Hist_CR_DepthUpper,xtitle,tag)
+            if IncludeHeightMethod:
+                Hist_Data_Height = SelectHistograms(folder,'Height','SR','VR')
+                Hist_CR_Height = SelectHistograms(folder,'Height','Bkg','VR')
+                Hist_Temp = Hist_Data_Height.Clone()
+            if IncludeMSCWMethod:
+                Hist_Data_MSCW = SelectHistograms(folder,'MSCW','SR','VR')
+                Hist_CR_MSCW = SelectHistograms(folder,'MSCW','Bkg','VR')
+                Hist_Temp = Hist_Data_MSCW.Clone()
+            if IncludeMSCLMethod:
+                Hist_Data_MSCL = SelectHistograms(folder,'MSCL','SR','VR')
+                Hist_CR_MSCL = SelectHistograms(folder,'MSCL','Bkg','VR')
+                Hist_Temp = Hist_Data_MSCL.Clone()
+            if IncludeDepthUpperMethod:
+                Hist_Data_DepthUpper = SelectHistograms(folder,'DepthUpper','SR','VR')
+                Hist_CR_DepthUpper = SelectHistograms(folder,'DepthUpper','Bkg','VR')
+                Hist_Temp = Hist_Data_DepthUpper.Clone()
+            if IncludeDepthLowerMethod:
+                Hist_Data_DepthLower = SelectHistograms(folder,'DepthLower','SR','VR')
+                Hist_CR_DepthLower = SelectHistograms(folder,'DepthLower','Bkg','VR')
+                Hist_Temp = Hist_Data_DepthLower.Clone()
         
-    if IncludeDepthLowerMethod:
-        tag = Variable.strip('_')
-        tag += '_%s'%(source)
-        tag += '_%s'%('SlantDepthLower')
-        if MSCW_lower_cut>1:
-            tag += '_Validation'
         if AddSyst:
-            tag += '_Syst'
-        if Variable == '_XoffVsYoff_':
-            Make2DPlot(Hist_Data_DepthLower,Hist_CR_DepthLower,xtitle,tag)
-        else:
-            MakeStackPlot(Hist_Data_DepthLower,Hist_CR_DepthLower,xtitle,tag)
+            if IncludeHeightMethod:
+                Hist_VR_Data_Height = SelectHistograms(folder,'Height','SR','VR')
+                Hist_VR_CR_Height = SelectHistograms(folder,'Height','Bkg','VR')
+                Hist_Syst_Height = Hist_VR_Data_Height.Clone()
+                Hist_Syst_Height.Add(Hist_VR_CR_Height,-1)
+                Hist_Syst_Height.Divide(Hist_VR_CR_Height)
+            if IncludeDepthUpperMethod:
+                Hist_VR_Data_DepthUpper = SelectHistograms(folder,'DepthUpper','SR','VR')
+                Hist_VR_CR_DepthUpper = SelectHistograms(folder,'DepthUpper','Bkg','VR')
+                Hist_Syst_DepthUpper = Hist_VR_Data_DepthUpper.Clone()
+                Hist_Syst_DepthUpper.Add(Hist_VR_CR_DepthUpper,-1)
+                Hist_Syst_DepthUpper.Divide(Hist_VR_CR_DepthUpper)
+            if IncludeDepthLowerMethod:
+                Hist_VR_Data_DepthLower = SelectHistograms(folder,'DepthLower','SR','VR')
+                Hist_VR_CR_DepthLower = SelectHistograms(folder,'DepthLower','Bkg','VR')
+                Hist_Syst_DepthLower = Hist_VR_Data_DepthLower.Clone()
+                Hist_Syst_DepthLower.Add(Hist_VR_CR_DepthLower,-1)
+                Hist_Syst_DepthLower.Divide(Hist_VR_CR_DepthLower)
+            if IncludeMSCWMethod:
+                Hist_VR_Data_MSCW = SelectHistograms(folder,'MSCW','SR','VR')
+                Hist_VR_CR_MSCW = SelectHistograms(folder,'MSCW','Bkg','VR')
+                Hist_Syst_MSCW = Hist_VR_Data_MSCW.Clone()
+                Hist_Syst_MSCW.Add(Hist_VR_CR_MSCW,-1)
+                Hist_Syst_MSCW.Divide(Hist_VR_CR_MSCW)
+                #Hist_Syst_MSCW.Scale(2)
+            if IncludeMSCLMethod:
+                Hist_VR_Data_MSCL = SelectHistograms(folder,'MSCL','SR','VR')
+                Hist_VR_CR_MSCL = SelectHistograms(folder,'MSCL','Bkg','VR')
+                Hist_Syst_MSCL = Hist_VR_Data_MSCL.Clone()
+                Hist_Syst_MSCL.Add(Hist_VR_CR_MSCL,-1)
+                Hist_Syst_MSCL.Divide(Hist_VR_CR_MSCL)
+                #Hist_Syst_MSCL.Scale(2)
         
-    if IncludeMSCWMethod:
-        tag = Variable.strip('_')
-        tag += '_%s'%(source)
-        tag += '_%s'%('MSCW')
-        if MSCW_lower_cut>1:
-            tag += '_Validation'
-        if AddSyst:
-            tag += '_Syst'
-        if Variable == '_XoffVsYoff_':
-            Make2DPlot(Hist_Data_MSCW,Hist_CR_MSCW,xtitle,tag)
-        else:
-            MakeStackPlot(Hist_Data_MSCW,Hist_CR_MSCW,xtitle,tag)
-        
-    if IncludeMSCLMethod:
-        tag = Variable.strip('_')
-        tag += '_%s'%(source)
-        tag += '_%s'%('MSCL')
-        if MSCW_lower_cut>1:
-            tag += '_Validation'
-        if AddSyst:
-            tag += '_Syst'
-        if Variable == '_XoffVsYoff_':
-            Make2DPlot(Hist_Data_MSCL,Hist_CR_MSCL,xtitle,tag)
-        else:
-            MakeStackPlot(Hist_Data_MSCL,Hist_CR_MSCL,xtitle,tag)
-    
-    Hist_CR4 = Hist_Temp.Clone()
-    for b in range(0,Hist_CR4.GetNbinsX()):
         if IncludeHeightMethod:
-            CR_Height = Hist_CR_Height.GetBinContent(b+1)
-            ErrCR_Height = Hist_CR_Height.GetBinError(b+1)
+            for b in range(0,Hist_CR_Height.GetNbinsX()):
+                CR_Height = Hist_CR_Height.GetBinContent(b+1)
+                ErrCR_Height = Hist_CR_Height.GetBinError(b+1)
+                if AddSyst:
+                    SystCR_Height = (Hist_Syst_Height.GetBinContent(b+1)*Hist_CR_Height.GetBinContent(b+1))
+                    SystCR_Err_Height = (Hist_Syst_Height.GetBinError(b+1)*Hist_CR_Height.GetBinContent(b+1))
+                    SystCR_Height = pow(SystCR_Height*SystCR_Height+SystCR_Err_Height*SystCR_Err_Height,0.5)
+                    ErrCR_Height = pow(ErrCR_Height*ErrCR_Height+SystCR_Height*SystCR_Height,0.5)
+                    Hist_CR_Height.SetBinError(b+1,ErrCR_Height)
+                    #Hist_CR_Height.SetBinContent(b+1,SystCR_Height+Hist_CR_Height.GetBinContent(b+1))
         if IncludeDepthUpperMethod:
-            CR_DepthUpper = Hist_CR_DepthUpper.GetBinContent(b+1)
-            ErrCR_DepthUpper = Hist_CR_DepthUpper.GetBinError(b+1)
+            for b in range(0,Hist_CR_DepthUpper.GetNbinsX()):
+                CR_DepthUpper = Hist_CR_DepthUpper.GetBinContent(b+1)
+                ErrCR_DepthUpper = Hist_CR_DepthUpper.GetBinError(b+1)
+                if AddSyst:
+                    SystCR_DepthUpper = (Hist_Syst_DepthUpper.GetBinContent(b+1)*Hist_CR_DepthUpper.GetBinContent(b+1))
+                    #SystCR_Err_DepthUpper = (Hist_Syst_DepthUpper.GetBinError(b+1)*Hist_CR_DepthUpper.GetBinContent(b+1))
+                    #SystCR_DepthUpper = pow(SystCR_DepthUpper*SystCR_DepthUpper+SystCR_Err_DepthUpper*SystCR_Err_DepthUpper,0.5)
+                    ErrCR_DepthUpper = pow(ErrCR_DepthUpper*ErrCR_DepthUpper+SystCR_DepthUpper*SystCR_DepthUpper,0.5)
+                    Hist_CR_DepthUpper.SetBinError(b+1,ErrCR_DepthUpper)
+                    #Hist_CR_DepthUpper.SetBinContent(b+1,SystCR_DepthUpper+Hist_CR_DepthUpper.GetBinContent(b+1))
         if IncludeDepthLowerMethod:
-            CR_DepthLower = Hist_CR_DepthLower.GetBinContent(b+1)
-            ErrCR_DepthLower = Hist_CR_DepthLower.GetBinError(b+1)
+            for b in range(0,Hist_CR_DepthLower.GetNbinsX()):
+                CR_DepthLower = Hist_CR_DepthLower.GetBinContent(b+1)
+                ErrCR_DepthLower = Hist_CR_DepthLower.GetBinError(b+1)
+                if AddSyst:
+                    SystCR_DepthLower = (Hist_Syst_DepthLower.GetBinContent(b+1)*Hist_CR_DepthLower.GetBinContent(b+1))
+                    #SystCR_Err_DepthLower = (Hist_Syst_DepthLower.GetBinError(b+1)*Hist_CR_DepthLower.GetBinContent(b+1))
+                    #SystCR_DepthLower = pow(SystCR_DepthLower*SystCR_DepthLower+SystCR_Err_DepthLower*SystCR_Err_DepthLower,0.5)
+                    ErrCR_DepthLower = pow(ErrCR_DepthLower*ErrCR_DepthLower+SystCR_DepthLower*SystCR_DepthLower,0.5)
+                    Hist_CR_DepthLower.SetBinError(b+1,ErrCR_DepthLower)
+                    #Hist_CR_DepthLower.SetBinContent(b+1,SystCR_DepthLower+Hist_CR_DepthLower.GetBinContent(b+1))
         if IncludeMSCWMethod:
-            CR_MSCW = Hist_CR_MSCW.GetBinContent(b+1)
-            ErrCR_MSCW = Hist_CR_MSCW.GetBinError(b+1)
+            for b in range(0,Hist_CR_MSCW.GetNbinsX()):
+                CR_MSCW = Hist_CR_MSCW.GetBinContent(b+1)
+                ErrCR_MSCW = Hist_CR_MSCW.GetBinError(b+1)
+                if AddSyst:
+                    SystCR_MSCW = (Hist_Syst_MSCW.GetBinContent(b+1)*Hist_CR_MSCW.GetBinContent(b+1))
+                    SystCR_Err_MSCW = (Hist_Syst_MSCW.GetBinError(b+1)*Hist_CR_MSCW.GetBinContent(b+1))
+                    SystCR_MSCW = pow(SystCR_MSCW*SystCR_MSCW+SystCR_Err_MSCW*SystCR_Err_MSCW,0.5)
+                    ErrCR_MSCW = pow(ErrCR_MSCW*ErrCR_MSCW+SystCR_MSCW*SystCR_MSCW,0.5)
+                    Hist_CR_MSCW.SetBinError(b+1,ErrCR_MSCW)
+                    #Hist_CR_MSCW.SetBinContent(b+1,SystCR_MSCW+Hist_CR_MSCW.GetBinContent(b+1))
         if IncludeMSCLMethod:
-            CR_MSCL = Hist_CR_MSCL.GetBinContent(b+1)
-            ErrCR_MSCL = Hist_CR_MSCL.GetBinError(b+1)
-        CR4 = 0
-        Norm4 = 0
-        ErrCR4 = 0
+            for b in range(0,Hist_CR_MSCL.GetNbinsX()):
+                CR_MSCL = Hist_CR_MSCL.GetBinContent(b+1)
+                ErrCR_MSCL = Hist_CR_MSCL.GetBinError(b+1)
+                if AddSyst:
+                    SystCR_MSCL = (Hist_Syst_MSCL.GetBinContent(b+1)*Hist_CR_MSCL.GetBinContent(b+1))
+                    SystCR_Err_MSCL = (Hist_Syst_MSCL.GetBinError(b+1)*Hist_CR_MSCL.GetBinContent(b+1))
+                    SystCR_MSCL = pow(SystCR_MSCL*SystCR_MSCL+SystCR_Err_MSCL*SystCR_Err_MSCL,0.5)
+                    ErrCR_MSCL = pow(ErrCR_MSCL*ErrCR_MSCL+SystCR_MSCL*SystCR_MSCL,0.5)
+                    Hist_CR_MSCL.SetBinError(b+1,ErrCR_MSCL)
+                    #Hist_CR_MSCL.SetBinContent(b+1,SystCR_MSCL+Hist_CR_MSCL.GetBinContent(b+1))
+        
         if IncludeHeightMethod:
-            if not ErrCR_Height==0:
-                CR4 += CR_Height/(ErrCR_Height*ErrCR_Height)
-                Norm4 += 1./(ErrCR_Height*ErrCR_Height)
-                ErrCR4 += 1./(ErrCR_Height*ErrCR_Height)
+            print 'Hist_Data_Height.Integral() = %s'%(Hist_Data_Height.Integral())
         if IncludeDepthUpperMethod:
-            if not ErrCR_DepthUpper==0:
-                CR4 += CR_DepthUpper/(ErrCR_DepthUpper*ErrCR_DepthUpper)
-                Norm4 += 1./(ErrCR_DepthUpper*ErrCR_DepthUpper)
-                ErrCR4 += 1./(ErrCR_DepthUpper*ErrCR_DepthUpper)
+            print 'Hist_Data_DepthUpper.Integral() = %s'%(Hist_Data_DepthUpper.Integral())
         if IncludeDepthLowerMethod:
-            if not ErrCR_DepthLower==0:
-                CR4 += CR_DepthLower/(ErrCR_DepthLower*ErrCR_DepthLower)
-                Norm4 += 1./(ErrCR_DepthLower*ErrCR_DepthLower)
-                ErrCR4 += 1./(ErrCR_DepthLower*ErrCR_DepthLower)
+            print 'Hist_Data_DepthLower.Integral() = %s'%(Hist_Data_DepthLower.Integral())
         if IncludeMSCWMethod:
-            if not ErrCR_MSCW==0:
-                CR4 += CR_MSCW/(ErrCR_MSCW*ErrCR_MSCW)
-                Norm4 += 1./(ErrCR_MSCW*ErrCR_MSCW)
-                ErrCR4 += 1./(ErrCR_MSCW*ErrCR_MSCW)
+            print 'Hist_Data_MSCW.Integral() = %s'%(Hist_Data_MSCW.Integral())
         if IncludeMSCLMethod:
-            if not ErrCR_MSCL==0:
-                CR4 += CR_MSCL/(ErrCR_MSCL*ErrCR_MSCL)
-                Norm4 += 1./(ErrCR_MSCL*ErrCR_MSCL)
-                ErrCR4 += 1./(ErrCR_MSCL*ErrCR_MSCL)
-        if not Norm4==0: 
-            CR4 = CR4/Norm4
-            ErrCR4 = 1./pow(ErrCR4,0.5)
-        Hist_CR4.SetBinContent(b+1,CR4)
-        Hist_CR4.SetBinError(b+1,ErrCR4)
-    tag = Variable.strip('_')
-    tag += '_%s'%(source)
-    tag += '_%s'%('Combined')
-    if MSCW_lower_cut>1:
-        tag += '_Validation'
-    if AddSyst:
-        tag += '_Syst'
-    if Variable == '_XoffVsYoff_':
-        Make2DPlot(Hist_Temp,Hist_CR4,xtitle,tag)
-    else:
-        MakeStackPlot(Hist_Temp,Hist_CR4,xtitle,tag)
-    
-    if not Variable == '_XoffVsYoff_':
-        bins = []
-        for b in range(0,Hist_Temp.GetNbinsX()+1):
-            bins += [Hist_Temp.GetBinLowEdge(b+1)]
-        Hist_Sensitivity_Height = ROOT.TH1D("Hist_Sensitivity_Height","",len(bins)-1,array('d',bins))
-        Hist_Sensitivity_DepthUpper = ROOT.TH1D("Hist_Sensitivity_DepthUpper","",len(bins)-1,array('d',bins))
-        Hist_Sensitivity_DepthLower = ROOT.TH1D("Hist_Sensitivity_DepthLower","",len(bins)-1,array('d',bins))
-        Hist_Sensitivity_MSCW = ROOT.TH1D("Hist_Sensitivity_MSCW","",len(bins)-1,array('d',bins))
-        Hist_Sensitivity_MSCL = ROOT.TH1D("Hist_Sensitivity_MSCL","",len(bins)-1,array('d',bins))
-        Hist_Sensitivity4 = ROOT.TH1D("Hist_Sensitivity4","",len(bins)-1,array('d',bins))
-        Hist_Sensitivity5 = ROOT.TH1D("Hist_Sensitivity5","",len(bins)-1,array('d',bins))
+            print 'Hist_Data_MSCL.Integral() = %s'%(Hist_Data_MSCL.Integral())
+        
+        if IncludeHeightMethod:
+            tag = Variable.strip('_')
+            tag += '_%s'%(source)
+            tag += '_%s'%('EmissionHeight')
+            if MSCW_lower_cut>1:
+                tag += '_Validation'
+            if AddSyst:
+                tag += '_Syst'
+            if Variable == '_XoffVsYoff_':
+                Make2DPlot(Hist_Data_Height,Hist_CR_Height,xtitle,tag)
+            else:
+                MakeStackPlot(Hist_Data_Height,Hist_CR_Height,xtitle,tag)
+            
+        if IncludeDepthUpperMethod:
+            tag = Variable.strip('_')
+            tag += '_%s'%(source)
+            tag += '_%s'%('SlantDepthUpper')
+            if MSCW_lower_cut>1:
+                tag += '_Validation'
+            if AddSyst:
+                tag += '_Syst'
+            if Variable == '_XoffVsYoff_':
+                Make2DPlot(Hist_Data_DepthUpper,Hist_CR_DepthUpper,xtitle,tag)
+            else:
+                MakeStackPlot(Hist_Data_DepthUpper,Hist_CR_DepthUpper,xtitle,tag)
+            
+        if IncludeDepthLowerMethod:
+            tag = Variable.strip('_')
+            tag += '_%s'%(source)
+            tag += '_%s'%('SlantDepthLower')
+            if MSCW_lower_cut>1:
+                tag += '_Validation'
+            if AddSyst:
+                tag += '_Syst'
+            if Variable == '_XoffVsYoff_':
+                Make2DPlot(Hist_Data_DepthLower,Hist_CR_DepthLower,xtitle,tag)
+            else:
+                MakeStackPlot(Hist_Data_DepthLower,Hist_CR_DepthLower,xtitle,tag)
+            
+        if IncludeMSCWMethod:
+            tag = Variable.strip('_')
+            tag += '_%s'%(source)
+            tag += '_%s'%('MSCW')
+            if MSCW_lower_cut>1:
+                tag += '_Validation'
+            if AddSyst:
+                tag += '_Syst'
+            if Variable == '_XoffVsYoff_':
+                Make2DPlot(Hist_Data_MSCW,Hist_CR_MSCW,xtitle,tag)
+            else:
+                MakeStackPlot(Hist_Data_MSCW,Hist_CR_MSCW,xtitle,tag)
+            
+        if IncludeMSCLMethod:
+            tag = Variable.strip('_')
+            tag += '_%s'%(source)
+            tag += '_%s'%('MSCL')
+            if MSCW_lower_cut>1:
+                tag += '_Validation'
+            if AddSyst:
+                tag += '_Syst'
+            if Variable == '_XoffVsYoff_':
+                Make2DPlot(Hist_Data_MSCL,Hist_CR_MSCL,xtitle,tag)
+            else:
+                MakeStackPlot(Hist_Data_MSCL,Hist_CR_MSCL,xtitle,tag)
+        
+        Hist_CR4 = Hist_Temp.Clone()
         for b in range(0,Hist_CR4.GetNbinsX()):
             if IncludeHeightMethod:
                 CR_Height = Hist_CR_Height.GetBinContent(b+1)
@@ -715,96 +658,170 @@ for s in source_list:
                     CR4 += CR_MSCL/(ErrCR_MSCL*ErrCR_MSCL)
                     Norm4 += 1./(ErrCR_MSCL*ErrCR_MSCL)
                     ErrCR4 += 1./(ErrCR_MSCL*ErrCR_MSCL)
-            CR4 = 0
-            ErrCR4 = 0
-            if not Norm4==0:
+            if not Norm4==0: 
                 CR4 = CR4/Norm4
-            if not ErrCR4==0:
                 ErrCR4 = 1./pow(ErrCR4,0.5)
-            if IncludeHeightMethod:
-                if not CR_Height==0:
-                    Hist_Sensitivity_Height.SetBinContent(b+1,5.*pow(ErrCR_Height*ErrCR_Height+CR_Height,0.5)/CR_Height)
-            if IncludeDepthUpperMethod:
-                if not CR_DepthUpper==0:
-                    Hist_Sensitivity_DepthUpper.SetBinContent(b+1,5.*pow(ErrCR_DepthUpper*ErrCR_DepthUpper+CR_DepthUpper,0.5)/CR_DepthUpper)
-            if IncludeDepthLowerMethod:
-                if not CR_DepthLower==0:
-                    Hist_Sensitivity_DepthLower.SetBinContent(b+1,5.*pow(ErrCR_DepthLower*ErrCR_DepthLower+CR_DepthLower,0.5)/CR_DepthLower)
-            if IncludeMSCWMethod:
-                if not CR_MSCW==0:
-                    Hist_Sensitivity_MSCW.SetBinContent(b+1,5.*pow(ErrCR_MSCW*ErrCR_MSCW+CR_MSCW,0.5)/CR_MSCW)
-            if IncludeMSCLMethod:
-                if not CR_MSCL==0:
-                    Hist_Sensitivity_MSCL.SetBinContent(b+1,5.*pow(ErrCR_MSCL*ErrCR_MSCL+CR_MSCL,0.5)/CR_MSCL)
-            if not CR4==0:
-                Hist_Sensitivity4.SetBinContent(b+1,5.*pow(ErrCR4*ErrCR4+CR4,0.5)/CR4)
-            Data_Depth = Hist_Temp.GetBinContent(b+1)
-            ErrData_Depth = Hist_Temp.GetBinError(b+1)
-            if not Data_Depth==0:
-                #Hist_Sensitivity5.SetBinContent(b+1,5.*pow(ErrData_Depth*ErrData_Depth+Data_Depth,0.5)/Data_Depth)
-                Hist_Sensitivity5.SetBinContent(b+1,5.*pow(Data_Depth,0.5)/Data_Depth)
+            Hist_CR4.SetBinContent(b+1,CR4)
+            Hist_CR4.SetBinError(b+1,ErrCR4)
+        tag = Variable.strip('_')
+        tag += '_%s'%(source)
+        tag += '_%s'%('Combined')
+        if MSCW_lower_cut>1:
+            tag += '_Validation'
+        if AddSyst:
+            tag += '_Syst'
+        if Variable == '_XoffVsYoff_':
+            Make2DPlot(Hist_Temp,Hist_CR4,xtitle,tag)
+        else:
+            MakeStackPlot(Hist_Temp,Hist_CR4,xtitle,tag)
         
-        canvas = ROOT.TCanvas("canvas","canvas", 200, 10, 600, 600)
-        pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.8)
-        pad1.SetBottomMargin(0.15)
-        pad1.SetRightMargin(0.15)
-        pad1.SetLeftMargin(0.15)
-        pad1.SetTopMargin(0.0)
-        pad1.SetBorderMode(0)
-        pad2 = ROOT.TPad("pad2","pad2",0,0.8,1,1)
-        pad2.SetBottomMargin(0.0)
-        pad2.SetRightMargin(0.15)
-        pad2.SetLeftMargin(0.15)
-        pad2.SetTopMargin(0.15)
-        pad2.SetBorderMode(0)
-        pad1.Draw()
-        pad2.Draw()
-        pad1.cd()
-        Hist_Sensitivity4.GetYaxis().SetTitle('Excluded signal flux (Bg unit.)')
-        Hist_Sensitivity4.GetXaxis().SetTitle(xtitle)
-        Hist_Sensitivity4.SetLineColor(1)
-        Hist_Sensitivity4.SetLineWidth(2)
-        Hist_Sensitivity4.SetMaximum(1)
-        Hist_Sensitivity4.SetMinimum(0)
-        Hist_Sensitivity4.Draw()
-        if IncludeDepthUpperMethod:
-            Hist_Sensitivity_DepthUpper.SetLineColor(2)
-            Hist_Sensitivity_DepthUpper.Draw("same")
-        if IncludeDepthLowerMethod:
-            Hist_Sensitivity_DepthLower.SetLineColor(3)
-            Hist_Sensitivity_DepthLower.Draw("same")
-        if IncludeMSCWMethod:
-            Hist_Sensitivity_MSCW.SetLineColor(4)
-            Hist_Sensitivity_MSCW.Draw("same")
-        if IncludeMSCLMethod:
-            Hist_Sensitivity_MSCL.SetLineColor(5)
-            Hist_Sensitivity_MSCL.Draw("same")
-        Hist_Sensitivity5.SetLineColor(6)
-        Hist_Sensitivity5.Draw("same")
-        Hist_Sensitivity4.Draw("same")
-        if Variable == '_ErecS_':
-            pad1.SetLogx()
-            #pad1.SetLogy()
-        pad2.cd()
-        legend = ROOT.TLegend(0.1,0.1,0.6,0.9)
-        legend.SetTextFont(42)
-        legend.SetBorderSize(0)
-        legend.SetTextSize(0.2)
-        legend.SetFillColor(0)
-        legend.SetFillStyle(0)
-        legend.SetLineColor(0)
-        legend.Clear()
-        if IncludeHeightMethod:
-            legend.AddEntry(Hist_Sensitivity_Height,'Height method',"pl")
-        if IncludeDepthUpperMethod:
-            legend.AddEntry(Hist_Sensitivity_DepthUpper,'Depth (upper) method',"pl")
-        if IncludeDepthLowerMethod:
-            legend.AddEntry(Hist_Sensitivity_DepthLower,'Depth (lower) method',"pl")
-        if IncludeMSCWMethod:
-            legend.AddEntry(Hist_Sensitivity_MSCW,'MSCW method',"pl")
-        if IncludeMSCLMethod:
-            legend.AddEntry(Hist_Sensitivity_MSCL,'MSCL method',"pl")
-        legend.AddEntry(Hist_Sensitivity4,'Combined method',"pl")
-        legend.AddEntry(Hist_Sensitivity5,'Some perfect method',"pl")
-        legend.Draw("SAME")
-        canvas.SaveAs('output_plots/Sensitivity_%s.pdf'%(tag))
+        if not Variable == '_XoffVsYoff_':
+            bins = []
+            for b in range(0,Hist_Temp.GetNbinsX()+1):
+                bins += [Hist_Temp.GetBinLowEdge(b+1)]
+            Hist_Sensitivity_Height = ROOT.TH1D("Hist_Sensitivity_Height","",len(bins)-1,array('d',bins))
+            Hist_Sensitivity_DepthUpper = ROOT.TH1D("Hist_Sensitivity_DepthUpper","",len(bins)-1,array('d',bins))
+            Hist_Sensitivity_DepthLower = ROOT.TH1D("Hist_Sensitivity_DepthLower","",len(bins)-1,array('d',bins))
+            Hist_Sensitivity_MSCW = ROOT.TH1D("Hist_Sensitivity_MSCW","",len(bins)-1,array('d',bins))
+            Hist_Sensitivity_MSCL = ROOT.TH1D("Hist_Sensitivity_MSCL","",len(bins)-1,array('d',bins))
+            Hist_Sensitivity4 = ROOT.TH1D("Hist_Sensitivity4","",len(bins)-1,array('d',bins))
+            Hist_Sensitivity5 = ROOT.TH1D("Hist_Sensitivity5","",len(bins)-1,array('d',bins))
+            for b in range(0,Hist_CR4.GetNbinsX()):
+                if IncludeHeightMethod:
+                    CR_Height = Hist_CR_Height.GetBinContent(b+1)
+                    ErrCR_Height = Hist_CR_Height.GetBinError(b+1)
+                if IncludeDepthUpperMethod:
+                    CR_DepthUpper = Hist_CR_DepthUpper.GetBinContent(b+1)
+                    ErrCR_DepthUpper = Hist_CR_DepthUpper.GetBinError(b+1)
+                if IncludeDepthLowerMethod:
+                    CR_DepthLower = Hist_CR_DepthLower.GetBinContent(b+1)
+                    ErrCR_DepthLower = Hist_CR_DepthLower.GetBinError(b+1)
+                if IncludeMSCWMethod:
+                    CR_MSCW = Hist_CR_MSCW.GetBinContent(b+1)
+                    ErrCR_MSCW = Hist_CR_MSCW.GetBinError(b+1)
+                if IncludeMSCLMethod:
+                    CR_MSCL = Hist_CR_MSCL.GetBinContent(b+1)
+                    ErrCR_MSCL = Hist_CR_MSCL.GetBinError(b+1)
+                CR4 = 0
+                Norm4 = 0
+                ErrCR4 = 0
+                if IncludeHeightMethod:
+                    if not ErrCR_Height==0:
+                        CR4 += CR_Height/(ErrCR_Height*ErrCR_Height)
+                        Norm4 += 1./(ErrCR_Height*ErrCR_Height)
+                        ErrCR4 += 1./(ErrCR_Height*ErrCR_Height)
+                if IncludeDepthUpperMethod:
+                    if not ErrCR_DepthUpper==0:
+                        CR4 += CR_DepthUpper/(ErrCR_DepthUpper*ErrCR_DepthUpper)
+                        Norm4 += 1./(ErrCR_DepthUpper*ErrCR_DepthUpper)
+                        ErrCR4 += 1./(ErrCR_DepthUpper*ErrCR_DepthUpper)
+                if IncludeDepthLowerMethod:
+                    if not ErrCR_DepthLower==0:
+                        CR4 += CR_DepthLower/(ErrCR_DepthLower*ErrCR_DepthLower)
+                        Norm4 += 1./(ErrCR_DepthLower*ErrCR_DepthLower)
+                        ErrCR4 += 1./(ErrCR_DepthLower*ErrCR_DepthLower)
+                if IncludeMSCWMethod:
+                    if not ErrCR_MSCW==0:
+                        CR4 += CR_MSCW/(ErrCR_MSCW*ErrCR_MSCW)
+                        Norm4 += 1./(ErrCR_MSCW*ErrCR_MSCW)
+                        ErrCR4 += 1./(ErrCR_MSCW*ErrCR_MSCW)
+                if IncludeMSCLMethod:
+                    if not ErrCR_MSCL==0:
+                        CR4 += CR_MSCL/(ErrCR_MSCL*ErrCR_MSCL)
+                        Norm4 += 1./(ErrCR_MSCL*ErrCR_MSCL)
+                        ErrCR4 += 1./(ErrCR_MSCL*ErrCR_MSCL)
+                #CR4 = 0
+                #ErrCR4 = 0
+                #if not Norm4==0:
+                #    CR4 = CR4/Norm4
+                #if not ErrCR4==0:
+                #    ErrCR4 = 1./pow(ErrCR4,0.5)
+                CR4 = CR4/Norm4
+                ErrCR4 = 1./pow(ErrCR4,0.5)
+                if IncludeHeightMethod:
+                    if not CR_Height==0:
+                        Hist_Sensitivity_Height.SetBinContent(b+1,5.*pow(ErrCR_Height*ErrCR_Height+CR_Height,0.5)/CR_Height)
+                if IncludeDepthUpperMethod:
+                    if not CR_DepthUpper==0:
+                        Hist_Sensitivity_DepthUpper.SetBinContent(b+1,5.*pow(ErrCR_DepthUpper*ErrCR_DepthUpper+CR_DepthUpper,0.5)/CR_DepthUpper)
+                if IncludeDepthLowerMethod:
+                    if not CR_DepthLower==0:
+                        Hist_Sensitivity_DepthLower.SetBinContent(b+1,5.*pow(ErrCR_DepthLower*ErrCR_DepthLower+CR_DepthLower,0.5)/CR_DepthLower)
+                if IncludeMSCWMethod:
+                    if not CR_MSCW==0:
+                        Hist_Sensitivity_MSCW.SetBinContent(b+1,5.*pow(ErrCR_MSCW*ErrCR_MSCW+CR_MSCW,0.5)/CR_MSCW)
+                if IncludeMSCLMethod:
+                    if not CR_MSCL==0:
+                        Hist_Sensitivity_MSCL.SetBinContent(b+1,5.*pow(ErrCR_MSCL*ErrCR_MSCL+CR_MSCL,0.5)/CR_MSCL)
+                if not CR4==0:
+                    Hist_Sensitivity4.SetBinContent(b+1,5.*pow(ErrCR4*ErrCR4+CR4,0.5)/CR4)
+                Data_Depth = Hist_Temp.GetBinContent(b+1)
+                ErrData_Depth = Hist_Temp.GetBinError(b+1)
+                if not Data_Depth==0:
+                    #Hist_Sensitivity5.SetBinContent(b+1,5.*pow(ErrData_Depth*ErrData_Depth+Data_Depth,0.5)/Data_Depth)
+                    Hist_Sensitivity5.SetBinContent(b+1,5.*pow(Data_Depth,0.5)/Data_Depth)
+            
+            canvas = ROOT.TCanvas("canvas","canvas", 200, 10, 600, 600)
+            pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.8)
+            pad1.SetBottomMargin(0.15)
+            pad1.SetRightMargin(0.15)
+            pad1.SetLeftMargin(0.15)
+            pad1.SetTopMargin(0.0)
+            pad1.SetBorderMode(0)
+            pad2 = ROOT.TPad("pad2","pad2",0,0.8,1,1)
+            pad2.SetBottomMargin(0.0)
+            pad2.SetRightMargin(0.15)
+            pad2.SetLeftMargin(0.15)
+            pad2.SetTopMargin(0.15)
+            pad2.SetBorderMode(0)
+            pad1.Draw()
+            pad2.Draw()
+            pad1.cd()
+            Hist_Sensitivity4.GetYaxis().SetTitle('Excluded signal flux (Bg unit.)')
+            Hist_Sensitivity4.GetXaxis().SetTitle(xtitle)
+            Hist_Sensitivity4.SetLineColor(1)
+            Hist_Sensitivity4.SetLineWidth(2)
+            Hist_Sensitivity4.SetMaximum(1)
+            Hist_Sensitivity4.SetMinimum(0)
+            Hist_Sensitivity4.Draw()
+            if IncludeDepthUpperMethod:
+                Hist_Sensitivity_DepthUpper.SetLineColor(2)
+                Hist_Sensitivity_DepthUpper.Draw("same")
+            if IncludeDepthLowerMethod:
+                Hist_Sensitivity_DepthLower.SetLineColor(5)
+                Hist_Sensitivity_DepthLower.Draw("same")
+            if IncludeMSCWMethod:
+                Hist_Sensitivity_MSCW.SetLineColor(4)
+                Hist_Sensitivity_MSCW.Draw("same")
+            if IncludeMSCLMethod:
+                Hist_Sensitivity_MSCL.SetLineColor(3)
+                Hist_Sensitivity_MSCL.Draw("same")
+            Hist_Sensitivity5.SetLineColor(6)
+            Hist_Sensitivity5.Draw("same")
+            Hist_Sensitivity4.Draw("same")
+            if Variable == '_ErecS_':
+                pad1.SetLogx()
+                #pad1.SetLogy()
+            pad2.cd()
+            legend = ROOT.TLegend(0.1,0.1,0.6,0.9)
+            legend.SetTextFont(42)
+            legend.SetBorderSize(0)
+            legend.SetTextSize(0.2)
+            legend.SetFillColor(0)
+            legend.SetFillStyle(0)
+            legend.SetLineColor(0)
+            legend.Clear()
+            if IncludeHeightMethod:
+                legend.AddEntry(Hist_Sensitivity_Height,'Height method',"pl")
+            if IncludeDepthUpperMethod:
+                legend.AddEntry(Hist_Sensitivity_DepthUpper,'Depth (upper) method',"pl")
+            if IncludeDepthLowerMethod:
+                legend.AddEntry(Hist_Sensitivity_DepthLower,'Depth (lower) method',"pl")
+            if IncludeMSCWMethod:
+                legend.AddEntry(Hist_Sensitivity_MSCW,'MSCW method',"pl")
+            if IncludeMSCLMethod:
+                legend.AddEntry(Hist_Sensitivity_MSCL,'MSCL method',"pl")
+            legend.AddEntry(Hist_Sensitivity4,'Combined method',"pl")
+            legend.AddEntry(Hist_Sensitivity5,'Some perfect method',"pl")
+            legend.Draw("SAME")
+            canvas.SaveAs('output_plots/Sensitivity_%s.pdf'%(tag))
