@@ -46,6 +46,8 @@ xtitle_list += ['#theta^{2}']
 AddSyst = True
 #AddSyst = False
 
+UseLooseControlRegions = False
+
 IncludeHeightMethod = False
 IncludeDepthUpperMethod = False
 IncludeDepthLowerMethod = False
@@ -86,7 +88,10 @@ def Make2DPlot(Hist_Data,Hist_CR,title,name):
     Hist_Sig.SetMaximum(5)
     Hist_Sig.SetMinimum(-3)
     Hist_Sig.Draw("COL4Z")
-    c_both.SaveAs('output_plots/%s.pdf'%(name))
+    if UseLooseControlRegions:
+        c_both.SaveAs('output_plots/%s.pdf'%(name))
+    else:
+        c_both.SaveAs('output_plots/%s_Tight.pdf'%(name))
 
 def MakeDiagnosticPlot(Hist_Crab_On,Hist_Crab_Off,Hist_Target_On,title,name):
     
@@ -276,7 +281,10 @@ def MakeStackPlot(Hist_Data,Hist_CR,title,name):
         pad1.SetLogy()
         pad1.SetLogx()
         pad2.SetLogx()
-    c_both.SaveAs('output_plots/%s.pdf'%(name))
+    if UseLooseControlRegions:
+        c_both.SaveAs('output_plots/%s.pdf'%(name))
+    else:
+        c_both.SaveAs('output_plots/%s_Tight.pdf'%(name))
     pad1.SetLogy(0)
     pad1.SetLogx(0)
     pad2.SetLogx(0)
@@ -286,10 +294,16 @@ def SelectHistograms(folder,method,isData,isSR):
 
     Hist_Data = ROOT.TH1D("Hist_Data","",1,0,1)
 
-    if isSR=='VR':
-        FilePath = '%s/Histograms_%s_%s_%s.root'%(folder,source,method,isSR)
+    if UseLooseControlRegions:
+        if isSR=='VR':
+            FilePath = '%s/Histograms_%s_%s_%s.root'%(folder,source,method,isSR)
+        else:
+            FilePath = '%s/Histograms_%s_%s_%s.root'%(folder,source,method,isSR)
     else:
-        FilePath = '%s/Histograms_%s_%s_%s.root'%(folder,source,method,isSR)
+        if isSR=='VR':
+            FilePath = '%s/Histograms_%s_%s_%s_Tight.root'%(folder,source,method,isSR)
+        else:
+            FilePath = '%s/Histograms_%s_%s_%s_Tight.root'%(folder,source,method,isSR)
     print 'Read %s'%(FilePath)
     InputFile=ROOT.TFile(FilePath)
     
@@ -327,10 +341,16 @@ def SelectDiagnosticaHistograms(folder,method,isSR,var):
 
     Hist_Data = ROOT.TH1D("Hist_Data","",1,0,1)
 
-    if isSR=='VR':
-        FilePath = '%s/Histograms_%s_%s_%s.root'%(folder,source,method,isSR)
+    if UseLooseControlRegions:
+        if isSR=='VR':
+            FilePath = '%s/Histograms_%s_%s_%s.root'%(folder,source,method,isSR)
+        else:
+            FilePath = '%s/Histograms_%s_%s_%s.root'%(folder,source,method,isSR)
     else:
-        FilePath = '%s/Histograms_%s_%s_%s.root'%(folder,source,method,isSR)
+        if isSR=='VR':
+            FilePath = '%s/Histograms_%s_%s_%s_Tight.root'%(folder,source,method,isSR)
+        else:
+            FilePath = '%s/Histograms_%s_%s_%s_Tight.root'%(folder,source,method,isSR)
     print 'Read %s'%(FilePath)
     InputFile=ROOT.TFile(FilePath)
     
@@ -403,6 +423,24 @@ for s in source_list:
             Hist_Tight_MSCW_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'MSCW','SR','Tight_MSCW_Crab_Off_TeV')
             Hist_Tight_MSCW_Target_On_TeV = SelectDiagnosticaHistograms(folder,'MSCW','SR','Tight_MSCW_Target_On_TeV')
             MakeDiagnosticPlot(Hist_Tight_MSCW_Crab_On_TeV,Hist_Tight_MSCW_Crab_Off_TeV,Hist_Tight_MSCW_Target_On_TeV,'MSCW','Tight_MSCW_TeV')
+        
+        if IncludeMSCLMethod:
+            Hist_Loose_MSCL_Crab_On = SelectDiagnosticaHistograms(folder,'MSCL','SR','Loose_MSCL_Crab_On')
+            Hist_Loose_MSCL_Crab_Off = SelectDiagnosticaHistograms(folder,'MSCL','SR','Loose_MSCL_Crab_Off')
+            Hist_Loose_MSCL_Target_On = SelectDiagnosticaHistograms(folder,'MSCL','SR','Loose_MSCL_Target_On')
+            MakeDiagnosticPlot(Hist_Loose_MSCL_Crab_On,Hist_Loose_MSCL_Crab_Off,Hist_Loose_MSCL_Target_On,'MSCL','Loose_MSCL')
+            Hist_Loose_MSCL_Crab_On_TeV = SelectDiagnosticaHistograms(folder,'MSCL','SR','Loose_MSCL_Crab_On_TeV')
+            Hist_Loose_MSCL_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'MSCL','SR','Loose_MSCL_Crab_Off_TeV')
+            Hist_Loose_MSCL_Target_On_TeV = SelectDiagnosticaHistograms(folder,'MSCL','SR','Loose_MSCL_Target_On_TeV')
+            MakeDiagnosticPlot(Hist_Loose_MSCL_Crab_On_TeV,Hist_Loose_MSCL_Crab_Off_TeV,Hist_Loose_MSCL_Target_On_TeV,'MSCL','Loose_MSCL_TeV')
+            Hist_Tight_MSCL_Crab_On = SelectDiagnosticaHistograms(folder,'MSCL','SR','Tight_MSCL_Crab_On')
+            Hist_Tight_MSCL_Crab_Off = SelectDiagnosticaHistograms(folder,'MSCL','SR','Tight_MSCL_Crab_Off')
+            Hist_Tight_MSCL_Target_On = SelectDiagnosticaHistograms(folder,'MSCL','SR','Tight_MSCL_Target_On')
+            MakeDiagnosticPlot(Hist_Tight_MSCL_Crab_On,Hist_Tight_MSCL_Crab_Off,Hist_Tight_MSCL_Target_On,'MSCL','Tight_MSCL')
+            Hist_Tight_MSCL_Crab_On_TeV = SelectDiagnosticaHistograms(folder,'MSCL','SR','Tight_MSCL_Crab_On_TeV')
+            Hist_Tight_MSCL_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'MSCL','SR','Tight_MSCL_Crab_Off_TeV')
+            Hist_Tight_MSCL_Target_On_TeV = SelectDiagnosticaHistograms(folder,'MSCL','SR','Tight_MSCL_Target_On_TeV')
+            MakeDiagnosticPlot(Hist_Tight_MSCL_Crab_On_TeV,Hist_Tight_MSCL_Crab_Off_TeV,Hist_Tight_MSCL_Target_On_TeV,'MSCL','Tight_MSCL_TeV')
         
         if MSCW_upper_cut<=1:
             if IncludeHeightMethod:
@@ -824,4 +862,7 @@ for s in source_list:
             legend.AddEntry(Hist_Sensitivity4,'Combined method',"pl")
             legend.AddEntry(Hist_Sensitivity5,'Some perfect method',"pl")
             legend.Draw("SAME")
-            canvas.SaveAs('output_plots/Sensitivity_%s.pdf'%(tag))
+            if UseLooseControlRegions:
+                canvas.SaveAs('output_plots/Sensitivity_%s.pdf'%(tag))
+            else:
+                canvas.SaveAs('output_plots/Sensitivity_%s_Tight.pdf'%(tag))

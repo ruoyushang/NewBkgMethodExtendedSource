@@ -121,6 +121,8 @@ Elev_cut_upper = 85
 #Elev_cut_lower = 55
 #Elev_cut_upper = 75
 
+UseLooseControlRegions = False
+
 MSCW_cut_lower = -1.0
 MSCW_cut_upper = 1.0
 MSCL_cut_lower = -1.0
@@ -176,27 +178,31 @@ def SignalSelection(tree):
 
 def ControlSelection(tree):
     if method=='DepthUpper':
-        #if tree.MSCW>MSCW_cut_upper: return False
-        #if tree.MSCW<MSCW_cut_lower: return False
-        #if tree.MSCL>MSCL_cut_upper: return False
-        #if tree.MSCL<MSCL_cut_lower: return False
+        if not UseLooseControlRegions:
+            if tree.MSCW>MSCW_cut_upper: return False
+            if tree.MSCW<MSCW_cut_lower: return False
+            if tree.MSCL>MSCL_cut_upper: return False
+            if tree.MSCL<MSCL_cut_lower: return False
         if tree.SlantDepth<Depth_cut_control: return False
     if method=='DepthLower':
-        #if tree.MSCW>MSCW_cut_upper: return False
-        #if tree.MSCW<MSCW_cut_lower: return False
-        #if tree.MSCL>MSCL_cut_upper: return False
-        #if tree.MSCL<MSCL_cut_lower: return False
+        if not UseLooseControlRegions:
+            if tree.MSCW>MSCW_cut_upper: return False
+            if tree.MSCW<MSCW_cut_lower: return False
+            if tree.MSCL>MSCL_cut_upper: return False
+            if tree.MSCL<MSCL_cut_lower: return False
         if tree.SlantDepth<1: return False
         if tree.SlantDepth>Depth_cut_control: return False
     if method == 'MSCW':
-        #if tree.MSCL>MSCL_cut_upper: return False
-        #if tree.MSCL<MSCL_cut_lower: return False
+        if not UseLooseControlRegions:
+            if tree.MSCL>MSCL_cut_upper: return False
+            if tree.MSCL<MSCL_cut_lower: return False
         if tree.SlantDepth<Depth_cut_lower: return False
         if tree.SlantDepth>Depth_cut_upper: return False
         if tree.MSCW<MSCW_cut_control: return False
     if method == 'MSCL':
-        #if tree.MSCW>MSCW_cut_upper: return False
-        #if tree.MSCW<MSCW_cut_lower: return False
+        if not UseLooseControlRegions:
+            if tree.MSCW>MSCW_cut_upper: return False
+            if tree.MSCW<MSCW_cut_lower: return False
         if tree.SlantDepth<Depth_cut_lower: return False
         if tree.SlantDepth>Depth_cut_upper: return False
         if tree.MSCL<MSCL_cut_control: return False
@@ -581,7 +587,10 @@ if not Hist_Tight_MSCL_Target_On_TeV.Integral(bin_begin,bin_end)==0:
 Hist_Tight_MSCL_Target_On_TeV.Scale(scale)
 
 
-OutputFile = ROOT.TFile("output/Histograms_%s_%s_%s.root"%(target,method,region),"recreate")
+if not UseLooseControlRegions:
+    OutputFile = ROOT.TFile("output/Histograms_%s_%s_%s_Tight.root"%(target,method,region),"recreate")
+else:
+    OutputFile = ROOT.TFile("output/Histograms_%s_%s_%s.root"%(target,method,region),"recreate")
 for energy in range(0,len(energy_bins)-1):
     Hist_ErecS_Target_SR[energy].Write()
     Hist_ErecS_Target_Bkg[energy].Write()
