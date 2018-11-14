@@ -43,11 +43,14 @@ xtitle_list += ['#theta^{2}']
 variable_list += ['_Theta2ZoomIn_']
 xtitle_list += ['#theta^{2}']
 
-#AddSyst = True
-AddSyst = False
+AddSyst = True
+#AddSyst = False
 
-#UseLooseControlRegions = True
-UseLooseControlRegions = False
+UseLooseControlRegions = True
+#UseLooseControlRegions = False
+
+#UseAuxRegion = True
+UseAuxRegion = False
 
 IncludeHeightMethod = False
 IncludeDepthUpperMethod = False
@@ -488,7 +491,7 @@ for s in source_list:
             Hist_Tight_MSCL_Target_On_TeV = SelectDiagnosticaHistograms(folder,'MSCL','SR','Tight_MSCL_Target_On_TeV')
             MakeDiagnosticPlot(Hist_Tight_MSCL_Crab_On_TeV,Hist_Tight_MSCL_Crab_Off_TeV,Hist_Tight_MSCL_Target_On_TeV,'MSCL','Tight_MSCL_TeV')
         
-        if MSCW_upper_cut<=1:
+        if not UseAuxRegion:
             if IncludeHeightMethod:
                 Hist_Data_Height = SelectHistograms(folder,'Height','SR','SR')
                 Hist_CR_Height = SelectHistograms(folder,'Height','Bkg','SR')
@@ -563,7 +566,7 @@ for s in source_list:
                 Hist_Syst_MSCL = Hist_VR_Data_MSCL.Clone()
                 Hist_Syst_MSCL.Add(Hist_VR_CR_MSCL,-1)
                 Hist_Syst_MSCL.Divide(Hist_VR_CR_MSCL)
-                #Hist_Syst_MSCL.Scale(2)
+                Hist_Syst_MSCL.Scale(1.5)
         
         if IncludeHeightMethod:
             for b in range(0,Hist_CR_Height.GetNbinsX()):
@@ -648,8 +651,8 @@ for s in source_list:
             tag = Variable.strip('_')
             tag += '_%s'%(source)
             tag += '_%s'%('EmissionHeight')
-            if MSCW_lower_cut>1:
-                tag += '_Validation'
+            if UseAuxRegion:
+                tag += '_Aux'
             if AddSyst:
                 tag += '_Syst'
             if Variable == '_XoffVsYoff_':
@@ -661,8 +664,8 @@ for s in source_list:
             tag = Variable.strip('_')
             tag += '_%s'%(source)
             tag += '_%s'%('SlantDepthUpper')
-            if MSCW_lower_cut>1:
-                tag += '_Validation'
+            if UseAuxRegion:
+                tag += '_Aux'
             if AddSyst:
                 tag += '_Syst'
             if Variable == '_XoffVsYoff_':
@@ -674,8 +677,8 @@ for s in source_list:
             tag = Variable.strip('_')
             tag += '_%s'%(source)
             tag += '_%s'%('SlantDepthLower')
-            if MSCW_lower_cut>1:
-                tag += '_Validation'
+            if UseAuxRegion:
+                tag += '_Aux'
             if AddSyst:
                 tag += '_Syst'
             if Variable == '_XoffVsYoff_':
@@ -687,8 +690,8 @@ for s in source_list:
             tag = Variable.strip('_')
             tag += '_%s'%(source)
             tag += '_%s'%('MSCW')
-            if MSCW_lower_cut>1:
-                tag += '_Validation'
+            if UseAuxRegion:
+                tag += '_Aux'
             if AddSyst:
                 tag += '_Syst'
             if Variable == '_XoffVsYoff_':
@@ -700,8 +703,8 @@ for s in source_list:
             tag = Variable.strip('_')
             tag += '_%s'%(source)
             tag += '_%s'%('MSCL')
-            if MSCW_lower_cut>1:
-                tag += '_Validation'
+            if UseAuxRegion:
+                tag += '_Aux'
             if AddSyst:
                 tag += '_Syst'
             if Variable == '_XoffVsYoff_':
@@ -762,8 +765,8 @@ for s in source_list:
         tag = Variable.strip('_')
         tag += '_%s'%(source)
         tag += '_%s'%('Combined')
-        if MSCW_lower_cut>1:
-            tag += '_Validation'
+        if UseAuxRegion:
+            tag += '_Aux'
         if AddSyst:
             tag += '_Syst'
         if Variable == '_XoffVsYoff_':

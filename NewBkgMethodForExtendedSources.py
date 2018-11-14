@@ -18,8 +18,8 @@ Elev_cut_upper = 85
 #Elev_cut_lower = 30
 #Elev_cut_upper = 85
 
-#UseLooseControlRegions = True
-UseLooseControlRegions = False
+UseLooseControlRegions = True
+#UseLooseControlRegions = False
 
 #target = '2ndCrab'
 #target = 'PKS1424'
@@ -138,8 +138,12 @@ Depth_cut_lower = 2
 Depth_cut_upper = 5
 if region=='VR':
     if method=='DepthUpper':
-        Depth_cut_lower = 1
+        Depth_cut_lower = 0
         Depth_cut_upper = 2
+        MSCW_cut_lower = -1
+        MSCW_cut_upper = 3.
+        MSCL_cut_lower = -1
+        MSCL_cut_upper = 3.
         if UseLooseControlRegions:
             MSCW_cut_lower = -1
             MSCW_cut_upper = 100.0
@@ -148,22 +152,34 @@ if region=='VR':
     if method=='DepthLower':
         Depth_cut_lower = 5
         Depth_cut_upper = 1000
+        MSCW_cut_lower = -1
+        MSCW_cut_upper = 3.
+        MSCL_cut_lower = -1
+        MSCL_cut_upper = 3.
         if UseLooseControlRegions:
             MSCW_cut_lower = -1
             MSCW_cut_upper = 100.0
             MSCL_cut_lower = -1
             MSCL_cut_upper = 100.0
     if method=='MSCW':
-        Depth_cut_lower = 1
+        Depth_cut_lower = 0
         Depth_cut_upper = 2
+        MSCL_cut_lower = -1
+        MSCL_cut_upper = 3.0
+        #MSCW_cut_lower = -1
+        #MSCW_cut_upper = 3.0
         if UseLooseControlRegions:
-            #MSCW_cut_lower = -1
-            #MSCW_cut_upper = 100.0
             MSCL_cut_lower = -1
             MSCL_cut_upper = 100.0
+            #MSCW_cut_lower = -1
+            #MSCW_cut_upper = 100.0
     if method=='MSCL':
-        Depth_cut_lower = 1
+        Depth_cut_lower = 0
         Depth_cut_upper = 2
+        MSCW_cut_lower = -1
+        MSCW_cut_upper = 3.0
+        #MSCL_cut_lower = -1
+        #MSCL_cut_upper = 3.0
         if UseLooseControlRegions:
             MSCW_cut_lower = -1
             MSCW_cut_upper = 100.0
@@ -205,7 +221,6 @@ def ControlSelection(tree):
             if tree.MSCW<MSCW_cut_lower: return False
             if tree.MSCL>MSCL_cut_upper: return False
             if tree.MSCL<MSCL_cut_lower: return False
-        if tree.SlantDepth<1: return False
         if tree.SlantDepth>Depth_cut_control: return False
     if method == 'MSCW':
         if not UseLooseControlRegions:
@@ -270,7 +285,7 @@ def DiagnosticLooseSelection(tree):
     return True
 
 def FOVSelection(tree):
-    if tree.theta2<0.1: return False
+    if tree.theta2<0.2: return False
     #if tree.theta2>1.0: return False
     return True
 
