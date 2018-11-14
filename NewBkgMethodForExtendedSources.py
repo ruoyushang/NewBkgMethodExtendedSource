@@ -13,6 +13,14 @@ ROOT.TH1.SetDefaultSumw2()
 ROOT.TH1.AddDirectory(False) # without this, the histograms returned from a function will be non-type
 ROOT.gStyle.SetPaintTextFormat("0.3f")
 
+Elev_cut_lower = 55
+Elev_cut_upper = 85
+#Elev_cut_lower = 30
+#Elev_cut_upper = 85
+
+#UseLooseControlRegions = True
+UseLooseControlRegions = False
+
 #target = '2ndCrab'
 #target = 'PKS1424'
 #target = '3C264'
@@ -70,6 +78,12 @@ Hist_Tight_SlantDepth_Crab_On_TeV = ROOT.TH1D("Hist_Tight_SlantDepth_Crab_On_TeV
 Hist_Tight_SlantDepth_Crab_Off_TeV = ROOT.TH1D("Hist_Tight_SlantDepth_Crab_Off_TeV","",100,0,10)
 Hist_Tight_SlantDepth_Target_On_TeV = ROOT.TH1D("Hist_Tight_SlantDepth_Target_On_TeV","",100,0,10)
 
+Hist2D_TelElev_vs_SlantDepth_Target = TH2D("Hist2D_TelElev_vs_SlantDepth_Target","",20,Elev_cut_lower,Elev_cut_upper,40,0,20)
+Hist2D_TelElev_vs_EmissionHeight_Target = TH2D("Hist2D_TelElev_vs_EmissionHeight_Target","",20,Elev_cut_lower,Elev_cut_upper,40,0,40)
+
+Hist_TelElevAzim_Counts_Target = TH2D("Hist_TelElevAzim_Counts_Target","",100,Elev_cut_lower,Elev_cut_upper,100,0,360)
+Hist_TelElevAzim_Counts_Crab = TH2D("Hist_TelElevAzim_Counts_Crab","",100,Elev_cut_lower,Elev_cut_upper,100,0,360)
+
 energy_bins = []
 #energy_bins += [pow(10,2.2),pow(10,2.4),pow(10,2.6),pow(10,2.8)]
 #energy_bins += [pow(10,3.0),pow(10,3.2),pow(10,3.4),pow(10,3.6),pow(10,3.8)]
@@ -116,13 +130,6 @@ for energy in range(0,len(energy_bins)-1):
     Hist_Theta2ZoomIn_Target_Bkg += [ROOT.TH1D("Hist_Theta2ZoomIn_Target_Bkg_ErecS%dto%d"%(energy_bins[energy],energy_bins[energy+1]),"",20,0,0.5)]
 
 
-Elev_cut_lower = 55
-Elev_cut_upper = 85
-#Elev_cut_lower = 55
-#Elev_cut_upper = 75
-
-UseLooseControlRegions = False
-
 MSCW_cut_lower = -1.0
 MSCW_cut_upper = 1.0
 MSCL_cut_lower = -1.0
@@ -133,27 +140,35 @@ if region=='VR':
     if method=='DepthUpper':
         Depth_cut_lower = 1
         Depth_cut_upper = 2
-        MSCW_cut_lower = -1
-        MSCW_cut_upper = 100.0
-        MSCL_cut_lower = -1
-        MSCL_cut_upper = 100.0
+        if UseLooseControlRegions:
+            MSCW_cut_lower = -1
+            MSCW_cut_upper = 100.0
+            MSCL_cut_lower = -1
+            MSCL_cut_upper = 100.0
     if method=='DepthLower':
         Depth_cut_lower = 5
         Depth_cut_upper = 1000
-        MSCW_cut_lower = -1
-        MSCW_cut_upper = 100.0
-        MSCL_cut_lower = -1
-        MSCL_cut_upper = 100.0
+        if UseLooseControlRegions:
+            MSCW_cut_lower = -1
+            MSCW_cut_upper = 100.0
+            MSCL_cut_lower = -1
+            MSCL_cut_upper = 100.0
     if method=='MSCW':
-        MSCL_cut_lower = -1
-        MSCL_cut_upper = 100.0
         Depth_cut_lower = 1
         Depth_cut_upper = 2
+        if UseLooseControlRegions:
+            #MSCW_cut_lower = -1
+            #MSCW_cut_upper = 100.0
+            MSCL_cut_lower = -1
+            MSCL_cut_upper = 100.0
     if method=='MSCL':
-        MSCW_cut_lower = -1
-        MSCW_cut_upper = 100.0
         Depth_cut_lower = 1
         Depth_cut_upper = 2
+        if UseLooseControlRegions:
+            MSCW_cut_lower = -1
+            MSCW_cut_upper = 100.0
+            #MSCL_cut_lower = -1
+            #MSCL_cut_upper = 100.0
 
 if method=='DepthUpper':
     Depth_cut_control = 5.0
@@ -325,6 +340,18 @@ def AnalyzeTarget(target):
         TelElev_end = pointing_tree.TelElevation
         if (TelElev_begin+TelElev_end)/2.<Elev_cut_lower: continue
         if (TelElev_begin+TelElev_end)/2.>Elev_cut_upper: continue
+
+        pointing_tree.GetEntry(0)
+        time_begin = pointing_tree.Time
+        pointing_tree.GetEntry(pointing_tree.GetEntries()-1)
+        time_end = pointing_tree.Time
+        hist_Ele_vs_time = ROOT.TProfile("hist_Ele_vs_time","",100,time_begin,time_end+0.01*(time_end-time_begin),0,100)
+        hist_Azi_vs_time = ROOT.TProfile("hist_Azi_vs_time","",100,time_begin,time_end+0.01*(time_end-time_begin),-400,400)
+        for i in range(0,pointing_tree.GetEntries()):
+            pointing_tree.GetEntry(i)
+            hist_Ele_vs_time.Fill(pointing_tree.Time,pointing_tree.TelElevation)
+            hist_Azi_vs_time.Fill(pointing_tree.Time,pointing_tree.TelAzimuth)
+
         Target_tree_On = Target_file.Get("run_%s/stereo/data_on"%(run))
         for entry in range(0,Target_tree_On.GetEntries()):
             Target_tree_On.GetEntry(entry)
@@ -333,6 +360,11 @@ def AnalyzeTarget(target):
             if Target_tree_On.ErecS*1000.>energy_bins[len(energy_bins)-1]: continue
             energy_bin = Hist_ErecS_Target_SR[0].FindBin(Target_tree_On.ErecS*1000.)-1
             if energy_bin>len(energy_bins)-2: continue
+            elevation = hist_Ele_vs_time.GetBinContent(hist_Ele_vs_time.FindBin(Target_tree_On.Time))
+            azimuth = hist_Azi_vs_time.GetBinContent(hist_Azi_vs_time.FindBin(Target_tree_On.Time))
+            Hist2D_TelElev_vs_SlantDepth_Target.Fill(elevation,Target_tree_On.SlantDepth)
+            Hist2D_TelElev_vs_EmissionHeight_Target.Fill(elevation,Target_tree_On.EmissionHeight)
+            Hist_TelElevAzim_Counts_Target.Fill(elevation,azimuth)
             if SignalSelection(Target_tree_On):
                 if FOVSelection(Target_tree_On):
                     Hist_ErecS_Target_SR[energy_bin].Fill(Target_tree_On.ErecS*1000.)
@@ -375,6 +407,17 @@ for run in Crab_runlist:
     if (TelElev_begin+TelElev_end)/2.<Elev_cut_lower: continue
     if (TelElev_begin+TelElev_end)/2.>Elev_cut_upper: continue
 
+    pointing_tree.GetEntry(0)
+    time_begin = pointing_tree.Time
+    pointing_tree.GetEntry(pointing_tree.GetEntries()-1)
+    time_end = pointing_tree.Time
+    hist_Ele_vs_time = ROOT.TProfile("hist_Ele_vs_time","",100,time_begin,time_end+0.01*(time_end-time_begin),0,100)
+    hist_Azi_vs_time = ROOT.TProfile("hist_Azi_vs_time","",100,time_begin,time_end+0.01*(time_end-time_begin),-400,400)
+    for i in range(0,pointing_tree.GetEntries()):
+        pointing_tree.GetEntry(i)
+        hist_Ele_vs_time.Fill(pointing_tree.Time,pointing_tree.TelElevation)
+        hist_Azi_vs_time.Fill(pointing_tree.Time,pointing_tree.TelAzimuth)
+
     Crab_tree_On = Crab_file.Get("run_%s/stereo/data_on"%(run))
     for entry in range(0,Crab_tree_On.GetEntries()):
         Crab_tree_On.GetEntry(entry)
@@ -383,6 +426,8 @@ for run in Crab_runlist:
         if Crab_tree_On.ErecS*1000.>energy_bins[len(energy_bins)-1]: continue
         energy_bin = Hist_ErecS_Target_SR[0].FindBin(Crab_tree_On.ErecS*1000.)-1
         if energy_bin>len(energy_bins)-2: continue
+        elevation = hist_Ele_vs_time.GetBinContent(hist_Ele_vs_time.FindBin(Crab_tree_On.Time))
+        azimuth = hist_Azi_vs_time.GetBinContent(hist_Azi_vs_time.FindBin(Crab_tree_On.Time))
         if SignalSelection(Crab_tree_On):
             Hist_On_SR_Count[energy_bin].Fill(0)
         if ControlSelection(Crab_tree_On):
@@ -413,6 +458,9 @@ for run in Crab_runlist:
         if Crab_tree_Off.ErecS*1000.>energy_bins[len(energy_bins)-1]: continue
         energy_bin = Hist_ErecS_Target_SR[0].FindBin(Crab_tree_Off.ErecS*1000.)-1
         if energy_bin>len(energy_bins)-2: continue
+        elevation = hist_Ele_vs_time.GetBinContent(hist_Ele_vs_time.FindBin(Crab_tree_Off.Time))
+        azimuth = hist_Azi_vs_time.GetBinContent(hist_Azi_vs_time.FindBin(Crab_tree_Off.Time))
+        Hist_TelElevAzim_Counts_Crab.Fill(elevation,azimuth)
         if SignalSelection(Crab_tree_Off):
             Hist_Off_SR_Count[energy_bin].Fill(0)
         if ControlSelection(Crab_tree_Off):
@@ -634,5 +682,9 @@ Hist_Tight_SlantDepth_Target_On.Write()
 Hist_Tight_SlantDepth_Crab_On_TeV.Write()
 Hist_Tight_SlantDepth_Crab_Off_TeV.Write()
 Hist_Tight_SlantDepth_Target_On_TeV.Write()
+Hist2D_TelElev_vs_SlantDepth_Target.Write()
+Hist2D_TelElev_vs_EmissionHeight_Target.Write()
+Hist_TelElevAzim_Counts_Target.Write()
+Hist_TelElevAzim_Counts_Crab.Write()
 OutputFile.Close()
 
