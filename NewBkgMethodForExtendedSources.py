@@ -160,51 +160,75 @@ if region=='VR':
         Depth_cut_upper = 5.4
         MSCL_cut_lower = -1
         MSCL_cut_upper = 100.0
+        #MSCW_cut_lower = -1
+        #MSCW_cut_upper = 100.0
     if method=='MSCL':
         Depth_cut_lower = 0
         Depth_cut_upper = 5.4
         MSCW_cut_lower = -1
         MSCW_cut_upper = 100.0
+        #MSCL_cut_lower = -1
+        #MSCL_cut_upper = 100.0
 
 if region=='VR2':
     if method=='DepthUpper':
         MSCW_cut_lower = 1.5
-        MSCW_cut_upper = 3.
+        MSCW_cut_upper = 100.
         MSCL_cut_lower = -1
         MSCL_cut_upper = 100.
+        Depth_cut_lower = 0
+        Depth_cut_upper = 100.
     if method=='DepthLower':
         MSCW_cut_lower = 1.5
-        MSCW_cut_upper = 3.
+        MSCW_cut_upper = 100.
         MSCL_cut_lower = -1
         MSCL_cut_upper = 100.
+        Depth_cut_lower = 0
+        Depth_cut_upper = 100.
     if method=='MSCW':
         Depth_cut_lower = 13.5
         Depth_cut_upper = 100.
         MSCL_cut_lower = -1
         MSCL_cut_upper = 100.0
+        #MSCW_cut_lower = -1
+        #MSCW_cut_upper = 100.0
     if method=='MSCL':
         Depth_cut_lower = 13.5
         Depth_cut_upper = 100.
         MSCW_cut_lower = -1
         MSCW_cut_upper = 100.0
+        #MSCL_cut_lower = -1
+        #MSCL_cut_upper = 100.0
 
 if region=='VR3':
     if method=='DepthUpper':
         MSCL_cut_lower = 1.5
-        MSCL_cut_upper = 3.
+        MSCL_cut_upper = 100.
         MSCW_cut_lower = -1
         MSCW_cut_upper = 100.
+        Depth_cut_lower = 0
+        Depth_cut_upper = 100.
     if method=='DepthLower':
         MSCL_cut_lower = 1.5
-        MSCL_cut_upper = 3.
+        MSCL_cut_upper = 100.
         MSCW_cut_lower = -1
         MSCW_cut_upper = 100.
+        Depth_cut_lower = 0
+        Depth_cut_upper = 100.
     if method=='MSCW':
         MSCL_cut_lower = 1.5
-        MSCL_cut_upper = 3.0
+        MSCL_cut_upper = 100.0
+        MSCW_cut_lower = -1
+        MSCW_cut_upper = 100.
+        #Depth_cut_lower = 0
+        #Depth_cut_upper = 100.
     if method=='MSCL':
         MSCW_cut_lower = 1.5
-        MSCW_cut_upper = 3.0
+        MSCW_cut_upper = 100.0
+        MSCL_cut_lower = -1
+        MSCL_cut_upper = 100.
+        #Depth_cut_lower = 0
+        #Depth_cut_upper = 100.
 
 if method=='DepthUpper':
     Depth_cut_control = 13.5
