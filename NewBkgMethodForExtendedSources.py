@@ -78,7 +78,7 @@ Hist_Tight_SlantDepth_Crab_On_TeV = ROOT.TH1D("Hist_Tight_SlantDepth_Crab_On_TeV
 Hist_Tight_SlantDepth_Crab_Off_TeV = ROOT.TH1D("Hist_Tight_SlantDepth_Crab_Off_TeV","",100,0,10)
 Hist_Tight_SlantDepth_Target_On_TeV = ROOT.TH1D("Hist_Tight_SlantDepth_Target_On_TeV","",100,0,10)
 
-Hist2D_TelElev_vs_SlantDepth_Target = TH2D("Hist2D_TelElev_vs_SlantDepth_Target","",20,Elev_cut_lower,Elev_cut_upper,40,0,20)
+Hist2D_TelElev_vs_SlantDepth_Target = TH2D("Hist2D_TelElev_vs_SlantDepth_Target","",20,Elev_cut_lower,Elev_cut_upper,48,0,12)
 Hist2D_TelElev_vs_EmissionHeight_Target = TH2D("Hist2D_TelElev_vs_EmissionHeight_Target","",20,Elev_cut_lower,Elev_cut_upper,40,0,40)
 
 Hist_TelElevAzim_Counts_Target = TH2D("Hist_TelElevAzim_Counts_Target","",100,Elev_cut_lower,Elev_cut_upper,100,0,360)
@@ -98,6 +98,10 @@ for energy in range(0,len(energy_bins)-1):
     Hist_ErecS_Target_SR += [ROOT.TH1D("Hist_ErecS_Target_SR_ErecS%dto%d"%(energy_bins[energy],energy_bins[energy+1]),"",len(energy_bins)-1,array('d',energy_bins))]
     Hist_ErecS_Target_CR += [ROOT.TH1D("Hist_ErecS_Target_CR_ErecS%dto%d"%(energy_bins[energy],energy_bins[energy+1]),"",len(energy_bins)-1,array('d',energy_bins))]
     Hist_ErecS_Target_Bkg += [ROOT.TH1D("Hist_ErecS_Target_Bkg_ErecS%dto%d"%(energy_bins[energy],energy_bins[energy+1]),"",len(energy_bins)-1,array('d',energy_bins))]
+
+Hist2D_Energy_vs_SlantDepth_Target = TH2D("Hist2D_Energy_vs_SlantDepth_Target","",len(energy_bins)-1,array('d',energy_bins),60,0,12)
+Hist2D_Energy_vs_SlantDepth_Crab_On = TH2D("Hist2D_Energy_vs_SlantDepth_Crab_On","",len(energy_bins)-1,array('d',energy_bins),60,0,12)
+Hist2D_Energy_vs_SlantDepth_Crab_Off = TH2D("Hist2D_Energy_vs_SlantDepth_Crab_Off","",len(energy_bins)-1,array('d',energy_bins),60,0,12)
 
 Hist_On_SR_Count = []
 Hist_On_CR_Count = []
@@ -131,9 +135,9 @@ for energy in range(0,len(energy_bins)-1):
 
 
 MSCW_cut_lower = -1.0
-MSCW_cut_upper = 1.0
+MSCW_cut_upper = 0.6
 MSCL_cut_lower = -1.0
-MSCL_cut_upper = 1.0
+MSCL_cut_upper = 0.6
 Depth_cut_lower = 2
 Depth_cut_upper = 5
 if region=='VR':
@@ -144,11 +148,11 @@ if region=='VR':
         MSCW_cut_upper = 3.
         MSCL_cut_lower = -1
         MSCL_cut_upper = 3.
-        if UseLooseControlRegions:
-            MSCW_cut_lower = -1
-            MSCW_cut_upper = 100.0
-            MSCL_cut_lower = -1
-            MSCL_cut_upper = 100.0
+        #if UseLooseControlRegions:
+        #    MSCW_cut_lower = -1
+        #    MSCW_cut_upper = 100.0
+        #    MSCL_cut_lower = -1
+        #    MSCL_cut_upper = 100.0
     if method=='DepthLower':
         Depth_cut_lower = 5
         Depth_cut_upper = 1000
@@ -156,11 +160,11 @@ if region=='VR':
         MSCW_cut_upper = 3.
         MSCL_cut_lower = -1
         MSCL_cut_upper = 3.
-        if UseLooseControlRegions:
-            MSCW_cut_lower = -1
-            MSCW_cut_upper = 100.0
-            MSCL_cut_lower = -1
-            MSCL_cut_upper = 100.0
+        #if UseLooseControlRegions:
+        #    MSCW_cut_lower = -1
+        #    MSCW_cut_upper = 100.0
+        #    MSCL_cut_lower = -1
+        #    MSCL_cut_upper = 100.0
     if method=='MSCW':
         Depth_cut_lower = 0
         Depth_cut_upper = 2
@@ -168,11 +172,11 @@ if region=='VR':
         MSCL_cut_upper = 3.0
         #MSCW_cut_lower = -1
         #MSCW_cut_upper = 3.0
-        if UseLooseControlRegions:
-            MSCL_cut_lower = -1
-            MSCL_cut_upper = 100.0
-            #MSCW_cut_lower = -1
-            #MSCW_cut_upper = 100.0
+        #if UseLooseControlRegions:
+        #    MSCL_cut_lower = -1
+        #    MSCL_cut_upper = 100.0
+        #    #MSCW_cut_lower = -1
+        #    #MSCW_cut_upper = 100.0
     if method=='MSCL':
         Depth_cut_lower = 0
         Depth_cut_upper = 2
@@ -180,11 +184,37 @@ if region=='VR':
         MSCW_cut_upper = 3.0
         #MSCL_cut_lower = -1
         #MSCL_cut_upper = 3.0
-        if UseLooseControlRegions:
-            MSCW_cut_lower = -1
-            MSCW_cut_upper = 100.0
-            #MSCL_cut_lower = -1
-            #MSCL_cut_upper = 100.0
+        #if UseLooseControlRegions:
+        #    MSCW_cut_lower = -1
+        #    MSCW_cut_upper = 100.0
+        #    #MSCL_cut_lower = -1
+        #    #MSCL_cut_upper = 100.0
+
+if region=='VR2':
+    if method=='MSCW':
+        Depth_cut_lower = 5
+        Depth_cut_upper = 100.
+        MSCL_cut_lower = -1
+        MSCL_cut_upper = 3.0
+        #MSCW_cut_lower = -1
+        #MSCW_cut_upper = 3.0
+        #if UseLooseControlRegions:
+        #    MSCL_cut_lower = -1
+        #    MSCL_cut_upper = 100.0
+        #    #MSCW_cut_lower = -1
+        #    #MSCW_cut_upper = 100.0
+    if method=='MSCL':
+        Depth_cut_lower = 5
+        Depth_cut_upper = 100.
+        MSCW_cut_lower = -1
+        MSCW_cut_upper = 3.0
+        #MSCL_cut_lower = -1
+        #MSCL_cut_upper = 3.0
+        #if UseLooseControlRegions:
+        #    MSCW_cut_lower = -1
+        #    MSCW_cut_upper = 100.0
+        #    #MSCL_cut_lower = -1
+        #    #MSCL_cut_upper = 100.0
 
 if method=='DepthUpper':
     Depth_cut_control = 5.0
@@ -400,6 +430,7 @@ def AnalyzeTarget(target):
                         Hist_Loose_MSCW_Target_On_TeV.Fill(Target_tree_On.MSCW)
                         Hist_Loose_MSCL_Target_On_TeV.Fill(Target_tree_On.MSCL)
             if DiagnosticTightSelection(Target_tree_On):
+                Hist2D_Energy_vs_SlantDepth_Target.Fill(Target_tree_On.ErecS*1000.,Target_tree_On.SlantDepth)
                 if FOVSelection(Target_tree_On):
                     Hist_Tight_SlantDepth_Target_On.Fill(Target_tree_On.SlantDepth)
                     Hist_Tight_MSCW_Target_On.Fill(Target_tree_On.MSCW)
@@ -457,6 +488,7 @@ for run in Crab_runlist:
                 Hist_Loose_MSCW_Crab_On_TeV.Fill(Crab_tree_On.MSCW)
                 Hist_Loose_MSCL_Crab_On_TeV.Fill(Crab_tree_On.MSCL)
         if DiagnosticTightSelection(Crab_tree_On):
+            Hist2D_Energy_vs_SlantDepth_Crab_On.Fill(Crab_tree_On.ErecS*1000.,Crab_tree_On.SlantDepth)
             Hist_Tight_SlantDepth_Crab_On.Fill(Crab_tree_On.SlantDepth)
             Hist_Tight_MSCW_Crab_On.Fill(Crab_tree_On.MSCW)
             Hist_Tight_MSCL_Crab_On.Fill(Crab_tree_On.MSCL)
@@ -490,6 +522,7 @@ for run in Crab_runlist:
                 Hist_Loose_MSCW_Crab_Off_TeV.Fill(Crab_tree_Off.MSCW)
                 Hist_Loose_MSCL_Crab_Off_TeV.Fill(Crab_tree_Off.MSCL)
         if DiagnosticTightSelection(Crab_tree_Off):
+            Hist2D_Energy_vs_SlantDepth_Crab_Off.Fill(Crab_tree_Off.ErecS*1000.,Crab_tree_Off.SlantDepth)
             Hist_Tight_SlantDepth_Crab_Off.Fill(Crab_tree_Off.SlantDepth)
             Hist_Tight_MSCW_Crab_Off.Fill(Crab_tree_Off.MSCW)
             Hist_Tight_MSCL_Crab_Off.Fill(Crab_tree_Off.MSCL)
@@ -519,6 +552,9 @@ Hist_Tight_MSCL_Crab_Off.Scale(alpha)
 Hist_Tight_SlantDepth_Crab_Off_TeV.Scale(alpha)
 Hist_Tight_MSCW_Crab_Off_TeV.Scale(alpha)
 Hist_Tight_MSCL_Crab_Off_TeV.Scale(alpha)
+
+Hist2D_Energy_vs_SlantDepth_Crab_Off.Scale(alpha)
+Hist2D_Energy_vs_SlantDepth_Crab_On.Add(Hist2D_Energy_vs_SlantDepth_Crab_Off,-1.)
 
 for energy in range(0,len(energy_bins)-1):
 
@@ -699,6 +735,9 @@ Hist_Tight_SlantDepth_Crab_Off_TeV.Write()
 Hist_Tight_SlantDepth_Target_On_TeV.Write()
 Hist2D_TelElev_vs_SlantDepth_Target.Write()
 Hist2D_TelElev_vs_EmissionHeight_Target.Write()
+Hist2D_Energy_vs_SlantDepth_Target.Write()
+Hist2D_Energy_vs_SlantDepth_Crab_On.Write()
+Hist2D_Energy_vs_SlantDepth_Crab_Off.Write()
 Hist_TelElevAzim_Counts_Target.Write()
 Hist_TelElevAzim_Counts_Crab.Write()
 OutputFile.Close()
