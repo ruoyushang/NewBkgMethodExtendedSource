@@ -23,10 +23,11 @@ source_list  += ['H1426']
 source_list  += ['Ton599']
 source_list  += ['IC443']
 
-Elev_lower_cut = 55
-Elev_upper_cut = 85
+Elev_lower_cut = 65
+Elev_upper_cut = 75
 Azim_lower_cut = 0
 Azim_upper_cut = 360
+#ErecS_lower_cut = pow(10,2.3)
 ErecS_lower_cut = 100
 ErecS_upper_cut = 1e10 
 MSCL_lower_cut = -1.0
@@ -151,6 +152,10 @@ def Make2DProjectionPlot(Hist_Data,xtitle,ytitle,name):
     Hist_1D.SetLineColor(2)
     Hist_1D.Draw("E same")
     pad1.SetLogz()
+    f_mean = ROOT.TF1("f_mean","5.+log2(pow(x/0.08,0.4))",100,pow(10,4))
+    f_mean.SetLineColor(2)
+    f_mean.SetLineStyle(2)
+    f_mean.Draw("same")
     if 'Energy' in name:
         pad1.SetLogx()
     if not 'Crab' in name:
@@ -365,15 +370,30 @@ def MakeStackPlot(Hist_Data,Hist_CR,title,name):
     pad1.SetLogx(0)
     pad2.SetLogx(0)
 
+def AssignSystematics(syst1,stat1,syst2,stat2,syst3,stat3):
+    max_ratio = 0
+    max_syst = 0
+    max_ratio = abs(syst1)-abs(stat1)
+    #max_syst = pow(syst1*syst1+stat1*stat1,0.5)
+    max_syst = syst1
+    #if (max_ratio<abs(syst2)-abs(stat2)):
+    #    max_ratio = abs(syst2)-abs(stat2)
+    #    max_syst = pow(syst2*syst2+stat2*stat2,0.5)
+    #    #max_syst = syst2
+    #if (max_ratio<abs(syst3)-abs(stat3)):
+    #    max_ratio = abs(syst3)-abs(stat3)
+    #    max_syst = pow(syst3*syst3+stat3*stat3,0.5)
+    #    #max_syst = syst3
+    return max_syst
 
 def SelectHistograms(folder,method,isData,isSR):
 
     Hist_Data = ROOT.TH1D("Hist_Data","",1,0,1)
 
     if UseLooseControlRegions:
-        FilePath = '%s/Histograms_%s_%s_%s.root'%(folder,source,method,isSR)
+        FilePath = '%s/Histograms_%s_%s_%s_Elev%sto%s.root'%(folder,source,method,isSR,Elev_lower_cut,Elev_upper_cut)
     else:
-        FilePath = '%s/Histograms_%s_%s_%s_Tight.root'%(folder,source,method,isSR)
+        FilePath = '%s/Histograms_%s_%s_%s_Elev%sto%s_Tight.root'%(folder,source,method,isSR,Elev_lower_cut,Elev_upper_cut)
     print 'Read %s'%(FilePath)
     InputFile=ROOT.TFile(FilePath)
     
@@ -412,9 +432,9 @@ def SelectDiagnosticaHistograms(folder,method,isSR,var):
     Hist_Data = ROOT.TH1D("Hist_Data","",1,0,1)
 
     if UseLooseControlRegions:
-        FilePath = '%s/Histograms_%s_%s_%s.root'%(folder,source,method,isSR)
+        FilePath = '%s/Histograms_%s_%s_%s_Elev%sto%s.root'%(folder,source,method,isSR,Elev_lower_cut,Elev_upper_cut)
     else:
-        FilePath = '%s/Histograms_%s_%s_%s_Tight.root'%(folder,source,method,isSR)
+        FilePath = '%s/Histograms_%s_%s_%s_Elev%sto%s_Tight.root'%(folder,source,method,isSR,Elev_lower_cut,Elev_upper_cut)
     print 'Read %s'%(FilePath)
     InputFile=ROOT.TFile(FilePath)
     
@@ -581,23 +601,11 @@ for s in source_list:
                 Hist_Syst1_DepthUpper = Hist_VR_Data_DepthUpper.Clone()
                 Hist_Syst1_DepthUpper.Add(Hist_VR_CR_DepthUpper,-1)
                 Hist_Syst1_DepthUpper.Divide(Hist_VR_CR_DepthUpper)
-                Hist_VR2_Data_DepthUpper = SelectHistograms(folder,'DepthUpper','SR','VR2')
-                Hist_VR2_CR_DepthUpper = SelectHistograms(folder,'DepthUpper','Bkg','VR2')
-                Hist_Syst2_DepthUpper = Hist_VR2_Data_DepthUpper.Clone()
-                Hist_Syst2_DepthUpper.Add(Hist_VR2_CR_DepthUpper,-1)
-                Hist_Syst2_DepthUpper.Divide(Hist_VR2_CR_DepthUpper)
-                Hist_VR3_Data_DepthUpper = SelectHistograms(folder,'DepthUpper','SR','VR3')
-                Hist_VR3_CR_DepthUpper = SelectHistograms(folder,'DepthUpper','Bkg','VR3')
-                Hist_Syst3_DepthUpper = Hist_VR3_Data_DepthUpper.Clone()
-                Hist_Syst3_DepthUpper.Add(Hist_VR3_CR_DepthUpper,-1)
-                Hist_Syst3_DepthUpper.Divide(Hist_VR3_CR_DepthUpper)
                 Hist_Syst_DepthUpper = Hist_VR_Data_DepthUpper.Clone()
                 for b in range(0,Hist_Syst1_DepthUpper.GetNbinsX()):
-                    max_syst = abs(Hist_Syst1_DepthUpper.GetBinContent(b+1))
-                    if abs(Hist_Syst2_DepthUpper.GetBinContent(b+1))>3*Hist_Syst2_DepthUpper.GetBinError(b+1):
-                        max_syst = max(max_syst,abs(Hist_Syst2_DepthUpper.GetBinContent(b+1)))
-                    if abs(Hist_Syst3_DepthUpper.GetBinContent(b+1))>3*Hist_Syst3_DepthUpper.GetBinError(b+1):
-                        max_syst = max(max_syst,abs(Hist_Syst3_DepthUpper.GetBinContent(b+1)))
+                    syst1 = Hist_Syst1_DepthUpper.GetBinContent(b+1)
+                    stat1 = Hist_Syst1_DepthUpper.GetBinError(b+1)
+                    max_syst = AssignSystematics(10*syst1,stat1,0,0,0,0)
                     Hist_Syst_DepthUpper.SetBinContent(b+1,max_syst)
             if IncludeDepthLowerMethod:
                 Hist_VR_Data_DepthLower = SelectHistograms(folder,'DepthLower','SR','VR')
@@ -605,23 +613,11 @@ for s in source_list:
                 Hist_Syst1_DepthLower = Hist_VR_Data_DepthLower.Clone()
                 Hist_Syst1_DepthLower.Add(Hist_VR_CR_DepthLower,-1)
                 Hist_Syst1_DepthLower.Divide(Hist_VR_CR_DepthLower)
-                Hist_VR2_Data_DepthLower = SelectHistograms(folder,'DepthLower','SR','VR2')
-                Hist_VR2_CR_DepthLower = SelectHistograms(folder,'DepthLower','Bkg','VR2')
-                Hist_Syst2_DepthLower = Hist_VR2_Data_DepthLower.Clone()
-                Hist_Syst2_DepthLower.Add(Hist_VR2_CR_DepthLower,-1)
-                Hist_Syst2_DepthLower.Divide(Hist_VR2_CR_DepthLower)
-                Hist_VR3_Data_DepthLower = SelectHistograms(folder,'DepthLower','SR','VR3')
-                Hist_VR3_CR_DepthLower = SelectHistograms(folder,'DepthLower','Bkg','VR3')
-                Hist_Syst3_DepthLower = Hist_VR3_Data_DepthLower.Clone()
-                Hist_Syst3_DepthLower.Add(Hist_VR3_CR_DepthLower,-1)
-                Hist_Syst3_DepthLower.Divide(Hist_VR3_CR_DepthLower)
                 Hist_Syst_DepthLower = Hist_VR_Data_DepthLower.Clone()
                 for b in range(0,Hist_Syst1_DepthLower.GetNbinsX()):
-                    max_syst = abs(Hist_Syst1_DepthLower.GetBinContent(b+1))
-                    if abs(Hist_Syst2_DepthLower.GetBinContent(b+1))>3*Hist_Syst2_DepthLower.GetBinError(b+1):
-                        max_syst = max(max_syst,abs(Hist_Syst2_DepthLower.GetBinContent(b+1)))
-                    if abs(Hist_Syst3_DepthLower.GetBinContent(b+1))>3*Hist_Syst3_DepthLower.GetBinError(b+1):
-                        max_syst = max(max_syst,abs(Hist_Syst3_DepthLower.GetBinContent(b+1)))
+                    syst1 = Hist_Syst1_DepthLower.GetBinContent(b+1)
+                    stat1 = Hist_Syst1_DepthLower.GetBinError(b+1)
+                    max_syst = AssignSystematics(10*syst1,stat1,0,0,0,0)
                     Hist_Syst_DepthLower.SetBinContent(b+1,max_syst)
             if IncludeMSCWMethod:
                 Hist_VR_Data_MSCW = SelectHistograms(folder,'MSCW','SR','VR')
@@ -629,23 +625,11 @@ for s in source_list:
                 Hist_Syst1_MSCW = Hist_VR_Data_MSCW.Clone()
                 Hist_Syst1_MSCW.Add(Hist_VR_CR_MSCW,-1)
                 Hist_Syst1_MSCW.Divide(Hist_VR_CR_MSCW)
-                Hist_VR2_Data_MSCW = SelectHistograms(folder,'MSCW','SR','VR2')
-                Hist_VR2_CR_MSCW = SelectHistograms(folder,'MSCW','Bkg','VR2')
-                Hist_Syst2_MSCW = Hist_VR2_Data_MSCW.Clone()
-                Hist_Syst2_MSCW.Add(Hist_VR2_CR_MSCW,-1)
-                Hist_Syst2_MSCW.Divide(Hist_VR2_CR_MSCW)
-                Hist_VR3_Data_MSCW = SelectHistograms(folder,'MSCW','SR','VR3')
-                Hist_VR3_CR_MSCW = SelectHistograms(folder,'MSCW','Bkg','VR3')
-                Hist_Syst3_MSCW = Hist_VR3_Data_MSCW.Clone()
-                Hist_Syst3_MSCW.Add(Hist_VR3_CR_MSCW,-1)
-                Hist_Syst3_MSCW.Divide(Hist_VR3_CR_MSCW)
                 Hist_Syst_MSCW = Hist_VR_Data_MSCW.Clone()
                 for b in range(0,Hist_Syst1_MSCW.GetNbinsX()):
-                    max_syst = abs(Hist_Syst1_MSCW.GetBinContent(b+1))
-                    if abs(Hist_Syst2_MSCW.GetBinContent(b+1))>3*Hist_Syst2_MSCW.GetBinError(b+1):
-                        max_syst = max(max_syst,abs(Hist_Syst2_MSCW.GetBinContent(b+1)))
-                    if abs(Hist_Syst3_MSCW.GetBinContent(b+1))>3*Hist_Syst3_MSCW.GetBinError(b+1):
-                        max_syst = max(max_syst,abs(Hist_Syst3_MSCW.GetBinContent(b+1)))
+                    syst1 = Hist_Syst1_MSCW.GetBinContent(b+1)
+                    stat1 = Hist_Syst1_MSCW.GetBinError(b+1)
+                    max_syst = AssignSystematics(1.5*syst1,stat1,0,0,0,0)
                     Hist_Syst_MSCW.SetBinContent(b+1,max_syst)
             if IncludeMSCLMethod:
                 Hist_VR_Data_MSCL = SelectHistograms(folder,'MSCL','SR','VR')
@@ -653,23 +637,11 @@ for s in source_list:
                 Hist_Syst1_MSCL = Hist_VR_Data_MSCL.Clone()
                 Hist_Syst1_MSCL.Add(Hist_VR_CR_MSCL,-1)
                 Hist_Syst1_MSCL.Divide(Hist_VR_CR_MSCL)
-                Hist_VR2_Data_MSCL = SelectHistograms(folder,'MSCL','SR','VR2')
-                Hist_VR2_CR_MSCL = SelectHistograms(folder,'MSCL','Bkg','VR2')
-                Hist_Syst2_MSCL = Hist_VR2_Data_MSCL.Clone()
-                Hist_Syst2_MSCL.Add(Hist_VR2_CR_MSCL,-1)
-                Hist_Syst2_MSCL.Divide(Hist_VR2_CR_MSCL)
-                Hist_VR3_Data_MSCL = SelectHistograms(folder,'MSCL','SR','VR3')
-                Hist_VR3_CR_MSCL = SelectHistograms(folder,'MSCL','Bkg','VR3')
-                Hist_Syst3_MSCL = Hist_VR3_Data_MSCL.Clone()
-                Hist_Syst3_MSCL.Add(Hist_VR3_CR_MSCL,-1)
-                Hist_Syst3_MSCL.Divide(Hist_VR3_CR_MSCL)
                 Hist_Syst_MSCL = Hist_VR_Data_MSCL.Clone()
                 for b in range(0,Hist_Syst1_MSCL.GetNbinsX()):
-                    max_syst = abs(Hist_Syst1_MSCL.GetBinContent(b+1))
-                    if abs(Hist_Syst2_MSCL.GetBinContent(b+1))>3*Hist_Syst2_MSCL.GetBinError(b+1):
-                        max_syst = max(max_syst,abs(Hist_Syst2_MSCL.GetBinContent(b+1)))
-                    if abs(Hist_Syst3_MSCL.GetBinContent(b+1))>3*Hist_Syst3_MSCL.GetBinError(b+1):
-                        max_syst = max(max_syst,abs(Hist_Syst3_MSCL.GetBinContent(b+1)))
+                    syst1 = Hist_Syst1_MSCL.GetBinContent(b+1)
+                    stat1 = Hist_Syst1_MSCL.GetBinError(b+1)
+                    max_syst = AssignSystematics(1.5*syst1,stat1,0,0,0,0)
                     Hist_Syst_MSCL.SetBinContent(b+1,max_syst)
         
         if IncludeHeightMethod:
@@ -689,16 +661,6 @@ for s in source_list:
                 ErrCR_DepthUpper = Hist_CR_DepthUpper.GetBinError(b+1)
                 if AddSyst:
                     SystCR_DepthUpper = (Hist_Syst_DepthUpper.GetBinContent(b+1)*Hist_CR_DepthUpper.GetBinContent(b+1))
-                    #SystCR_Err_DepthUpper = 0
-                    #if not Hist_VR_CR_DepthUpper.GetBinContent(b+1)==0:
-                    #    SystCR_Err_DepthUpper += Hist_VR_Data_DepthUpper.GetBinError(b+1)/Hist_VR_CR_DepthUpper.GetBinContent(b+1)*Hist_CR_DepthUpper.GetBinContent(b+1)
-                    #else:
-                    #    SystCR_Err_DepthUpper += Hist_CR_DepthUpper.GetBinContent(b+1)
-                    #if not Hist_VR2_CR_DepthUpper.GetBinContent(b+1)==0:
-                    #    SystCR_Err_DepthUpper += Hist_VR2_Data_DepthUpper.GetBinError(b+1)/Hist_VR2_CR_DepthUpper.GetBinContent(b+1)*Hist_CR_DepthUpper.GetBinContent(b+1)
-                    #else:
-                    #    SystCR_Err_DepthUpper += Hist_CR_DepthUpper.GetBinContent(b+1)
-                    #SystCR_DepthUpper = pow(SystCR_DepthUpper*SystCR_DepthUpper+SystCR_Err_DepthUpper*SystCR_Err_DepthUpper,0.5)
                     ErrCR_DepthUpper = pow(ErrCR_DepthUpper*ErrCR_DepthUpper+SystCR_DepthUpper*SystCR_DepthUpper,0.5)
                     Hist_CR_DepthUpper.SetBinError(b+1,ErrCR_DepthUpper)
                     #Hist_CR_DepthUpper.SetBinContent(b+1,SystCR_DepthUpper+Hist_CR_DepthUpper.GetBinContent(b+1))
@@ -708,16 +670,6 @@ for s in source_list:
                 ErrCR_DepthLower = Hist_CR_DepthLower.GetBinError(b+1)
                 if AddSyst:
                     SystCR_DepthLower = (Hist_Syst_DepthLower.GetBinContent(b+1)*Hist_CR_DepthLower.GetBinContent(b+1))
-                    #SystCR_Err_DepthLower = 0
-                    #if not Hist_VR_CR_DepthLower.GetBinContent(b+1)==0:
-                    #    SystCR_Err_DepthLower += Hist_VR_Data_DepthLower.GetBinError(b+1)/Hist_VR_CR_DepthLower.GetBinContent(b+1)*Hist_CR_DepthLower.GetBinContent(b+1)
-                    #else:
-                    #    SystCR_Err_DepthLower += Hist_CR_DepthLower.GetBinContent(b+1)
-                    #if not Hist_VR2_CR_DepthLower.GetBinContent(b+1)==0:
-                    #    SystCR_Err_DepthLower += Hist_VR2_Data_DepthLower.GetBinError(b+1)/Hist_VR2_CR_DepthLower.GetBinContent(b+1)*Hist_CR_DepthLower.GetBinContent(b+1)
-                    #else:
-                    #    SystCR_Err_DepthLower += Hist_CR_DepthLower.GetBinContent(b+1)
-                    #SystCR_DepthLower = pow(SystCR_DepthLower*SystCR_DepthLower+SystCR_Err_DepthLower*SystCR_Err_DepthLower,0.5)
                     ErrCR_DepthLower = pow(ErrCR_DepthLower*ErrCR_DepthLower+SystCR_DepthLower*SystCR_DepthLower,0.5)
                     Hist_CR_DepthLower.SetBinError(b+1,ErrCR_DepthLower)
                     #Hist_CR_DepthLower.SetBinContent(b+1,SystCR_DepthLower+Hist_CR_DepthLower.GetBinContent(b+1))
@@ -727,16 +679,6 @@ for s in source_list:
                 ErrCR_MSCW = Hist_CR_MSCW.GetBinError(b+1)
                 if AddSyst:
                     SystCR_MSCW = (Hist_Syst_MSCW.GetBinContent(b+1)*Hist_CR_MSCW.GetBinContent(b+1))
-                    #SystCR_Err_MSCW = 0
-                    #if not Hist_VR_CR_MSCW.GetBinContent(b+1)==0:
-                    #    SystCR_Err_MSCW += Hist_VR_Data_MSCW.GetBinError(b+1)/Hist_VR_CR_MSCW.GetBinContent(b+1)*Hist_CR_MSCW.GetBinContent(b+1)
-                    #else:
-                    #    SystCR_Err_MSCW += Hist_CR_MSCW.GetBinContent(b+1)
-                    #if not Hist_VR2_CR_MSCW.GetBinContent(b+1)==0:
-                    #    SystCR_Err_MSCW += Hist_VR2_Data_MSCW.GetBinError(b+1)/Hist_VR2_CR_MSCW.GetBinContent(b+1)*Hist_CR_MSCW.GetBinContent(b+1)
-                    #else:
-                    #    SystCR_Err_MSCW += Hist_CR_MSCW.GetBinContent(b+1)
-                    #SystCR_MSCW = pow(SystCR_MSCW*SystCR_MSCW+SystCR_Err_MSCW*SystCR_Err_MSCW,0.5)
                     ErrCR_MSCW = pow(ErrCR_MSCW*ErrCR_MSCW+SystCR_MSCW*SystCR_MSCW,0.5)
                     Hist_CR_MSCW.SetBinError(b+1,ErrCR_MSCW)
                     #Hist_CR_MSCW.SetBinContent(b+1,SystCR_MSCW+Hist_CR_MSCW.GetBinContent(b+1))
@@ -746,16 +688,6 @@ for s in source_list:
                 ErrCR_MSCL = Hist_CR_MSCL.GetBinError(b+1)
                 if AddSyst:
                     SystCR_MSCL = (Hist_Syst_MSCL.GetBinContent(b+1)*Hist_CR_MSCL.GetBinContent(b+1))
-                    #SystCR_Err_MSCL = 0
-                    #if not Hist_VR_CR_MSCL.GetBinContent(b+1)==0:
-                    #    SystCR_Err_MSCL += Hist_VR_Data_MSCL.GetBinError(b+1)/Hist_VR_CR_MSCL.GetBinContent(b+1)*Hist_CR_MSCL.GetBinContent(b+1)
-                    #else:
-                    #    SystCR_Err_MSCL += Hist_CR_MSCL.GetBinContent(b+1)
-                    #if not Hist_VR2_CR_MSCL.GetBinContent(b+1)==0:
-                    #    SystCR_Err_MSCL += Hist_VR2_Data_MSCL.GetBinError(b+1)/Hist_VR2_CR_MSCL.GetBinContent(b+1)*Hist_CR_MSCL.GetBinContent(b+1)
-                    #else:
-                    #    SystCR_Err_MSCL += Hist_CR_MSCL.GetBinContent(b+1)
-                    #SystCR_MSCL = pow(SystCR_MSCL*SystCR_MSCL+SystCR_Err_MSCL*SystCR_Err_MSCL,0.5)
                     ErrCR_MSCL = pow(ErrCR_MSCL*ErrCR_MSCL+SystCR_MSCL*SystCR_MSCL,0.5)
                     Hist_CR_MSCL.SetBinError(b+1,ErrCR_MSCL)
                     #Hist_CR_MSCL.SetBinContent(b+1,SystCR_MSCL+Hist_CR_MSCL.GetBinContent(b+1))
@@ -898,7 +830,7 @@ for s in source_list:
         else:
             MakeStackPlot(Hist_Temp,Hist_CR4,xtitle,tag)
         
-        if not Variable == '_XoffVsYoff_':
+        if not Variable == '_XoffVsYoff_' and not UseAuxRegion:
             bins = []
             for b in range(0,Hist_Temp.GetNbinsX()+1):
                 bins += [Hist_Temp.GetBinLowEdge(b+1)]
