@@ -44,6 +44,8 @@ method = sys.argv[2]
 region = sys.argv[3]
 Elev_cut_lower = float(sys.argv[4])
 Elev_cut_upper = Elev_cut_lower+5
+Elev_cut_lower = 55
+Elev_cut_upper = 85
 
 Hist_MSCW_Crab_On_Alpha = ROOT.TH1D("Hist_MSCW_Crab_On_Alpha","",110,-1,10)
 Hist_MSCW_Crab_Off_Alpha = ROOT.TH1D("Hist_MSCW_Crab_Off_Alpha","",110,-1,10)
@@ -167,9 +169,9 @@ def SignalSelection(tree):
         if SignalRegion(tree): return False
         if ControlSelection(tree): return False
         if method=='DepthUpper':
-            if tree.MSCW>MSCW_cut_upper*2.5: return False
+            if tree.MSCW>MSCW_cut_upper*4.0: return False
             if tree.MSCW<MSCW_cut_lower: return False
-            if tree.MSCL>MSCL_cut_upper*2.5: return False
+            if tree.MSCL>MSCL_cut_upper*1.0: return False
             if tree.MSCL<MSCL_cut_lower: return False
             if tree.SlantDepth*100./37.>Depth_cut_lower: return False
         return True
@@ -184,9 +186,11 @@ def SignalRegion(tree):
     return True
 
 def ControlSelection(tree):
-    if tree.MSCW>MSCW_cut_upper*2.5: return False
-    if tree.MSCL>MSCL_cut_upper*2.5: return False
+    if tree.MSCW>MSCW_cut_upper*3.0: return False
+    if tree.MSCL>MSCL_cut_upper*3.0: return False
     if method=='DepthUpper':
+        if tree.MSCW>MSCW_cut_upper*3.0: return False
+        if tree.MSCL>MSCL_cut_upper*1.: return False
         if tree.MSCW<MSCW_cut_lower: return False
         if tree.MSCL<MSCL_cut_lower: return False
         if tree.SlantDepth*100./37.<Depth_cut_upper: return False
@@ -259,7 +263,7 @@ def DiagnosticLooseSelection(tree):
     return True
 
 def FOVSelection(tree):
-    if tree.theta2<0.2: return False
+    if tree.theta2<0.3: return False
     #if tree.theta2>1.0: return False
     return True
 
