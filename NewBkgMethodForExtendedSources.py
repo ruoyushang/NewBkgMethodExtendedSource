@@ -43,7 +43,7 @@ target = sys.argv[1]
 method = sys.argv[2]
 region = sys.argv[3]
 Elev_cut_lower = float(sys.argv[4])
-Elev_cut_upper = Elev_cut_lower+10
+Elev_cut_upper = Elev_cut_lower+5
 
 Hist_MSCW_Crab_On_Alpha = ROOT.TH1D("Hist_MSCW_Crab_On_Alpha","",110,-1,10)
 Hist_MSCW_Crab_Off_Alpha = ROOT.TH1D("Hist_MSCW_Crab_Off_Alpha","",110,-1,10)
@@ -144,13 +144,13 @@ MSCW_cut_lower = -0.5
 MSCW_cut_upper = 0.6
 MSCL_cut_lower = -0.5
 MSCL_cut_upper = 0.6
-Depth_cut_lower = 6
-Depth_cut_upper = 14
+Depth_cut_lower = 7
+Depth_cut_upper = 13
 
 if method=='DepthUpper':
-    Depth_cut_control = 14
+    Depth_cut_control = 13
 if method=='DepthLower':
-    Depth_cut_control = 6
+    Depth_cut_control = 7
 MSCW_cut_control = 2.0
 MSCL_cut_control = 2.0
 
@@ -166,6 +166,12 @@ def SignalSelection(tree):
     else:
         if SignalRegion(tree): return False
         if ControlSelection(tree): return False
+        if method=='DepthUpper':
+            if tree.MSCW>MSCW_cut_upper*2.5: return False
+            if tree.MSCW<MSCW_cut_lower: return False
+            if tree.MSCL>MSCL_cut_upper*2.5: return False
+            if tree.MSCL<MSCL_cut_lower: return False
+            if tree.SlantDepth*100./37.>Depth_cut_lower: return False
         return True
 
 def SignalRegion(tree):
@@ -183,9 +189,10 @@ def ControlSelection(tree):
     if method=='DepthUpper':
         if tree.MSCW<MSCW_cut_lower: return False
         if tree.MSCL<MSCL_cut_lower: return False
-        if tree.SlantDepth*100./37.>Depth_cut_lower and tree.SlantDepth*100./37.<Depth_cut_upper: return False
+        if tree.SlantDepth*100./37.<Depth_cut_upper: return False
+        #if tree.SlantDepth*100./37.>Depth_cut_lower and tree.SlantDepth*100./37.<Depth_cut_upper: return False
     if method == 'MSCW':
-        if tree.MSCL>MSCL_cut_upper*1.5: return False
+        if tree.MSCL>MSCL_cut_upper*1.25: return False
         if tree.MSCL<MSCL_cut_lower: return False
         if tree.SlantDepth*100./37.<Depth_cut_lower: return False
         if tree.SlantDepth*100./37.>Depth_cut_upper: return False
