@@ -12,11 +12,11 @@ folder = 'output'
 
 source = ''
 source_list = []
-#source_list  += ['Crab']
+source_list  += ['Crab']
 #source_list  += ['2ndCrab']
 #source_list  += ['PKS1424']
 #source_list  += ['3C264']
-source_list  += ['H1426']
+#source_list  += ['H1426']
 #source_list  += ['Ton599']
 #source_list  += ['IC443']
 
@@ -33,7 +33,9 @@ MSCW_upper_cut = 0.6
 
 energy_list = []
 energy_list += [100]
+energy_list += [200]
 energy_list += [500]
+energy_list += [700]
 energy_list += [1000]
 energy_list += [2000]
 
@@ -155,13 +157,22 @@ for s in source_list:
         ErecS_lower_cut = energy_list[e]
 
         which_method = 'MSCW'
-        Hist_CrabOff_SR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','CrabOff_SR_MSCW')
-        Hist_CrabOff_CR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','CrabOff_CR_MSCW')
-        Hist_CrabOff_Deconv_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','CrabOff_Deconv_MSCW')
-        Hist_CrabOff_Bkg_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','CrabOff_Bkg_MSCW')
-        #MakeDiagnosticPlot(Hist_CrabOff_SR_MSCW,Hist_CrabOff_CR_MSCW,Hist_CrabOff_Deconv_MSCW,'MSCW','CrabOff_Deconv_MSCW_E%s'%(ErecS_lower_cut))
-        MakeDiagnosticPlot(Hist_CrabOff_SR_MSCW,Hist_CrabOff_CR_MSCW,Hist_CrabOff_Bkg_MSCW,'MSCW','CrabOff_Bkg_MSCW_E%s'%(ErecS_lower_cut))
+
         Hist_Target_SR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_MSCW')
         Hist_Target_CR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_MSCW')
         Hist_Target_Bkg_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_MSCW')
         MakeDiagnosticPlot(Hist_Target_SR_MSCW,Hist_Target_CR_MSCW,Hist_Target_Bkg_MSCW,'MSCW','Target_Bkg_MSCW_E%s'%(ErecS_lower_cut))
+        Hist_Target_ASR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_ASR_MSCW')
+        Hist_Target_ACR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_ACR_MSCW')
+        Hist_Target_ABkg_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_ABkg_MSCW')
+        MakeDiagnosticPlot(Hist_Target_ASR_MSCW,Hist_Target_ACR_MSCW,Hist_Target_ABkg_MSCW,'MSCW','Target_ABkg_MSCW_E%s'%(ErecS_lower_cut))
+
+        #Hist_Target_SR_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_MSCL')
+        #Hist_Target_CR_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_MSCL')
+        #Hist_Target_Bkg_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_MSCL')
+        #MakeDiagnosticPlot(Hist_Target_SR_MSCL,Hist_Target_CR_MSCL,Hist_Target_Bkg_MSCL,'MSCL','Target_Bkg_MSCL_E%s'%(ErecS_lower_cut))
+        #Hist_Target_ASR_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_ASR_MSCL')
+        #Hist_Target_ACR_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_ACR_MSCL')
+        #Hist_Target_ABkg_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_ABkg_MSCL')
+        #MakeDiagnosticPlot(Hist_Target_ASR_MSCL,Hist_Target_ACR_MSCL,Hist_Target_ABkg_MSCL,'MSCL','Target_ABkg_MSCL_E%s'%(ErecS_lower_cut))
+
