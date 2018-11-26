@@ -86,11 +86,11 @@ Hist_Tight_SlantDepth_Crab_On_TeV = ROOT.TH1D("Hist_Tight_SlantDepth_Crab_On_TeV
 Hist_Tight_SlantDepth_Crab_Off_TeV = ROOT.TH1D("Hist_Tight_SlantDepth_Crab_Off_TeV","",100,0,30)
 Hist_Tight_SlantDepth_Target_On_TeV = ROOT.TH1D("Hist_Tight_SlantDepth_Target_On_TeV","",100,0,30)
 
-Hist2D_TelElev_vs_SlantDepth_Target = TH2D("Hist2D_TelElev_vs_SlantDepth_Target","",20,55,85,48,0,36)
-Hist2D_TelElev_vs_EmissionHeight_Target = TH2D("Hist2D_TelElev_vs_EmissionHeight_Target","",20,55,85,40,0,40)
+Hist2D_TelElev_vs_SlantDepth_Target = TH2D("Hist2D_TelElev_vs_SlantDepth_Target","",20,30,85,48,0,36)
+Hist2D_TelElev_vs_EmissionHeight_Target = TH2D("Hist2D_TelElev_vs_EmissionHeight_Target","",20,30,85,40,0,40)
 
-Hist_TelElevAzim_Counts_Target = TH2D("Hist_TelElevAzim_Counts_Target","",100,55,85,100,0,360)
-Hist_TelElevAzim_Counts_Crab = TH2D("Hist_TelElevAzim_Counts_Crab","",100,55,85,100,0,360)
+Hist_TelElevAzim_Counts_Target = TH2D("Hist_TelElevAzim_Counts_Target","",100,30,85,100,0,360)
+Hist_TelElevAzim_Counts_Crab = TH2D("Hist_TelElevAzim_Counts_Crab","",100,30,85,100,0,360)
 
 energy_bins = []
 #energy_bins += [pow(10,2.2),pow(10,2.4),pow(10,2.6),pow(10,2.8)]
@@ -141,6 +141,18 @@ for energy in range(0,len(energy_bins)-1):
     Hist_Theta2ZoomIn_Target_CR += [ROOT.TH1D("Hist_Theta2ZoomIn_Target_CR_ErecS%dto%d"%(energy_bins[energy],energy_bins[energy+1]),"",20,0,0.5)]
     Hist_Theta2ZoomIn_Target_Bkg += [ROOT.TH1D("Hist_Theta2ZoomIn_Target_Bkg_ErecS%dto%d"%(energy_bins[energy],energy_bins[energy+1]),"",20,0,0.5)]
 
+Xcenter = 0
+Ycenter = 0
+Window = 2.
+Nbins = 100
+Hist_Xoff_vs_Yoff_SR = []
+Hist_Xoff_vs_Yoff_CR = []
+Hist_Xoff_vs_Yoff_Bkg = []
+for energy in range(0,len(energy_bins)-1):
+    Hist_Xoff_vs_Yoff_SR += [ROOT.TH2D("Hist_Xoff_vs_Yoff_SR_ErecS%dto%d"%(energy_bins[energy],energy_bins[energy+1]),"",Nbins,Xcenter-Window,Xcenter+Window,Nbins,Ycenter-Window,Ycenter+Window)]
+    Hist_Xoff_vs_Yoff_CR += [ROOT.TH2D("Hist_Xoff_vs_Yoff_CR_ErecS%dto%d"%(energy_bins[energy],energy_bins[energy+1]),"",Nbins,Xcenter-Window,Xcenter+Window,Nbins,Ycenter-Window,Ycenter+Window)]
+    Hist_Xoff_vs_Yoff_Bkg += [ROOT.TH2D("Hist_Xoff_vs_Yoff_Bkg_ErecS%dto%d"%(energy_bins[energy],energy_bins[energy+1]),"",Nbins,Xcenter-Window,Xcenter+Window,Nbins,Ycenter-Window,Ycenter+Window)]
+
 
 MSCW_cut_lower = -0.5
 MSCW_cut_upper = 0.6
@@ -168,6 +180,9 @@ def SignalSelection(tree):
     else:
         if SignalRegion(tree): return False
         if ControlSelection(tree): return False
+        if method=='MSCW':
+            if tree.MSCW>MSCW_cut_upper*1.0: return False
+            if tree.MSCL>MSCL_cut_upper*4.0: return False
         if method=='DepthUpper':
             if tree.MSCW>MSCW_cut_upper*4.0: return False
             if tree.MSCW<MSCW_cut_lower: return False
@@ -240,26 +255,6 @@ def DiagnosticTightSelection(tree):
     return True
 
 def DiagnosticLooseSelection(tree):
-    #if method=='DepthUpper':
-    #    if tree.MSCW>MSCW_cut_upper: return False
-    #    if tree.MSCW<MSCW_cut_lower: return False
-    #    if tree.MSCL>MSCL_cut_upper: return False
-    #    if tree.MSCL<MSCL_cut_lower: return False
-    #if method=='DepthLower':
-    #    if tree.MSCW>MSCW_cut_upper: return False
-    #    if tree.MSCW<MSCW_cut_lower: return False
-    #    if tree.MSCL>MSCL_cut_upper: return False
-    #    if tree.MSCL<MSCL_cut_lower: return False
-    #if method == 'MSCW':
-    #    if tree.MSCL>MSCL_cut_upper: return False
-    #    if tree.MSCL<MSCL_cut_lower: return False
-    #    if tree.SlantDepth<Depth_cut_lower: return False
-    #    if tree.SlantDepth>Depth_cut_upper: return False
-    #if method == 'MSCL':
-    #    if tree.MSCW>MSCW_cut_upper: return False
-    #    if tree.MSCW<MSCW_cut_lower: return False
-    #    if tree.SlantDepth<Depth_cut_lower: return False
-    #    if tree.SlantDepth>Depth_cut_upper: return False
     return True
 
 def FOVSelection(tree):
@@ -363,11 +358,13 @@ def AnalyzeTarget(target):
                     Hist_ErecS_Target_SR[energy_bin].Fill(Target_tree_On.ErecS*1000.)
                 Hist_Theta2_Target_SR[energy_bin].Fill(Target_tree_On.theta2)
                 Hist_Theta2ZoomIn_Target_SR[energy_bin].Fill(Target_tree_On.theta2)
+                Hist_Xoff_vs_Yoff_SR[energy_bin].Fill(Target_tree_On.ra,Target_tree_On.dec)
             if ControlSelection(Target_tree_On):
                 if FOVSelection(Target_tree_On):
                     Hist_ErecS_Target_CR[energy_bin].Fill(Target_tree_On.ErecS*1000.)
                 Hist_Theta2_Target_CR[energy_bin].Fill(Target_tree_On.theta2)
                 Hist_Theta2ZoomIn_Target_CR[energy_bin].Fill(Target_tree_On.theta2)
+                Hist_Xoff_vs_Yoff_CR[energy_bin].Fill(Target_tree_On.ra,Target_tree_On.dec)
             if DiagnosticLooseSelection(Target_tree_On):
                 if FOVSelection(Target_tree_On):
                     Hist_Loose_SlantDepth_Target_On.Fill(Target_tree_On.SlantDepth*100./37.)
@@ -525,13 +522,12 @@ for energy in range(0,len(energy_bins)-1):
         CalculateBkgHeightMethod(Hist_ErecS_Target_Bkg[energy],Hist_ErecS_Target_SR[energy],Hist_ErecS_Target_CR[energy],bkg_att,err_bkg_att,sig_att,err_sig_att)
         CalculateBkgHeightMethod(Hist_Theta2_Target_Bkg[energy],Hist_Theta2_Target_SR[energy],Hist_Theta2_Target_CR[energy],bkg_att,err_bkg_att,sig_att,err_sig_att)
         CalculateBkgHeightMethod(Hist_Theta2ZoomIn_Target_Bkg[energy],Hist_Theta2ZoomIn_Target_SR[energy],Hist_Theta2ZoomIn_Target_CR[energy],bkg_att,err_bkg_att,sig_att,err_sig_att)
+        CalculateBkgHeightMethod(Hist_Xoff_vs_Yoff_Bkg[energy],Hist_Xoff_vs_Yoff_SR[energy],Hist_Xoff_vs_Yoff_CR[energy],bkg_att,err_bkg_att,sig_att,err_sig_att)
     if method == 'MSCW' or method == 'MSCL':
         CalculateBkgMSCWMethod(Hist_ErecS_Target_Bkg[energy],Hist_ErecS_Target_SR[energy],Hist_ErecS_Target_CR[energy],bkg_att,err_bkg_att)
         CalculateBkgMSCWMethod(Hist_Theta2_Target_Bkg[energy],Hist_Theta2_Target_SR[energy],Hist_Theta2_Target_CR[energy],bkg_att,err_bkg_att)
         CalculateBkgMSCWMethod(Hist_Theta2ZoomIn_Target_Bkg[energy],Hist_Theta2ZoomIn_Target_SR[energy],Hist_Theta2ZoomIn_Target_CR[energy],bkg_att,err_bkg_att)
-    #CalculateBkgMSCWMethod(Hist_ErecS_Target_Bkg[energy],Hist_ErecS_Target_SR[energy],Hist_ErecS_Target_CR[energy],bkg_att,err_bkg_att)
-    #CalculateBkgMSCWMethod(Hist_Theta2_Target_Bkg[energy],Hist_Theta2_Target_SR[energy],Hist_Theta2_Target_CR[energy],bkg_att,err_bkg_att)
-    #CalculateBkgMSCWMethod(Hist_Theta2ZoomIn_Target_Bkg[energy],Hist_Theta2ZoomIn_Target_SR[energy],Hist_Theta2ZoomIn_Target_CR[energy],bkg_att,err_bkg_att)
+        CalculateBkgMSCWMethod(Hist_Xoff_vs_Yoff_Bkg[energy],Hist_Xoff_vs_Yoff_SR[energy],Hist_Xoff_vs_Yoff_CR[energy],bkg_att,err_bkg_att)
 
 if method=='DepthUpper':
     bin_begin = Hist_Loose_SlantDepth_Crab_On.FindBin(Depth_cut_control)
@@ -645,6 +641,8 @@ for energy in range(0,len(energy_bins)-1):
     Hist_Theta2_Target_Bkg[energy].Write()
     Hist_Theta2ZoomIn_Target_SR[energy].Write()
     Hist_Theta2ZoomIn_Target_Bkg[energy].Write()
+    Hist_Xoff_vs_Yoff_SR[energy].Write()
+    Hist_Xoff_vs_Yoff_Bkg[energy].Write()
 Hist_Loose_MSCW_Crab_On.Write()
 Hist_Loose_MSCW_Crab_Off.Write()
 Hist_Loose_MSCW_Target_On.Write()

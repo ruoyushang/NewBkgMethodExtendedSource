@@ -9,28 +9,26 @@ ROOT.TH1.AddDirectory(False) # without this, the histograms returned from a func
 ROOT.gStyle.SetPaintTextFormat("0.3f")
 
 folder = 'output'
-MSCW_lower_cut = -1.0
-MSCW_upper_cut = 1.0
-#MSCW_lower_cut = 2
-#MSCW_upper_cut = 3
 
 source = ''
 source_list = []
-source_list  += ['2ndCrab']
-source_list  += ['PKS1424']
-source_list  += ['3C264']
+#source_list  += ['2ndCrab']
+#source_list  += ['PKS1424']
+#source_list  += ['3C264']
 source_list  += ['H1426']
-source_list  += ['Ton599']
-source_list  += ['IC443']
+#source_list  += ['Ton599']
+#source_list  += ['IC443']
 
-Elev_lower_cut = 55
-Elev_upper_cut = 85
+Elev_lower_cut = 65
+Elev_upper_cut = 70
 Azim_lower_cut = 0
 Azim_upper_cut = 360
 ErecS_lower_cut = 100
 ErecS_upper_cut = 1e10 
-MSCL_lower_cut = -1.0
-MSCL_upper_cut = 1.0
+MSCL_lower_cut = -0.5
+MSCL_upper_cut = 0.6
+MSCW_lower_cut = -0.5
+MSCW_upper_cut = 0.6
 
 energy_list = []
 energy_list += [100]
@@ -46,6 +44,8 @@ variable_list += ['_Theta2_']
 xtitle_list += ['#theta^{2}']
 variable_list += ['_Theta2ZoomIn_']
 xtitle_list += ['#theta^{2}']
+variable_list += ['_Xoff_vs_Yoff_']
+xtitle_list += ['']
 
 AddSyst = True
 #AddSyst = False
@@ -63,10 +63,10 @@ IncludeMSCWMethod = False
 IncludeMSCLMethod = False
 
 #IncludeHeightMethod = True
-IncludeDepthUpperMethod = True
+#IncludeDepthUpperMethod = True
 #IncludeDepthLowerMethod = True
 IncludeMSCWMethod = True
-IncludeMSCLMethod = True
+#IncludeMSCLMethod = True
 
 def set_histStyle( hist , color):
     hist.SetFillColor(color)
@@ -90,8 +90,8 @@ def Make2DSignificancePlot(Hist_Data,Hist_CR,title,name):
             if not this_bkg_err==0:
                 value = (this_data-this_bkg)/pow(this_bkg_err*this_bkg_err+this_data_err*this_data_err,0.5)
             Hist_Sig.SetBinContent(bx+1,by+1,value)
-    Hist_Sig.GetYaxis().SetTitle('Yoff')
-    Hist_Sig.GetXaxis().SetTitle('Xoff')
+    Hist_Sig.GetYaxis().SetTitle('Dec from source')
+    Hist_Sig.GetXaxis().SetTitle('RA from source')
     Hist_Sig.GetZaxis().SetTitle('Significance')
     Hist_Sig.SetMaximum(5)
     Hist_Sig.SetMinimum(-3)
@@ -100,6 +100,14 @@ def Make2DSignificancePlot(Hist_Data,Hist_CR,title,name):
         c_both.SaveAs('output_plots/%s_E%s.pdf'%(name,ErecS_lower_cut))
     else:
         c_both.SaveAs('output_plots/%s_E%s_Tight.pdf'%(name,ErecS_lower_cut))
+    Hist_Sig_Distribution = ROOT.TH1D("Hist_Sig_Distribution","",75,-5,10)
+    for bx in range(0,Hist_Sig.GetNbinsX()):
+        for by in range(0,Hist_Sig.GetNbinsY()):
+            Hist_Sig_Distribution.Fill(Hist_Sig.GetBinContent(bx+1,by+1))
+    Hist_Sig_Distribution.Draw()
+    c_both.SetLogy()
+    c_both.SaveAs('output_plots/%s_SigDist_E%s.pdf'%(name,ErecS_lower_cut))
+
 
 def Make1DProjectionPlot(Hist_Data,xtitle,name):
 
@@ -169,21 +177,104 @@ def Make2DProjectionPlot(Hist_Data,xtitle,ytitle,name):
 def Make2DTrajectoryPlot(Hist_1,Hist_2,xtitle,ytitle,name):
 
     canvas = ROOT.TCanvas("canvas","canvas", 200, 10, 600, 600)
-    pad1 = ROOT.TPad("pad1","pad1",0,0,1,1)
+    pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
+    pad3.SetBottomMargin(0.0)
+    pad3.SetTopMargin(0.03)
+    pad3.SetBorderMode(1)
+    pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.8)
     pad1.SetBottomMargin(0.15)
-    pad1.SetRightMargin(0.15)
-    pad1.SetLeftMargin(0.15)
-    pad1.SetTopMargin(0.15)
+    pad1.SetTopMargin(0.0)
     pad1.SetBorderMode(0)
     pad1.Draw()
+    pad3.Draw()
     pad1.cd()
     Hist_1.GetYaxis().SetTitle(ytitle)
     Hist_1.GetXaxis().SetTitle(xtitle)
+    Hist_2.GetYaxis().SetTitle(ytitle)
+    Hist_2.GetXaxis().SetTitle(xtitle)
     Hist_1.SetLineColor(4)
     Hist_1.Draw("CONT3")
     Hist_2.SetLineColor(2)
     Hist_2.Draw("CONT3 same")
+    pad3.cd()
+    legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.2)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+    legend.Clear()
+    legend.AddEntry(Hist_1,'Crab 2017-18',"pl")
+    if source=='2ndCrab':
+        legend.AddEntry(Hist_2,'Crab 2016',"pl")
+    else:
+        legend.AddEntry(Hist_2,source,"pl")
+    legend.Draw("SAME")
     canvas.SaveAs('output_plots/%s_%s.pdf'%(name,source))
+
+    canvas2 = ROOT.TCanvas("canvas2","canvas2", 200, 10, 600, 600)
+    Hist_1.RebinX(2)
+    Hist_1.RebinY(2)
+    Hist_1.Draw("COL4Z")
+    canvas2.SaveAs('output_plots/%s_%s_Lego.pdf'%(name,'Crab'))
+    Hist_2.Draw("COL4Z")
+    Hist_2.RebinX(2)
+    Hist_2.RebinY(2)
+    canvas2.SaveAs('output_plots/%s_%s_Lego.pdf'%(name,source))
+
+def CompareLooseAndTightPlot(Hist_Loose,Hist_Tight,title,name):
+    
+    c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
+    pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
+    pad3.SetBottomMargin(0.0)
+    pad3.SetTopMargin(0.03)
+    pad3.SetBorderMode(1)
+    pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.8)
+    pad1.SetBottomMargin(0.15)
+    pad1.SetTopMargin(0.0)
+    pad1.SetBorderMode(0)
+    pad1.Draw()
+    pad3.Draw()
+
+    pad1.cd()
+    Hist_Loose.SetLineColor(2)
+    Hist_Loose.SetLineWidth(3)
+    Hist_Tight.SetLineColor(4)
+    Hist_Tight.SetLineWidth(3)
+    if 'Depth' in name:
+        bin1 = Hist_Tight.FindBin(13)
+        bin2 = Hist_Tight.FindBin(30)
+        scale = Hist_Tight.Integral(bin1,bin2)/Hist_Loose.Integral(bin1,bin2)
+        Hist_Loose.Scale(scale)
+    Hist_Loose.Draw("E")
+    Hist_Tight.Draw("E same")
+    pad3.cd()
+    legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.2)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+    legend.Clear()
+    legend.AddEntry(Hist_Loose,'Loose',"pl")
+    legend.AddEntry(Hist_Tight,'Tight',"pl")
+    legend.Draw("SAME")
+    lumilab1 = ROOT.TLatex(0.15,0.75,'   ' )
+    lumilab1.SetNDC()
+    lumilab1.SetTextSize(0.15)
+    lumilab1.Draw()
+    lumilab2 = ROOT.TLatex(0.15,0.65,'%0.2f < Tel elev. < %0.2f'%(Elev_lower_cut,Elev_upper_cut) )
+    lumilab2.SetNDC()
+    lumilab2.SetTextSize(0.15)
+    lumilab2.Draw()
+    lumilab5 = ROOT.TLatex(0.15,0.50,'%0.2f < Tel azim. < %0.2f'%(Azim_lower_cut,Azim_upper_cut) )
+    lumilab5.SetNDC()
+    lumilab5.SetTextSize(0.15)
+    lumilab5.Draw()
+    #pad1.SetLogy()
+    c_both.SaveAs('output_plots/%s_%s.pdf'%(name,source))
 
 def MakeDiagnosticPlot(Hist_Crab_On,Hist_Crab_Off,Hist_Target_On,title,name):
     
@@ -459,23 +550,26 @@ def SelectDiagnosticaHistograms(folder,method,isSR,var):
 
 for s in source_list:
     source = s
+
+    which_method = 'MSCW'
+    Hist2D_TelElev_vs_SlantDepth_Target = SelectDiagnosticaHistograms(folder,which_method,'SR','2D_TelElev_vs_SlantDepth_Target')
+    Make2DProjectionPlot(Hist2D_TelElev_vs_SlantDepth_Target,'Tel. elev','Slant depth [37g/cm^{2}]','TelElev_vs_SlantDepth')
+    Hist2D_Energy_vs_SlantDepth_Target = SelectDiagnosticaHistograms(folder,which_method,'SR','2D_Energy_vs_SlantDepth_Target')
+    Make2DProjectionPlot(Hist2D_Energy_vs_SlantDepth_Target,'E [GeV]','Slant depth [37g/cm^{2}]','Energy_vs_SlantDepth')
+    Make1DProjectionPlot(Hist2D_Energy_vs_SlantDepth_Target,'Slant depth [37g/cm^{2}]','SlantDepth_as_FofE')
+    Hist2D_Energy_vs_SlantDepth_Crab_On = SelectDiagnosticaHistograms(folder,which_method,'SR','2D_Energy_vs_SlantDepth_Crab_On')
+    Make2DProjectionPlot(Hist2D_Energy_vs_SlantDepth_Crab_On,'E [GeV]','Slant depth [37g/cm^{2}]','Energy_vs_SlantDepth_Crab_On')
+    Make1DProjectionPlot(Hist2D_Energy_vs_SlantDepth_Crab_On,'Slant depth [37g/cm^{2}]','SlantDepth_as_FofE_Crab_On')
+    Hist2D_Energy_vs_SlantDepth_Crab_Off = SelectDiagnosticaHistograms(folder,which_method,'SR','2D_Energy_vs_SlantDepth_Crab_Off')
+    Make2DProjectionPlot(Hist2D_Energy_vs_SlantDepth_Crab_Off,'E [GeV]','Slant depth [37g/cm^{2}]','Energy_vs_SlantDepth_Crab_Off')
+    Make1DProjectionPlot(Hist2D_Energy_vs_SlantDepth_Crab_Off,'Slant depth [37g/cm^{2}]','SlantDepth_as_FofE_Crab_Off')
+    Hist2D_TelElev_vs_EmissionHeight_Target = SelectDiagnosticaHistograms(folder,which_method,'SR','2D_TelElev_vs_EmissionHeight_Target')
+    Make2DProjectionPlot(Hist2D_TelElev_vs_EmissionHeight_Target,'Tel. elev','Emission height [km]','TelElev_vs_EmissionHeight')
+    Hist_TelElevAzim_Counts_Target = SelectDiagnosticaHistograms(folder,which_method,'SR','TelElevAzim_Counts_Target')
+    Hist_TelElevAzim_Counts_Crab = SelectDiagnosticaHistograms(folder,which_method,'SR','TelElevAzim_Counts_Crab')
+    Make2DTrajectoryPlot(Hist_TelElevAzim_Counts_Crab,Hist_TelElevAzim_Counts_Target,'Tel. elev.','Tel. azim.','TelElevAzim')
+
     if IncludeDepthUpperMethod:
-        Hist2D_TelElev_vs_SlantDepth_Target = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','2D_TelElev_vs_SlantDepth_Target')
-        Make2DProjectionPlot(Hist2D_TelElev_vs_SlantDepth_Target,'Tel. elev','Slant depth [37g/cm^{2}]','TelElev_vs_SlantDepth')
-        Hist2D_Energy_vs_SlantDepth_Target = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','2D_Energy_vs_SlantDepth_Target')
-        Make2DProjectionPlot(Hist2D_Energy_vs_SlantDepth_Target,'E [GeV]','Slant depth [37g/cm^{2}]','Energy_vs_SlantDepth')
-        Make1DProjectionPlot(Hist2D_Energy_vs_SlantDepth_Target,'Slant depth [37g/cm^{2}]','SlantDepth_as_FofE')
-        Hist2D_Energy_vs_SlantDepth_Crab_On = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','2D_Energy_vs_SlantDepth_Crab_On')
-        Make2DProjectionPlot(Hist2D_Energy_vs_SlantDepth_Crab_On,'E [GeV]','Slant depth [37g/cm^{2}]','Energy_vs_SlantDepth_Crab_On')
-        Make1DProjectionPlot(Hist2D_Energy_vs_SlantDepth_Crab_On,'Slant depth [37g/cm^{2}]','SlantDepth_as_FofE_Crab_On')
-        Hist2D_Energy_vs_SlantDepth_Crab_Off = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','2D_Energy_vs_SlantDepth_Crab_Off')
-        Make2DProjectionPlot(Hist2D_Energy_vs_SlantDepth_Crab_Off,'E [GeV]','Slant depth [37g/cm^{2}]','Energy_vs_SlantDepth_Crab_Off')
-        Make1DProjectionPlot(Hist2D_Energy_vs_SlantDepth_Crab_Off,'Slant depth [37g/cm^{2}]','SlantDepth_as_FofE_Crab_Off')
-        Hist2D_TelElev_vs_EmissionHeight_Target = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','2D_TelElev_vs_EmissionHeight_Target')
-        Make2DProjectionPlot(Hist2D_TelElev_vs_EmissionHeight_Target,'Tel. elev','Emission height [km]','TelElev_vs_EmissionHeight')
-        Hist_TelElevAzim_Counts_Target = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','TelElevAzim_Counts_Target')
-        Hist_TelElevAzim_Counts_Crab = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','TelElevAzim_Counts_Crab')
-        Make2DTrajectoryPlot(Hist_TelElevAzim_Counts_Crab,Hist_TelElevAzim_Counts_Target,'Tel. elev.','Tel. azim.','TelElevAzim')
         Hist_Loose_SlantDepth_Crab_On = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Loose_SlantDepth_Crab_On')
         Hist_Loose_SlantDepth_Crab_Off = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Loose_SlantDepth_Crab_Off')
         Hist_Loose_SlantDepth_Target_On = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Loose_SlantDepth_Target_On')
@@ -492,6 +586,7 @@ for s in source_list:
         Hist_Tight_SlantDepth_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Tight_SlantDepth_Crab_Off_TeV')
         Hist_Tight_SlantDepth_Target_On_TeV = SelectDiagnosticaHistograms(folder,'DepthUpper','SR','Tight_SlantDepth_Target_On_TeV')
         MakeDiagnosticPlot(Hist_Tight_SlantDepth_Crab_On_TeV,Hist_Tight_SlantDepth_Crab_Off_TeV,Hist_Tight_SlantDepth_Target_On_TeV,'Slant Depth [37g/cm^{2}]','Tight_SlantDepth_TeV_Upper')
+        CompareLooseAndTightPlot(Hist_Loose_SlantDepth_Target_On,Hist_Tight_SlantDepth_Target_On,'Slant Depth [37g/cm^{2}]','LooseVsTight_SlantDepth_Upper')
     if IncludeDepthLowerMethod:
         Hist_Loose_SlantDepth_Crab_On = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Loose_SlantDepth_Crab_On')
         Hist_Loose_SlantDepth_Crab_Off = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Loose_SlantDepth_Crab_Off')
@@ -509,6 +604,7 @@ for s in source_list:
         Hist_Tight_SlantDepth_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Tight_SlantDepth_Crab_Off_TeV')
         Hist_Tight_SlantDepth_Target_On_TeV = SelectDiagnosticaHistograms(folder,'DepthLower','SR','Tight_SlantDepth_Target_On_TeV')
         MakeDiagnosticPlot(Hist_Tight_SlantDepth_Crab_On_TeV,Hist_Tight_SlantDepth_Crab_Off_TeV,Hist_Tight_SlantDepth_Target_On_TeV,'Slant Depth [37g/cm^{2}]','Tight_SlantDepth_TeV_Lower')
+        CompareLooseAndTightPlot(Hist_Loose_SlantDepth_Target_On,Hist_Tight_SlantDepth_Target_On,'Slant Depth [37g/cm^{2}]','LooseVsTight_SlantDepth_Lower')
     if IncludeMSCWMethod:
         Hist_Loose_MSCW_Crab_On = SelectDiagnosticaHistograms(folder,'MSCW','SR','Loose_MSCW_Crab_On')
         Hist_Loose_MSCW_Crab_Off = SelectDiagnosticaHistograms(folder,'MSCW','SR','Loose_MSCW_Crab_Off')
@@ -526,6 +622,7 @@ for s in source_list:
         Hist_Tight_MSCW_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'MSCW','SR','Tight_MSCW_Crab_Off_TeV')
         Hist_Tight_MSCW_Target_On_TeV = SelectDiagnosticaHistograms(folder,'MSCW','SR','Tight_MSCW_Target_On_TeV')
         MakeDiagnosticPlot(Hist_Tight_MSCW_Crab_On_TeV,Hist_Tight_MSCW_Crab_Off_TeV,Hist_Tight_MSCW_Target_On_TeV,'MSCW','Tight_MSCW_TeV')
+        CompareLooseAndTightPlot(Hist_Loose_MSCW_Target_On,Hist_Tight_MSCW_Target_On,'MSCW','LooseVsTight_MSCW')
     
     if IncludeMSCLMethod:
         Hist_Loose_MSCL_Crab_On = SelectDiagnosticaHistograms(folder,'MSCL','SR','Loose_MSCL_Crab_On')
@@ -544,6 +641,7 @@ for s in source_list:
         Hist_Tight_MSCL_Crab_Off_TeV = SelectDiagnosticaHistograms(folder,'MSCL','SR','Tight_MSCL_Crab_Off_TeV')
         Hist_Tight_MSCL_Target_On_TeV = SelectDiagnosticaHistograms(folder,'MSCL','SR','Tight_MSCL_Target_On_TeV')
         MakeDiagnosticPlot(Hist_Tight_MSCL_Crab_On_TeV,Hist_Tight_MSCL_Crab_Off_TeV,Hist_Tight_MSCL_Target_On_TeV,'MSCL','Tight_MSCL_TeV')
+        CompareLooseAndTightPlot(Hist_Loose_MSCL_Target_On,Hist_Tight_MSCL_Target_On,'MSCL','LooseVsTight_MSCL')
     
     for v in range(0,len(variable_list)):
         Variable = variable_list[v]
@@ -684,7 +782,7 @@ for s in source_list:
                     CR_MSCW = Hist_CR_MSCW.GetBinContent(b+1)
                     ErrCR_MSCW = Hist_CR_MSCW.GetBinError(b+1)
                     if AddSyst:
-                        SystCR_MSCW = 2.*(Hist_Syst_MSCW.GetBinContent(b+1)*Hist_CR_MSCW.GetBinContent(b+1))
+                        SystCR_MSCW = 1.*(Hist_Syst_MSCW.GetBinContent(b+1)*Hist_CR_MSCW.GetBinContent(b+1))
                         ErrCR_MSCW = pow(ErrCR_MSCW*ErrCR_MSCW+SystCR_MSCW*SystCR_MSCW,0.5)
                         Hist_CR_MSCW.SetBinError(b+1,ErrCR_MSCW)
                         #Hist_CR_MSCW.SetBinContent(b+1,SystCR_MSCW+Hist_CR_MSCW.GetBinContent(b+1))
@@ -717,7 +815,7 @@ for s in source_list:
                     tag += '_Aux'
                 if AddSyst:
                     tag += '_Syst'
-                if Variable == '_XoffVsYoff_':
+                if Variable == '_Xoff_vs_Yoff_':
                     Make2DSignificancePlot(Hist_Data_Height,Hist_CR_Height,xtitle,tag)
                 else:
                     MakeStackPlot(Hist_Data_Height,Hist_CR_Height,xtitle,tag)
@@ -730,7 +828,7 @@ for s in source_list:
                     tag += '_Aux'
                 if AddSyst:
                     tag += '_Syst'
-                if Variable == '_XoffVsYoff_':
+                if Variable == '_Xoff_vs_Yoff_':
                     Make2DSignificancePlot(Hist_Data_DepthUpper,Hist_CR_DepthUpper,xtitle,tag)
                 else:
                     MakeStackPlot(Hist_Data_DepthUpper,Hist_CR_DepthUpper,xtitle,tag)
@@ -743,7 +841,7 @@ for s in source_list:
                     tag += '_Aux'
                 if AddSyst:
                     tag += '_Syst'
-                if Variable == '_XoffVsYoff_':
+                if Variable == '_Xoff_vs_Yoff_':
                     Make2DSignificancePlot(Hist_Data_DepthLower,Hist_CR_DepthLower,xtitle,tag)
                 else:
                     MakeStackPlot(Hist_Data_DepthLower,Hist_CR_DepthLower,xtitle,tag)
@@ -756,7 +854,7 @@ for s in source_list:
                     tag += '_Aux'
                 if AddSyst:
                     tag += '_Syst'
-                if Variable == '_XoffVsYoff_':
+                if Variable == '_Xoff_vs_Yoff_':
                     Make2DSignificancePlot(Hist_Data_MSCW,Hist_CR_MSCW,xtitle,tag)
                 else:
                     MakeStackPlot(Hist_Data_MSCW,Hist_CR_MSCW,xtitle,tag)
@@ -769,61 +867,113 @@ for s in source_list:
                     tag += '_Aux'
                 if AddSyst:
                     tag += '_Syst'
-                if Variable == '_XoffVsYoff_':
+                if Variable == '_Xoff_vs_Yoff_':
                     Make2DSignificancePlot(Hist_Data_MSCL,Hist_CR_MSCL,xtitle,tag)
                 else:
                     MakeStackPlot(Hist_Data_MSCL,Hist_CR_MSCL,xtitle,tag)
             
             Hist_CR4 = Hist_Temp.Clone()
-            for b in range(0,Hist_CR4.GetNbinsX()):
-                if IncludeHeightMethod:
-                    CR_Height = Hist_CR_Height.GetBinContent(b+1)
-                    ErrCR_Height = Hist_CR_Height.GetBinError(b+1)
-                if IncludeDepthUpperMethod:
-                    CR_DepthUpper = Hist_CR_DepthUpper.GetBinContent(b+1)
-                    ErrCR_DepthUpper = Hist_CR_DepthUpper.GetBinError(b+1)
-                if IncludeDepthLowerMethod:
-                    CR_DepthLower = Hist_CR_DepthLower.GetBinContent(b+1)
-                    ErrCR_DepthLower = Hist_CR_DepthLower.GetBinError(b+1)
-                if IncludeMSCWMethod:
-                    CR_MSCW = Hist_CR_MSCW.GetBinContent(b+1)
-                    ErrCR_MSCW = Hist_CR_MSCW.GetBinError(b+1)
-                if IncludeMSCLMethod:
-                    CR_MSCL = Hist_CR_MSCL.GetBinContent(b+1)
-                    ErrCR_MSCL = Hist_CR_MSCL.GetBinError(b+1)
-                CR4 = 0
-                Norm4 = 0
-                ErrCR4 = 0
-                if IncludeHeightMethod:
-                    if not ErrCR_Height==0:
-                        CR4 += CR_Height/(ErrCR_Height*ErrCR_Height)
-                        Norm4 += 1./(ErrCR_Height*ErrCR_Height)
-                        ErrCR4 += 1./(ErrCR_Height*ErrCR_Height)
-                if IncludeDepthUpperMethod:
-                    if not ErrCR_DepthUpper==0:
-                        CR4 += CR_DepthUpper/(ErrCR_DepthUpper*ErrCR_DepthUpper)
-                        Norm4 += 1./(ErrCR_DepthUpper*ErrCR_DepthUpper)
-                        ErrCR4 += 1./(ErrCR_DepthUpper*ErrCR_DepthUpper)
-                if IncludeDepthLowerMethod:
-                    if not ErrCR_DepthLower==0:
-                        CR4 += CR_DepthLower/(ErrCR_DepthLower*ErrCR_DepthLower)
-                        Norm4 += 1./(ErrCR_DepthLower*ErrCR_DepthLower)
-                        ErrCR4 += 1./(ErrCR_DepthLower*ErrCR_DepthLower)
-                if IncludeMSCWMethod:
-                    if not ErrCR_MSCW==0:
-                        CR4 += CR_MSCW/(ErrCR_MSCW*ErrCR_MSCW)
-                        Norm4 += 1./(ErrCR_MSCW*ErrCR_MSCW)
-                        ErrCR4 += 1./(ErrCR_MSCW*ErrCR_MSCW)
-                if IncludeMSCLMethod:
-                    if not ErrCR_MSCL==0:
-                        CR4 += CR_MSCL/(ErrCR_MSCL*ErrCR_MSCL)
-                        Norm4 += 1./(ErrCR_MSCL*ErrCR_MSCL)
-                        ErrCR4 += 1./(ErrCR_MSCL*ErrCR_MSCL)
-                if not Norm4==0: 
-                    CR4 = CR4/Norm4
-                    ErrCR4 = 1./pow(ErrCR4,0.5)
-                Hist_CR4.SetBinContent(b+1,CR4)
-                Hist_CR4.SetBinError(b+1,ErrCR4)
+            if Variable == '_Xoff_vs_Yoff_':
+                for bx in range(0,Hist_CR4.GetNbinsX()):
+                    for by in range(0,Hist_CR4.GetNbinsY()):
+                        if IncludeHeightMethod:
+                            CR_Height = Hist_CR_Height.GetBinContent(bx+1,by+1)
+                            ErrCR_Height = Hist_CR_Height.GetBinError(bx+1,by+1)
+                        if IncludeDepthUpperMethod:
+                            CR_DepthUpper = Hist_CR_DepthUpper.GetBinContent(bx+1,by+1)
+                            ErrCR_DepthUpper = Hist_CR_DepthUpper.GetBinError(bx+1,by+1)
+                        if IncludeDepthLowerMethod:
+                            CR_DepthLower = Hist_CR_DepthLower.GetBinContent(bx+1,by+1)
+                            ErrCR_DepthLower = Hist_CR_DepthLower.GetBinError(bx+1,by+1)
+                        if IncludeMSCWMethod:
+                            CR_MSCW = Hist_CR_MSCW.GetBinContent(bx+1,by+1)
+                            ErrCR_MSCW = Hist_CR_MSCW.GetBinError(bx+1,by+1)
+                        if IncludeMSCLMethod:
+                            CR_MSCL = Hist_CR_MSCL.GetBinContent(bx+1,by+1)
+                            ErrCR_MSCL = Hist_CR_MSCL.GetBinError(bx+1,by+1)
+                        CR4 = 0
+                        Norm4 = 0
+                        ErrCR4 = 0
+                        if IncludeHeightMethod:
+                            if not ErrCR_Height==0:
+                                CR4 += CR_Height/(ErrCR_Height*ErrCR_Height)
+                                Norm4 += 1./(ErrCR_Height*ErrCR_Height)
+                                ErrCR4 += 1./(ErrCR_Height*ErrCR_Height)
+                        if IncludeDepthUpperMethod:
+                            if not ErrCR_DepthUpper==0:
+                                CR4 += CR_DepthUpper/(ErrCR_DepthUpper*ErrCR_DepthUpper)
+                                Norm4 += 1./(ErrCR_DepthUpper*ErrCR_DepthUpper)
+                                ErrCR4 += 1./(ErrCR_DepthUpper*ErrCR_DepthUpper)
+                        if IncludeDepthLowerMethod:
+                            if not ErrCR_DepthLower==0:
+                                CR4 += CR_DepthLower/(ErrCR_DepthLower*ErrCR_DepthLower)
+                                Norm4 += 1./(ErrCR_DepthLower*ErrCR_DepthLower)
+                                ErrCR4 += 1./(ErrCR_DepthLower*ErrCR_DepthLower)
+                        if IncludeMSCWMethod:
+                            if not ErrCR_MSCW==0:
+                                CR4 += CR_MSCW/(ErrCR_MSCW*ErrCR_MSCW)
+                                Norm4 += 1./(ErrCR_MSCW*ErrCR_MSCW)
+                                ErrCR4 += 1./(ErrCR_MSCW*ErrCR_MSCW)
+                        if IncludeMSCLMethod:
+                            if not ErrCR_MSCL==0:
+                                CR4 += CR_MSCL/(ErrCR_MSCL*ErrCR_MSCL)
+                                Norm4 += 1./(ErrCR_MSCL*ErrCR_MSCL)
+                                ErrCR4 += 1./(ErrCR_MSCL*ErrCR_MSCL)
+                        if not Norm4==0: 
+                            CR4 = CR4/Norm4
+                            ErrCR4 = 1./pow(ErrCR4,0.5)
+                        Hist_CR4.SetBinContent(bx+1,by+1,CR4)
+                        Hist_CR4.SetBinError(bx+1,by+1,ErrCR4)
+            else:
+                for b in range(0,Hist_CR4.GetNbinsX()):
+                    if IncludeHeightMethod:
+                        CR_Height = Hist_CR_Height.GetBinContent(b+1)
+                        ErrCR_Height = Hist_CR_Height.GetBinError(b+1)
+                    if IncludeDepthUpperMethod:
+                        CR_DepthUpper = Hist_CR_DepthUpper.GetBinContent(b+1)
+                        ErrCR_DepthUpper = Hist_CR_DepthUpper.GetBinError(b+1)
+                    if IncludeDepthLowerMethod:
+                        CR_DepthLower = Hist_CR_DepthLower.GetBinContent(b+1)
+                        ErrCR_DepthLower = Hist_CR_DepthLower.GetBinError(b+1)
+                    if IncludeMSCWMethod:
+                        CR_MSCW = Hist_CR_MSCW.GetBinContent(b+1)
+                        ErrCR_MSCW = Hist_CR_MSCW.GetBinError(b+1)
+                    if IncludeMSCLMethod:
+                        CR_MSCL = Hist_CR_MSCL.GetBinContent(b+1)
+                        ErrCR_MSCL = Hist_CR_MSCL.GetBinError(b+1)
+                    CR4 = 0
+                    Norm4 = 0
+                    ErrCR4 = 0
+                    if IncludeHeightMethod:
+                        if not ErrCR_Height==0:
+                            CR4 += CR_Height/(ErrCR_Height*ErrCR_Height)
+                            Norm4 += 1./(ErrCR_Height*ErrCR_Height)
+                            ErrCR4 += 1./(ErrCR_Height*ErrCR_Height)
+                    if IncludeDepthUpperMethod:
+                        if not ErrCR_DepthUpper==0:
+                            CR4 += CR_DepthUpper/(ErrCR_DepthUpper*ErrCR_DepthUpper)
+                            Norm4 += 1./(ErrCR_DepthUpper*ErrCR_DepthUpper)
+                            ErrCR4 += 1./(ErrCR_DepthUpper*ErrCR_DepthUpper)
+                    if IncludeDepthLowerMethod:
+                        if not ErrCR_DepthLower==0:
+                            CR4 += CR_DepthLower/(ErrCR_DepthLower*ErrCR_DepthLower)
+                            Norm4 += 1./(ErrCR_DepthLower*ErrCR_DepthLower)
+                            ErrCR4 += 1./(ErrCR_DepthLower*ErrCR_DepthLower)
+                    if IncludeMSCWMethod:
+                        if not ErrCR_MSCW==0:
+                            CR4 += CR_MSCW/(ErrCR_MSCW*ErrCR_MSCW)
+                            Norm4 += 1./(ErrCR_MSCW*ErrCR_MSCW)
+                            ErrCR4 += 1./(ErrCR_MSCW*ErrCR_MSCW)
+                    if IncludeMSCLMethod:
+                        if not ErrCR_MSCL==0:
+                            CR4 += CR_MSCL/(ErrCR_MSCL*ErrCR_MSCL)
+                            Norm4 += 1./(ErrCR_MSCL*ErrCR_MSCL)
+                            ErrCR4 += 1./(ErrCR_MSCL*ErrCR_MSCL)
+                    if not Norm4==0: 
+                        CR4 = CR4/Norm4
+                        ErrCR4 = 1./pow(ErrCR4,0.5)
+                    Hist_CR4.SetBinContent(b+1,CR4)
+                    Hist_CR4.SetBinError(b+1,ErrCR4)
             tag = Variable.strip('_')
             tag += '_%s'%(source)
             tag += '_%s'%('Combined')
@@ -831,12 +981,12 @@ for s in source_list:
                 tag += '_Aux'
             if AddSyst:
                 tag += '_Syst'
-            if Variable == '_XoffVsYoff_':
+            if Variable == '_Xoff_vs_Yoff_':
                 Make2DSignificancePlot(Hist_Temp,Hist_CR4,xtitle,tag)
             else:
                 MakeStackPlot(Hist_Temp,Hist_CR4,xtitle,tag)
             
-            if not Variable == '_XoffVsYoff_' and not UseAuxRegion:
+            if not Variable == '_Xoff_vs_Yoff_' and not UseAuxRegion:
                 bins = []
                 for b in range(0,Hist_Temp.GetNbinsX()+1):
                     bins += [Hist_Temp.GetBinLowEdge(b+1)]
