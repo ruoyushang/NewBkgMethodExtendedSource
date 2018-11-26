@@ -17,8 +17,8 @@ source_list = []
 #source_list  += ['Crab']
 #source_list  += ['2ndCrab']
 #source_list  += ['PKS1424']
-#source_list  += ['3C264']
-source_list  += ['H1426']
+source_list  += ['3C264']
+#source_list  += ['H1426']
 #source_list  += ['Ton599']
 #source_list  += ['IC443']
 
@@ -77,7 +77,6 @@ def SelectDiagnosticaHistograms(folder,method,isSR,var):
                 ErecS_upper = float(element.split('to')[1])
         if ErecS_lower<ErecS_lower_cut: continue
         if ErecS_upper>ErecS_upper_cut: continue
-        print 'found histogram.'
         if Hist_Data.Integral()==0:
             Hist_Data.Delete()
             Hist_Data = hist.Clone()
@@ -132,10 +131,10 @@ def MakeDiagnosticPlot(Hist_Crab_On,Hist_Crab_Off,Hist_Target_On,title,name):
     legend.AddEntry(Hist_Crab_On,'SR (%.2f#pm%.2f)'%(mean,rms),"pl")
     mean = Hist_Crab_Off.GetMean()
     rms = Hist_Crab_Off.GetRMS()
-    legend.AddEntry(Hist_Crab_Off,'Bkg (same run) (%.2f#pm%.2f)'%(mean,rms),"pl")
+    legend.AddEntry(Hist_Crab_Off,'Origin (%.2f#pm%.2f)'%(mean,rms),"pl")
     mean = Hist_Target_On.GetMean()
     rms = Hist_Target_On.GetRMS()
-    legend.AddEntry(Hist_Target_On,'Bkg (dark run) (%.2f#pm%.2f)'%(mean,rms),"pl")
+    legend.AddEntry(Hist_Target_On,'Modified (%.2f#pm%.2f)'%(mean,rms),"pl")
     legend.Draw("SAME")
     lumilab1 = ROOT.TLatex(0.15,0.75,'   ' )
     lumilab1.SetNDC()
@@ -149,7 +148,7 @@ def MakeDiagnosticPlot(Hist_Crab_On,Hist_Crab_Off,Hist_Target_On,title,name):
     lumilab5.SetNDC()
     lumilab5.SetTextSize(0.15)
     lumilab5.Draw()
-    #pad1.SetLogy()
+    pad1.SetLogy()
     c_both.SaveAs('output_plots/%s_%s.pdf'%(name,source))
 
 for s in source_list:
@@ -160,14 +159,24 @@ for s in source_list:
         which_method = 'MSCW'
 
         Hist_Target_SR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_MSCW')
-        Hist_Target_ASR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_ASR_MSCW')
+        Hist_Dark_Bkg_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_Bkg_MSCW')
+        Hist_Dark_SR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_SR_MSCW')
+        MakeDiagnosticPlot(Hist_Target_SR_MSCW,Hist_Dark_SR_MSCW,Hist_Dark_Bkg_MSCW,'MSCW','Dark_Bkg_MSCW_E%s'%(ErecS_lower_cut))
+
+        #Hist_Target_CR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_MSCW')
+        #Hist_Dark_CR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_CR_MSCW')
+        #MakeDiagnosticPlot(Hist_Target_CR_MSCW,Hist_Dark_CR_MSCW,Hist_Dark_Bkg_MSCW,'MSCW','Dark_CR_MSCW_E%s'%(ErecS_lower_cut))
 
         Hist_Target_Bkg_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_MSCW')
-        Hist_Target_ABkg_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_ABkg_MSCW')
+        Hist_Target_CR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_MSCW')
+        MakeDiagnosticPlot(Hist_Target_SR_MSCW,Hist_Target_CR_MSCW,Hist_Target_Bkg_MSCW,'MSCW','Target_Bkg_MSCW_E%s'%(ErecS_lower_cut))
 
-        Hist_Dark_Bkg_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_Bkg_MSCW')
-        Hist_Dark_ABkg_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_ABkg_MSCW')
+        Hist_Target_SR_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_MSCL')
+        Hist_Dark_Bkg_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_Bkg_MSCL')
+        Hist_Dark_SR_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_SR_MSCL')
+        MakeDiagnosticPlot(Hist_Target_SR_MSCL,Hist_Dark_SR_MSCL,Hist_Dark_Bkg_MSCL,'MSCL','Dark_Bkg_MSCL_E%s'%(ErecS_lower_cut))
 
-        MakeDiagnosticPlot(Hist_Target_SR_MSCW,Hist_Target_Bkg_MSCW,Hist_Dark_Bkg_MSCW,'MSCW','Target_Bkg_MSCW_E%s'%(ErecS_lower_cut))
-        MakeDiagnosticPlot(Hist_Target_ASR_MSCW,Hist_Target_ABkg_MSCW,Hist_Dark_ABkg_MSCW,'MSCW','Target_ABkg_MSCW_E%s'%(ErecS_lower_cut))
+        Hist_Target_Bkg_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_MSCL')
+        Hist_Target_CR_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_MSCL')
+        MakeDiagnosticPlot(Hist_Target_SR_MSCL,Hist_Target_CR_MSCL,Hist_Target_Bkg_MSCL,'MSCL','Target_Bkg_MSCL_E%s'%(ErecS_lower_cut))
 

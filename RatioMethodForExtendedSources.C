@@ -26,8 +26,9 @@
 
 
 //char target[50] = "H1426";
+char target[50] = "3C264";
 //char target[50] = "IC443";
-char target[50] = "2ndCrab";
+//char target[50] = "2ndCrab";
 char method[50] = "MSCW";
 
 double Elev_cut_lower = 55;
@@ -37,8 +38,8 @@ double MSCW_cut_lower = -0.5;
 double MSCW_cut_upper = 0.7;
 double MSCL_cut_lower = -0.5;
 double MSCL_cut_upper = 0.7;
-double Depth_cut_lower = 7;
-double Depth_cut_upper = 13;
+double Depth_cut_lower = 6;
+double Depth_cut_upper = 14;
 
 
 string  filename;
@@ -55,10 +56,116 @@ double theta2 = 0;
 const int N_energy_bins = 23;
 double energy_bins[N_energy_bins+1] = {pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0),pow(10,4.1),pow(10,4.2),pow(10,4.3),pow(10,4.4)};
 
-const int N_bins_for_deconv = int(pow(2,9));
+const int N_bins_for_deconv = int(pow(2,8));
 
 vector<int> GetRunList(string source) {
         vector<int> list;
+        if (source=="Ton599") {
+                list.push_back(88356);
+                list.push_back(88357);
+                list.push_back(88378);
+                list.push_back(88379);
+                list.push_back(88380);
+                list.push_back(88397);
+                list.push_back(88420);
+                list.push_back(88421);
+                list.push_back(88422);
+                list.push_back(88423);
+                list.push_back(88447);
+                list.push_back(88448);
+                list.push_back(88449);
+                list.push_back(88475);
+        }
+        if (source=="3C264") {
+                list.push_back(89177);
+                list.push_back(89178);
+                list.push_back(89181);
+                list.push_back(89200);
+                list.push_back(89201);
+                list.push_back(89202);
+                list.push_back(89312);
+                list.push_back(89531);
+                list.push_back(89532);
+                list.push_back(89534);
+                list.push_back(89535);
+                list.push_back(89537);
+                list.push_back(89538);
+                list.push_back(89554);
+                list.push_back(89555);
+                list.push_back(89557);
+                list.push_back(89558);
+                list.push_back(89559);
+                list.push_back(89577);
+                list.push_back(89590);
+                list.push_back(89591);
+                list.push_back(89592);
+                list.push_back(89599);
+                list.push_back(89600);
+                list.push_back(89601);
+                list.push_back(89648);
+                list.push_back(89649);
+                list.push_back(89650);
+                list.push_back(89662);
+                list.push_back(89684);
+                list.push_back(89685);
+                list.push_back(89692);
+                list.push_back(89700);
+                list.push_back(89701);
+                list.push_back(89707);
+                list.push_back(89708);
+                list.push_back(89755);
+                list.push_back(89756);
+                list.push_back(89761);
+                list.push_back(89762);
+                list.push_back(89779);
+                list.push_back(89780);
+                list.push_back(89781);
+                list.push_back(89782);
+                list.push_back(89816);
+                list.push_back(89817);
+                list.push_back(89818);
+                list.push_back(89819);
+                list.push_back(89827);
+                list.push_back(89828);
+                list.push_back(89840);
+                list.push_back(89841);
+                list.push_back(89846);
+                list.push_back(89847);
+                list.push_back(89848);
+                list.push_back(89878);
+                list.push_back(89879);
+                list.push_back(89880);
+                list.push_back(89915);
+                list.push_back(89916);
+                list.push_back(89935);
+                list.push_back(89936);
+        }
+        if (source=="PKS1424") {
+                list.push_back(89252);
+                list.push_back(89291);
+                list.push_back(89342);
+                list.push_back(89358);
+                list.push_back(89359);
+                list.push_back(89360);
+                list.push_back(89560);
+                list.push_back(89561);
+                list.push_back(89562);
+                list.push_back(89563);
+                list.push_back(89764);
+                list.push_back(89765);
+                list.push_back(89945);
+                list.push_back(89946);
+                list.push_back(90082);
+                list.push_back(90083);
+                list.push_back(90228);
+                list.push_back(90229);
+                list.push_back(90230);
+                list.push_back(90231);
+                list.push_back(90232);
+                list.push_back(90357);
+                list.push_back(90432);
+                list.push_back(90433);
+        }
         if (source=="2ndCrab") {
                 list.push_back(83006);
                 list.push_back(83031);
@@ -361,7 +468,7 @@ bool AuxSignalSelectionMSCW() {
 bool ControlSelectionMSCW() {
     //if (EChi2S>0.2) return false;
     if (MSCL<MSCL_cut_upper*1.5) return false;
-    if (MSCL>MSCL_cut_upper*5.) return false;
+    if (MSCL>MSCL_cut_upper*15.) return false;
     //if (SlantDepth*100./37.<Depth_cut_lower) return false;
     //if (SlantDepth*100./37.>Depth_cut_upper) return false;
     return true;
@@ -369,7 +476,7 @@ bool ControlSelectionMSCW() {
 bool AuxControlSelectionMSCW() {
     //if (EChi2S>0.2) return false;
     if (MSCL<MSCL_cut_upper*1.5) return false;
-    if (MSCL>MSCL_cut_upper*5.) return false;
+    if (MSCL>MSCL_cut_upper*15.) return false;
     if (SlantDepth*100./37.>Depth_cut_lower && SlantDepth*100./37.<Depth_cut_upper) return false;
     return true;
 }
@@ -391,7 +498,7 @@ bool AuxSignalSelectionMSCL() {
 bool ControlSelectionMSCL() {
     //if (EChi2S>0.2) return false;
     if (MSCW<MSCW_cut_upper*1.5) return false;
-    if (MSCW>MSCW_cut_upper*5.) return false;
+    if (MSCW>MSCW_cut_upper*15.) return false;
     //if (SlantDepth*100./37.<Depth_cut_lower) return false;
     //if (SlantDepth*100./37.>Depth_cut_upper) return false;
     return true;
@@ -399,7 +506,7 @@ bool ControlSelectionMSCL() {
 bool AuxControlSelectionMSCL() {
     //if (EChi2S>0.2) return false;
     if (MSCW<MSCW_cut_upper*1.5) return false;
-    if (MSCW>MSCW_cut_upper*5.) return false;
+    if (MSCW>MSCW_cut_upper*15.) return false;
     if (SlantDepth*100./37.>Depth_cut_lower && SlantDepth*100./37.<Depth_cut_upper) return false;
     return true;
 }
@@ -414,8 +521,9 @@ void Deconvolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Deconv) {
         }
         TSpectrum sp;
         //sp.Deconvolution(source,response,N_bins_for_deconv,30,1,1000);
-        //sp.Deconvolution(source,response,N_bins_for_deconv,30,1,3000);
-        sp.Deconvolution(source,response,N_bins_for_deconv,80,1,3000);
+        //sp.Deconvolution(source,response,N_bins_for_deconv,50,1,3000);
+        //sp.Deconvolution(source,response,N_bins_for_deconv,100,1,3000);
+        sp.Deconvolution(source,response,N_bins_for_deconv,10000,1,100000);
         for (int i=0;i<N_bins_for_deconv;i++) {
             Hist_Deconv->SetBinContent(i+1,max(source[i],0.));
         }
@@ -592,7 +700,8 @@ void RatioMethodForExtendedSources() {
                         if (e>=N_energy_bins) continue;
                         if (e<0) continue;
                         //if (theta2<0.2) continue;
-                        if (theta2>1.0) continue;
+                        //if (theta2>1.0) continue;
+                        //if (theta2>0.1) continue;
                         if (SignalSelectionMSCW()) Hist_Target_SR_MSCW.at(e).Fill(MSCW);
                         if (ControlSelectionMSCW()) Hist_Target_CR_MSCW.at(e).Fill(MSCW);
                         if (AuxSignalSelectionMSCW()) Hist_Target_ASR_MSCW.at(e).Fill(MSCW);
