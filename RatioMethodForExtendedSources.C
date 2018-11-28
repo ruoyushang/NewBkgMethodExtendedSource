@@ -25,19 +25,21 @@
 #include "TRandom.h"
 
 
-char target[50] = "H1426";
+//char target[50] = "H1426";
+//char target[50] = "PKS1424";
 //char target[50] = "3C264";
 //char target[50] = "IC443";
-//char target[50] = "2ndCrab";
+//char target[50] = "Ton599";
+char target[50] = "2ndCrab";
 char method[50] = "MSCW";
 
 double Elev_cut_lower = 75;
 double Elev_cut_upper = 85;
 
-//double Target_Elev_cut_lower = 25;
-//double Target_Elev_cut_upper = 55;
-double Target_Elev_cut_lower = 75;
-double Target_Elev_cut_upper = 85;
+double Target_Elev_cut_lower = 25;
+double Target_Elev_cut_upper = 55;
+//double Target_Elev_cut_lower = 75;
+//double Target_Elev_cut_upper = 85;
 //double Target_Elev_cut_lower = 55;
 //double Target_Elev_cut_upper = 85;
 
@@ -59,7 +61,9 @@ double SlantDepth = 0;
 double theta2 = 0;
 
 //const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] = {pow(10,3.0),pow(10,4.4)};
+//double energy_bins[N_energy_bins+1] = {4000,1e10};
+//const int N_energy_bins = 10;
+//double energy_bins[N_energy_bins+1] = {pow(10,2.2),pow(10,2.4),pow(10,2.6),pow(10,2.8),pow(10,3.0),pow(10,3.2),pow(10,3.4),pow(10,3.6),pow(10,3.8),pow(10,4.0),pow(10,4.2)};
 const int N_energy_bins = 23;
 double energy_bins[N_energy_bins+1] = {pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0),pow(10,4.1),pow(10,4.2),pow(10,4.3),pow(10,4.4)};
 
@@ -460,6 +464,7 @@ vector<int> GetRunList(string source) {
 }
 bool FoV() {
     if (theta2>0.2) return true;
+    //if (theta2<0.5) return true;
     return false;
 }
 bool SignalSelectionMSCW() {
@@ -578,11 +583,9 @@ void Deconvolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Deconv) {
             else response[i] = 0;
         }
         TSpectrum sp;
-        //sp.Deconvolution(source,response,N_bins_for_deconv,30,1,1000);
-        //sp.Deconvolution(source,response,N_bins_for_deconv,50,1,3000);
-        //sp.Deconvolution(source,response,N_bins_for_deconv,100,1,3000);
-        //sp.Deconvolution(source,response,N_bins_for_deconv,10000,1,100000);
-        sp.Deconvolution(source,response,N_bins_for_deconv,100,1,100);
+        //sp.Deconvolution(source,response,N_bins_for_deconv,100,1,100);  // best option
+        //sp.Deconvolution(source,response,N_bins_for_deconv,100,1,1000);
+        sp.Deconvolution(source,response,N_bins_for_deconv,100,1,10000); // new best option
         for (int i=0;i<N_bins_for_deconv;i++) {
             Hist_Deconv->SetBinContent(i+1,max(source[i],0.));
         }
@@ -839,7 +842,7 @@ void RatioMethodForExtendedSources() {
                         Hist_Target_Bkg_MSCW.at(e).SetBinError(i+1,Hist_Target_BkgTemp_MSCW.at(e).GetBinError(b));
                 }
                 int norm_bin_low_target = Hist_Target_Bkg_MSCW.at(e).FindBin(2*MSCW_cut_upper);
-                int norm_bin_up_target = Hist_Target_Bkg_MSCW.at(e).FindBin(3*MSCW_cut_upper);
+                int norm_bin_up_target = Hist_Target_Bkg_MSCW.at(e).FindBin(6*MSCW_cut_upper);
                 double scale_target = Hist_Target_SR_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Target_Bkg_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
                 Hist_Target_Bkg_MSCW.at(e).Scale(scale_target);
                 scale_target = Hist_Target_ASR_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Target_ABkg_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
@@ -863,7 +866,7 @@ void RatioMethodForExtendedSources() {
                 std::cout << e << ", SR " << Hist_Target_SR_MSCL.at(e).Integral() << std::endl;
                 std::cout << e << ", Bkg " << Hist_Target_Bkg_MSCL.at(e).Integral() << std::endl;
                 int norm_bin_low_target = Hist_Target_Bkg_MSCL.at(e).FindBin(2*MSCL_cut_upper);
-                int norm_bin_up_target = Hist_Target_Bkg_MSCL.at(e).FindBin(3*MSCL_cut_upper);
+                int norm_bin_up_target = Hist_Target_Bkg_MSCL.at(e).FindBin(6*MSCL_cut_upper);
                 double scale_target = 0;
                 scale_target = Hist_Target_SR_MSCL.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Target_Bkg_MSCL.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
                 if (!(Hist_Target_SR_MSCL.at(e).Integral()>0)) scale_target = 0;
@@ -881,7 +884,7 @@ void RatioMethodForExtendedSources() {
         }
 
         for (int e=0;e<N_energy_bins;e++) {
-                double offset = Hist_Target_ASR_Depth.at(e).GetMean()-Hist_Target_ABkgTemp_Depth.at(e).GetMean();
+                double offset = Hist_Target_CR_Depth.at(e).GetMean()-Hist_Target_ABkgTemp_Depth.at(e).GetMean();
                 for (int i=0;i<N_bins_for_deconv;i++) {
                         int b = Hist_Target_Bkg_Depth.at(e).FindBin(Hist_Target_Bkg_Depth.at(e).GetBinCenter(i+1)-offset);
                         Hist_Target_ABkg_Depth.at(e).SetBinContent(i+1,Hist_Target_ABkgTemp_Depth.at(e).GetBinContent(b));
