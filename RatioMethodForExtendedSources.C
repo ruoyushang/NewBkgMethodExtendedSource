@@ -12,6 +12,7 @@
 #include "TFile.h"
 #include "TF1.h"
 #include "TH1.h"
+#include "TH2.h"
 #include "TTree.h"
 #include "TString.h"
 #include "TSystem.h"
@@ -53,6 +54,7 @@ double Depth_cut_width = 5.;
 
 string  filename;
 double TelElevation = 0;
+double TelAzimuth = 0;
 double ErecS = 0;
 double EChi2S = 0;
 double MSCW = 0;
@@ -609,6 +611,8 @@ void RatioMethodForExtendedSources() {
         TH1::SetDefaultSumw2();
 
         TRandom rnd;
+        TH2D Hist_Dark_TelElevAzim("Hist_Dark_TelElevAzim","",90,0,90,360,0,360);
+        TH2D Hist_Target_TelElevAzim("Hist_Target_TelElevAzim","",90,0,90,360,0,360);
         vector<TH1D> Hist_Dark_SR_ErecS;
         vector<TH1D> Hist_Dark_SR_MSCW;
         vector<TH1D> Hist_Dark_CR_MSCW;
@@ -737,10 +741,15 @@ void RatioMethodForExtendedSources() {
                 //std::cout << "Open " << filename << std::endl;
                 TTree* pointing_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/pointingDataReduced");
                 pointing_tree->SetBranchAddress("TelElevation",&TelElevation);
+                pointing_tree->SetBranchAddress("TelAzimuth",&TelAzimuth);
                 pointing_tree->GetEntry(0);
                 //std::cout << TelElevation << std::endl;
                 if (TelElevation<Elev_cut_lower) continue;
                 if (TelElevation>Elev_cut_upper) continue;
+                for (int entry=0;entry<pointing_tree->GetEntries();entry++) {
+                        pointing_tree->GetEntry(entry);
+                        Hist_Dark_TelElevAzim.Fill(TelElevation,TelAzimuth);
+                }
 
                 TTree* Dark_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/data_off");
                 Dark_tree->SetBranchAddress("ErecS",&ErecS);
@@ -784,10 +793,15 @@ void RatioMethodForExtendedSources() {
                 //std::cout << "Open " << filename << std::endl;
                 TTree* pointing_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/pointingDataReduced");
                 pointing_tree->SetBranchAddress("TelElevation",&TelElevation);
+                pointing_tree->SetBranchAddress("TelAzimuth",&TelAzimuth);
                 pointing_tree->GetEntry(0);
                 //std::cout << TelElevation << std::endl;
                 if (TelElevation<Target_Elev_cut_lower) continue;
                 if (TelElevation>Target_Elev_cut_upper) continue;
+                for (int entry=0;entry<pointing_tree->GetEntries();entry++) {
+                        pointing_tree->GetEntry(entry);
+                        Hist_Target_TelElevAzim.Fill(TelElevation,TelAzimuth);
+                }
 
                 TTree* Target_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/data_on");
                 Target_tree->SetBranchAddress("ErecS",&ErecS);
@@ -1069,7 +1083,21 @@ void RatioMethodForExtendedSources() {
         }
 
 
-        TFile OutputFile("output/Deconvolution_"+TString(target)+"_"+TString(method)+".root","recreate"); 
+        TFile OutputFile("output/Deconvolution_"+TString(target)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+".root","recreate"); 
+        TTree InfoTree("InfoTree","info tree");
+        InfoTree.Branch("MSCW_cut_lower",&MSCW_cut_lower,"MSCW_cut_lower/D");
+        InfoTree.Branch("MSCW_cut_upper",&MSCW_cut_upper,"MSCW_cut_upper/D");
+        InfoTree.Branch("MSCL_cut_lower",&MSCL_cut_lower,"MSCW_cut_lower/D");
+        InfoTree.Branch("MSCL_cut_upper",&MSCL_cut_upper,"MSCW_cut_upper/D");
+        InfoTree.Branch("Depth_cut_width",&Depth_cut_width,"Depth_cut_width/D");
+        InfoTree.Branch("Elev_cut_lower",&Elev_cut_lower,"Elev_cut_lower/D");
+        InfoTree.Branch("Elev_cut_upper",&Elev_cut_upper,"Elev_cut_upper/D");
+        InfoTree.Branch("Target_Elev_cut_lower",&Target_Elev_cut_lower,"Target_Elev_cut_lower/D");
+        InfoTree.Branch("Target_Elev_cut_upper",&Target_Elev_cut_upper,"Target_Elev_cut_upper/D");
+        InfoTree.Fill();
+        InfoTree.Write();
+        Hist_Target_TelElevAzim.Write();
+        Hist_Dark_TelElevAzim.Write();
         for (int e=0;e<N_energy_bins;e++) {
                 Hist_Dark_ASR_MSCW.at(e).Write();
                 Hist_Dark_ACR_MSCW.at(e).Write();

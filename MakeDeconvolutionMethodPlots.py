@@ -22,8 +22,12 @@ source_list  += ['H1426']
 #source_list  += ['Ton599']
 #source_list  += ['IC443']
 
-Elev_lower_cut = 65
-Elev_upper_cut = 70
+Elev_lower_cut = 75
+Elev_upper_cut = 85
+#Elev_lower_cut = 25
+#Elev_upper_cut = 55
+
+Depth_cut_width = 10
 Azim_lower_cut = 0
 Azim_upper_cut = 360
 ErecS_lower_cut = 100
@@ -41,6 +45,8 @@ energy_list += [700]
 energy_list += [1000]
 energy_list += [2000]
 energy_list += [4000]
+energy_list += [10000]
+energy_list += [1e10]
 
 Variable = ''
 xtitle = ''
@@ -59,7 +65,7 @@ def SelectDiagnosticaHistograms(folder,method,isSR,var):
 
     Hist_Data = ROOT.TH1D("Hist_Data","",1,0,1)
 
-    FilePath = '%s/Deconvolution_%s_%s.root'%(folder,source,method)
+    FilePath = '%s/Deconvolution_%s_Elev%sto%s.root'%(folder,source,Elev_lower_cut,Elev_upper_cut)
     print 'Read %s'%(FilePath)
     InputFile=ROOT.TFile(FilePath)
     
@@ -69,6 +75,8 @@ def SelectDiagnosticaHistograms(folder,method,isSR,var):
     for h in range(0,HistList.GetSize()):
         name = HistList.At(h).GetName()
         hist = InputFile.Get(name)
+        ErecS_lower = 0
+        ErecS_upper = 0
         if not var in name: continue
         for e in range(0,len(name.split("_"))):
             element = name.split("_")[e]
@@ -86,7 +94,7 @@ def SelectDiagnosticaHistograms(folder,method,isSR,var):
 
     return Hist_Data
 
-def MakeDiagnosticPlot(Hist_Crab_On,Hist_Crab_Off,Hist_Target_On,title,name):
+def MakeDiagnosticPlot(Hists,legends,title,name):
     
     c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
     pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
@@ -101,25 +109,25 @@ def MakeDiagnosticPlot(Hist_Crab_On,Hist_Crab_Off,Hist_Target_On,title,name):
     pad3.Draw()
 
     pad1.cd()
-    Hist_Crab_On.SetLineColor(2)
-    Hist_Crab_On.SetLineWidth(3)
-    Hist_Crab_Off.SetLineColor(4)
-    Hist_Crab_Off.SetLineWidth(3)
-    Hist_Target_On.SetLineColor(3)
-    Hist_Target_On.SetLineWidth(3)
-    if Hist_Crab_On.GetMaximum()>Hist_Crab_Off.GetMaximum():
-        Hist_Crab_On.GetXaxis().SetTitle(title)
-        Hist_Crab_On.GetXaxis().SetRangeUser(-1,10)
-        if title=='Depth': Hist_Crab_On.GetXaxis().SetRangeUser(0,20)
-        Hist_Crab_On.Draw("E")
-    else:
-        Hist_Crab_Off.GetXaxis().SetTitle(title)
-        Hist_Crab_Off.GetXaxis().SetRangeUser(-1,10)
-        if title=='Depth': Hist_Crab_Off.GetXaxis().SetRangeUser(0,20)
-        Hist_Crab_Off.Draw("E")
-    Hist_Crab_On.Draw("E same")
-    Hist_Crab_Off.Draw("E same")
-    Hist_Target_On.Draw("E same")
+    max_heigh = 0
+    max_hist = 0
+    for h in range(0,len(Hists)):
+        if Hists[h]!=0:
+            Hists[h].SetLineColor(h+1)
+            if max_heigh < Hists[h].GetMaximum(): 
+                max_heigh = Hists[h].GetMaximum()
+                max_hist = h
+            Hists[h].GetXaxis().SetTitle(title)
+            Hists[h].GetXaxis().SetRangeUser(-1,10)
+            if title=='Depth': Hists[h].GetXaxis().SetRangeUser(0,20)
+
+    Hists[max_hist].Draw("E")
+    Hists[max_hist].SetMinimum(0)
+    for h in range(0,len(Hists)):
+        if Hists[h]!=0:
+            Hists[h].Draw("E same")
+    Hists[0].SetLineWidth(3)
+    Hists[0].Draw("E same")
     pad3.cd()
     legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
     legend.SetTextFont(42)
@@ -129,15 +137,9 @@ def MakeDiagnosticPlot(Hist_Crab_On,Hist_Crab_Off,Hist_Target_On,title,name):
     legend.SetFillStyle(0)
     legend.SetLineColor(0)
     legend.Clear()
-    mean = Hist_Crab_On.GetMean()
-    rms = Hist_Crab_On.GetRMS()
-    legend.AddEntry(Hist_Crab_On,'SR (%.2f#pm%.2f)'%(mean,rms),"pl")
-    mean = Hist_Crab_Off.GetMean()
-    rms = Hist_Crab_Off.GetRMS()
-    legend.AddEntry(Hist_Crab_Off,'Origin (%.2f#pm%.2f)'%(mean,rms),"pl")
-    mean = Hist_Target_On.GetMean()
-    rms = Hist_Target_On.GetRMS()
-    legend.AddEntry(Hist_Target_On,'Modified (%.2f#pm%.2f)'%(mean,rms),"pl")
+    for h in range(0,len(Hists)):
+        if Hists[h]!=0:
+            legend.AddEntry(Hists[h],legends[h],"pl")
     legend.Draw("SAME")
     lumilab1 = ROOT.TLatex(0.15,0.75,'   ' )
     lumilab1.SetNDC()
@@ -154,52 +156,134 @@ def MakeDiagnosticPlot(Hist_Crab_On,Hist_Crab_Off,Hist_Target_On,title,name):
     #pad1.SetLogy()
     c_both.SaveAs('output_plots/%s_%s.pdf'%(name,source))
 
+def Make2DTrajectoryPlot(Hist_1,Hist_2,xtitle,ytitle,name):
+
+    canvas = ROOT.TCanvas("canvas","canvas", 200, 10, 600, 600)
+    pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
+    pad3.SetBottomMargin(0.0)
+    pad3.SetTopMargin(0.03)
+    pad3.SetBorderMode(1)
+    pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.8)
+    pad1.SetBottomMargin(0.15)
+    pad1.SetTopMargin(0.0)
+    pad1.SetBorderMode(0)
+    pad1.Draw()
+    pad3.Draw()
+    pad1.cd()
+    Hist_1.GetYaxis().SetTitle(ytitle)
+    Hist_1.GetXaxis().SetTitle(xtitle)
+    Hist_2.GetYaxis().SetTitle(ytitle)
+    Hist_2.GetXaxis().SetTitle(xtitle)
+    Hist_1.SetLineColor(4)
+    Hist_1.Draw("CONT3")
+    Hist_2.SetLineColor(2)
+    Hist_2.Draw("CONT3 same")
+    pad3.cd()
+    legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.2)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+    legend.Clear()
+    legend.AddEntry(Hist_1,'Crab 2017-18',"pl")
+    if source=='2ndCrab':
+        legend.AddEntry(Hist_2,'Crab 2016',"pl")
+    else:
+        legend.AddEntry(Hist_2,source,"pl")
+    legend.Draw("SAME")
+    canvas.SaveAs('output_plots/%s_%s.pdf'%(name,source))
+
+    canvas2 = ROOT.TCanvas("canvas2","canvas2", 200, 10, 600, 600)
+    Hist_1.RebinX(2)
+    Hist_1.RebinY(2)
+    Hist_1.Draw("COL4Z")
+    canvas2.SaveAs('output_plots/%s_%s_Lego.pdf'%(name,'Crab'))
+    Hist_2.Draw("COL4Z")
+    Hist_2.RebinX(2)
+    Hist_2.RebinY(2)
+    canvas2.SaveAs('output_plots/%s_%s_Lego.pdf'%(name,source))
+
+
 for s in source_list:
     source = s
-    for e in range(0,len(energy_list)):
+    ErecS_lower_cut = 0
+    ErecS_upper_cut = 1e10
+    FilePath = '%s/Deconvolution_%s_Elev%sto%s.root'%(folder,source,Elev_lower_cut,Elev_upper_cut)
+    print 'Read %s'%(FilePath)
+    TargetFile=ROOT.TFile(FilePath)
+    InfoTree = TargetFile.Get("InfoTree")
+    Depth_cut_width = InfoTree.Depth_cut_width
+    MSCW_lower_cut = InfoTree.MSCW_cut_lower
+    MSCW_upper_cut = InfoTree.MSCW_cut_upper
+    MSCL_lower_cut = InfoTree.MSCL_cut_lower
+    MSCL_upper_cut = InfoTree.MSCL_cut_upper
+    Hist_Target_TelElevAzim = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_TelElevAzim')
+    Hist_Dark_TelElevAzim = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_TelElevAzim')
+    Make2DTrajectoryPlot(Hist_Dark_TelElevAzim,Hist_Target_TelElevAzim,'Tel. elev.','Tel. azim.','TelElevAzim')
+    for e in range(0,len(energy_list)-1):
         ErecS_lower_cut = energy_list[e]
+        ErecS_upper_cut = energy_list[e+1]
 
         which_method = 'MSCW'
 
         Hist_Target_SR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_MSCW')
         Hist_Dark_Bkg_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_Bkg_MSCW')
         Hist_Dark_SR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_SR_MSCW')
-        MakeDiagnosticPlot(Hist_Target_SR_MSCW,Hist_Dark_SR_MSCW,Hist_Dark_Bkg_MSCW,'MSCW','Dark_Bkg_MSCW_E%s'%(ErecS_lower_cut))
-
-        #Hist_Target_ASR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_ASR_MSCW')
-        #Hist_Dark_ABkg_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_ABkg_MSCW')
-        #Hist_Dark_ASR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_ASR_MSCW')
-        #MakeDiagnosticPlot(Hist_Target_ASR_MSCW,Hist_Dark_ASR_MSCW,Hist_Dark_ABkg_MSCW,'MSCW','Dark_ABkg_MSCW_E%s'%(ErecS_lower_cut))
-
         Hist_Target_Bkg_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_MSCW')
         Hist_Target_CR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_MSCW')
-        MakeDiagnosticPlot(Hist_Target_SR_MSCW,Hist_Dark_SR_MSCW,Hist_Target_Bkg_MSCW,'MSCW','Target_Bkg_MSCW_E%s'%(ErecS_lower_cut))
 
         Hist_Target_SR_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_MSCL')
         Hist_Dark_Bkg_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_Bkg_MSCL')
         Hist_Dark_SR_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_SR_MSCL')
-        MakeDiagnosticPlot(Hist_Target_SR_MSCL,Hist_Dark_SR_MSCL,Hist_Dark_Bkg_MSCL,'MSCL','Dark_Bkg_MSCL_E%s'%(ErecS_lower_cut))
-
-        #Hist_Target_ASR_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_ASR_MSCL')
-        #Hist_Dark_ABkg_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_ABkg_MSCL')
-        #Hist_Dark_ASR_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_ASR_MSCL')
-        #MakeDiagnosticPlot(Hist_Target_ASR_MSCL,Hist_Dark_ASR_MSCL,Hist_Dark_ABkg_MSCL,'MSCL','Dark_ABkg_MSCL_E%s'%(ErecS_lower_cut))
-
         Hist_Target_Bkg_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_MSCL')
         Hist_Target_CR_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_MSCL')
-        MakeDiagnosticPlot(Hist_Target_SR_MSCL,Hist_Dark_SR_MSCL,Hist_Target_Bkg_MSCL,'MSCL','Target_Bkg_MSCL_E%s'%(ErecS_lower_cut))
 
         Hist_Target_SR_Depth = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_Depth')
         Hist_Dark_Bkg_Depth = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_Bkg_Depth')
         Hist_Dark_SR_Depth = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_SR_Depth')
-        MakeDiagnosticPlot(Hist_Target_SR_Depth,Hist_Dark_SR_Depth,Hist_Dark_Bkg_Depth,'Depth','Dark_Bkg_Depth_E%s'%(ErecS_lower_cut))
-
         Hist_Target_Bkg_Depth = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_Depth')
         Hist_Target_CR_Depth = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_Depth')
-        MakeDiagnosticPlot(Hist_Target_SR_Depth,Hist_Dark_SR_Depth,Hist_Target_Bkg_Depth,'Depth','Target_Bkg_Depth_E%s'%(ErecS_lower_cut))
 
-        #Hist_Target_ASR_Depth = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_ASR_Depth')
-        #Hist_Dark_ABkg_Depth = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_ABkg_Depth')
-        #Hist_Dark_ASR_Depth = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_ASR_Depth')
-        #MakeDiagnosticPlot(Hist_Target_ASR_Depth,Hist_Dark_ASR_Depth,Hist_Dark_ABkg_Depth,'Depth','Dark_ABkg_Depth_E%s'%(ErecS_lower_cut))
+        Hists = []
+        legends = []
+        Hists += [Hist_Target_SR_MSCW]
+        legends += ['Target SR']
+        Hists += [Hist_Dark_SR_MSCW]
+        legends += ['method 1']
+        Hists += [Hist_Dark_Bkg_MSCW]
+        legends += ['method 2']
+        Hists += [Hist_Target_Bkg_MSCW]
+        legends += ['method 3']
+        plotname = 'MSCW_E%s'%(ErecS_lower_cut)
+        title = 'MSCW'
+        MakeDiagnosticPlot(Hists,legends,title,plotname)
 
+        Hists = []
+        legends = []
+        Hists += [Hist_Target_SR_MSCL]
+        legends += ['Target SR']
+        Hists += [Hist_Dark_SR_MSCL]
+        legends += ['method 1']
+        Hists += [Hist_Dark_Bkg_MSCL]
+        legends += ['method 2']
+        Hists += [Hist_Target_Bkg_MSCL]
+        legends += ['method 3']
+        plotname = 'MSCL_E%s'%(ErecS_lower_cut)
+        title = 'MSCL'
+        MakeDiagnosticPlot(Hists,legends,title,plotname)
+
+        Hists = []
+        legends = []
+        Hists += [Hist_Target_SR_Depth]
+        legends += ['Target SR']
+        Hists += [Hist_Dark_SR_Depth]
+        legends += ['method 1']
+        Hists += [Hist_Dark_Bkg_Depth]
+        legends += ['method 2']
+        Hists += [Hist_Target_Bkg_Depth]
+        legends += ['method 3']
+        plotname = 'Depth_E%s'%(ErecS_lower_cut)
+        title = 'Depth'
+        MakeDiagnosticPlot(Hists,legends,title,plotname)
