@@ -73,6 +73,7 @@ double energy_bins[N_energy_bins+1] = {pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(1
 //const int N_bins_for_deconv = int(pow(2,7));
 //const int N_bins_for_deconv = 600;
 const int N_bins_for_deconv = 2400;
+//const int N_bins_for_deconv = 4800;
 
 vector<int> GetRunList(string source) {
         vector<int> list;
@@ -613,10 +614,10 @@ void RatioMethodForExtendedSources() {
         TH1::SetDefaultSumw2();
 
         if (TString(Region)=="VR") {
-                MSCW_cut_lower = -0.5;
-                MSCW_cut_upper = 0.7;
-                MSCL_cut_lower = 1.0;
-                MSCL_cut_upper = 2.0;
+                MSCW_cut_lower = 1.4;
+                MSCW_cut_upper = 1.6;
+                MSCL_cut_lower = 1.4;
+                MSCL_cut_upper = 1.6;
         }
 
         TRandom rnd;
