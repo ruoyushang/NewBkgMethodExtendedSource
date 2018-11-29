@@ -26,31 +26,32 @@
 #include "TRandom.h"
 
 
-//char target[50] = "H1426";
+char target[50] = "H1426";
 //char target[50] = "PKS1424";
 //char target[50] = "3C264";
 //char target[50] = "IC443";
 //char target[50] = "Ton599";
-char target[50] = "2ndCrab";
-char method[50] = "MSCW";
+//char target[50] = "2ndCrab";
+char Region[50] = "SR";
 
 double Elev_cut_lower = 75;
 double Elev_cut_upper = 85;
 
-double Target_Elev_cut_lower = 25;
-double Target_Elev_cut_upper = 55;
-//double Target_Elev_cut_lower = 75;
-//double Target_Elev_cut_upper = 85;
+double Target_Elev_cut_lower = 75;
+double Target_Elev_cut_upper = 85;
 //double Target_Elev_cut_lower = 55;
 //double Target_Elev_cut_upper = 85;
+//double Target_Elev_cut_lower = 35;
+//double Target_Elev_cut_upper = 55;
 
 double MSCW_cut_lower = -0.5;
 double MSCW_cut_upper = 0.7;
 double MSCL_cut_lower = -0.5;
 double MSCL_cut_upper = 0.7;
+
 double Depth_cut_lower = 6;
 double Depth_cut_upper = 14;
-double Depth_cut_width = 5.;
+double Depth_cut_width = 4.;
 
 string  filename;
 double TelElevation = 0;
@@ -70,7 +71,8 @@ const int N_energy_bins = 23;
 double energy_bins[N_energy_bins+1] = {pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0),pow(10,4.1),pow(10,4.2),pow(10,4.3),pow(10,4.4)};
 
 //const int N_bins_for_deconv = int(pow(2,7));
-const int N_bins_for_deconv = 600;
+//const int N_bins_for_deconv = 600;
+const int N_bins_for_deconv = 2400;
 
 vector<int> GetRunList(string source) {
         vector<int> list;
@@ -466,7 +468,7 @@ vector<int> GetRunList(string source) {
 }
 bool FoV() {
     if (theta2>0.2) return true;
-    //if (theta2<0.5) return true;
+    //if (theta2<0.4) return true;
     return false;
 }
 bool SignalSelectionMSCW() {
@@ -609,6 +611,13 @@ void Convolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Conv) {
 void RatioMethodForExtendedSources() {
 
         TH1::SetDefaultSumw2();
+
+        if (TString(Region)=="VR") {
+                MSCW_cut_lower = -0.5;
+                MSCW_cut_upper = 0.7;
+                MSCL_cut_lower = 1.0;
+                MSCL_cut_upper = 2.0;
+        }
 
         TRandom rnd;
         TH2D Hist_Dark_TelElevAzim("Hist_Dark_TelElevAzim","",90,0,90,360,0,360);
@@ -899,6 +908,7 @@ void RatioMethodForExtendedSources() {
 
         for (int e=0;e<N_energy_bins;e++) {
                 double offset = Hist_Target_CR_Depth.at(e).GetMean()-Hist_Target_ABkgTemp_Depth.at(e).GetMean();
+                double scale_target = 0;
                 for (int i=0;i<N_bins_for_deconv;i++) {
                         int b = Hist_Target_Bkg_Depth.at(e).FindBin(Hist_Target_Bkg_Depth.at(e).GetBinCenter(i+1)-offset);
                         Hist_Target_ABkg_Depth.at(e).SetBinContent(i+1,Hist_Target_ABkgTemp_Depth.at(e).GetBinContent(b));
@@ -914,19 +924,24 @@ void RatioMethodForExtendedSources() {
                 Depth_cut_upper = cut_mean+Depth_cut_width;
                 int norm_bin_low_target = Hist_Target_Bkg_Depth.at(e).FindBin(Depth_cut_lower);
                 int norm_bin_up_target = Hist_Target_Bkg_Depth.at(e).FindBin(Depth_cut_upper);
-                double scale_target = 0;
-                scale_target = Hist_Target_SR_Depth.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Target_Bkg_Depth.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
-                if (!(Hist_Target_SR_Depth.at(e).Integral()>0)) scale_target = 0;
-                if (!(Hist_Target_Bkg_Depth.at(e).Integral()>0)) scale_target = 0;
+                double numerator = Hist_Target_SR_Depth.at(e).Integral(1,norm_bin_low_target)+Hist_Target_SR_Depth.at(e).Integral(norm_bin_up_target,Hist_Dark_Bkg_Depth.at(e).GetNbinsX());
+                double denominator = Hist_Target_Bkg_Depth.at(e).Integral(1,norm_bin_low_target)+Hist_Target_Bkg_Depth.at(e).Integral(norm_bin_up_target,Hist_Dark_Bkg_Depth.at(e).GetNbinsX());
+                scale_target = numerator/denominator;
+                if (!(scale_target>0)) scale_target = 0;
+                if (!(denominator>0)) scale_target = 0;
                 Hist_Target_Bkg_Depth.at(e).Scale(scale_target);
-                scale_target = Hist_Target_ASR_Depth.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Target_ABkg_Depth.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
-                if (!(Hist_Target_ASR_Depth.at(e).Integral()>0)) scale_target = 0;
-                if (!(Hist_Target_ABkg_Depth.at(e).Integral()>0)) scale_target = 0;
+                numerator = Hist_Target_ASR_Depth.at(e).Integral(1,norm_bin_low_target)+Hist_Target_ASR_Depth.at(e).Integral(norm_bin_up_target,Hist_Dark_Bkg_Depth.at(e).GetNbinsX());
+                denominator = Hist_Target_ABkg_Depth.at(e).Integral(1,norm_bin_low_target)+Hist_Target_ABkg_Depth.at(e).Integral(norm_bin_up_target,Hist_Dark_Bkg_Depth.at(e).GetNbinsX());
+                scale_target = numerator/denominator;
+                if (!(scale_target>0)) scale_target = 0;
+                if (!(denominator>0)) scale_target = 0;
                 Hist_Target_ABkg_Depth.at(e).Scale(scale_target);
                 std::cout << e << ", Bkg (scaled) " << Hist_Target_Bkg_Depth.at(e).Integral() << std::endl;
-                scale_target = Hist_Target_SR_Depth.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Target_CR_Depth.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
+                numerator = Hist_Target_SR_Depth.at(e).Integral(1,norm_bin_low_target)+Hist_Target_SR_Depth.at(e).Integral(norm_bin_up_target,Hist_Dark_Bkg_Depth.at(e).GetNbinsX());
+                denominator = Hist_Target_CR_Depth.at(e).Integral(1,norm_bin_low_target)+Hist_Target_CR_Depth.at(e).Integral(norm_bin_up_target,Hist_Dark_Bkg_Depth.at(e).GetNbinsX());
+                scale_target = numerator/denominator;
                 if (!(scale_target>0)) scale_target = 0;
-                if (!(Hist_Target_CR_Depth.at(e).Integral(norm_bin_low_target,norm_bin_up_target)>0)) scale_target = 0;
+                if (!(denominator>0)) scale_target = 0;
                 Hist_Target_CR_Depth.at(e).Scale(scale_target);
         }
 
@@ -1083,7 +1098,7 @@ void RatioMethodForExtendedSources() {
         }
 
 
-        TFile OutputFile("output/Deconvolution_"+TString(target)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+".root","recreate"); 
+        TFile OutputFile("output/Deconvolution_"+TString(target)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_"+TString(Region)+".root","recreate"); 
         TTree InfoTree("InfoTree","info tree");
         InfoTree.Branch("MSCW_cut_lower",&MSCW_cut_lower,"MSCW_cut_lower/D");
         InfoTree.Branch("MSCW_cut_upper",&MSCW_cut_upper,"MSCW_cut_upper/D");

@@ -10,8 +10,6 @@ ROOT.gStyle.SetPaintTextFormat("0.3f")
 
 folder = 'output'
 
-UseDarkRun = True
-
 source = ''
 source_list = []
 #source_list  += ['Crab']
@@ -22,10 +20,24 @@ source_list  += ['H1426']
 #source_list  += ['Ton599']
 #source_list  += ['IC443']
 
+Region = 'SR'
+
+global MSCW_lower_cut
+global MSCW_upper_cut
+global MSCL_lower_cut
+global MSCL_upper_cut
+global Depth_cut_width
+
+#Elev_lower_cut = 55
+#Elev_upper_cut = 85
 Elev_lower_cut = 75
 Elev_upper_cut = 85
-#Elev_lower_cut = 25
+#Elev_lower_cut = 35
 #Elev_upper_cut = 55
+
+UseMethod1 = True
+UseMethod2 = True
+UseMethod3 = True
 
 Depth_cut_width = 10
 Azim_lower_cut = 0
@@ -65,7 +77,7 @@ def SelectDiagnosticaHistograms(folder,method,isSR,var):
 
     Hist_Data = ROOT.TH1D("Hist_Data","",1,0,1)
 
-    FilePath = '%s/Deconvolution_%s_Elev%sto%s.root'%(folder,source,Elev_lower_cut,Elev_upper_cut)
+    FilePath = '%s/Deconvolution_%s_Elev%sto%s_%s.root'%(folder,source,Elev_lower_cut,Elev_upper_cut,Region)
     print 'Read %s'%(FilePath)
     InputFile=ROOT.TFile(FilePath)
     
@@ -96,6 +108,12 @@ def SelectDiagnosticaHistograms(folder,method,isSR,var):
 
 def MakeDiagnosticPlot(Hists,legends,title,name):
     
+    global MSCW_lower_cut
+    global MSCW_upper_cut
+    global MSCL_lower_cut
+    global MSCL_upper_cut
+    global Depth_cut_width
+
     c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
     pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
     pad3.SetBottomMargin(0.0)
@@ -118,8 +136,10 @@ def MakeDiagnosticPlot(Hists,legends,title,name):
                 max_heigh = Hists[h].GetMaximum()
                 max_hist = h
             Hists[h].GetXaxis().SetTitle(title)
-            Hists[h].GetXaxis().SetRangeUser(-1,10)
-            if title=='Depth': Hists[h].GetXaxis().SetRangeUser(0,20)
+            Hists[h].GetXaxis().SetRangeUser(-1,3)
+            if title=='Depth': 
+                Hists[h].Rebin(4)
+                Hists[h].GetXaxis().SetRangeUser(0,20)
 
     Hists[max_hist].Draw("E")
     Hists[max_hist].SetMinimum(0)
@@ -145,16 +165,23 @@ def MakeDiagnosticPlot(Hists,legends,title,name):
     lumilab1.SetNDC()
     lumilab1.SetTextSize(0.15)
     lumilab1.Draw()
-    lumilab2 = ROOT.TLatex(0.15,0.65,'%0.2f < Tel elev. < %0.2f'%(Elev_lower_cut,Elev_upper_cut) )
-    lumilab2.SetNDC()
-    lumilab2.SetTextSize(0.15)
-    lumilab2.Draw()
-    lumilab5 = ROOT.TLatex(0.15,0.50,'%0.2f < Tel azim. < %0.2f'%(Azim_lower_cut,Azim_upper_cut) )
-    lumilab5.SetNDC()
-    lumilab5.SetTextSize(0.15)
-    lumilab5.Draw()
+    if not title=='MSCW':
+        lumilab2 = ROOT.TLatex(0.15,0.65,'%0.2f < MSCW < %0.2f'%(MSCW_lower_cut,MSCW_upper_cut) )
+        lumilab2.SetNDC()
+        lumilab2.SetTextSize(0.15)
+        lumilab2.Draw()
+    if not title=='MSCL':
+        lumilab5 = ROOT.TLatex(0.15,0.50,'%0.2f < MSCL < %0.2f'%(MSCL_lower_cut,MSCL_upper_cut) )
+        lumilab5.SetNDC()
+        lumilab5.SetTextSize(0.15)
+        lumilab5.Draw()
+    if not title=='Depth':
+        lumilab4 = ROOT.TLatex(0.15,0.35,'Slant depth (central #pm %0.2f)'%(Depth_cut_width) )
+        lumilab4.SetNDC()
+        lumilab4.SetTextSize(0.15)
+        lumilab4.Draw()
     #pad1.SetLogy()
-    c_both.SaveAs('output_plots/%s_%s.pdf'%(name,source))
+    c_both.SaveAs('output_plots/%s_%s_Elev%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Region))
 
 def Make2DTrajectoryPlot(Hist_1,Hist_2,xtitle,ytitle,name):
 
@@ -195,25 +222,27 @@ def Make2DTrajectoryPlot(Hist_1,Hist_2,xtitle,ytitle,name):
     legend.Draw("SAME")
     canvas.SaveAs('output_plots/%s_%s.pdf'%(name,source))
 
-    canvas2 = ROOT.TCanvas("canvas2","canvas2", 200, 10, 600, 600)
-    Hist_1.RebinX(2)
-    Hist_1.RebinY(2)
-    Hist_1.Draw("COL4Z")
-    canvas2.SaveAs('output_plots/%s_%s_Lego.pdf'%(name,'Crab'))
-    Hist_2.Draw("COL4Z")
-    Hist_2.RebinX(2)
-    Hist_2.RebinY(2)
-    canvas2.SaveAs('output_plots/%s_%s_Lego.pdf'%(name,source))
+    #canvas2 = ROOT.TCanvas("canvas2","canvas2", 200, 10, 600, 600)
+    #Hist_1.RebinX(2)
+    #Hist_1.RebinY(2)
+    #Hist_1.Draw("COL4Z")
+    #canvas2.SaveAs('output_plots/%s_%s_Lego.pdf'%(name,'Crab'))
+    #Hist_2.Draw("COL4Z")
+    #Hist_2.RebinX(2)
+    #Hist_2.RebinY(2)
+    #canvas2.SaveAs('output_plots/%s_%s_Lego.pdf'%(name,source))
 
 
 for s in source_list:
+
     source = s
     ErecS_lower_cut = 0
     ErecS_upper_cut = 1e10
-    FilePath = '%s/Deconvolution_%s_Elev%sto%s.root'%(folder,source,Elev_lower_cut,Elev_upper_cut)
+    FilePath = '%s/Deconvolution_%s_Elev%sto%s_%s.root'%(folder,source,Elev_lower_cut,Elev_upper_cut,Region)
     print 'Read %s'%(FilePath)
     TargetFile=ROOT.TFile(FilePath)
     InfoTree = TargetFile.Get("InfoTree")
+    InfoTree.GetEntry(0)
     Depth_cut_width = InfoTree.Depth_cut_width
     MSCW_lower_cut = InfoTree.MSCW_cut_lower
     MSCW_upper_cut = InfoTree.MSCW_cut_upper
@@ -250,11 +279,20 @@ for s in source_list:
         legends = []
         Hists += [Hist_Target_SR_MSCW]
         legends += ['Target SR']
-        Hists += [Hist_Dark_SR_MSCW]
+        if UseMethod1:
+            Hists += [Hist_Dark_SR_MSCW]
+        else:
+            Hists += [0]
         legends += ['method 1']
-        Hists += [Hist_Dark_Bkg_MSCW]
+        if UseMethod2:
+            Hists += [Hist_Dark_Bkg_MSCW]
+        else:
+            Hists += [0]
         legends += ['method 2']
-        Hists += [Hist_Target_Bkg_MSCW]
+        if UseMethod3:
+            Hists += [Hist_Target_Bkg_MSCW]
+        else:
+            Hists += [0]
         legends += ['method 3']
         plotname = 'MSCW_E%s'%(ErecS_lower_cut)
         title = 'MSCW'
@@ -264,11 +302,20 @@ for s in source_list:
         legends = []
         Hists += [Hist_Target_SR_MSCL]
         legends += ['Target SR']
-        Hists += [Hist_Dark_SR_MSCL]
+        if UseMethod1:
+            Hists += [Hist_Dark_SR_MSCL]
+        else:
+            Hists += [0]
         legends += ['method 1']
-        Hists += [Hist_Dark_Bkg_MSCL]
+        if UseMethod2:
+            Hists += [Hist_Dark_Bkg_MSCL]
+        else:
+            Hists += [0]
         legends += ['method 2']
-        Hists += [Hist_Target_Bkg_MSCL]
+        if UseMethod3:
+            Hists += [Hist_Target_Bkg_MSCL]
+        else:
+            Hists += [0]
         legends += ['method 3']
         plotname = 'MSCL_E%s'%(ErecS_lower_cut)
         title = 'MSCL'
@@ -278,11 +325,20 @@ for s in source_list:
         legends = []
         Hists += [Hist_Target_SR_Depth]
         legends += ['Target SR']
-        Hists += [Hist_Dark_SR_Depth]
+        if UseMethod1:
+            Hists += [Hist_Dark_SR_Depth]
+        else:
+            Hists += [0]
         legends += ['method 1']
-        Hists += [Hist_Dark_Bkg_Depth]
+        if UseMethod2:
+            Hists += [Hist_Dark_Bkg_Depth]
+        else:
+            Hists += [0]
         legends += ['method 2']
-        Hists += [Hist_Target_Bkg_Depth]
+        if UseMethod3:
+            Hists += [Hist_Target_Bkg_Depth]
+        else:
+            Hists += [0]
         legends += ['method 3']
         plotname = 'Depth_E%s'%(ErecS_lower_cut)
         title = 'Depth'
