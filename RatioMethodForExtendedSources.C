@@ -32,9 +32,9 @@ char target[50] = "H1426";
 //char target[50] = "IC443";
 //char target[50] = "Ton599";
 //char target[50] = "2ndCrab";
-char Region[50] = "SR";
+char Region[50] = "VR";
 
-double Elev_cut_lower = 75;
+double Elev_cut_lower = 55;
 double Elev_cut_upper = 85;
 
 double Target_Elev_cut_lower = 75;
@@ -44,14 +44,14 @@ double Target_Elev_cut_upper = 85;
 //double Target_Elev_cut_lower = 35;
 //double Target_Elev_cut_upper = 55;
 
-double MSCW_cut_lower = -0.5;
-double MSCW_cut_upper = 0.7;
-double MSCL_cut_lower = -0.5;
-double MSCL_cut_upper = 0.7;
+double MSCW_cut_lower = -1.0;
+double MSCW_cut_upper = 0.5;
+double MSCL_cut_lower = -1.0;
+double MSCL_cut_upper = 0.5;
 
 double Depth_cut_lower = 6;
 double Depth_cut_upper = 14;
-double Depth_cut_width = 4.;
+double Depth_cut_width = 3;
 
 string  filename;
 double TelElevation = 0;
@@ -65,14 +65,15 @@ double theta2 = 0;
 
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] = {4000,1e10};
-//const int N_energy_bins = 10;
-//double energy_bins[N_energy_bins+1] = {pow(10,2.2),pow(10,2.4),pow(10,2.6),pow(10,2.8),pow(10,3.0),pow(10,3.2),pow(10,3.4),pow(10,3.6),pow(10,3.8),pow(10,4.0),pow(10,4.2)};
-const int N_energy_bins = 23;
-double energy_bins[N_energy_bins+1] = {pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0),pow(10,4.1),pow(10,4.2),pow(10,4.3),pow(10,4.4)};
+const int N_energy_bins = 10;
+double energy_bins[N_energy_bins+1] = {pow(10,2.2),pow(10,2.4),pow(10,2.6),pow(10,2.8),pow(10,3.0),pow(10,3.2),pow(10,3.4),pow(10,3.6),pow(10,3.8),pow(10,4.0),pow(10,4.2)};
+//const int N_energy_bins = 23;
+//double energy_bins[N_energy_bins+1] = {pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0),pow(10,4.1),pow(10,4.2),pow(10,4.3),pow(10,4.4)};
 
 //const int N_bins_for_deconv = int(pow(2,7));
 //const int N_bins_for_deconv = 600;
-const int N_bins_for_deconv = 2400;
+const int N_bins_for_deconv = 1200;
+//const int N_bins_for_deconv = 2400;
 //const int N_bins_for_deconv = 4800;
 
 vector<int> GetRunList(string source) {
@@ -469,7 +470,7 @@ vector<int> GetRunList(string source) {
 }
 bool FoV() {
     if (theta2>0.2) return true;
-    //if (theta2<0.4) return true;
+    //if (theta2<1.0) return true;
     return false;
 }
 bool SignalSelectionMSCW() {
@@ -588,9 +589,11 @@ void Deconvolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Deconv) {
             else response[i] = 0;
         }
         TSpectrum sp;
-        //sp.Deconvolution(source,response,N_bins_for_deconv,100,1,100);  // best option
+        //sp.Deconvolution(source,response,N_bins_for_deconv,100,1,100);
         //sp.Deconvolution(source,response,N_bins_for_deconv,100,1,1000);
-        sp.Deconvolution(source,response,N_bins_for_deconv,100,1,10000); // new best option
+        //sp.Deconvolution(source,response,N_bins_for_deconv,100,1,10000); // best option
+        //sp.Deconvolution(source,response,N_bins_for_deconv,50,1,10000); // new best option
+        sp.Deconvolution(source,response,N_bins_for_deconv,25,1,10000); // new best option
         for (int i=0;i<N_bins_for_deconv;i++) {
             Hist_Deconv->SetBinContent(i+1,max(source[i],0.));
         }
@@ -865,8 +868,10 @@ void RatioMethodForExtendedSources() {
                         Hist_Target_Bkg_MSCW.at(e).SetBinContent(i+1,Hist_Target_BkgTemp_MSCW.at(e).GetBinContent(b));
                         Hist_Target_Bkg_MSCW.at(e).SetBinError(i+1,Hist_Target_BkgTemp_MSCW.at(e).GetBinError(b));
                 }
-                int norm_bin_low_target = Hist_Target_Bkg_MSCW.at(e).FindBin(2*MSCW_cut_upper);
-                int norm_bin_up_target = Hist_Target_Bkg_MSCW.at(e).FindBin(6*MSCW_cut_upper);
+                //int norm_bin_low_target = Hist_Target_Bkg_MSCW.at(e).FindBin(1.5*MSCW_cut_upper);
+                //int norm_bin_up_target = Hist_Target_Bkg_MSCW.at(e).FindBin(3*MSCW_cut_upper);
+                int norm_bin_low_target = Hist_Target_Bkg_MSCW.at(e).FindBin(1.);
+                int norm_bin_up_target = Hist_Target_Bkg_MSCW.at(e).FindBin(2.);
                 double scale_target = Hist_Target_SR_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Target_Bkg_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
                 Hist_Target_Bkg_MSCW.at(e).Scale(scale_target);
                 scale_target = Hist_Target_ASR_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Target_ABkg_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
@@ -889,8 +894,10 @@ void RatioMethodForExtendedSources() {
                 std::cout << e << ", Deconv " << Hist_Target_Deconv_MSCL.at(e).Integral() << std::endl;
                 std::cout << e << ", SR " << Hist_Target_SR_MSCL.at(e).Integral() << std::endl;
                 std::cout << e << ", Bkg " << Hist_Target_Bkg_MSCL.at(e).Integral() << std::endl;
-                int norm_bin_low_target = Hist_Target_Bkg_MSCL.at(e).FindBin(2*MSCL_cut_upper);
-                int norm_bin_up_target = Hist_Target_Bkg_MSCL.at(e).FindBin(6*MSCL_cut_upper);
+                //int norm_bin_low_target = Hist_Target_Bkg_MSCL.at(e).FindBin(1.5*MSCL_cut_upper);
+                //int norm_bin_up_target = Hist_Target_Bkg_MSCL.at(e).FindBin(3*MSCL_cut_upper);
+                int norm_bin_low_target = Hist_Target_Bkg_MSCL.at(e).FindBin(1.);
+                int norm_bin_up_target = Hist_Target_Bkg_MSCL.at(e).FindBin(2.);
                 double scale_target = 0;
                 scale_target = Hist_Target_SR_MSCL.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Target_Bkg_MSCL.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
                 if (!(Hist_Target_SR_MSCL.at(e).Integral()>0)) scale_target = 0;
@@ -1057,8 +1064,10 @@ void RatioMethodForExtendedSources() {
                 Hist_Dark_Bkg_Depth.at(e).Multiply(&Hist_Dark_Deconv_Depth.at(e));
         }
         for (int e=0;e<N_energy_bins;e++) {
-                int norm_bin_low_target = Hist_Dark_Bkg_MSCW.at(e).FindBin(2*MSCW_cut_upper);
-                int norm_bin_up_target = Hist_Dark_Bkg_MSCW.at(e).FindBin(3*MSCW_cut_upper);
+                //int norm_bin_low_target = Hist_Dark_Bkg_MSCW.at(e).FindBin(1.5*MSCW_cut_upper);
+                //int norm_bin_up_target = Hist_Dark_Bkg_MSCW.at(e).FindBin(3*MSCW_cut_upper);
+                int norm_bin_low_target = Hist_Dark_Bkg_MSCW.at(e).FindBin(1.);
+                int norm_bin_up_target = Hist_Dark_Bkg_MSCW.at(e).FindBin(2.);
                 double scale_target = Hist_Target_SR_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Dark_Bkg_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
                 if (!(scale_target>0)) scale_target = 0;
                 if (!(Hist_Dark_Bkg_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target)>0)) scale_target = 0;
@@ -1068,8 +1077,10 @@ void RatioMethodForExtendedSources() {
                 if (!(Hist_Dark_SR_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target)>0)) scale_target = 0;
                 Hist_Dark_SR_MSCW.at(e).Scale(scale_target);
 
-                norm_bin_low_target = Hist_Dark_Bkg_MSCL.at(e).FindBin(2*MSCL_cut_upper);
-                norm_bin_up_target = Hist_Dark_Bkg_MSCL.at(e).FindBin(3*MSCL_cut_upper);
+                //norm_bin_low_target = Hist_Dark_Bkg_MSCL.at(e).FindBin(1.5*MSCL_cut_upper);
+                //norm_bin_up_target = Hist_Dark_Bkg_MSCL.at(e).FindBin(3*MSCL_cut_upper);
+                norm_bin_low_target = Hist_Dark_Bkg_MSCL.at(e).FindBin(1.);
+                norm_bin_up_target = Hist_Dark_Bkg_MSCL.at(e).FindBin(2.);
                 scale_target = Hist_Target_SR_MSCL.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Dark_Bkg_MSCL.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
                 if (!(scale_target>0)) scale_target = 0;
                 if (!(Hist_Dark_Bkg_MSCL.at(e).Integral(norm_bin_low_target,norm_bin_up_target)>0)) scale_target = 0;
