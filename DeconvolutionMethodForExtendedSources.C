@@ -40,10 +40,10 @@ double Elev_cut_upper = 85;
 
 //double Target_Elev_cut_lower = 75;
 //double Target_Elev_cut_upper = 85;
-double Target_Elev_cut_lower = 55;
-double Target_Elev_cut_upper = 85;
-//double Target_Elev_cut_lower = 35;
-//double Target_Elev_cut_upper = 55;
+//double Target_Elev_cut_lower = 55;
+//double Target_Elev_cut_upper = 85;
+double Target_Elev_cut_lower = 35;
+double Target_Elev_cut_upper = 55;
 
 double MSCW_cut_lower = -1.0;
 double MSCW_cut_upper = 0.5;
@@ -54,6 +54,9 @@ double Depth_cut_lower = 6;
 double Depth_cut_upper = 14;
 //double Depth_cut_width = 3;
 double Depth_cut_width = 4;
+
+double Norm_Lower = 1.0;
+double Norm_Upper = 3.0;
 
 string  filename;
 double TelElevation = 0;
@@ -67,8 +70,8 @@ double theta2 = 0;
 
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] = {4000,1e6};
-const int N_energy_bins = 6;
-double energy_bins[N_energy_bins+1] = {150,200,600,1000,2000,4000,1e6};
+const int N_energy_bins = 9;
+double energy_bins[N_energy_bins+1] = {150,200,400,1000,1500,2000,3000,4000,6000,1e6};
 //const int N_energy_bins = 10;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.2),pow(10,2.4),pow(10,2.6),pow(10,2.8),pow(10,3.0),pow(10,3.2),pow(10,3.4),pow(10,3.6),pow(10,3.8),pow(10,4.0),pow(10,4.2)};
 //const int N_energy_bins = 23;
@@ -534,7 +537,7 @@ bool FoV() {
     //if (theta2>0.2) return true;
     //if (theta2<1.0) return true;
     if (theta2<0.5) return true;
-    //if (theta2<0.2) return true;
+    //if (theta2<0.2) return true;  // Crab signal icontamination with this cut is too strong for the deconvolution method.
     return false;
 }
 bool SignalSelectionMSCW() {
@@ -760,8 +763,9 @@ void DeconvolutionMethodForExtendedSources() {
             char e_up[50];
             sprintf(e_up, "%i", int(energy_bins[e+1]));
             if (energy_bins[e]>=100) N_bins_for_deconv = 9600;
-            if (energy_bins[e]>=200) N_bins_for_deconv = 4800;
-            if (energy_bins[e]>=500) N_bins_for_deconv = 2400;
+            if (energy_bins[e]>=200) N_bins_for_deconv = 9600;
+            if (energy_bins[e]>=400) N_bins_for_deconv = 2400;
+            if (energy_bins[e]>=600) N_bins_for_deconv = 2400;
             if (energy_bins[e]>=1000) N_bins_for_deconv = 1200;
             if (energy_bins[e]>=2000) N_bins_for_deconv = 1200;
             if (energy_bins[e]>=8000) N_bins_for_deconv = 600;
@@ -946,8 +950,10 @@ void DeconvolutionMethodForExtendedSources() {
         vector<int> N_iter;
         for (int e=0;e<N_energy_bins;e++) {
                 int n_iteration = 25;
-                if (energy_bins[e]>=100) n_iteration = 10;
-                if (energy_bins[e]>=500) n_iteration = 15;
+                if (energy_bins[e]>=100) n_iteration = 8;
+                if (energy_bins[e]>=200) n_iteration = 10;
+                if (energy_bins[e]>=400) n_iteration = 12;
+                if (energy_bins[e]>=600) n_iteration = 12;
                 if (energy_bins[e]>=1000) n_iteration = 20;
                 if (energy_bins[e]>=2000) n_iteration = 25;
                 N_iter.push_back(n_iteration);
@@ -977,8 +983,8 @@ void DeconvolutionMethodForExtendedSources() {
                 }
                 //int norm_bin_low_target = Hist_Target_Bkg_MSCW.at(e).FindBin(1.5*MSCW_cut_upper);
                 //int norm_bin_up_target = Hist_Target_Bkg_MSCW.at(e).FindBin(3*MSCW_cut_upper);
-                int norm_bin_low_target = Hist_Target_Bkg_MSCW.at(e).FindBin(1.5);
-                int norm_bin_up_target = Hist_Target_Bkg_MSCW.at(e).FindBin(3.5);
+                int norm_bin_low_target = Hist_Target_Bkg_MSCW.at(e).FindBin(Norm_Lower);
+                int norm_bin_up_target = Hist_Target_Bkg_MSCW.at(e).FindBin(Norm_Upper);
                 double scale_target = Hist_Target_SR_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Target_Bkg_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
                 Hist_Target_Bkg_MSCW.at(e).Scale(scale_target);
                 scale_target = Hist_Target_ASR_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Target_ABkg_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
@@ -1000,8 +1006,8 @@ void DeconvolutionMethodForExtendedSources() {
                 }
                 //int norm_bin_low_target = Hist_Target_Bkg_MSCL.at(e).FindBin(1.5*MSCL_cut_upper);
                 //int norm_bin_up_target = Hist_Target_Bkg_MSCL.at(e).FindBin(3*MSCL_cut_upper);
-                int norm_bin_low_target = Hist_Target_Bkg_MSCL.at(e).FindBin(1.5);
-                int norm_bin_up_target = Hist_Target_Bkg_MSCL.at(e).FindBin(3.5);
+                int norm_bin_low_target = Hist_Target_Bkg_MSCL.at(e).FindBin(Norm_Lower);
+                int norm_bin_up_target = Hist_Target_Bkg_MSCL.at(e).FindBin(Norm_Upper);
                 double scale_target = Hist_Target_SR_MSCL.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Target_Bkg_MSCL.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
                 Hist_Target_Bkg_MSCL.at(e).Scale(scale_target);
                 scale_target = Hist_Target_ASR_MSCL.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Target_ABkg_MSCL.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
@@ -1077,8 +1083,8 @@ void DeconvolutionMethodForExtendedSources() {
                 }
                 //int norm_bin_low_Dark = Hist_Dark_Bkg_MSCW.at(e).FindBin(1.5*MSCW_cut_upper);
                 //int norm_bin_up_Dark = Hist_Dark_Bkg_MSCW.at(e).FindBin(3*MSCW_cut_upper);
-                int norm_bin_low_Dark = Hist_Dark_Bkg_MSCW.at(e).FindBin(1.5);
-                int norm_bin_up_Dark = Hist_Dark_Bkg_MSCW.at(e).FindBin(3.5);
+                int norm_bin_low_Dark = Hist_Dark_Bkg_MSCW.at(e).FindBin(Norm_Lower);
+                int norm_bin_up_Dark = Hist_Dark_Bkg_MSCW.at(e).FindBin(Norm_Upper);
                 double scale_Dark = Hist_Dark_SR_MSCW.at(e).Integral(norm_bin_low_Dark,norm_bin_up_Dark)/Hist_Dark_Bkg_MSCW.at(e).Integral(norm_bin_low_Dark,norm_bin_up_Dark);
                 Hist_Dark_Bkg_MSCW.at(e).Scale(scale_Dark);
                 scale_Dark = Hist_Dark_ASR_MSCW.at(e).Integral(norm_bin_low_Dark,norm_bin_up_Dark)/Hist_Dark_ABkg_MSCW.at(e).Integral(norm_bin_low_Dark,norm_bin_up_Dark);
@@ -1100,8 +1106,8 @@ void DeconvolutionMethodForExtendedSources() {
                 }
                 //int norm_bin_low_Dark = Hist_Dark_Bkg_MSCL.at(e).FindBin(1.5*MSCL_cut_upper);
                 //int norm_bin_up_Dark = Hist_Dark_Bkg_MSCL.at(e).FindBin(3*MSCL_cut_upper);
-                int norm_bin_low_Dark = Hist_Dark_Bkg_MSCL.at(e).FindBin(1.5);
-                int norm_bin_up_Dark = Hist_Dark_Bkg_MSCL.at(e).FindBin(3.5);
+                int norm_bin_low_Dark = Hist_Dark_Bkg_MSCL.at(e).FindBin(Norm_Lower);
+                int norm_bin_up_Dark = Hist_Dark_Bkg_MSCL.at(e).FindBin(Norm_Upper);
                 double scale_Dark = Hist_Dark_SR_MSCL.at(e).Integral(norm_bin_low_Dark,norm_bin_up_Dark)/Hist_Dark_Bkg_MSCL.at(e).Integral(norm_bin_low_Dark,norm_bin_up_Dark);
                 Hist_Dark_Bkg_MSCL.at(e).Scale(scale_Dark);
                 scale_Dark = Hist_Dark_ASR_MSCL.at(e).Integral(norm_bin_low_Dark,norm_bin_up_Dark)/Hist_Dark_ABkg_MSCL.at(e).Integral(norm_bin_low_Dark,norm_bin_up_Dark);
@@ -1197,8 +1203,8 @@ void DeconvolutionMethodForExtendedSources() {
 
         // Get ring bkg
         for (int e=0;e<N_energy_bins;e++) {
-                int norm_bin_low_ring = Hist_Target_Ring_MSCW.at(e).FindBin(1.5);
-                int norm_bin_up_ring = Hist_Target_Ring_MSCW.at(e).FindBin(3.5);
+                int norm_bin_low_ring = Hist_Target_Ring_MSCW.at(e).FindBin(Norm_Lower);
+                int norm_bin_up_ring = Hist_Target_Ring_MSCW.at(e).FindBin(Norm_Upper);
                 double scale_ring = Hist_Target_SR_MSCW.at(e).Integral(norm_bin_low_ring,norm_bin_up_ring)/Hist_Target_Ring_MSCW.at(e).Integral(norm_bin_low_ring,norm_bin_up_ring);
                 if (!(scale_ring>0)) scale_ring = 0;
                 if (!(Hist_Target_Ring_MSCW.at(e).Integral(norm_bin_low_ring,norm_bin_up_ring)>0)) scale_ring = 0;
