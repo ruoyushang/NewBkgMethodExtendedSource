@@ -108,7 +108,7 @@ def SelectDiagnosticaHistograms(folder,method,isSR,var):
 
     return Hist_Data
 
-def MakeDiagnosticPlot(Hists,legends,title,name):
+def MakeDiagnosticPlot(Hists,legends,colors,title,name):
     
     global MSCW_lower_cut
     global MSCW_upper_cut
@@ -133,7 +133,8 @@ def MakeDiagnosticPlot(Hists,legends,title,name):
     max_hist = 0
     for h in range(0,len(Hists)):
         if Hists[h]!=0:
-            Hists[h].SetLineColor(h+1)
+            Hists[h].Rebin(4)
+            Hists[h].SetLineColor(colors[h])
             if max_heigh < Hists[h].GetMaximum(): 
                 max_heigh = Hists[h].GetMaximum()
                 max_hist = h
@@ -145,17 +146,18 @@ def MakeDiagnosticPlot(Hists,legends,title,name):
                 Hists[h].Rebin(4)
                 Hists[h].GetXaxis().SetRangeUser(0,20)
 
-    Hists[max_hist].Draw("E")
     Hists[max_hist].SetMinimum(0)
+    Hists[max_hist].Draw("E")
+    Hist_Sum = Hists[1].Clone()
+    Hist_Sum.Add(Hists[2])
+    Hist_Sum.SetLineColor(6)
+    Hist_Sum.SetMinimum(0)
+    Hist_Sum.Draw("E same")
     for h in range(0,len(Hists)):
         if Hists[h]!=0:
             Hists[h].Draw("E same")
     Hists[0].SetLineWidth(3)
     Hists[0].Draw("E same")
-    Hist_Sum = Hists[1].Clone()
-    Hist_Sum.Add(Hists[2])
-    Hist_Sum.SetLineColor(4)
-    Hist_Sum.Draw("E same")
     pad3.cd()
     legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
     legend.SetTextFont(42)
@@ -271,45 +273,41 @@ for s in source_list:
         Hist_Target_Bkg_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_MSCW')
         Hist_Target_CR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_MSCW')
         Hist_Target_Elec_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Elec_MSCW')
+        Hist_Target_Ring_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Ring_MSCW')
         Hist_Dark_Elec_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_Elec_MSCW')
 
-        Hist_Target_SR_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_MSCL')
-        Hist_Dark_Bkg_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_Bkg_MSCL')
-        Hist_Dark_SR_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_SR_MSCL')
-        Hist_Target_Bkg_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_MSCL')
-        Hist_Target_CR_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_MSCL')
-        Hist_Target_Elec_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Elec_MSCL')
-        Hist_Dark_Elec_MSCL = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_Elec_MSCL')
-
-        Hist_Target_SR_Depth = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_Depth')
-        Hist_Dark_Bkg_Depth = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_Bkg_Depth')
-        Hist_Dark_SR_Depth = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_SR_Depth')
-        Hist_Target_Bkg_Depth = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_Depth')
-        Hist_Target_CR_Depth = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_Depth')
-        Hist_Target_Elec_Depth = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Elec_Depth')
-        Hist_Dark_Elec_Depth = SelectDiagnosticaHistograms(folder,'MSCW','SR','Dark_Elec_Depth')
-
         Hists = []
         legends = []
+        colors = []
         Hists += [Hist_Target_SR_MSCW]
         legends += ['Target SR']
+        colors += [1]
         Hists += [Hist_Target_Elec_MSCW]
         legends += ['Elec']
+        colors += [3]
         Hists += [Hist_Target_Bkg_MSCW]
-        legends += ['Bkg']
+        legends += ['CR']
+        colors += [4]
+        Hists += [Hist_Target_Ring_MSCW]
+        legends += ['Ring']
+        colors += [2]
         plotname = 'Target_MSCW_E%s'%(ErecS_lower_cut)
         title = 'MSCW'
-        MakeDiagnosticPlot(Hists,legends,title,plotname)
+        MakeDiagnosticPlot(Hists,legends,colors,title,plotname)
 
         Hists = []
         legends = []
+        colors = []
         Hists += [Hist_Dark_SR_MSCW]
         legends += ['Dark SR']
+        colors += [1]
         Hists += [Hist_Dark_Elec_MSCW]
         legends += ['Elec']
+        colors += [3]
         Hists += [Hist_Dark_Bkg_MSCW]
-        legends += ['Bkg']
+        legends += ['CR']
+        colors += [4]
         plotname = 'Dark_MSCW_E%s'%(ErecS_lower_cut)
         title = 'MSCW'
-        MakeDiagnosticPlot(Hists,legends,title,plotname)
+        MakeDiagnosticPlot(Hists,legends,colors,title,plotname)
 
