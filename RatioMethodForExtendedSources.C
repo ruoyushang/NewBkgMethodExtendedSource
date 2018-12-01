@@ -26,21 +26,22 @@
 #include "TRandom.h"
 
 
-char target[50] = "H1426";
+//char target[50] = "H1426";
 //char target[50] = "PKS1424";
 //char target[50] = "3C264";
 //char target[50] = "IC443";
 //char target[50] = "Ton599";
 //char target[50] = "2ndCrab";
-char Region[50] = "VR";
+char target[50] = "BrandonValidation";
+char Region[50] = "SR";
 
 double Elev_cut_lower = 55;
 double Elev_cut_upper = 85;
 
-double Target_Elev_cut_lower = 75;
-double Target_Elev_cut_upper = 85;
-//double Target_Elev_cut_lower = 55;
+//double Target_Elev_cut_lower = 75;
 //double Target_Elev_cut_upper = 85;
+double Target_Elev_cut_lower = 55;
+double Target_Elev_cut_upper = 85;
 //double Target_Elev_cut_lower = 35;
 //double Target_Elev_cut_upper = 55;
 
@@ -65,10 +66,10 @@ double theta2 = 0;
 
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] = {4000,1e10};
-const int N_energy_bins = 10;
-double energy_bins[N_energy_bins+1] = {pow(10,2.2),pow(10,2.4),pow(10,2.6),pow(10,2.8),pow(10,3.0),pow(10,3.2),pow(10,3.4),pow(10,3.6),pow(10,3.8),pow(10,4.0),pow(10,4.2)};
-//const int N_energy_bins = 23;
-//double energy_bins[N_energy_bins+1] = {pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0),pow(10,4.1),pow(10,4.2),pow(10,4.3),pow(10,4.4)};
+//const int N_energy_bins = 10;
+//double energy_bins[N_energy_bins+1] = {pow(10,2.2),pow(10,2.4),pow(10,2.6),pow(10,2.8),pow(10,3.0),pow(10,3.2),pow(10,3.4),pow(10,3.6),pow(10,3.8),pow(10,4.0),pow(10,4.2)};
+const int N_energy_bins = 23;
+double energy_bins[N_energy_bins+1] = {pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0),pow(10,4.1),pow(10,4.2),pow(10,4.3),pow(10,4.4)};
 
 //const int N_bins_for_deconv = int(pow(2,7));
 //const int N_bins_for_deconv = 600;
@@ -78,6 +79,68 @@ const int N_bins_for_deconv = 1200;
 
 vector<int> GetRunList(string source) {
         vector<int> list;
+        if (source=="BrandonValidation") {
+                list.push_back(38030);
+                list.push_back(38194);
+                list.push_back(38418);
+                list.push_back(38421);
+                list.push_back(38538);
+                list.push_back(38559);
+                list.push_back(38622);
+                list.push_back(38919);
+                list.push_back(39032);
+                list.push_back(39111);
+                list.push_back(39165);
+                list.push_back(39197);
+                list.push_back(39200);
+                list.push_back(39230);
+                list.push_back(39258);
+                list.push_back(39359);
+                list.push_back(39588);
+                list.push_back(39614);
+                list.push_back(39642);
+                list.push_back(39645);
+                list.push_back(39702);
+                list.push_back(39710);
+                list.push_back(39796);
+                list.push_back(39857);
+                list.push_back(39877);
+                list.push_back(39917);
+                list.push_back(39921);
+                list.push_back(39947);
+                list.push_back(39950);
+                list.push_back(40151);
+                list.push_back(40225);
+                list.push_back(40281);
+                list.push_back(40314);
+                list.push_back(40361);
+                list.push_back(40391);
+                list.push_back(40424);
+                list.push_back(40555);
+                list.push_back(40558);
+                list.push_back(40593);
+                list.push_back(40736);
+                list.push_back(40760);
+                list.push_back(40785);
+                list.push_back(40844);
+                list.push_back(40847);
+                list.push_back(40941);
+                list.push_back(40958);
+                list.push_back(40976);
+                list.push_back(40989);
+                list.push_back(41011);
+                list.push_back(41122);
+                list.push_back(41125);
+                list.push_back(43901);
+                list.push_back(44049);
+                list.push_back(44090);
+                list.push_back(44494);
+                list.push_back(44603);
+                list.push_back(44692);
+                list.push_back(45319);
+                list.push_back(45322);
+                list.push_back(45364);
+        }
         if (source=="Ton599") {
                 list.push_back(88356);
                 list.push_back(88357);
@@ -471,6 +534,7 @@ vector<int> GetRunList(string source) {
 bool FoV() {
     if (theta2>0.2) return true;
     //if (theta2<1.0) return true;
+    //if (theta2<0.2) return true;
     return false;
 }
 bool SignalSelectionMSCW() {
@@ -816,7 +880,11 @@ void RatioMethodForExtendedSources() {
                         Hist_Target_TelElevAzim.Fill(TelElevation,TelAzimuth);
                 }
 
-                TTree* Target_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/data_on");
+                TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
+                if (TString(observation)=="BrandonValidation") {
+                    root_file = "run_"+TString(run_number)+"/stereo/data_on";
+                }
+                TTree* Target_tree = (TTree*) input_file->Get(root_file);
                 Target_tree->SetBranchAddress("ErecS",&ErecS);
                 Target_tree->SetBranchAddress("EChi2S",&EChi2S);
                 Target_tree->SetBranchAddress("MSCW",&MSCW);
@@ -976,8 +1044,8 @@ void RatioMethodForExtendedSources() {
                         Hist_Dark_Bkg_MSCW.at(e).SetBinContent(i+1,Hist_Dark_BkgTemp_MSCW.at(e).GetBinContent(b));
                         Hist_Dark_Bkg_MSCW.at(e).SetBinError(i+1,Hist_Dark_BkgTemp_MSCW.at(e).GetBinError(b));
                 }
-                int norm_bin_low_target = Hist_Dark_Bkg_MSCW.at(e).FindBin(2*MSCW_cut_upper);
-                int norm_bin_up_target = Hist_Dark_Bkg_MSCW.at(e).FindBin(3*MSCW_cut_upper);
+                int norm_bin_low_target = Hist_Dark_Bkg_MSCW.at(e).FindBin(1.);
+                int norm_bin_up_target = Hist_Dark_Bkg_MSCW.at(e).FindBin(2.);
                 double scale_target = Hist_Target_SR_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Dark_Bkg_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
                 if (!(scale_target>0)) scale_target = 0;
                 if (!(Hist_Dark_Bkg_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target)>0)) scale_target = 0;
@@ -1001,8 +1069,8 @@ void RatioMethodForExtendedSources() {
                         Hist_Dark_Bkg_MSCL.at(e).SetBinContent(i+1,Hist_Dark_BkgTemp_MSCL.at(e).GetBinContent(b));
                         Hist_Dark_Bkg_MSCL.at(e).SetBinError(i+1,Hist_Dark_BkgTemp_MSCL.at(e).GetBinError(b));
                 }
-                int norm_bin_low_target = Hist_Dark_Bkg_MSCL.at(e).FindBin(2*MSCL_cut_upper);
-                int norm_bin_up_target = Hist_Dark_Bkg_MSCL.at(e).FindBin(3*MSCL_cut_upper);
+                int norm_bin_low_target = Hist_Dark_Bkg_MSCL.at(e).FindBin(1.);
+                int norm_bin_up_target = Hist_Dark_Bkg_MSCL.at(e).FindBin(2.);
                 double scale_target = Hist_Target_SR_MSCL.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Dark_Bkg_MSCL.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
                 if (!(scale_target>0)) scale_target = 0;
                 if (!(Hist_Dark_Bkg_MSCL.at(e).Integral(norm_bin_low_target,norm_bin_up_target)>0)) scale_target = 0;
