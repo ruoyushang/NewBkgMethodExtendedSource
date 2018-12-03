@@ -66,16 +66,18 @@ double EChi2S = 0;
 double MSCW = 0;
 double MSCL = 0;
 double SlantDepth = 0;
+float EmissionHeight = 0;
+float EmissionHeightChi2 = 0;
 double theta2 = 0;
 
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] = {4000,1e6};
 const int N_energy_bins = 10;
-double energy_bins[N_energy_bins+1] = {150,200,250,300,400,600,800,1000,2000,4000,1e6};
-//const int N_energy_bins = 10;
-//double energy_bins[N_energy_bins+1] = {pow(10,2.2),pow(10,2.4),pow(10,2.6),pow(10,2.8),pow(10,3.0),pow(10,3.2),pow(10,3.4),pow(10,3.6),pow(10,3.8),pow(10,4.0),pow(10,4.2)};
+double energy_bins[N_energy_bins+1] = {150,200,250,300,400,600,800,1000,2000,4000,10000};
 //const int N_energy_bins = 23;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0),pow(10,4.1),pow(10,4.2),pow(10,4.3),pow(10,4.4)};
+const int N_energy_bins_log = 23;
+double energy_bins_log[N_energy_bins_log+1] = {pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0),pow(10,4.1),pow(10,4.2),pow(10,4.3),pow(10,4.4)};
 
 int N_bins_for_deconv = 1200;
 
@@ -540,6 +542,10 @@ bool FoV() {
     //if (theta2<0.2) return true;  // Crab signal icontamination with this cut is too strong for the deconvolution method.
     return false;
 }
+bool QualitySelection() {
+    //if (EmissionHeightChi2/EmissionHeight<0.2) return true;
+    return true;
+}
 bool SignalSelectionMSCW() {
     if (MSCL<MSCL_cut_lower) return false;
     if (MSCL>MSCL_cut_upper) return false;
@@ -695,6 +701,10 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         TRandom rnd;
         TH2D Hist_Dark_TelElevAzim("Hist_Dark_TelElevAzim","",90,0,90,360,0,360);
         TH2D Hist_Target_TelElevAzim("Hist_Target_TelElevAzim","",90,0,90,360,0,360);
+        TH2D Hist_Target_ON_ErecSDepth("Hist_Target_ON_ErecSDepth","",N_energy_bins_log,energy_bins_log,60,0,30);
+        TH2D Hist_Target_OFF_ErecSDepth("Hist_Target_OFF_ErecSDepth","",N_energy_bins_log,energy_bins_log,60,0,30);
+        TH1D Hist_Target_ON_MSCW_Alpha("Hist_Target_ON_MSCW_Alpha","",100,0,10);
+        TH1D Hist_Target_OFF_MSCW_Alpha("Hist_Target_OFF_MSCW_Alpha","",100,0,10);
         vector<TH1D> Hist_Dark_SR_ErecS;
         vector<TH1D> Hist_Dark_SR_MSCW;
         vector<TH1D> Hist_Dark_CR_MSCW;
@@ -864,6 +874,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 Dark_tree->SetBranchAddress("MSCW",&MSCW);
                 Dark_tree->SetBranchAddress("MSCL",&MSCL);
                 Dark_tree->SetBranchAddress("SlantDepth",&SlantDepth);
+                Dark_tree->SetBranchAddress("EmissionHeight",&EmissionHeight);
+                Dark_tree->SetBranchAddress("EmissionHeightChi2",&EmissionHeightChi2);
                 Dark_tree->SetBranchAddress("theta2",&theta2);
                 for (int entry=0;entry<Dark_tree->GetEntries();entry++) {
                         Dark_tree->GetEntry(entry);
@@ -871,6 +883,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         if (e>=N_energy_bins) continue;
                         if (e<0) continue;
                         if (!FoV()) continue;
+                        if (!QualitySelection()) continue;
                         if (SignalSelectionMSCW()) Hist_Dark_SR_MSCW.at(e).Fill(MSCW);
                         if (ControlSelectionMSCW()) Hist_Dark_CR_MSCW.at(e).Fill(MSCW);
                         if (AuxSignalSelectionMSCW()) Hist_Dark_ASR_MSCW.at(e).Fill(MSCW);
@@ -920,12 +933,15 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 Target_tree->SetBranchAddress("MSCW",&MSCW);
                 Target_tree->SetBranchAddress("MSCL",&MSCL);
                 Target_tree->SetBranchAddress("SlantDepth",&SlantDepth);
+                Target_tree->SetBranchAddress("EmissionHeight",&EmissionHeight);
+                Target_tree->SetBranchAddress("EmissionHeightChi2",&EmissionHeightChi2);
                 Target_tree->SetBranchAddress("theta2",&theta2);
                 for (int entry=0;entry<Target_tree->GetEntries();entry++) {
                         Target_tree->GetEntry(entry);
                         int e = Hist_Target_SR_ErecS.at(0).FindBin(ErecS*1000.)-1;
                         if (e>=N_energy_bins) continue;
                         if (e<0) continue;
+                        if (!QualitySelection()) continue;
                         if (FoV()) {
                                 if (SignalSelectionMSCW()) Hist_Target_SR_MSCW.at(e).Fill(MSCW);
                                 if (ControlSelectionMSCW()) Hist_Target_CR_MSCW.at(e).Fill(MSCW);
@@ -939,6 +955,14 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                                 if (ControlSelectionDepth()) Hist_Target_CR_Depth.at(e).Fill(SlantDepth*100./37.);
                                 if (AuxSignalSelectionDepth()) Hist_Target_ASR_Depth.at(e).Fill(SlantDepth*100./37.);
                                 if (AuxControlSelectionDepth()) Hist_Target_ACR_Depth.at(e).Fill(SlantDepth*100./37.);
+                                if (SignalSelectionDepth()&&theta2<0.2) 
+                                    Hist_Target_ON_ErecSDepth.Fill(ErecS*1000.,SlantDepth*100./37.);
+                                if (SignalSelectionMSCW()&&theta2<0.2) 
+                                    Hist_Target_ON_MSCW_Alpha.Fill(MSCW);
+                                if (SignalSelectionDepth()&&theta2>0.2) 
+                                    Hist_Target_OFF_ErecSDepth.Fill(ErecS*1000.,SlantDepth*100./37.);
+                                if (SignalSelectionMSCW()&&theta2>0.2) 
+                                    Hist_Target_OFF_MSCW_Alpha.Fill(MSCW);
                         }
                         else {
                                 if (SignalSelectionMSCW()) Hist_Target_Ring_MSCW.at(e).Fill(MSCW);
@@ -1219,6 +1243,12 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 Hist_Target_Ring_Depth.at(e).Scale(scale_ring);
         }
 
+        int norm_bin_low_ring = Hist_Target_ON_MSCW_Alpha.FindBin(Norm_Lower);
+        int norm_bin_up_ring = Hist_Target_ON_MSCW_Alpha.FindBin(Norm_Upper);
+        double scale_ring = Hist_Target_ON_MSCW_Alpha.Integral(norm_bin_low_ring,norm_bin_up_ring)/Hist_Target_OFF_MSCW_Alpha.Integral(norm_bin_low_ring,norm_bin_up_ring);
+        Hist_Target_OFF_ErecSDepth.Scale(scale_ring);
+        Hist_Target_ON_ErecSDepth.Add(&Hist_Target_OFF_ErecSDepth,-1.);
+
         TFile OutputFile("output/Deconvolution_"+TString(target)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_"+TString(Region)+".root","recreate"); 
         TTree InfoTree("InfoTree","info tree");
         InfoTree.Branch("MSCW_cut_lower",&MSCW_cut_lower,"MSCW_cut_lower/D");
@@ -1233,6 +1263,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         InfoTree.Fill();
         InfoTree.Write();
         Hist_Target_TelElevAzim.Write();
+        Hist_Target_ON_ErecSDepth.Write();
+        Hist_Target_OFF_ErecSDepth.Write();
         Hist_Dark_TelElevAzim.Write();
         for (int e=0;e<N_energy_bins;e++) {
                 Hist_Dark_ASR_MSCW.at(e).Write();
