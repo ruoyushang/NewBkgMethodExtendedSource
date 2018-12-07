@@ -540,9 +540,9 @@ vector<int> GetRunList(string source) {
         return list;
 }
 bool FoV() {
-    //if (theta2>0.2) return true;
+    if (theta2>0.2) return true;
     //if (theta2<1.0) return true;
-    if (theta2<0.5) return true;
+    //if (theta2<0.5) return true;
     //if (theta2<0.2) return true;  // Crab signal icontamination with this cut is too strong for the deconvolution method.
     return false;
 }
@@ -667,8 +667,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         vector<TH1D> Hist_Dark_Elec_MSCW;
         vector<TH1D> Hist_Target_SR_ErecS;
         vector<TH1D> Hist_Target_SR_MSCW;
-        vector<TH1D> Hist_Target_SR_MSCW_FFT;
-        vector<TH1D> Hist_Target_SR_MSCW_FFT_back;
         vector<TH1D> Hist_Target_CR_MSCW;
         vector<TH1D> Hist_Target_ASR_MSCW;
         vector<TH1D> Hist_Target_ACR_MSCW;
@@ -686,13 +684,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             char e_up[50];
             sprintf(e_up, "%i", int(energy_bins[e+1]));
             N_bins_for_deconv = 1200;
-            if (energy_bins[e]>=400) N_bins_for_deconv = 1200;
-            //if (energy_bins[e]>=200) N_bins_for_deconv = 2400;
-            //if (energy_bins[e]>=400) N_bins_for_deconv = 2400;
-            //if (energy_bins[e]>=600) N_bins_for_deconv = 2400;
-            //if (energy_bins[e]>=800) N_bins_for_deconv = 1200;
-            //if (energy_bins[e]>=1000) N_bins_for_deconv = 1200;
-            //if (energy_bins[e]>=2000) N_bins_for_deconv = 1200;
+            //if (energy_bins[e]>=400) N_bins_for_deconv = 1200;
             Hist_Dark_SR_ErecS.push_back(TH1D("Hist_Dark_SR_ErecS_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_bins,energy_bins));
             Hist_Dark_SR_MSCW.push_back(TH1D("Hist_Dark_SR_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
             Hist_Dark_CR_MSCW.push_back(TH1D("Hist_Dark_CR_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
@@ -707,8 +699,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             Hist_Dark_Elec_MSCW.push_back(TH1D("Hist_Dark_Elec_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
             Hist_Target_SR_ErecS.push_back(TH1D("Hist_Target_SR_ErecS_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_bins,energy_bins));
             Hist_Target_SR_MSCW.push_back(TH1D("Hist_Target_SR_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
-            Hist_Target_SR_MSCW_FFT.push_back(TH1D("Hist_Target_SR_MSCW_FFT_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
-            Hist_Target_SR_MSCW_FFT_back.push_back(TH1D("Hist_Target_SR_MSCW_FFT_back_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
             Hist_Target_CR_MSCW.push_back(TH1D("Hist_Target_CR_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
             Hist_Target_ASR_MSCW.push_back(TH1D("Hist_Target_ASR_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
             Hist_Target_ACR_MSCW.push_back(TH1D("Hist_Target_ACR_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
@@ -828,45 +818,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 input_file->Close();
 
         }
-        
-        //FFT
-        /*
-        for (int e=0;e<N_energy_bins;e++) {
-                Int_t n_size = Hist_Target_SR_MSCW.at(e).GetNbinsX();
-                Double_t MSCW_points[n_size];
-                for (int i=0;i<Hist_Target_SR_MSCW.at(e).GetNbinsX();i++) {
-                        MSCW_points[i] = Hist_Target_SR_MSCW.at(e).GetBinContent(i+1);
-                }
-                Double_t fft_re[n_size];
-                Double_t fft_im[n_size];
-                TVirtualFFT *MSCW_fft = TVirtualFFT::FFT(1, &n_size, "R2C ES K");
-                TVirtualFFT *MSCW_fft_back = TVirtualFFT::FFT(1, &n_size, "C2R M K");
-                MSCW_fft->SetPoints(MSCW_points);
-                MSCW_fft->Transform();
-                Double_t re, im;
-                for (int i=0;i<Hist_Target_SR_MSCW.at(e).GetNbinsX();i++) {
-                        MSCW_fft->GetPointComplex(i, re, im);
-                        if (double(i)<double(Hist_Target_SR_MSCW.at(e).GetNbinsX())*0.02) {
-                                re = 0;
-                                im = 0;
-                        }
-                        if (double(i)>double(Hist_Target_SR_MSCW.at(e).GetNbinsX())*0.98) {
-                                re = 0;
-                                im = 0;
-                        }
-                        Hist_Target_SR_MSCW_FFT.at(e).SetBinContent(i+1,re*re+im*im);
-                        fft_re[i] = re;
-                        fft_im[i] = im;
-                }
-                MSCW_fft_back->SetPointsComplex(fft_re,fft_im);
-                MSCW_fft_back->Transform();
-                for (int i=0;i<Hist_Target_SR_MSCW.at(e).GetNbinsX();i++) {
-                        int new_value = MSCW_fft_back->GetPointReal(i);
-                        Hist_Target_SR_MSCW_FFT_back.at(e).SetBinContent(i+1,new_value);
-                }
-
-        }
-        */
 
         vector<int> N_iter;
         for (int e=0;e<N_energy_bins;e++) {
@@ -1054,8 +1005,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 Hist_Target_ACR_MSCW.at(e).Write();
                 Hist_Target_ABkg_MSCW.at(e).Write();
                 Hist_Target_SR_MSCW.at(e).Write();
-                Hist_Target_SR_MSCW_FFT.at(e).Write();
-                Hist_Target_SR_MSCW_FFT_back.at(e).Write();
                 Hist_Target_CR_MSCW.at(e).Write();
                 Hist_Target_Bkg_MSCW.at(e).Write();
                 Hist_Target_Deconv_MSCW.at(e).Write();
