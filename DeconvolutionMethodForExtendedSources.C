@@ -33,15 +33,17 @@ char target[50] = "H1426";
 //char target[50] = "Ton599";
 //char target[50] = "2ndCrab";
 //char target[50] = "BrandonValidation";
+
 char Region[50] = "SR";
+//char Region[50] = "VR";
 
 double Elev_cut_lower = 55;
 double Elev_cut_upper = 85;
 
-//double Target_Elev_cut_lower = 75;
-//double Target_Elev_cut_upper = 85;
-double Target_Elev_cut_lower = 55;
+double Target_Elev_cut_lower = 75;
 double Target_Elev_cut_upper = 85;
+//double Target_Elev_cut_lower = 55;
+//double Target_Elev_cut_upper = 85;
 //double Target_Elev_cut_lower = 35;
 //double Target_Elev_cut_upper = 55;
 
@@ -539,13 +541,20 @@ vector<int> GetRunList(string source) {
 }
 bool FoV() {
     //if (theta2>0.2) return true;
-    if (theta2<1.0) return true;
-    //if (theta2<0.5) return true;
+    //if (theta2<1.0) return true;
+    if (theta2<0.5) return true;
     //if (theta2<0.2) return true;  // Crab signal icontamination with this cut is too strong for the deconvolution method.
     return false;
 }
 bool QualitySelection() {
     //if (EmissionHeightChi2/EmissionHeight<0.2) return true;
+    return true;
+}
+bool SignalSelectionDepth() {
+    if (MSCL<MSCL_cut_lower) return false;
+    if (MSCL>MSCL_cut_upper) return false;
+    if (MSCW<MSCW_cut_lower) return false;
+    if (MSCW>MSCW_cut_upper) return false;
     return true;
 }
 bool SignalSelectionMSCW() {
@@ -566,10 +575,11 @@ bool AuxSignalSelectionMSCW() {
     Depth_cut_upper = cut_mean+Depth_cut_width;
     if (SlantDepth*100./37.>Depth_cut_lower && SlantDepth*100./37.<Depth_cut_upper) return false;
     if (SlantDepth*100./37.>Depth_cut_upper+1.) return false;
+    if (SlantDepth*100./37.<Depth_cut_lower-3.) return false;
     return true;
 }
 bool ControlSelectionMSCW() {
-    if (MSCL<1.) return false;
+    if (MSCL<MSCL_cut_upper) return false;
     double cut_mean = 5.+log2(pow(ErecS*1000./0.08,0.4));
     Depth_cut_lower = cut_mean-Depth_cut_width;
     Depth_cut_upper = cut_mean+Depth_cut_width;
@@ -578,81 +588,15 @@ bool ControlSelectionMSCW() {
     return true;
 }
 bool AuxControlSelectionMSCW() {
-    if (MSCL<1.) return false;
+    if (MSCL<MSCL_cut_upper) return false;
     double cut_mean = 5.+log2(pow(ErecS*1000./0.08,0.4));
     Depth_cut_lower = cut_mean-Depth_cut_width;
     Depth_cut_upper = cut_mean+Depth_cut_width;
     if (SlantDepth*100./37.>Depth_cut_lower && SlantDepth*100./37.<Depth_cut_upper) return false;
     if (SlantDepth*100./37.>Depth_cut_upper+1.) return false;
+    if (SlantDepth*100./37.<Depth_cut_lower-3.) return false;
     return true;
 }
-bool SignalSelectionMSCL() {
-    if (MSCW<MSCW_cut_lower) return false;
-    if (MSCW>MSCW_cut_upper) return false;
-    double cut_mean = 5.+log2(pow(ErecS*1000./0.08,0.4));
-    Depth_cut_lower = cut_mean-Depth_cut_width;
-    Depth_cut_upper = cut_mean+Depth_cut_width;
-    if (SlantDepth*100./37.<Depth_cut_lower) return false;
-    if (SlantDepth*100./37.>Depth_cut_upper) return false;
-    return true;
-}
-bool AuxSignalSelectionMSCL() {
-    if (MSCW<MSCW_cut_lower) return false;
-    if (MSCW>MSCW_cut_upper) return false;
-    double cut_mean = 5.+log2(pow(ErecS*1000./0.08,0.4));
-    Depth_cut_lower = cut_mean-Depth_cut_width;
-    Depth_cut_upper = cut_mean+Depth_cut_width;
-    if (SlantDepth*100./37.>Depth_cut_lower && SlantDepth*100./37.<Depth_cut_upper) return false;
-    return true;
-}
-bool ControlSelectionMSCL() {
-    if (MSCW<MSCW_cut_upper*1.5) return false;
-    if (MSCW>MSCW_cut_upper*15.) return false;
-    double cut_mean = 5.+log2(pow(ErecS*1000./0.08,0.4));
-    Depth_cut_lower = cut_mean-Depth_cut_width;
-    Depth_cut_upper = cut_mean+Depth_cut_width;
-    if (SlantDepth*100./37.<Depth_cut_lower) return false;
-    if (SlantDepth*100./37.>Depth_cut_upper) return false;
-    return true;
-}
-bool AuxControlSelectionMSCL() {
-    if (MSCW<MSCW_cut_upper*1.5) return false;
-    if (MSCW>MSCW_cut_upper*15.) return false;
-    double cut_mean = 5.+log2(pow(ErecS*1000./0.08,0.4));
-    Depth_cut_lower = cut_mean-Depth_cut_width;
-    Depth_cut_upper = cut_mean+Depth_cut_width;
-    if (SlantDepth*100./37.>Depth_cut_lower && SlantDepth*100./37.<Depth_cut_upper) return false;
-    return true;
-    //if (ControlSelectionMSCL() || AuxSignalSelectionMSCL()) return true;
-    return false;
-}
-bool SignalSelectionDepth() {
-    if (MSCW<MSCW_cut_lower) return false;
-    if (MSCW>MSCW_cut_upper) return false;
-    if (MSCL<MSCL_cut_lower) return false;
-    if (MSCL>MSCL_cut_upper) return false;
-    return true;
-}
-bool AuxSignalSelectionDepth() {
-    if (MSCW<MSCW_cut_upper*1.5) return false;
-    if (MSCW>MSCW_cut_upper*2.5) return false;
-    return true;
-}
-bool ControlSelectionDepth() {
-    if (MSCL<MSCL_cut_upper*1.5) return false;
-    if (MSCL>MSCL_cut_upper*2.5) return false;
-    return true;
-}
-bool AuxControlSelectionDepth() {
-    //if (MSCL<MSCL_cut_upper*1.5) return false;
-    //if (MSCL>MSCL_cut_upper*2.5) return false;
-    //if (MSCW<MSCW_cut_upper*1.5) return false;
-    //if (MSCW>MSCW_cut_upper*2.5) return false;
-    //return true;
-    if (ControlSelectionDepth() || AuxSignalSelectionDepth()) return true;
-    return false;
-}
-
 void Deconvolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Deconv, int n_iteration) {
         const int N_bins = Hist_source->GetNbinsX();
         Double_t *source = new Double_t[N_bins];
@@ -692,12 +636,14 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         sprintf(target, "%s", target_data.c_str());
         Target_Elev_cut_lower = elev_lower;
         Target_Elev_cut_upper = elev_upper;
+        Elev_cut_lower = elev_lower;
+        Elev_cut_upper = elev_upper;
 
         if (TString(Region)=="VR") {
-                MSCW_cut_lower = 1.4;
-                MSCW_cut_upper = 1.6;
-                MSCL_cut_lower = 1.4;
-                MSCL_cut_upper = 1.6;
+                MSCW_cut_lower = 1.5;
+                MSCW_cut_upper = 2.5;
+                MSCL_cut_lower = 1.5;
+                MSCL_cut_upper = 2.5;
         }
 
         TRandom rnd;
@@ -717,6 +663,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         vector<TH1D> Hist_Dark_ABkgTemp_MSCW;
         vector<TH1D> Hist_Dark_ABkg_MSCW;
         vector<TH1D> Hist_Dark_Deconv_MSCW;
+        vector<TH1D> Hist_Dark_TrueDeconv_MSCW;
         vector<TH1D> Hist_Dark_Elec_MSCW;
         vector<TH1D> Hist_Target_SR_ErecS;
         vector<TH1D> Hist_Target_SR_MSCW;
@@ -730,6 +677,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         vector<TH1D> Hist_Target_ABkgTemp_MSCW;
         vector<TH1D> Hist_Target_ABkg_MSCW;
         vector<TH1D> Hist_Target_Deconv_MSCW;
+        vector<TH1D> Hist_Target_TrueDeconv_MSCW;
         vector<TH1D> Hist_Target_Elec_MSCW;
         vector<TH1D> Hist_Target_Ring_MSCW;
         for (int e=0;e<N_energy_bins;e++) {
@@ -738,7 +686,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             char e_up[50];
             sprintf(e_up, "%i", int(energy_bins[e+1]));
             N_bins_for_deconv = 1200;
-            //if (energy_bins[e]>=100) N_bins_for_deconv = 2400;
+            if (energy_bins[e]>=400) N_bins_for_deconv = 1200;
             //if (energy_bins[e]>=200) N_bins_for_deconv = 2400;
             //if (energy_bins[e]>=400) N_bins_for_deconv = 2400;
             //if (energy_bins[e]>=600) N_bins_for_deconv = 2400;
@@ -755,6 +703,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             Hist_Dark_ABkgTemp_MSCW.push_back(TH1D("Hist_Dark_ABkgTemp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
             Hist_Dark_ABkg_MSCW.push_back(TH1D("Hist_Dark_ABkg_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
             Hist_Dark_Deconv_MSCW.push_back(TH1D("Hist_Dark_Deconv_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
+            Hist_Dark_TrueDeconv_MSCW.push_back(TH1D("Hist_Dark_TrueDeconv_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
             Hist_Dark_Elec_MSCW.push_back(TH1D("Hist_Dark_Elec_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
             Hist_Target_SR_ErecS.push_back(TH1D("Hist_Target_SR_ErecS_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_bins,energy_bins));
             Hist_Target_SR_MSCW.push_back(TH1D("Hist_Target_SR_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
@@ -768,6 +717,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             Hist_Target_ABkgTemp_MSCW.push_back(TH1D("Hist_Target_ABkgTemp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
             Hist_Target_ABkg_MSCW.push_back(TH1D("Hist_Target_ABkg_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
             Hist_Target_Deconv_MSCW.push_back(TH1D("Hist_Target_Deconv_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
+            Hist_Target_TrueDeconv_MSCW.push_back(TH1D("Hist_Target_TrueDeconv_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
             Hist_Target_Elec_MSCW.push_back(TH1D("Hist_Target_Elec_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
             Hist_Target_Ring_MSCW.push_back(TH1D("Hist_Target_Ring_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
         }
@@ -932,6 +882,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_ASR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),n_iteration);
                 Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_ABkgTemp_MSCW.at(e),n_iteration);
                 Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),n_iteration);
+                Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_SR_MSCW.at(e),&Hist_Target_TrueDeconv_MSCW.at(e),n_iteration);
         }
 
         // Dark run method
@@ -941,6 +892,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 Deconvolution(&Hist_Dark_ACR_MSCW.at(e), &Hist_Dark_ASR_MSCW.at(e), &Hist_Dark_Deconv_MSCW.at(e),n_iteration);
                 Deconvolution(&Hist_Dark_ACR_MSCW.at(e), &Hist_Dark_Deconv_MSCW.at(e), &Hist_Dark_ABkgTemp_MSCW.at(e),n_iteration);
                 Deconvolution(&Hist_Dark_CR_MSCW.at(e), &Hist_Dark_Deconv_MSCW.at(e), &Hist_Dark_BkgTemp_MSCW.at(e),n_iteration);
+                Deconvolution(&Hist_Dark_CR_MSCW.at(e), &Hist_Dark_SR_MSCW.at(e), &Hist_Dark_TrueDeconv_MSCW.at(e),n_iteration);
         }
 
         for (int e=0;e<N_energy_bins;e++) {
@@ -1096,6 +1048,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 Hist_Dark_CR_MSCW.at(e).Write();
                 Hist_Dark_Bkg_MSCW.at(e).Write();
                 Hist_Dark_Deconv_MSCW.at(e).Write();
+                Hist_Dark_TrueDeconv_MSCW.at(e).Write();
                 Hist_Dark_Elec_MSCW.at(e).Write();
                 Hist_Target_ASR_MSCW.at(e).Write();
                 Hist_Target_ACR_MSCW.at(e).Write();
@@ -1106,6 +1059,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 Hist_Target_CR_MSCW.at(e).Write();
                 Hist_Target_Bkg_MSCW.at(e).Write();
                 Hist_Target_Deconv_MSCW.at(e).Write();
+                Hist_Target_TrueDeconv_MSCW.at(e).Write();
                 Hist_Target_Elec_MSCW.at(e).Write();
                 Hist_Target_Ring_MSCW.at(e).Write();
         }
