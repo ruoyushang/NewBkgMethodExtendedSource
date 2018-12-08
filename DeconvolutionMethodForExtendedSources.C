@@ -540,14 +540,14 @@ vector<int> GetRunList(string source) {
         return list;
 }
 bool FoV() {
-    if (theta2>0.2) return true;
+    //if (theta2>0.2) return true;
     //if (theta2<1.0) return true;
-    //if (theta2<0.5) return true;
+    if (theta2<0.5) return true;
     //if (theta2<0.2) return true;  // Crab signal icontamination with this cut is too strong for the deconvolution method.
     return false;
 }
 bool QualitySelection() {
-    //if (EmissionHeightChi2/EmissionHeight<0.2) return true;
+    if (EmissionHeightChi2/EmissionHeight>0.2) return false;
     return true;
 }
 bool SignalSelectionDepth() {
@@ -651,6 +651,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         TH2D Hist_Target_TelElevAzim("Hist_Target_TelElevAzim","",90,0,90,360,0,360);
         TH2D Hist_Target_ON_ErecSDepth("Hist_Target_ON_ErecSDepth","",N_energy_bins_log,energy_bins_log,60,0,30);
         TH2D Hist_Target_OFF_ErecSDepth("Hist_Target_OFF_ErecSDepth","",N_energy_bins_log,energy_bins_log,60,0,30);
+        TH2D Hist_Target_ON_ElevDepth("Hist_Target_ON_ElevDepth","",12,30,90,40,-10,10);
+        TH2D Hist_Target_OFF_ElevDepth("Hist_Target_OFF_ElevDepth","",12,30,90,40,-10,10);
         TH1D Hist_Target_ON_MSCW_Alpha("Hist_Target_ON_MSCW_Alpha","",100,0,10);
         TH1D Hist_Target_OFF_MSCW_Alpha("Hist_Target_OFF_MSCW_Alpha","",100,0,10);
         vector<TH1D> Hist_Dark_SR_ErecS;
@@ -797,19 +799,28 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         if (e>=N_energy_bins) continue;
                         if (e<0) continue;
                         if (!QualitySelection()) continue;
+                        if (MSCL<1) {
+                            double depth_mean = 5.+log2(pow(ErecS*1000./0.08,0.4));
+                            if (theta2<0.1) {
+                                if (MSCW<1) {
+                                        Hist_Target_ON_ElevDepth.Fill(TelElevation,SlantDepth*100./37.-depth_mean);
+                                        Hist_Target_ON_ErecSDepth.Fill(ErecS*1000.,SlantDepth*100./37.);
+                                }
+                                Hist_Target_ON_MSCW_Alpha.Fill(MSCW);
+                            }
+                            else {
+                                if (MSCW<1) {
+                                        Hist_Target_OFF_ElevDepth.Fill(TelElevation,SlantDepth*100./37.-depth_mean);
+                                        Hist_Target_OFF_ErecSDepth.Fill(ErecS*1000.,SlantDepth*100./37.);
+                                }
+                                Hist_Target_OFF_MSCW_Alpha.Fill(MSCW);
+                            }
+                        }
                         if (FoV()) {
                                 if (SignalSelectionMSCW()) Hist_Target_SR_MSCW.at(e).Fill(MSCW);
                                 if (ControlSelectionMSCW()) Hist_Target_CR_MSCW.at(e).Fill(MSCW);
                                 if (AuxSignalSelectionMSCW()) Hist_Target_ASR_MSCW.at(e).Fill(MSCW);
                                 if (AuxControlSelectionMSCW()) Hist_Target_ACR_MSCW.at(e).Fill(MSCW);
-                                if (SignalSelectionDepth()&&theta2<0.2) 
-                                    Hist_Target_ON_ErecSDepth.Fill(ErecS*1000.,SlantDepth*100./37.);
-                                if (SignalSelectionMSCW()&&theta2<0.2) 
-                                    Hist_Target_ON_MSCW_Alpha.Fill(MSCW);
-                                if (SignalSelectionDepth()&&theta2>0.2) 
-                                    Hist_Target_OFF_ErecSDepth.Fill(ErecS*1000.,SlantDepth*100./37.);
-                                if (SignalSelectionMSCW()&&theta2>0.2) 
-                                    Hist_Target_OFF_MSCW_Alpha.Fill(MSCW);
                         }
                         else {
                                 if (SignalSelectionMSCW()) Hist_Target_Ring_MSCW.at(e).Fill(MSCW);
@@ -972,7 +983,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         int norm_bin_up_ring = Hist_Target_ON_MSCW_Alpha.FindBin(Norm_Upper);
         double scale_ring = Hist_Target_ON_MSCW_Alpha.Integral(norm_bin_low_ring,norm_bin_up_ring)/Hist_Target_OFF_MSCW_Alpha.Integral(norm_bin_low_ring,norm_bin_up_ring);
         Hist_Target_OFF_ErecSDepth.Scale(scale_ring);
+        Hist_Target_OFF_ElevDepth.Scale(scale_ring);
         Hist_Target_ON_ErecSDepth.Add(&Hist_Target_OFF_ErecSDepth,-1.);
+        Hist_Target_ON_ElevDepth.Add(&Hist_Target_OFF_ElevDepth,-1.);
 
         TFile OutputFile("output/Deconvolution_"+TString(target)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_"+TString(Region)+".root","recreate"); 
         TTree InfoTree("InfoTree","info tree");
@@ -990,6 +1003,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         Hist_Target_TelElevAzim.Write();
         Hist_Target_ON_ErecSDepth.Write();
         Hist_Target_OFF_ErecSDepth.Write();
+        Hist_Target_ON_ElevDepth.Write();
+        Hist_Target_OFF_ElevDepth.Write();
         Hist_Dark_TelElevAzim.Write();
         for (int e=0;e<N_energy_bins;e++) {
                 Hist_Dark_ASR_MSCW.at(e).Write();
