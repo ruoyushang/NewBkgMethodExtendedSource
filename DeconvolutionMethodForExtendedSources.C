@@ -546,6 +546,11 @@ bool FoV() {
     //if (theta2<0.2) return true;  // Crab signal icontamination with this cut is too strong for the deconvolution method.
     return false;
 }
+bool RingFoV() {
+    if (theta2<0.5) return false;
+    if (theta2>1.0) return false;
+    return true;
+}
 bool QualitySelection() {
     if (EmissionHeightChi2/EmissionHeight>0.2) return false;
     return true;
@@ -609,6 +614,7 @@ void Deconvolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Deconv, int n
         TSpectrum sp;
         //sp.Deconvolution(source,response,N_bins,25,1,10000); // new best option
         n_iteration = 10;
+        //n_iteration = 20; // for 35-55 elevation
         //if (Hist_response->GetRMS()<=2.0) n_iteration = 100;
         //if (Hist_response->GetRMS()<=1.3) n_iteration = 1000;
         sp.Deconvolution(source,response,N_bins,n_iteration,1,100000); // new best option
@@ -632,7 +638,7 @@ void Convolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Conv) {
 
 void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower, double elev_upper) {
 
-        TH1::SetDefaultSumw2();
+        //TH1::SetDefaultSumw2();
         sprintf(target, "%s", target_data.c_str());
         Target_Elev_cut_lower = elev_lower;
         Target_Elev_cut_upper = elev_upper;
@@ -822,7 +828,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                                 if (AuxSignalSelectionMSCW()) Hist_Target_ASR_MSCW.at(e).Fill(MSCW);
                                 if (AuxControlSelectionMSCW()) Hist_Target_ACR_MSCW.at(e).Fill(MSCW);
                         }
-                        else {
+                        else if (RingFoV()) {
                                 if (SignalSelectionMSCW()) Hist_Target_Ring_MSCW.at(e).Fill(MSCW);
                         }
                 }
