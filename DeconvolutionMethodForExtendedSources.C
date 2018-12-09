@@ -602,6 +602,42 @@ bool AuxControlSelectionMSCW() {
     if (SlantDepth*100./37.<Depth_cut_lower-3.) return false;
     return true;
 }
+double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double shift_begin, double norm_low, double norm_up) {
+    double shift_fit = 0;
+    double scale_fit = 0;
+    double chi2 = 0.;
+    for (int fit=0;fit<20;fit++) {
+            double shift = shift_begin-1.+fit*0.1;
+            for (int i=0;i<Hist_SR->GetNbinsX();i++) {
+                    int b = Hist_SR->FindBin(Hist_SR->GetBinCenter(i+1)-shift);
+                    Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
+                    Hist_Bkg->SetBinError(i+1,Hist_BkgTemp->GetBinError(b));
+            }
+            int norm_bin_low = Hist_SR->FindBin(norm_low);
+            int norm_bin_up = Hist_SR->FindBin(norm_up);
+            double scale = Hist_SR->Integral(norm_bin_low,norm_bin_up)/Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
+            Hist_Bkg->Scale(scale);
+            double chi2_temp = 0;
+            for (int i=0;i<Hist_SR->GetNbinsX();i++) {
+                if (Hist_Bkg->GetBinCenter(i+1)<norm_low) continue;
+                chi2_temp += pow(Hist_Bkg->GetBinContent(i+1)-Hist_SR->GetBinContent(i+1),2);
+            }
+            chi2_temp = 1./chi2_temp;
+            if (chi2<chi2_temp) {
+                chi2 = chi2_temp;
+                shift_fit = shift;
+                scale_fit = scale;
+            } 
+    }
+    for (int i=0;i<Hist_SR->GetNbinsX();i++) {
+            int b = Hist_Bkg->FindBin(Hist_Bkg->GetBinCenter(i+1)-shift_fit);
+            Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
+            Hist_Bkg->SetBinError(i+1,Hist_BkgTemp->GetBinError(b));
+    }
+    Hist_Bkg->Scale(scale_fit);
+    return chi2;
+}
+
 void Deconvolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Deconv, int n_iteration) {
         const int N_bins = Hist_source->GetNbinsX();
         Double_t *source = new Double_t[N_bins];
@@ -844,107 +880,57 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 //if (energy_bins[e]>=4000) n_iteration = 15;
                 N_iter.push_back(n_iteration);
         }
+
         // Target deconvolution method
         for (int e=0;e<N_energy_bins;e++) {
-                int n_iteration = N_iter.at(e);
-                Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_ASR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),n_iteration);
-                Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_ABkgTemp_MSCW.at(e),n_iteration);
-                Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),n_iteration);
-                Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_SR_MSCW.at(e),&Hist_Target_TrueDeconv_MSCW.at(e),n_iteration);
+                double chi2_best = 0.;
+                for (int n_iter = 10;n_iter<=50;n_iter++) {
+                        double offset_begin = 0;
+                        double chi2 = 0;
+                        Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_ASR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),n_iter);
+                        Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_ABkgTemp_MSCW.at(e),n_iter);
+                        offset_begin = Hist_Target_ASR_MSCW.at(e).GetMean()-Hist_Target_ABkgTemp_MSCW.at(e).GetMean();
+                        chi2 = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Bkg_MSCW.at(e),offset_begin,-1,20);
+                        if (chi2_best<chi2) {
+                            chi2_best = chi2;
+                            N_iter.at(e) = n_iter;
+                        } 
+                }
+                Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_ASR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_iter.at(e));
+                Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_ABkgTemp_MSCW.at(e),N_iter.at(e));
+                Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),N_iter.at(e));
+                Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_SR_MSCW.at(e),&Hist_Target_TrueDeconv_MSCW.at(e),N_iter.at(e));
+                double offset_begin = 0;
+                double chi2 = 0;
+                offset_begin = Hist_Target_ASR_MSCW.at(e).GetMean()-Hist_Target_ABkgTemp_MSCW.at(e).GetMean();
+                chi2 = ShiftAndNormalize(&Hist_Target_ASR_MSCW.at(e),&Hist_Target_ABkgTemp_MSCW.at(e),&Hist_Target_ABkg_MSCW.at(e),offset_begin,Norm_Lower,Norm_Upper);
+                chi2 = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Bkg_MSCW.at(e),offset_begin,Norm_Lower,Norm_Upper);
         }
 
         // Dark run method
-
         for (int e=0;e<N_energy_bins;e++) {
-                int n_iteration = N_iter.at(e);
-                Deconvolution(&Hist_Dark_ACR_MSCW.at(e), &Hist_Dark_ASR_MSCW.at(e), &Hist_Dark_Deconv_MSCW.at(e),n_iteration);
-                Deconvolution(&Hist_Dark_ACR_MSCW.at(e), &Hist_Dark_Deconv_MSCW.at(e), &Hist_Dark_ABkgTemp_MSCW.at(e),n_iteration);
-                Deconvolution(&Hist_Dark_CR_MSCW.at(e), &Hist_Dark_Deconv_MSCW.at(e), &Hist_Dark_BkgTemp_MSCW.at(e),n_iteration);
-                Deconvolution(&Hist_Dark_CR_MSCW.at(e), &Hist_Dark_SR_MSCW.at(e), &Hist_Dark_TrueDeconv_MSCW.at(e),n_iteration);
-        }
-
-        for (int e=0;e<N_energy_bins;e++) {
-                double offset_begin = Hist_Dark_ASR_MSCW.at(e).GetMean()-Hist_Dark_ABkgTemp_MSCW.at(e).GetMean();
-                double offset_fit = 0;
-                double scale_fit = 0;
-                double chi2 = 0.;
-                for (int fit=0;fit<20;fit++) {
-                        double offset = offset_begin-1.+fit*0.1;
-                        for (int i=0;i<Hist_Dark_SR_MSCW.at(e).GetNbinsX();i++) {
-                                int b = Hist_Dark_Bkg_MSCW.at(e).FindBin(Hist_Dark_Bkg_MSCW.at(e).GetBinCenter(i+1)-offset);
-                                Hist_Dark_ABkg_MSCW.at(e).SetBinContent(i+1,Hist_Dark_ABkgTemp_MSCW.at(e).GetBinContent(b));
-                                Hist_Dark_ABkg_MSCW.at(e).SetBinError(i+1,Hist_Dark_ABkgTemp_MSCW.at(e).GetBinError(b));
-                                Hist_Dark_Bkg_MSCW.at(e).SetBinContent(i+1,Hist_Dark_BkgTemp_MSCW.at(e).GetBinContent(b));
-                                Hist_Dark_Bkg_MSCW.at(e).SetBinError(i+1,Hist_Dark_BkgTemp_MSCW.at(e).GetBinError(b));
-                        }
-                        int norm_bin_low_Dark = Hist_Dark_Bkg_MSCW.at(e).FindBin(Norm_Lower);
-                        int norm_bin_up_Dark = Hist_Dark_Bkg_MSCW.at(e).FindBin(Norm_Upper);
-                        double scale_Dark = Hist_Dark_SR_MSCW.at(e).Integral(norm_bin_low_Dark,norm_bin_up_Dark)/Hist_Dark_Bkg_MSCW.at(e).Integral(norm_bin_low_Dark,norm_bin_up_Dark);
-                        Hist_Dark_Bkg_MSCW.at(e).Scale(scale_Dark);
-                        double chi2_temp = 0;
-                        for (int i=0;i<Hist_Dark_SR_MSCW.at(e).GetNbinsX();i++) {
-                            if (Hist_Dark_Bkg_MSCW.at(e).GetBinCenter(i+1)<Norm_Lower) continue;
-                            chi2_temp += pow(Hist_Dark_Bkg_MSCW.at(e).GetBinContent(i+1)-Hist_Dark_SR_MSCW.at(e).GetBinContent(i+1),2);
-                        }
-                        chi2_temp = 1./chi2_temp;
-                        if (chi2<chi2_temp) {
-                            chi2 = chi2_temp;
-                            offset_fit = offset;
-                            scale_fit = scale_Dark;
+                double chi2_best = 0.;
+                for (int n_iter = 10;n_iter<=50;n_iter++) {
+                        double offset_begin = 0;
+                        double chi2 = 0;
+                        Deconvolution(&Hist_Dark_ACR_MSCW.at(e),&Hist_Dark_ASR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),n_iter);
+                        Deconvolution(&Hist_Dark_ACR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_ABkgTemp_MSCW.at(e),n_iter);
+                        offset_begin = Hist_Dark_ASR_MSCW.at(e).GetMean()-Hist_Dark_ABkgTemp_MSCW.at(e).GetMean();
+                        chi2 = ShiftAndNormalize(&Hist_Dark_SR_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),&Hist_Dark_Bkg_MSCW.at(e),offset_begin,-1,20);
+                        if (chi2_best<chi2) {
+                            chi2_best = chi2;
+                            N_iter.at(e) = n_iter;
                         } 
                 }
-                for (int i=0;i<Hist_Dark_SR_MSCW.at(e).GetNbinsX();i++) {
-                        int b = Hist_Dark_Bkg_MSCW.at(e).FindBin(Hist_Dark_Bkg_MSCW.at(e).GetBinCenter(i+1)-offset_fit);
-                        Hist_Dark_ABkg_MSCW.at(e).SetBinContent(i+1,Hist_Dark_ABkgTemp_MSCW.at(e).GetBinContent(b));
-                        Hist_Dark_ABkg_MSCW.at(e).SetBinError(i+1,Hist_Dark_ABkgTemp_MSCW.at(e).GetBinError(b));
-                        Hist_Dark_Bkg_MSCW.at(e).SetBinContent(i+1,Hist_Dark_BkgTemp_MSCW.at(e).GetBinContent(b));
-                        Hist_Dark_Bkg_MSCW.at(e).SetBinError(i+1,Hist_Dark_BkgTemp_MSCW.at(e).GetBinError(b));
-                }
-                Hist_Dark_Bkg_MSCW.at(e).Scale(scale_fit);
-                Hist_Dark_ABkg_MSCW.at(e).Scale(scale_fit);
-                Hist_Dark_CR_MSCW.at(e).Scale(scale_fit);
-        }
-
-        for (int e=0;e<N_energy_bins;e++) {
-                double offset_begin = Hist_Target_ASR_MSCW.at(e).GetMean()-Hist_Target_ABkgTemp_MSCW.at(e).GetMean();
-                double offset_fit = 0;
-                double scale_fit = 0;
-                double chi2 = 0.;
-                for (int fit=0;fit<20;fit++) {
-                        double offset = offset_begin-1.+fit*0.1;
-                        for (int i=0;i<Hist_Target_SR_MSCW.at(e).GetNbinsX();i++) {
-                                int b = Hist_Target_Bkg_MSCW.at(e).FindBin(Hist_Target_Bkg_MSCW.at(e).GetBinCenter(i+1)-offset);
-                                Hist_Target_ABkg_MSCW.at(e).SetBinContent(i+1,Hist_Target_ABkgTemp_MSCW.at(e).GetBinContent(b));
-                                Hist_Target_ABkg_MSCW.at(e).SetBinError(i+1,Hist_Target_ABkgTemp_MSCW.at(e).GetBinError(b));
-                                Hist_Target_Bkg_MSCW.at(e).SetBinContent(i+1,Hist_Target_BkgTemp_MSCW.at(e).GetBinContent(b));
-                                Hist_Target_Bkg_MSCW.at(e).SetBinError(i+1,Hist_Target_BkgTemp_MSCW.at(e).GetBinError(b));
-                        }
-                        int norm_bin_low_target = Hist_Target_Bkg_MSCW.at(e).FindBin(Norm_Lower);
-                        int norm_bin_up_target = Hist_Target_Bkg_MSCW.at(e).FindBin(Norm_Upper);
-                        double scale_target = Hist_Target_SR_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target)/Hist_Target_Bkg_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
-                        Hist_Target_Bkg_MSCW.at(e).Scale(scale_target);
-                        double chi2_temp = 0;
-                        for (int i=0;i<Hist_Target_SR_MSCW.at(e).GetNbinsX();i++) {
-                            if (Hist_Target_Bkg_MSCW.at(e).GetBinCenter(i+1)<Norm_Lower) continue;
-                            chi2_temp += pow(Hist_Target_Bkg_MSCW.at(e).GetBinContent(i+1)-Hist_Target_SR_MSCW.at(e).GetBinContent(i+1),2);
-                        }
-                        chi2_temp = 1./chi2_temp;
-                        if (chi2<chi2_temp) {
-                            chi2 = chi2_temp;
-                            offset_fit = offset;
-                            scale_fit = scale_target;
-                        } 
-                }
-                for (int i=0;i<Hist_Target_SR_MSCW.at(e).GetNbinsX();i++) {
-                        int b = Hist_Target_Bkg_MSCW.at(e).FindBin(Hist_Target_Bkg_MSCW.at(e).GetBinCenter(i+1)-offset_fit);
-                        Hist_Target_ABkg_MSCW.at(e).SetBinContent(i+1,Hist_Target_ABkgTemp_MSCW.at(e).GetBinContent(b));
-                        Hist_Target_ABkg_MSCW.at(e).SetBinError(i+1,Hist_Target_ABkgTemp_MSCW.at(e).GetBinError(b));
-                        Hist_Target_Bkg_MSCW.at(e).SetBinContent(i+1,Hist_Target_BkgTemp_MSCW.at(e).GetBinContent(b));
-                        Hist_Target_Bkg_MSCW.at(e).SetBinError(i+1,Hist_Target_BkgTemp_MSCW.at(e).GetBinError(b));
-                }
-                Hist_Target_Bkg_MSCW.at(e).Scale(scale_fit);
-                Hist_Target_ABkg_MSCW.at(e).Scale(scale_fit);
-                Hist_Target_CR_MSCW.at(e).Scale(scale_fit);
+                Deconvolution(&Hist_Dark_ACR_MSCW.at(e),&Hist_Dark_ASR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),N_iter.at(e));
+                Deconvolution(&Hist_Dark_ACR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_ABkgTemp_MSCW.at(e),N_iter.at(e));
+                Deconvolution(&Hist_Dark_CR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),N_iter.at(e));
+                Deconvolution(&Hist_Dark_CR_MSCW.at(e),&Hist_Dark_SR_MSCW.at(e),&Hist_Dark_TrueDeconv_MSCW.at(e),N_iter.at(e));
+                double offset_begin = 0;
+                double chi2 = 0;
+                offset_begin = Hist_Dark_ASR_MSCW.at(e).GetMean()-Hist_Dark_ABkgTemp_MSCW.at(e).GetMean();
+                chi2 = ShiftAndNormalize(&Hist_Dark_ASR_MSCW.at(e),&Hist_Dark_ABkgTemp_MSCW.at(e),&Hist_Dark_ABkg_MSCW.at(e),offset_begin,Norm_Lower,Norm_Upper);
+                chi2 = ShiftAndNormalize(&Hist_Dark_SR_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),&Hist_Dark_Bkg_MSCW.at(e),offset_begin,Norm_Lower,Norm_Upper);
         }
 
         // simple dark template method
