@@ -602,6 +602,15 @@ bool AuxControlSelectionMSCW() {
     if (SlantDepth*100./37.<Depth_cut_lower-3.) return false;
     return true;
 }
+double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, double norm_low, double norm_up) {
+    double chi2_temp = 0;
+    for (int i=0;i<Hist_SR->GetNbinsX();i++) {
+        if (Hist_Bkg->GetBinCenter(i+1)<norm_low) continue;
+        chi2_temp += pow(Hist_Bkg->GetBinContent(i+1)-Hist_SR->GetBinContent(i+1),2);
+    }
+    chi2_temp = 1./chi2_temp;
+    return chi2_temp;
+}
 double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double shift_begin, double norm_low, double norm_up, bool doShift) {
     double shift_fit = 0;
     double scale_fit = 0;
@@ -618,12 +627,7 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
                 int norm_bin_up = Hist_SR->FindBin(norm_up);
                 double scale = Hist_SR->Integral(norm_bin_low,norm_bin_up)/Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
                 Hist_Bkg->Scale(scale);
-                double chi2_temp = 0;
-                for (int i=0;i<Hist_SR->GetNbinsX();i++) {
-                    if (Hist_Bkg->GetBinCenter(i+1)<norm_low) continue;
-                    chi2_temp += pow(Hist_Bkg->GetBinContent(i+1)-Hist_SR->GetBinContent(i+1),2);
-                }
-                chi2_temp = 1./chi2_temp;
+                double chi2_temp = GetChi2(Hist_SR, Hist_Bkg, norm_low, norm_up);
                 if (chi2<chi2_temp) {
                     chi2 = chi2_temp;
                     shift_fit = shift;
@@ -657,7 +661,7 @@ void Deconvolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Deconv, int n
         }
         TSpectrum sp;
         //sp.Deconvolution(source,response,N_bins,25,1,10000); // new best option
-        n_iteration = 10;
+        //n_iteration = 10;
         //n_iteration = 20; // for 35-55 elevation
         //if (Hist_response->GetRMS()<=2.0) n_iteration = 100;
         //if (Hist_response->GetRMS()<=1.3) n_iteration = 1000;
@@ -892,7 +896,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     hist_integral += Hist_Target_ASR_MSCW.at(e).GetBinContent(b+1);
                     hist_error += Hist_Target_ASR_MSCW.at(e).GetBinError(b+1);
                 }
-                if (hist_error/hist_integral>0.3) {
+                if (hist_error/hist_integral>0.2) {
                         Hist_Dark_SR_MSCW.at(e).Rebin(2);
                         Hist_Dark_CR_MSCW.at(e).Rebin(2);
                         Hist_Dark_ASR_MSCW.at(e).Rebin(2);
