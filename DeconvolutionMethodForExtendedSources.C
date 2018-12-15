@@ -48,10 +48,10 @@ double Target_Elev_cut_upper = 85;
 //double Target_Elev_cut_lower = 35;
 //double Target_Elev_cut_upper = 55;
 
-double MSCW_cut_lower = -0.5;
+double MSCW_cut_lower = -1.0;
 double MSCW_cut_upper = 0.5;
-double MSCL_cut_lower = -0.5;
-double MSCL_cut_upper = 1.0;
+double MSCL_cut_lower = -1.0;
+double MSCL_cut_upper = 0.5;
 
 double Depth_cut_lower = 6;
 double Depth_cut_upper = 14;
@@ -79,8 +79,8 @@ double dec_sky = 0;
 
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] = {150,1e6};
-const int N_energy_bins = 11;
-double energy_bins[N_energy_bins+1] = {150,200,250,300,400,600,800,1000,2000,4000,6000,10000};
+const int N_energy_bins = 10;
+double energy_bins[N_energy_bins+1] = {150,200,250,300,400,600,800,1000,2000,4000,10000};
 //const int N_energy_bins = 23;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0),pow(10,4.1),pow(10,4.2),pow(10,4.3),pow(10,4.4)};
 const int N_energy_bins_log = 23;
@@ -594,7 +594,7 @@ bool AuxSignalSelectionMSCW() {
 }
 bool ControlSelectionMSCW() {
     if (MSCW<MSCW_cut_lower) return false;
-    if (MSCL<MSCL_cut_upper) return false;
+    if (MSCL<1.5) return false;
     double cut_mean = 5.+log2(pow(ErecS*1000./0.08,0.4));
     Depth_cut_lower = cut_mean-Depth_cut_width;
     Depth_cut_upper = cut_mean+Depth_cut_width;
@@ -604,7 +604,7 @@ bool ControlSelectionMSCW() {
 }
 bool AuxControlSelectionMSCW() {
     if (MSCW<MSCW_cut_lower) return false;
-    if (MSCL<MSCL_cut_upper) return false;
+    if (MSCL<1.5) return false;
     double cut_mean = 5.+log2(pow(ErecS*1000./0.08,0.4));
     Depth_cut_lower = cut_mean-Depth_cut_width;
     Depth_cut_upper = cut_mean+Depth_cut_width;
@@ -612,6 +612,9 @@ bool AuxControlSelectionMSCW() {
     if (SlantDepth*100./37.>Depth_cut_upper+2.) return false;
     if (SlantDepth*100./37.<Depth_cut_lower-2.) return false;
     return true;
+}
+double background(Double_t *x, Double_t *par) {
+    return (1./par[0])*(x[0]+par[1])*exp(-pow((x[0]+par[1])/par[0],2));
 }
 double RatioSRCR(TH1D* Hist_Bkg, double SR_cut_low, double SR_cut_up, double CR_cut) {
     //TGraph Graph_Bkg(Hist_Bkg);
