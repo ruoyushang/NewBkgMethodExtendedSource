@@ -15,10 +15,10 @@ source_list = []
 #source_list  += ['Crab']
 source_list  += ['2ndCrab']
 source_list  += ['PKS1424']
-source_list  += ['Ton599']
-source_list  += ['IC443']
 source_list  += ['H1426']
 source_list  += ['3C264']
+#source_list  += ['Ton599']
+#source_list  += ['IC443']
 #source_list  += ['BrandonValidation']
 
 Region = 'SR'
@@ -63,7 +63,6 @@ energy_list += [800]
 energy_list += [1000]
 energy_list += [2000]
 energy_list += [4000]
-energy_list += [6000]
 energy_list += [1e10]
 
 Variable = ''
@@ -84,12 +83,12 @@ def SelectDiagnosticaHistograms(folder,method,isSR,var):
     Hist_Data = ROOT.TH1D("Hist_Data","",1,0,1)
 
     FilePath = '%s/Deconvolution_%s_Elev%sto%s_%s.root'%(folder,source,Elev_lower_cut,Elev_upper_cut,Region)
-    print 'Read %s'%(FilePath)
+    #print 'Read %s'%(FilePath)
     InputFile=ROOT.TFile(FilePath)
     
     HistList = InputFile.GetListOfKeys()
     
-    print 'HistList.GetSize() = %s'%(HistList.GetSize())
+    #print 'HistList.GetSize() = %s'%(HistList.GetSize())
     for h in range(0,HistList.GetSize()):
         name = HistList.At(h).GetName()
         hist = InputFile.Get(name)
@@ -108,7 +107,7 @@ def SelectDiagnosticaHistograms(folder,method,isSR,var):
         #print 'ErecS_upper = %s'%(ErecS_upper)
         if ErecS_lower<int(ErecS_lower_cut): continue
         if ErecS_upper>int(ErecS_upper_cut): continue
-        print 'found histogram'
+        #print 'found histogram'
         if Hist_Data.Integral()==0:
             Hist_Data.Delete()
             Hist_Data = hist.Clone()
@@ -124,6 +123,153 @@ def set_histStyle( hist , color):
     hist.SetMarkerColor(color)
     hist.SetFillStyle(1001)
     pass
+
+def MakeReyleighPlot(Hists,legends,colors,title,name,doSum,doNorm):
+    
+    global MSCW_lower_cut
+    global MSCW_upper_cut
+    global MSCL_lower_cut
+    global MSCL_upper_cut
+    global Depth_cut_width
+
+    c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
+    pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
+    pad3.SetBottomMargin(0.0)
+    pad3.SetTopMargin(0.03)
+    pad3.SetBorderMode(1)
+    pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.8)
+    pad1.SetBottomMargin(0.15)
+    pad1.SetTopMargin(0.0)
+    pad1.SetBorderMode(0)
+    pad1.Draw()
+    pad3.Draw()
+
+    pad1.cd()
+
+    if doNorm:
+        for h in range(1,len(Hists)):
+            if Hists[h]!=0:
+                scale = Hists[0].Integral()/Hists[h].Integral()
+                Hists[h].Scale(scale)
+
+    max_heigh = 0
+    max_hist = 0
+    mean = []
+    rms = []
+    amp = []
+    for h in range(0,2):
+        mean += [0]
+        rms += [0]
+        amp += [0]
+        if Hists[h]!=0:
+            Hists[h].SetLineColor(colors[h])
+            Hists[h].GetXaxis().SetTitle(title)
+            Hists[h].GetXaxis().SetRangeUser(-1.0,20.5)
+            if max_heigh < Hists[h].GetMaximum(): 
+                max_heigh = Hists[h].GetMaximum()
+                max_hist = h
+
+    Hists[max_hist].SetMinimum(0)
+    Hists[max_hist].Draw("E")
+
+    power1 = 2
+    power2 = 2
+    func = ROOT.TF1("func","[2]*pow(x+[1],%s)*exp(-pow((x+[1])/[0],%s))"%(power1,power2), -1.0, 20.5)
+    func.SetParameter(0,3.)
+    func.SetParameter(1,0.)
+    func.SetParameter(2,100.)
+    func.SetParName(0,"RMS")
+    func.SetParName(1,"shift")
+    func.SetParName(2,"Amp")
+
+    for h in range(0,2):
+        if Hists[h]!=0:
+            Hists[h].Draw("E same")
+    Hists[0].Fit("func","","",-1.0,20.0)
+    rms[0] = func.GetParameter(0)
+    mean[0] = func.GetParameter(1)
+    amp[0] = func.GetParameter(2)
+    Hists[1].Fit("func","","",-1.0,20.0)
+    rms[1] = func.GetParameter(0)
+    mean[1] = func.GetParameter(1)
+    amp[1] = func.GetParameter(2)
+
+    Hists[0].SetLineWidth(3)
+    Hists[0].Draw("E same")
+
+    pad3.cd()
+    legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.15)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+    legend.Clear()
+    for h in range(0,2):
+        if Hists[h]!=0:
+            legend.AddEntry(Hists[h],legends[h]+"(%0.2f#pm%0.2f)"%(mean[h],rms[h]),"pl")
+    legend.Draw("SAME")
+    c_both.SaveAs('output_plots/Aux_%s_%s_Elev%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Region))
+
+    pad1.cd()
+    max_heigh = 0
+    max_hist = 0
+    for h in range(2,4):
+        mean += [0]
+        rms += [0]
+        amp += [0]
+        if Hists[h]!=0:
+            Hists[h].SetLineColor(colors[h])
+            Hists[h].GetXaxis().SetTitle(title)
+            Hists[h].GetXaxis().SetRangeUser(-1.0,20.5)
+            if max_heigh < Hists[h].GetMaximum(): 
+                max_heigh = Hists[h].GetMaximum()
+                max_hist = h
+
+    Hists[max_hist].SetMinimum(0)
+    Hists[max_hist].Draw("E")
+
+    func = ROOT.TF1("func","[2]*pow(x+[1],%s)*exp(-pow((x+[1])/[0],%s))"%(power1,power2), -1.0, 20.5)
+    func.SetParameter(0,3.)
+    func.SetParameter(1,0.)
+    func.SetParameter(2,100.)
+    func.SetParName(0,"RMS")
+    func.SetParName(1,"shift")
+    func.SetParName(2,"Amp")
+
+    for h in range(2,4):
+        if Hists[h]!=0:
+            Hists[h].Draw("E same")
+    Hists[2].Fit("func","","",-1.0,20.0)
+    rms[2] = func.GetParameter(0)
+    mean[2] = func.GetParameter(1)
+    amp[2] = func.GetParameter(2)
+
+    rms[3] = rms[1]-rms[0]+rms[2]
+    mean[3] = mean[1]-mean[0]+mean[2]
+    amp[3] = amp[1]/amp[0]*amp[2]
+    func_result = ROOT.TF1("func_result","[0]*pow(x+%0.3f,%s)*exp(-pow((x+%0.3f)/%0.3f,%s))"%(mean[3],power1,mean[3],rms[3],power2), -1.0, 20.5)
+    Hists[3].Fit("func_result","","",2.0,20.0)
+    func_result.Draw("same")
+
+    Hists[3].SetLineWidth(3)
+    Hists[3].Draw("E same")
+
+    pad3.cd()
+    legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.15)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+    legend.Clear()
+    for h in range(2,4):
+        if Hists[h]!=0:
+            legend.AddEntry(Hists[h],legends[h]+"(%0.2f#pm%0.2f)"%(mean[h],rms[h]),"pl")
+    legend.Draw("SAME")
+    c_both.SaveAs('output_plots/Sig_%s_%s_Elev%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Region))
 
 def MakeDiagnosticPlot(Hists,legends,colors,title,name,doSum,doNorm):
     
@@ -155,14 +301,19 @@ def MakeDiagnosticPlot(Hists,legends,colors,title,name,doSum,doNorm):
 
     max_heigh = 0
     max_hist = 0
+    mean = []
+    rms = []
     for h in range(0,len(Hists)):
+        mean += [Hists[h].GetMean()]
+        rms += [Hists[h].GetRMS()]
         if Hists[h]!=0:
             Hists[h].SetLineColor(colors[h])
             Hists[h].GetXaxis().SetTitle(title)
             #Hists[h].GetXaxis().SetRangeUser(-0.5,2.5)
             #Hists[h].GetXaxis().SetRangeUser(-0.5,3.5)
             #Hists[h].GetXaxis().SetRangeUser(-0.5,5.5)
-            Hists[h].GetXaxis().SetRangeUser(-0.5,10.5)
+            #Hists[h].GetXaxis().SetRangeUser(-0.5,10.5)
+            Hists[h].GetXaxis().SetRangeUser(-1.0,9.0)
             if title=='Depth': 
                 Hists[h].GetXaxis().SetRangeUser(0,20)
             if title=='EmissionHeight': 
@@ -203,7 +354,8 @@ def MakeDiagnosticPlot(Hists,legends,colors,title,name,doSum,doNorm):
     legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
     legend.SetTextFont(42)
     legend.SetBorderSize(0)
-    legend.SetTextSize(0.2)
+    #legend.SetTextSize(0.2)
+    legend.SetTextSize(0.15)
     legend.SetFillColor(0)
     legend.SetFillStyle(0)
     legend.SetLineColor(0)
@@ -211,8 +363,8 @@ def MakeDiagnosticPlot(Hists,legends,colors,title,name,doSum,doNorm):
     for h in range(0,len(Hists)):
         if Hists[h]!=0:
             if 'NoElec' in name and legends[h]=='electron': continue
-            #legend.AddEntry(Hists[h],legends[h]+"(%0.2f)"%(Hists[h].GetRMS()),"pl")
-            legend.AddEntry(Hists[h],legends[h],"pl")
+            legend.AddEntry(Hists[h],legends[h]+"(%0.2f#pm%0.2f)"%(mean[h],rms[h]),"pl")
+            #legend.AddEntry(Hists[h],legends[h],"pl")
     if doSum:
         legend.AddEntry(Hist_Sum,'total bkg',"f")
     legend.Draw("SAME")
@@ -259,6 +411,14 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,xtitle,ytitle,name):
     Hist_Data.GetXaxis().SetTitle(xtitle)
     Hist_Data.Draw("COL4Z")
     canvas.SaveAs('output_plots/%s_%s_Elev%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Region))
+    #Hist_Sig = ROOT.TH1D("Hist_Sig","",20,-2,2)
+    #for bx in range(0,Hist_Data.GetNbinsX()):
+    #    for by in range(0,Hist_Data.GetNbinsY()):
+    #        if not Hist_SR.GetBinError(bx+1,by+1)==0:
+    #            content = Hist_Data.GetBinContent(bx+1,by+1)/Hist_SR.GetBinError(bx+1,by+1)
+    #            Hist_Sig.Fill(content)
+    #Hist_Sig.Draw()
+    #canvas.SaveAs('output_plots/Sig_%s_%s_Elev%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Region))
 
 def Make2DProjectionPlot(Hist_Data,xtitle,ytitle,name):
 
@@ -353,7 +513,7 @@ for s in source_list:
     ErecS_lower_cut = 0
     ErecS_upper_cut = 1e10
     FilePath = '%s/Deconvolution_%s_Elev%sto%s_%s.root'%(folder,source,Elev_lower_cut,Elev_upper_cut,Region)
-    print 'Read %s'%(FilePath)
+    #print 'Read %s'%(FilePath)
     TargetFile=ROOT.TFile(FilePath)
     InfoTree = TargetFile.Get("InfoTree")
     InfoTree.GetEntry(0)
@@ -432,32 +592,67 @@ for s in source_list:
         #MakeDiagnosticPlot(Hists,legends,colors,title,plotname,False,False)
         MakeDiagnosticPlot(Hists,legends,colors,title,plotname,True,False)
 
+        #Hists = []
+        #legends = []
+        #colors = []
+        #Hists += [Hist_Target_ASR_MSCW]
+        #legends += ['CR1 (MSCL<1)']
+        #colors += [2]
+        #Hists += [Hist_Target_ACR_MSCW]
+        #legends += ['CR2 (MSCL>1)']
+        #colors += [3]
+        #Hists += [Hist_Target_ABkg_MSCW]
+        #legends += ['Deconv.']
+        #colors += [4]
+        #plotname = 'Target_ASR_MSCW_E%s'%(ErecS_lower_cut)
+        #title = 'MSCW'
+        #MakeDiagnosticPlot(Hists,legends,colors,title,plotname,False,False)
+
+        #Hists = []
+        #legends = []
+        #colors = []
+        #Hists += [Hist_Target_SR_MSCW]
+        #legends += ['SR (MSCL<1)']
+        #colors += [2]
+        #Hists += [Hist_Target_CR_MSCW]
+        #legends += ['CR3 (MSCL>1)']
+        #colors += [3]
+        #Hists += [Hist_Target_Bkg_MSCW]
+        #legends += ['Deconv.']
+        #colors += [4]
+        #plotname = 'Target_SR_MSCW_E%s'%(ErecS_lower_cut)
+        #title = 'MSCW'
+        #MakeDiagnosticPlot(Hists,legends,colors,title,plotname,False,False)
+
+        #Hists = []
+        #legends = []
+        #colors = []
+        #Hists += [Hist_Target_SR_Theta2]
+        #legends += ['SR']
+        #colors += [4]
+        #Hists += [Hist_Target_Bkg_Theta2]
+        #legends += ['Bkg']
+        #colors += [2]
+        #plotname = 'Target_Theta2_E%s'%(ErecS_lower_cut)
+        #title = '#theta^{2}'
+        #MakeDiagnosticPlot(Hists,legends,colors,title,plotname,False,False)
+
+
         Hists = []
         legends = []
         colors = []
+        Hists += [Hist_Target_ACR_MSCW]
+        legends += ['CR2 (MSCL>1)']
+        colors += [4]
         Hists += [Hist_Target_ASR_MSCW]
         legends += ['CR1 (MSCL<1)']
         colors += [2]
-        Hists += [Hist_Target_ACR_MSCW]
-        legends += ['CR2 (MSCL>1)']
-        colors += [3]
-        Hists += [Hist_Target_ABkg_MSCW]
-        legends += ['Deconv.']
+        Hists += [Hist_Target_CR_MSCW]
+        legends += ['CR3 (MSCL>1)']
         colors += [4]
-        plotname = 'Target_ASR_MSCW_E%s'%(ErecS_lower_cut)
-        title = 'MSCW'
-        MakeDiagnosticPlot(Hists,legends,colors,title,plotname,False,False)
-
-        Hists = []
-        legends = []
-        colors = []
-        Hists += [Hist_Target_SR_Theta2]
-        legends += ['SR']
-        colors += [4]
-        Hists += [Hist_Target_Bkg_Theta2]
-        legends += ['Bkg']
+        Hists += [Hist_Target_SR_MSCW]
+        legends += ['SR (MSCL<1)']
         colors += [2]
-        plotname = 'Target_Theta2_E%s'%(ErecS_lower_cut)
-        title = '#theta^{2}'
-        MakeDiagnosticPlot(Hists,legends,colors,title,plotname,False,False)
-
+        plotname = 'Target_SR_MSCW_E%s'%(ErecS_lower_cut)
+        title = 'MSCW'
+        MakeReyleighPlot(Hists,legends,colors,title,plotname,False,False)
