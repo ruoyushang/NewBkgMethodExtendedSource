@@ -55,8 +55,8 @@ double MSCL_cut_upper = 0.5;
 
 double Depth_cut_lower = 6;
 double Depth_cut_upper = 14;
-//double Depth_cut_width = 3;
-double Depth_cut_width = 4;
+double Depth_cut_width = 3;
+//double Depth_cut_width = 4;
 
 double Control_MSCL_cut = 0.;
 
@@ -543,18 +543,18 @@ vector<int> GetRunList(string source) {
         return list;
 }
 bool FoV() {
-    if (theta2<4.0) return true;
+    //if (theta2<4.0) return true;
     //if (theta2>0.2) return true;
-    //if (theta2<1.0) return true;
+    if (theta2<1.0) return true;
     //if (theta2<0.5) return true;
     //if (theta2>0.2 && theta2<0.4) return true;
     //if (theta2<0.2) return true;  // Crab signal icontamination with this cut is too strong for the deconvolution method.
     return false;
 }
 bool RingFoV() {
-    if (theta2<0.5) return false;
-    if (theta2>1.0) return false;
-    //if (theta2<1.0) return false;
+    //if (theta2<0.5) return false;
+    //if (theta2>1.0) return false;
+    if (theta2<1.0) return false;
     //if (theta2>4.0) return false;
     return true;
 }
@@ -588,13 +588,14 @@ bool AuxSignalSelectionMSCW() {
     Depth_cut_lower = cut_mean-Depth_cut_width;
     Depth_cut_upper = cut_mean+Depth_cut_width;
     if (SlantDepth*100./37.>Depth_cut_lower && SlantDepth*100./37.<Depth_cut_upper) return false;
-    if (SlantDepth*100./37.>Depth_cut_upper+2.) return false;
-    if (SlantDepth*100./37.<Depth_cut_lower-2.) return false;
+    if (SlantDepth*100./37.>Depth_cut_upper+3.) return false;
+    if (SlantDepth*100./37.<Depth_cut_lower-3.) return false;
     return true;
 }
 bool ControlSelectionMSCW() {
     if (MSCW<MSCW_cut_lower) return false;
     if (MSCL<1.5) return false;
+    if (MSCL>2.5) return false;
     double cut_mean = 5.+log2(pow(ErecS*1000./0.08,0.4));
     Depth_cut_lower = cut_mean-Depth_cut_width;
     Depth_cut_upper = cut_mean+Depth_cut_width;
@@ -605,12 +606,13 @@ bool ControlSelectionMSCW() {
 bool AuxControlSelectionMSCW() {
     if (MSCW<MSCW_cut_lower) return false;
     if (MSCL<1.5) return false;
+    if (MSCL>2.5) return false;
     double cut_mean = 5.+log2(pow(ErecS*1000./0.08,0.4));
     Depth_cut_lower = cut_mean-Depth_cut_width;
     Depth_cut_upper = cut_mean+Depth_cut_width;
     if (SlantDepth*100./37.>Depth_cut_lower && SlantDepth*100./37.<Depth_cut_upper) return false;
-    if (SlantDepth*100./37.>Depth_cut_upper+2.) return false;
-    if (SlantDepth*100./37.<Depth_cut_lower-2.) return false;
+    if (SlantDepth*100./37.>Depth_cut_upper+3.) return false;
+    if (SlantDepth*100./37.<Depth_cut_lower-3.) return false;
     return true;
 }
 double background(Double_t *x, Double_t *par) {
@@ -1010,25 +1012,25 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         for (int e=0;e<N_energy_bins;e++) {
                 double chi2_best = 0.;
                 double delta_rms_best = 1000.;
-                //for (int n_iter = 2;n_iter<=10;n_iter++) {
-                //        double offset_begin = 0;
-                //        double chi2 = 0;
-                //        double delta_rms = 1000.;
-                //        Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_ASR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),n_iter);
-                //        Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_ABkgTemp_MSCW.at(e),n_iter);
-                //        offset_begin = Hist_Target_ASR_MSCW.at(e).GetMean()-Hist_Target_ABkgTemp_MSCW.at(e).GetMean();
-                //        offset_begin = ShiftAndNormalize(&Hist_Target_ASR_MSCW.at(e),&Hist_Target_ABkgTemp_MSCW.at(e),&Hist_Target_ABkg_MSCW.at(e),offset_begin,-1.,10.,true);
-                //        chi2 = GetChi2(&Hist_Target_ASR_MSCW.at(e), &Hist_Target_ABkg_MSCW.at(e), -1., 10.);
-                //        if (chi2_best<chi2) {
-                //            chi2_best = chi2;
-                //            N_iter.at(e) = n_iter;
-                //        } 
-                //        //delta_rms = abs(Hist_Target_ASR_MSCW.at(e).GetRMS()-Hist_Target_ABkg_MSCW.at(e).GetRMS());
-                //        //if (delta_rms_best>delta_rms) {
-                //        //    delta_rms_best = delta_rms;
-                //        //    N_iter.at(e) = n_iter;
-                //        //}
-                //}
+                for (int n_iter = 2;n_iter<=30;n_iter++) {
+                        double offset_begin = 0;
+                        double chi2 = 0;
+                        double delta_rms = 1000.;
+                        Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_ASR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),n_iter);
+                        Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_ABkgTemp_MSCW.at(e),n_iter);
+                        offset_begin = Hist_Target_ASR_MSCW.at(e).GetMean()-Hist_Target_ABkgTemp_MSCW.at(e).GetMean();
+                        offset_begin = ShiftAndNormalize(&Hist_Target_ASR_MSCW.at(e),&Hist_Target_ABkgTemp_MSCW.at(e),&Hist_Target_ABkg_MSCW.at(e),offset_begin,-1.,10.,true);
+                        chi2 = GetChi2(&Hist_Target_ASR_MSCW.at(e), &Hist_Target_ABkg_MSCW.at(e), -1., 10.);
+                        if (chi2_best<chi2) {
+                            chi2_best = chi2;
+                            N_iter.at(e) = n_iter;
+                        } 
+                        //delta_rms = abs(Hist_Target_ASR_MSCW.at(e).GetRMS()-Hist_Target_ABkg_MSCW.at(e).GetRMS());
+                        //if (delta_rms_best>delta_rms) {
+                        //    delta_rms_best = delta_rms;
+                        //    N_iter.at(e) = n_iter;
+                        //}
+                }
                 std::cout << "Target, e " << e << ", N_iter.at(e) = " << N_iter.at(e) << std::endl;
                 Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_ASR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_iter.at(e));
                 Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_ABkgTemp_MSCW.at(e),N_iter.at(e));
@@ -1046,25 +1048,25 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         for (int e=0;e<N_energy_bins;e++) {
                 double chi2_best = 0.;
                 double delta_rms_best = 1000.;
-                //for (int n_iter = 2;n_iter<=10;n_iter++) {
-                //        double offset_begin = 0;
-                //        double chi2 = 0;
-                //        double delta_rms = 1000.;
-                //        Deconvolution(&Hist_Dark_ACR_MSCW.at(e),&Hist_Dark_ASR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),n_iter);
-                //        Deconvolution(&Hist_Dark_ACR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_ABkgTemp_MSCW.at(e),n_iter);
-                //        offset_begin = Hist_Dark_ASR_MSCW.at(e).GetMean()-Hist_Dark_ABkgTemp_MSCW.at(e).GetMean();
-                //        offset_begin = ShiftAndNormalize(&Hist_Dark_ASR_MSCW.at(e),&Hist_Dark_ABkgTemp_MSCW.at(e),&Hist_Dark_ABkg_MSCW.at(e),offset_begin,-1.,10.,true);
-                //        chi2 = GetChi2(&Hist_Dark_ASR_MSCW.at(e), &Hist_Dark_ABkg_MSCW.at(e), -1., 10.);
-                //        if (chi2_best<chi2) {
-                //            chi2_best = chi2;
-                //            N_iter.at(e) = n_iter;
-                //        } 
-                //        //delta_rms = abs(Hist_Dark_ASR_MSCW.at(e).GetRMS()-Hist_Dark_ABkg_MSCW.at(e).GetRMS());
-                //        //if (delta_rms_best>delta_rms) {
-                //        //    delta_rms_best = delta_rms;
-                //        //    N_iter.at(e) = n_iter;
-                //        //}
-                //}
+                for (int n_iter = 2;n_iter<=30;n_iter++) {
+                        double offset_begin = 0;
+                        double chi2 = 0;
+                        double delta_rms = 1000.;
+                        Deconvolution(&Hist_Dark_ACR_MSCW.at(e),&Hist_Dark_ASR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),n_iter);
+                        Deconvolution(&Hist_Dark_ACR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_ABkgTemp_MSCW.at(e),n_iter);
+                        offset_begin = Hist_Dark_ASR_MSCW.at(e).GetMean()-Hist_Dark_ABkgTemp_MSCW.at(e).GetMean();
+                        offset_begin = ShiftAndNormalize(&Hist_Dark_ASR_MSCW.at(e),&Hist_Dark_ABkgTemp_MSCW.at(e),&Hist_Dark_ABkg_MSCW.at(e),offset_begin,-1.,10.,true);
+                        chi2 = GetChi2(&Hist_Dark_ASR_MSCW.at(e), &Hist_Dark_ABkg_MSCW.at(e), -1., 10.);
+                        if (chi2_best<chi2) {
+                            chi2_best = chi2;
+                            N_iter.at(e) = n_iter;
+                        } 
+                        //delta_rms = abs(Hist_Dark_ASR_MSCW.at(e).GetRMS()-Hist_Dark_ABkg_MSCW.at(e).GetRMS());
+                        //if (delta_rms_best>delta_rms) {
+                        //    delta_rms_best = delta_rms;
+                        //    N_iter.at(e) = n_iter;
+                        //}
+                }
                 std::cout << "Dark, e " << e << ", N_iter.at(e) = " << N_iter.at(e) << std::endl;
                 Deconvolution(&Hist_Dark_ACR_MSCW.at(e),&Hist_Dark_ASR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),N_iter.at(e));
                 Deconvolution(&Hist_Dark_ACR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_ABkgTemp_MSCW.at(e),N_iter.at(e));
