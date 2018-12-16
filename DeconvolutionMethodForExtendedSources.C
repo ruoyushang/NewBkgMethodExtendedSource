@@ -618,27 +618,16 @@ bool AuxControlSelectionMSCW() {
 double background(Double_t *x, Double_t *par) {
     return (1./par[0])*(x[0]+par[1])*exp(-pow((x[0]+par[1])/par[0],2));
 }
-double RatioSRCR(TH1D* Hist_Bkg, double SR_cut_low, double SR_cut_up, double CR_cut) {
-    //TGraph Graph_Bkg(Hist_Bkg);
-    //double Bkg_in_SR = 0.;
-    //double Bkg_in_CR = 0.;
-    //for (int i=1;i<=10;i++) {
-    //    double point = double(i)*(SR_cut_up-SR_cut_low)/10.+SR_cut_low;
-    //    Bkg_in_SR += Graph_Bkg.Eval(point)*(SR_cut_up-SR_cut_low)/10./Hist_Bkg->GetBinWidth(1);
-    //}
-    //for (int i=1;i<=10;i++) {
-    //    double point = double(i)*(CR_cut+1.-CR_cut)/10.+CR_cut;
-    //    Bkg_in_CR += Graph_Bkg.Eval(point)*(CR_cut+1.-CR_cut)/10./Hist_Bkg->GetBinWidth(1);
-    //}
-    //std::cout << "Bkg_in_SR = " << Bkg_in_SR << std::endl;
-    //std::cout << "Bkg_in_CR = " << Bkg_in_CR << std::endl;
-    //return Bkg_in_SR/Bkg_in_CR;
+std::pair<double, double> RatioSRCR(TH1D* Hist_Bkg, double SR_cut_low, double SR_cut_up, double CR_cut) {
     int b_low = Hist_Bkg->FindBin(SR_cut_low);
     int b_up = Hist_Bkg->FindBin(SR_cut_up);
     int b_cr = Hist_Bkg->FindBin(CR_cut);
-    double NSR = Hist_Bkg->Integral(b_low,b_up-1);
-    double NCR = Hist_Bkg->Integral(b_cr,Hist_Bkg->GetNbinsX());
-    return NSR/NCR;
+    double NSR_err;
+    double NSR = Hist_Bkg->IntegralAndError(b_low,b_up-1,NSR_err);
+    double NCR_err;
+    double NCR = Hist_Bkg->IntegralAndError(b_cr,Hist_Bkg->GetNbinsX(),NCR_err);
+    //std::cout << "NSR_err" << NSR_err << std::endl;
+    return std::make_pair(NSR/NCR,NSR/NCR*pow(pow(NSR_err/NSR,2)+pow(NCR_err/NCR,2),0.5));
 }
 double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, double norm_low, double norm_up) {
     double chi2_temp = 0;
@@ -1164,13 +1153,28 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
 
         // Get sky map bkg
         for (int e=0;e<N_energy_bins;e++) {
-            double ratio =  RatioSRCR(&Hist_Target_TotalBkg_MSCW.at(e), MSCW_cut_lower, MSCW_cut_upper, Norm_Lower);
-            Hist_Target_Bkg_SkyMap.at(e).Reset();
-            Hist_Target_Bkg_SkyMap.at(e).Add(&Hist_Target_CR_SkyMap.at(e));
-            Hist_Target_Bkg_SkyMap.at(e).Scale(ratio);
+            double ratio, ratio_err;
+            std::tie(ratio,ratio_err) = RatioSRCR(&Hist_Target_TotalBkg_MSCW.at(e), MSCW_cut_lower, MSCW_cut_upper, Norm_Lower);
             Hist_Target_Bkg_Theta2.at(e).Reset();
-            Hist_Target_Bkg_Theta2.at(e).Add(&Hist_Target_CR_Theta2.at(e));
-            Hist_Target_Bkg_Theta2.at(e).Scale(ratio);
+            for (int b=0;b<Hist_Target_Bkg_Theta2.at(e).GetNbinsX();b++) {
+                double NCR = Hist_Target_CR_Theta2.at(e).GetBinContent(b+1);
+                double NCR_err = Hist_Target_CR_Theta2.at(e).GetBinError(b+1);
+                double NSR = NCR*ratio;
+                double NSR_err = NCR*ratio*pow(pow(NCR_err/NCR,2)+pow(ratio_err/ratio,2),0.5);
+                Hist_Target_Bkg_Theta2.at(e).SetBinContent(b+1,NSR);
+                Hist_Target_Bkg_Theta2.at(e).SetBinError(b+1,NSR_err);
+            }
+            Hist_Target_Bkg_SkyMap.at(e).Reset();
+            for (int bx=0;bx<Hist_Target_CR_SkyMap.at(e).GetNbinsX();bx++) {
+                for (int by=0;by<Hist_Target_CR_SkyMap.at(e).GetNbinsY();by++) {
+                    double NCR = Hist_Target_CR_SkyMap.at(e).GetBinContent(bx+1,by+1);
+                    double NCR_err = Hist_Target_CR_SkyMap.at(e).GetBinError(bx+1,by+1);
+                    double NSR = NCR*ratio;
+                    double NSR_err = NCR*ratio*pow(pow(NCR_err/NCR,2)+pow(ratio_err/ratio,2),0.5);
+                    Hist_Target_Bkg_SkyMap.at(e).SetBinContent(bx+1,by+1,NSR);
+                    Hist_Target_Bkg_SkyMap.at(e).SetBinError(bx+1,by+1,NSR_err);
+                }
+            }
         }
 
         int norm_bin_low_ring = Hist_Target_ON_MSCW_Alpha.FindBin(Norm_Lower);
