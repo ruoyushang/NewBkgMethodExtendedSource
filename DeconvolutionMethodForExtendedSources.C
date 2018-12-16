@@ -627,6 +627,7 @@ std::pair<double, double> RatioSRCR(TH1D* Hist_Bkg, double SR_cut_low, double SR
     double NCR_err;
     double NCR = Hist_Bkg->IntegralAndError(b_cr,Hist_Bkg->GetNbinsX(),NCR_err);
     //std::cout << "NSR_err" << NSR_err << std::endl;
+    if (NCR==0) return std::make_pair(0,0);
     return std::make_pair(NSR/NCR,NSR/NCR*pow(pow(NSR_err/NSR,2)+pow(NCR_err/NCR,2),0.5));
 }
 double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, double norm_low, double norm_up) {
@@ -808,9 +809,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             Hist_Target_Elec_MSCW.push_back(TH1D("Hist_Target_Elec_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
             Hist_Target_Ring_MSCW.push_back(TH1D("Hist_Target_Ring_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
             Hist_Target_TotalBkg_MSCW.push_back(TH1D("Hist_Target_TotalBkg_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-200,100));
-            Hist_Target_SR_SkyMap.push_back(TH2D("Hist_Target_SR_SkyMap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",40,-2,2,40,-2,2));
-            Hist_Target_CR_SkyMap.push_back(TH2D("Hist_Target_CR_SkyMap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",40,-2,2,40,-2,2));
-            Hist_Target_Bkg_SkyMap.push_back(TH2D("Hist_Target_Bkg_SkyMap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",40,-2,2,40,-2,2));
+            Hist_Target_SR_SkyMap.push_back(TH2D("Hist_Target_SR_SkyMap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",100,-2,2,100,-2,2));
+            Hist_Target_CR_SkyMap.push_back(TH2D("Hist_Target_CR_SkyMap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",100,-2,2,100,-2,2));
+            Hist_Target_Bkg_SkyMap.push_back(TH2D("Hist_Target_Bkg_SkyMap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",100,-2,2,100,-2,2));
             Hist_Target_SR_Theta2.push_back(TH1D("Hist_Target_SR_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",40,0,4));
             Hist_Target_CR_Theta2.push_back(TH1D("Hist_Target_CR_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",40,0,4));
             Hist_Target_Bkg_Theta2.push_back(TH1D("Hist_Target_Bkg_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",40,0,4));
