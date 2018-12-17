@@ -61,7 +61,7 @@ double Depth_cut_width = 3;
 double Control_MSCL_cut = 0.;
 
 double Norm_Lower = 1.0;
-double Norm_Upper = 8.0;
+double Norm_Upper = 20.0;
 
 string  filename;
 double TelElevation = 0;
@@ -646,8 +646,8 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
     double scale_fit = 0;
     double chi2 = 0.;
     if (doShift) {
-        for (int fit=0;fit<20;fit++) {
-                double shift = shift_begin-1.+fit*0.1;
+        for (int fit=0;fit<40;fit++) {
+                double shift = shift_begin-2.+fit*0.1;
                 for (int i=0;i<Hist_SR->GetNbinsX();i++) {
                         int b = Hist_SR->FindBin(Hist_SR->GetBinCenter(i+1)-shift);
                         Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
@@ -696,6 +696,7 @@ void Deconvolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Deconv, int n
         //if (Hist_response->GetRMS()<=2.0) n_iteration = 100;
         //if (Hist_response->GetRMS()<=1.3) n_iteration = 1000;
         sp.Deconvolution(source,response,N_bins,n_iteration,1,100000); // new best option
+        //sp.Deconvolution(source,response,N_bins,n_iteration,2,10);
         for (int i=0;i<N_bins;i++) {
             Hist_Deconv->SetBinContent(i+1,max(source[i],0.));
         }
@@ -1003,25 +1004,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         // Target deconvolution method
         for (int e=0;e<N_energy_bins;e++) {
                 double chi2_best = 0.;
-                double delta_rms_best = 1000.;
-                for (int n_iter = 10;n_iter<=200;n_iter++) {
-                        double offset_begin = 0;
-                        double chi2 = 0;
-                        double delta_rms = 1000.;
-                        Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_ASR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),n_iter);
-                        Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_ABkgTemp_MSCW.at(e),n_iter);
-                        offset_begin = Hist_Target_ASR_MSCW.at(e).GetMean()-Hist_Target_ABkgTemp_MSCW.at(e).GetMean();
-                        offset_begin = ShiftAndNormalize(&Hist_Target_ASR_MSCW.at(e),&Hist_Target_ABkgTemp_MSCW.at(e),&Hist_Target_ABkg_MSCW.at(e),offset_begin,-1.,Norm_Upper,true);
-                        chi2 = GetChi2(&Hist_Target_ASR_MSCW.at(e), &Hist_Target_ABkg_MSCW.at(e),-10.,Norm_Upper,true);
-                        if (chi2_best<chi2) {
-                            chi2_best = chi2;
-                            N_iter.at(e) = n_iter;
-                        } 
-                }
-                std::cout << "Target, e " << energy_bins[e] << ", N_iter.at(e) = " << N_iter.at(e) << std::endl;
-                Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_ASR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_iter.at(e));
-                Deconvolution(&Hist_Target_ACR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_ABkgTemp_MSCW.at(e),N_iter.at(e));
-                chi2_best = 0.;
                 for (int n_iter = 10;n_iter<=200;n_iter++) {
                         double offset_begin = 0;
                         double chi2 = 0;
@@ -1059,25 +1041,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         std::cout << "Dark run deconvolution... " << std::endl;
         for (int e=0;e<N_energy_bins;e++) {
                 double chi2_best = 0.;
-                double delta_rms_best = 1000.;
-                for (int n_iter = 10;n_iter<=200;n_iter++) {
-                        double offset_begin = 0;
-                        double chi2 = 0;
-                        double delta_rms = 1000.;
-                        Deconvolution(&Hist_Dark_ACR_MSCW.at(e),&Hist_Dark_ASR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),n_iter);
-                        Deconvolution(&Hist_Dark_ACR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_ABkgTemp_MSCW.at(e),n_iter);
-                        offset_begin = Hist_Dark_ASR_MSCW.at(e).GetMean()-Hist_Dark_ABkgTemp_MSCW.at(e).GetMean();
-                        offset_begin = ShiftAndNormalize(&Hist_Dark_ASR_MSCW.at(e),&Hist_Dark_ABkgTemp_MSCW.at(e),&Hist_Dark_ABkg_MSCW.at(e),offset_begin,-1.,Norm_Upper,true);
-                        chi2 = GetChi2(&Hist_Dark_ASR_MSCW.at(e), &Hist_Dark_ABkg_MSCW.at(e),-10.,Norm_Upper,true);
-                        if (chi2_best<chi2) {
-                            chi2_best = chi2;
-                            N_iter.at(e) = n_iter;
-                        } 
-                }
-                std::cout << "Dark, e " << energy_bins[e] << ", N_iter.at(e) = " << N_iter.at(e) << std::endl;
-                Deconvolution(&Hist_Dark_ACR_MSCW.at(e),&Hist_Dark_ASR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),N_iter.at(e));
-                Deconvolution(&Hist_Dark_ACR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_ABkgTemp_MSCW.at(e),N_iter.at(e));
-                chi2_best = 0.;
                 for (int n_iter = 10;n_iter<=200;n_iter++) {
                         double offset_begin = 0;
                         double chi2 = 0;
