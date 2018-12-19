@@ -60,7 +60,7 @@ double Depth_cut_width = 3;
 
 double Control_MSCL_cut = 0.;
 
-double Norm_Lower = 1.5;
+double Norm_Lower = 1.0;
 //double Norm_Upper = 8.5;
 double Norm_Upper = 20.5;
 
@@ -657,11 +657,11 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, double norm_low, double norm_up, boo
         //if (Hist_Bkg->GetBinContent(i+1)==0) continue;
         double bkg = Hist_Bkg->GetBinContent(i+1);
         double data = Hist_SR->GetBinContent(i+1);
-        if (!includeSR && Hist_Bkg->GetBinCenter(i+1)>-1.0 && Hist_Bkg->GetBinCenter(i+1)<1.5) {
+        if (!includeSR && Hist_Bkg->GetBinCenter(i+1)>-1.0 && Hist_Bkg->GetBinCenter(i+1)<Norm_Lower) {
             data = 0.;
         }
         chi2_temp += pow(pow(bkg-data,2),0.5)/Hist_SR->Integral();
-        //chi2_temp += pow(Hist_Bkg->GetBinContent(i+1)-Hist_SR->GetBinContent(i+1),2)/(Hist_Bkg->GetBinContent(i+1)+Hist_SR->GetBinContent(i+1));
+        //chi2_temp += pow(pow(bkg-data,2),0.5)/(bkg+data);
     }
     chi2_temp = 1./chi2_temp;
     return chi2_temp;
@@ -1071,16 +1071,16 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         vector<double> N_rms1;
         vector<double> N_rms2;
         for (int e=0;e<N_energy_bins;e++) {
-                N_iter.push_back(30);
+                N_iter.push_back(40);
                 //if (energy_bins[e]>=400) N_iter.at(e) = 28;
                 //if (energy_bins[e]>=600) N_iter.at(e) = 30;
                 //if (energy_bins[e]>=800) N_iter.at(e) = 30;
                 //if (energy_bins[e]>=1000) N_iter.at(e) = 30;
                 //if (energy_bins[e]>=1200) N_iter.at(e) = 30;
-                //if (energy_bins[e]>=1600) N_iter.at(e) = 30;
-                //if (energy_bins[e]>=2000) N_iter.at(e) = 30;
-                //if (energy_bins[e]>=3000) N_iter.at(e) = 20;
-                //if (energy_bins[e]>=4000) N_iter.at(e) = 20;
+                if (energy_bins[e]>=1600) N_iter.at(e) = 40;
+                if (energy_bins[e]>=2000) N_iter.at(e) = 30;
+                if (energy_bins[e]>=3000) N_iter.at(e) = 30;
+                if (energy_bins[e]>=4000) N_iter.at(e) = 30;
                 N_rms.push_back(1);
                 N_rms1.push_back(1);
                 N_rms2.push_back(1);
@@ -1341,7 +1341,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 Hist_Dark_Elec_MSCW.at(e).Add(&Hist_Dark_SR_MSCW.at(e));
                 Hist_Dark_Elec_MSCW.at(e).Add(&Hist_Dark_Bkg_MSCW.at(e),-1.);
                 for (int i=0;i<Hist_Target_SR_MSCW.at(e).GetNbinsX();i++) {
-                        if (Hist_Dark_SR_MSCW.at(e).GetBinCenter(i+1)>2.) 
+                        if (Hist_Dark_SR_MSCW.at(e).GetBinCenter(i+1)>Norm_Lower) 
                             Hist_Dark_Elec_MSCW.at(e).SetBinContent(i+1,0.);
                             Hist_Dark_Elec_MSCW.at(e).SetBinError(i+1,0.);
                 }
