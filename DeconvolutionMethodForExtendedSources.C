@@ -1176,7 +1176,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             Hist_Target_SRB_MSCW.at(e).Reset();
             Hist_Target_SRB_MSCW.at(e).Add(&Hist_Target_ASR1_MSCW.at(e));
             Hist_Target_SRB_MSCW.at(e).Add(&Hist_Target_ASR2_MSCW.at(e));
-            double scale = Hist_Target_SR_MSCW.at(e).Integral()/Hist_Target_SRB_MSCW.at(e).Integral();
+            int norm_bin_low = Hist_Target_SRB_MSCW.at(e).FindBin(Norm_Lower);
+            int norm_bin_up = Hist_Target_SRB_MSCW.at(e).FindBin(Norm_Upper);
+            double scale = Hist_Target_SR_MSCW.at(e).Integral(norm_bin_low,norm_bin_up)/Hist_Target_SRB_MSCW.at(e).Integral(norm_bin_low,norm_bin_up);
             Hist_Target_SRB_MSCW.at(e).Scale(scale);
             for (int b=0;b<Hist_Target_SRB_MSCW.at(e).GetNbinsX();b++) {
                 if (Hist_Target_SRB_MSCW.at(e).GetBinCenter(b+1)<-1.0 || Hist_Target_SRB_MSCW.at(e).GetBinCenter(b+1)>Norm_Lower)
@@ -1304,7 +1306,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             Hist_Dark_SRB_MSCW.at(e).Reset();
             Hist_Dark_SRB_MSCW.at(e).Add(&Hist_Dark_ASR1_MSCW.at(e));
             Hist_Dark_SRB_MSCW.at(e).Add(&Hist_Dark_ASR2_MSCW.at(e));
-            double scale = Hist_Dark_SR_MSCW.at(e).Integral()/Hist_Dark_SRB_MSCW.at(e).Integral();
+            int norm_bin_low = Hist_Dark_SRB_MSCW.at(e).FindBin(Norm_Lower);
+            int norm_bin_up = Hist_Dark_SRB_MSCW.at(e).FindBin(Norm_Upper);
+            double scale = Hist_Dark_SR_MSCW.at(e).Integral(norm_bin_low,norm_bin_up)/Hist_Dark_SRB_MSCW.at(e).Integral(norm_bin_low,norm_bin_up);
             Hist_Dark_SRB_MSCW.at(e).Scale(scale);
             for (int b=0;b<Hist_Dark_SRB_MSCW.at(e).GetNbinsX();b++) {
                 if (Hist_Dark_SRB_MSCW.at(e).GetBinCenter(b+1)<-1.0 || Hist_Dark_SRB_MSCW.at(e).GetBinCenter(b+1)>Norm_Lower)
