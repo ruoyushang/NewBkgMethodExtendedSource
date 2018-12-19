@@ -1077,12 +1077,12 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         vector<double> N_rms1;
         vector<double> N_rms2;
         for (int e=0;e<N_energy_bins;e++) {
-                N_iter.push_back(50);
+                N_iter.push_back(100);
                 //if (energy_bins[e]>=400) N_iter.at(e) = 28;
                 //if (energy_bins[e]>=600) N_iter.at(e) = 30;
-                //if (energy_bins[e]>=800) N_iter.at(e) = 30;
-                //if (energy_bins[e]>=1000) N_iter.at(e) = 30;
-                //if (energy_bins[e]>=1200) N_iter.at(e) = 30;
+                if (energy_bins[e]>=800) N_iter.at(e) = 70;
+                if (energy_bins[e]>=1000) N_iter.at(e) = 50;
+                if (energy_bins[e]>=1200) N_iter.at(e) = 50;
                 if (energy_bins[e]>=1600) N_iter.at(e) = 40;
                 if (energy_bins[e]>=2000) N_iter.at(e) = 30;
                 if (energy_bins[e]>=3000) N_iter.at(e) = 30;
@@ -1127,7 +1127,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                   double rms = rms_begin-1.0+double(n_rms)/40.;
                   myfunc->SetParameters(10.,mean_begin,rms);
                   Hist_Target_Deconv_MSCW.at(e).Reset();
-                  Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",50000);
+                  Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Target_SR_MSCW.at(e).Integral()*10);
                   Deconvolution(&Hist_Target_ACR1_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_ABkg1Temp_MSCW.at(e),n_iter);
                   offset_begin = Hist_Target_ASR1_MSCW.at(e).GetMean()-Hist_Target_ABkg1Temp_MSCW.at(e).GetMean();
                   offset_begin = ShiftAndNormalize(&Hist_Target_ASR1_MSCW.at(e),&Hist_Target_ABkg1Temp_MSCW.at(e),&Hist_Target_ABkg1_MSCW.at(e),offset_begin,-10.,Norm_Upper,true);
@@ -1150,7 +1150,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                   double rms = rms_begin-1.0+double(n_rms)/40.;
                   myfunc->SetParameters(10.,mean_begin,rms);
                   Hist_Target_Deconv_MSCW.at(e).Reset();
-                  Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",50000);
+                  Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Target_SR_MSCW.at(e).Integral()*10);
                   Deconvolution(&Hist_Target_ACR2_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_ABkg2Temp_MSCW.at(e),n_iter);
                   offset_begin = Hist_Target_ASR2_MSCW.at(e).GetMean()-Hist_Target_ABkg2Temp_MSCW.at(e).GetMean();
                   offset_begin = ShiftAndNormalize(&Hist_Target_ASR2_MSCW.at(e),&Hist_Target_ABkg2Temp_MSCW.at(e),&Hist_Target_ABkg2_MSCW.at(e),offset_begin,-10.,Norm_Upper,true);
@@ -1197,7 +1197,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                   double rms = N_rms1.at(e)+double(n_rms)/20.*delta_rms;
                   myfunc->SetParameters(10.,mean_begin,rms);
                   Hist_Target_Deconv_MSCW.at(e).Reset();
-                  Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",50000);
+                  Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Target_SR_MSCW.at(e).Integral()*10);
                   Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),n_iter);
                   offset_begin = Hist_Target_SRB_MSCW.at(e).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
                   offset_begin = ShiftAndNormalize(&Hist_Target_SRB_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Bkg_MSCW.at(e),offset_begin,-1.0,Norm_Upper,true);
@@ -1213,7 +1213,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             double rms = N_rms.at(e);
             myfunc->SetParameters(10.,mean_begin,rms);
             Hist_Target_Deconv_MSCW.at(e).Reset();
-            Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",50000);
+            Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Target_SR_MSCW.at(e).Integral()*10);
             Deconvolution(&Hist_Target_ACR1_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_ABkg1Temp_MSCW.at(e),n_iter_final);
             Deconvolution(&Hist_Target_ACR2_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_ABkg2Temp_MSCW.at(e),n_iter_final);
             Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),n_iter_final);
@@ -1262,7 +1262,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                   double rms = rms_begin-1.0+double(n_rms)/40.;
                   myfunc->SetParameters(10.,mean_begin,rms);
                   Hist_Dark_Deconv_MSCW.at(e).Reset();
-                  Hist_Dark_Deconv_MSCW.at(e).FillRandom("myfunc",50000);
+                  Hist_Dark_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Dark_SR_MSCW.at(e).Integral()*10);
                   Deconvolution(&Hist_Dark_ACR1_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_ABkg1Temp_MSCW.at(e),n_iter);
                   offset_begin = Hist_Dark_ASR1_MSCW.at(e).GetMean()-Hist_Dark_ABkg1Temp_MSCW.at(e).GetMean();
                   offset_begin = ShiftAndNormalize(&Hist_Dark_ASR1_MSCW.at(e),&Hist_Dark_ABkg1Temp_MSCW.at(e),&Hist_Dark_ABkg1_MSCW.at(e),offset_begin,-10.,Norm_Upper,true);
@@ -1285,7 +1285,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                   double rms = rms_begin-1.0+double(n_rms)/40.;
                   myfunc->SetParameters(10.,mean_begin,rms);
                   Hist_Dark_Deconv_MSCW.at(e).Reset();
-                  Hist_Dark_Deconv_MSCW.at(e).FillRandom("myfunc",50000);
+                  Hist_Dark_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Dark_SR_MSCW.at(e).Integral()*10);
                   Deconvolution(&Hist_Dark_ACR2_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_ABkg2Temp_MSCW.at(e),n_iter);
                   offset_begin = Hist_Dark_ASR2_MSCW.at(e).GetMean()-Hist_Dark_ABkg2Temp_MSCW.at(e).GetMean();
                   offset_begin = ShiftAndNormalize(&Hist_Dark_ASR2_MSCW.at(e),&Hist_Dark_ABkg2Temp_MSCW.at(e),&Hist_Dark_ABkg2_MSCW.at(e),offset_begin,-10.,Norm_Upper,true);
@@ -1332,7 +1332,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                   double rms = N_rms1.at(e)+double(n_rms)/20.*delta_rms;
                   myfunc->SetParameters(10.,mean_begin,rms);
                   Hist_Dark_Deconv_MSCW.at(e).Reset();
-                  Hist_Dark_Deconv_MSCW.at(e).FillRandom("myfunc",50000);
+                  Hist_Dark_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Dark_SR_MSCW.at(e).Integral()*10);
                   Deconvolution(&Hist_Dark_CR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),n_iter);
                   offset_begin = Hist_Dark_SRB_MSCW.at(e).GetMean()-Hist_Dark_BkgTemp_MSCW.at(e).GetMean();
                   offset_begin = ShiftAndNormalize(&Hist_Dark_SRB_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),&Hist_Dark_Bkg_MSCW.at(e),offset_begin,-1.0,Norm_Upper,true);
@@ -1348,7 +1348,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             double rms = N_rms.at(e);
             myfunc->SetParameters(10.,mean_begin,rms);
             Hist_Dark_Deconv_MSCW.at(e).Reset();
-            Hist_Dark_Deconv_MSCW.at(e).FillRandom("myfunc",50000);
+            Hist_Dark_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Dark_SR_MSCW.at(e).Integral()*10);
             Deconvolution(&Hist_Dark_ACR1_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_ABkg1Temp_MSCW.at(e),n_iter_final);
             Deconvolution(&Hist_Dark_ACR2_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_ABkg2Temp_MSCW.at(e),n_iter_final);
             Deconvolution(&Hist_Dark_CR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),n_iter_final);
