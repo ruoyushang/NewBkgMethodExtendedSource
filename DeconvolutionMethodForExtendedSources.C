@@ -665,10 +665,10 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, double norm_low, double norm_up, boo
             //data = 0.;
             continue;
         }
-        //chi2_temp += pow(pow(bkg-data,2),0.5)/Hist_SR->Integral();
+        chi2_temp += pow(pow(bkg-data,2),0.5)/Hist_SR->Integral();
         //chi2_temp += pow(bkg-data,2)/(bkg+data);
         //chi2_temp += pow(pow(bkg-data,2),0.5)/(data_err);
-        chi2_temp += pow(bkg-data,2)/(data_err*data_err);
+        //chi2_temp += pow(bkg-data,2)/(data_err*data_err);
     }
     chi2_temp = 1./chi2_temp;
     return chi2_temp;
@@ -1162,7 +1162,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                   Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),n_iter);
                   offset_begin = Hist_Target_SRB_MSCW.at(e).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
                   offset_begin = ShiftAndNormalize(&Hist_Target_SRB_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Bkg_MSCW.at(e),offset_begin,-1.0,Norm_Upper,false);
-                  chi2 += GetChi2(&Hist_Target_SRB_MSCW.at(e), &Hist_Target_Bkg_MSCW.at(e),-2.,Norm_Upper,true);
+                  chi2 += GetChi2(&Hist_Target_SRB_MSCW.at(e), &Hist_Target_Bkg_MSCW.at(e),-2.,Norm_Upper,false);
                   if (chi2_best<chi2) {
                       chi2_best = chi2;
                       N_rms.at(e) = rms;
@@ -1218,7 +1218,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                   Deconvolution(&Hist_Dark_CR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),n_iter);
                   offset_begin = Hist_Dark_SRB_MSCW.at(e).GetMean()-Hist_Dark_BkgTemp_MSCW.at(e).GetMean();
                   offset_begin = ShiftAndNormalize(&Hist_Dark_SRB_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),&Hist_Dark_Bkg_MSCW.at(e),offset_begin,-1.0,Norm_Upper,false);
-                  chi2 += GetChi2(&Hist_Dark_SRB_MSCW.at(e), &Hist_Dark_Bkg_MSCW.at(e),-2.,Norm_Upper,true);
+                  chi2 += GetChi2(&Hist_Dark_SRB_MSCW.at(e), &Hist_Dark_Bkg_MSCW.at(e),-2.,Norm_Upper,false);
                   if (chi2_best<chi2) {
                       chi2_best = chi2;
                       N_rms.at(e) = rms;
