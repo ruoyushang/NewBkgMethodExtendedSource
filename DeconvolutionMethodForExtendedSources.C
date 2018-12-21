@@ -659,11 +659,11 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, double norm_low, double norm_up, boo
             //data = 0.;
             continue;
         }
-        chi2_temp += pow(bkg-data,2)/Hist_SR->Integral();
+        //chi2_temp += pow(bkg-data,2)/Hist_SR->Integral();
         //chi2_temp += pow(pow(bkg-data,2),0.5)/Hist_SR->Integral();
         //chi2_temp += pow(bkg-data,2)/(bkg+data);
         //chi2_temp += pow(pow(bkg-data,2),0.5)/(data_err);
-        //chi2_temp += pow(bkg-data,2)/(data_err*data_err);
+        chi2_temp += pow(bkg-data,2)/(data_err*data_err);
     }
     chi2_temp = 1./chi2_temp;
     return chi2_temp;
@@ -1113,7 +1113,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         vector<double> N_rms;
         vector<double> N_mean;
         for (int e=0;e<N_energy_bins;e++) {
-                N_iter.push_back(10);
+                N_iter.push_back(15);
                 //if (energy_bins[e]>=400) N_iter.at(e) = 100;
                 //if (energy_bins[e]>=600) N_iter.at(e) = 100;
                 //if (energy_bins[e]>=800) N_iter.at(e) = 100;
@@ -1145,9 +1145,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
 
             double n_iter_final = N_iter.at(e);
             double chi2_best = 0.;
-            for (int delta_n_iter = 0;delta_n_iter<30;delta_n_iter++) {
+            for (int delta_n_iter = 1;delta_n_iter<=100;delta_n_iter++) {
             for (int n_rms = 0; n_rms<=20;n_rms++) {
-                  int n_iter = N_iter.at(e)+delta_n_iter*10;
+                  int n_iter = delta_n_iter;
                   double offset_begin = 0;
                   double chi2 = 0;
                   double rms = rms_begin-1.+double(n_rms)*0.1;
@@ -1201,9 +1201,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
 
             double n_iter_final = N_iter.at(e);
             double chi2_best = 0.;
-            for (int delta_n_iter = 0;delta_n_iter<30;delta_n_iter++) {
+            for (int delta_n_iter = 1;delta_n_iter<=100;delta_n_iter++) {
             for (int n_rms = 0; n_rms<=20;n_rms++) {
-                  int n_iter = N_iter.at(e)+delta_n_iter*10;
+                  int n_iter = delta_n_iter;
                   double offset_begin = 0;
                   double chi2 = 0;
                   double rms = rms_begin-1.+double(n_rms)*0.1;
