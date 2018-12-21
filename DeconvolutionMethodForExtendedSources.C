@@ -601,9 +601,7 @@ bool Aux2SignalSelectionMSCW() {
 }
 bool ControlSelectionMSCW() {
     if (MSCL<1.0) return false;
-    if (MSCL>2.0) return false;
-    //if (MSCL<2.0) return false;
-    //if (MSCL>3.0) return false;
+    if (MSCL>1.2) return false;
     double cut_mean = 5.+log2(pow(ErecS*1000./0.08,0.4));
     Depth_cut_lower = cut_mean-Depth_cut_width;
     Depth_cut_upper = cut_mean+Depth_cut_width;
@@ -613,9 +611,7 @@ bool ControlSelectionMSCW() {
 }
 bool Aux1ControlSelectionMSCW() {
     if (MSCL<1.0) return false;
-    if (MSCL>2.0) return false;
-    //if (MSCL<2.0) return false;
-    //if (MSCL>3.0) return false;
+    if (MSCL>1.2) return false;
     double cut_mean = 5.+log2(pow(ErecS*1000./0.08,0.4));
     Depth_cut_lower = cut_mean-Depth_cut_width;
     Depth_cut_upper = cut_mean+Depth_cut_width;
@@ -625,9 +621,7 @@ bool Aux1ControlSelectionMSCW() {
 }
 bool Aux2ControlSelectionMSCW() {
     if (MSCL<1.0) return false;
-    if (MSCL>2.0) return false;
-    //if (MSCL<2.0) return false;
-    //if (MSCL>3.0) return false;
+    if (MSCL>1.2) return false;
     double cut_mean = 5.+log2(pow(ErecS*1000./0.08,0.4));
     Depth_cut_lower = cut_mean-Depth_cut_width;
     Depth_cut_upper = cut_mean+Depth_cut_width;
@@ -665,7 +659,8 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, double norm_low, double norm_up, boo
             //data = 0.;
             continue;
         }
-        chi2_temp += pow(pow(bkg-data,2),0.5)/Hist_SR->Integral();
+        chi2_temp += pow(bkg-data,2)/Hist_SR->Integral();
+        //chi2_temp += pow(pow(bkg-data,2),0.5)/Hist_SR->Integral();
         //chi2_temp += pow(bkg-data,2)/(bkg+data);
         //chi2_temp += pow(pow(bkg-data,2),0.5)/(data_err);
         //chi2_temp += pow(bkg-data,2)/(data_err*data_err);
@@ -958,14 +953,14 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         if (e>=N_energy_bins) continue;
                         if (e<0) continue;
                         if (!QualitySelection()) continue;
-                        if (FoV()) {
+                        //if (FoV()) {
                             if (SignalSelectionMSCW()) Hist_Dark_SR_MSCW.at(e).Fill(MSCW);
                             if (ControlSelectionMSCW()) Hist_Dark_CR_MSCW.at(e).Fill(MSCW);
                             if (Aux1SignalSelectionMSCW()) Hist_Dark_ASR1_MSCW.at(e).Fill(MSCW);
                             if (Aux1ControlSelectionMSCW()) Hist_Dark_ACR1_MSCW.at(e).Fill(MSCW);
                             if (Aux2SignalSelectionMSCW()) Hist_Dark_ASR2_MSCW.at(e).Fill(MSCW);
                             if (Aux2ControlSelectionMSCW()) Hist_Dark_ACR2_MSCW.at(e).Fill(MSCW);
-                        }
+                        //}
                 }
                 input_file->Close();
 
