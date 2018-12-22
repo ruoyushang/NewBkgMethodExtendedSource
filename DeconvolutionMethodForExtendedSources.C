@@ -78,12 +78,12 @@ double theta2 = 0;
 double ra_sky = 0;
 double dec_sky = 0;
 
-//const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] = {150,1e6};
 //const int N_energy_bins = 13;
 //double energy_bins[N_energy_bins+1] = {150,200,250,300,400,600,800,1000,1200,1600,2000,3000,4000,10000};
 const int N_energy_bins = 10;
 double energy_bins[N_energy_bins+1] = {300,400,600,800,1000,1200,1600,2000,3000,4000,10000};
+//const int N_energy_bins = 6;
+//double energy_bins[N_energy_bins+1] = {1000,1200,1600,2000,3000,4000,10000};
 //const int N_energy_bins = 23;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0),pow(10,4.1),pow(10,4.2),pow(10,4.3),pow(10,4.4)};
 const int N_energy_bins_log = 23;
@@ -646,9 +646,12 @@ std::pair<double, double> RatioSRCR(TH1D* Hist_Bkg, double SR_cut_low, double SR
 }
 double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, double norm_low, double norm_up, bool includeSR) {
     double chi2_temp = 0;
+    double mean = Hist_SR->GetMean();
+    double rms = Hist_SR->GetRMS();
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
         if (Hist_Bkg->GetBinCenter(i+1)<norm_low) continue;
         if (Hist_Bkg->GetBinCenter(i+1)>norm_up) continue;
+        if (Hist_Bkg->GetBinCenter(i+1)>mean+5.*rms) continue;
         //if (Hist_Bkg->GetBinContent(i+1)==0) continue;
         double bkg = Hist_Bkg->GetBinContent(i+1);
         double data = Hist_SR->GetBinContent(i+1);
@@ -664,18 +667,6 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, double norm_low, double norm_up, boo
         //chi2_temp += pow(bkg-data,2)/(bkg+data);
         //chi2_temp += pow(pow(bkg-data,2),0.5)/(data_err);
         chi2_temp += pow(bkg-data,2)/(data_err*data_err);
-    }
-    chi2_temp = 1./chi2_temp;
-    return chi2_temp;
-}
-double GetChi2_2(TH1* Hist_SR, TH1* Hist_Bkg, double norm_low, double norm_up, bool includeSR) {
-    double chi2_temp = 0;
-    for (int i=0;i<Hist_SR->GetNbinsX();i++) {
-        if (Hist_Bkg->GetBinCenter(i+1)<norm_low) continue;
-        if (Hist_Bkg->GetBinCenter(i+1)>norm_up) continue;
-        //if (Hist_Bkg->GetBinContent(i+1)==0) continue;
-        if (!includeSR && Hist_Bkg->GetBinCenter(i+1)>-1.0 && Hist_Bkg->GetBinCenter(i+1)<1.5) continue;
-        chi2_temp += pow(Hist_Bkg->GetBinContent(i+1)-Hist_SR->GetBinContent(i+1),2)/Hist_SR->Integral();
     }
     chi2_temp = 1./chi2_temp;
     return chi2_temp;
@@ -1068,7 +1059,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     hist_error += Hist_Target_SR_MSCW.at(e).GetBinError(b+1);
                 }
                 double bin_width = Hist_Target_SR_MSCW.at(e).GetBinWidth(1);
-                if (hist_error/hist_integral>0.05) {
+                if (hist_error/hist_integral>0.1) {
                 //if (bin_width/rms<0.2 || hist_error/hist_integral>0.2) {
                         Hist_Dark_SR_MSCW.at(e).Rebin(2);
                         Hist_Dark_SRB_MSCW.at(e).Rebin(2);
@@ -1146,18 +1137,18 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             double n_iter_final = N_iter.at(e);
             double chi2_best = 0.;
             for (int delta_n_iter = 1;delta_n_iter<=100;delta_n_iter++) {
-            for (int n_rms = 0; n_rms<=20;n_rms++) {
+            for (int n_rms = 0; n_rms<=10;n_rms++) {
                   int n_iter = delta_n_iter;
                   double offset_begin = 0;
                   double chi2 = 0;
-                  double rms = rms_begin-1.+double(n_rms)*0.1;
+                  double rms = rms_begin-0.5+double(n_rms)*0.1;
                   myfunc->SetParameters(10.,mean_begin,rms);
                   Hist_Target_Deconv_MSCW.at(e).Reset();
                   Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Target_SR_MSCW.at(e).Integral()*100);
                   Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),n_iter);
                   offset_begin = Hist_Target_SRB_MSCW.at(e).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
                   offset_begin = ShiftAndNormalize(&Hist_Target_SRB_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Bkg_MSCW.at(e),offset_begin,-1.0,Norm_Upper,false);
-                  chi2 += GetChi2(&Hist_Target_SRB_MSCW.at(e), &Hist_Target_Bkg_MSCW.at(e),-2.,Norm_Upper,false);
+                  chi2 += GetChi2(&Hist_Target_SRB_MSCW.at(e), &Hist_Target_Bkg_MSCW.at(e),-1.,Norm_Upper,false);
                   if (chi2_best<chi2) {
                       chi2_best = chi2;
                       N_rms.at(e) = rms;
@@ -1202,18 +1193,18 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             double n_iter_final = N_iter.at(e);
             double chi2_best = 0.;
             for (int delta_n_iter = 1;delta_n_iter<=100;delta_n_iter++) {
-            for (int n_rms = 0; n_rms<=20;n_rms++) {
+            for (int n_rms = 0; n_rms<=10;n_rms++) {
                   int n_iter = delta_n_iter;
                   double offset_begin = 0;
                   double chi2 = 0;
-                  double rms = rms_begin-1.+double(n_rms)*0.1;
+                  double rms = rms_begin-0.5+double(n_rms)*0.1;
                   myfunc->SetParameters(10.,mean_begin,rms);
                   Hist_Dark_Deconv_MSCW.at(e).Reset();
                   Hist_Dark_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Dark_SR_MSCW.at(e).Integral()*100);
                   Deconvolution(&Hist_Dark_CR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),n_iter);
                   offset_begin = Hist_Dark_SRB_MSCW.at(e).GetMean()-Hist_Dark_BkgTemp_MSCW.at(e).GetMean();
                   offset_begin = ShiftAndNormalize(&Hist_Dark_SRB_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),&Hist_Dark_Bkg_MSCW.at(e),offset_begin,-1.0,Norm_Upper,false);
-                  chi2 += GetChi2(&Hist_Dark_SRB_MSCW.at(e), &Hist_Dark_Bkg_MSCW.at(e),-2.,Norm_Upper,false);
+                  chi2 += GetChi2(&Hist_Dark_SRB_MSCW.at(e), &Hist_Dark_Bkg_MSCW.at(e),-1.,Norm_Upper,false);
                   if (chi2_best<chi2) {
                       chi2_best = chi2;
                       N_rms.at(e) = rms;
