@@ -78,12 +78,14 @@ double theta2 = 0;
 double ra_sky = 0;
 double dec_sky = 0;
 
-const int N_energy_bins = 13;
-double energy_bins[N_energy_bins+1] = {150,200,250,300,400,600,800,1000,1200,1600,2000,3000,4000,10000};
-//const int N_energy_bins = 10;
-//double energy_bins[N_energy_bins+1] = {300,400,600,800,1000,1200,1600,2000,3000,4000,10000};
-//const int N_energy_bins = 6;
-//double energy_bins[N_energy_bins+1] = {1000,1200,1600,2000,3000,4000,10000};
+//const int N_energy_bins = 1;
+//double energy_bins[N_energy_bins+1] = {1500,2000};
+const int N_energy_bins = 10;
+double energy_bins[N_energy_bins+1] = {150,200,250,300,400,600,1000,1500,2000,4000,10000};
+//const int N_energy_bins = 7;
+//double energy_bins[N_energy_bins+1] = {300,400,600,1000,1500,2000,4000,10000};
+//const int N_energy_bins = 4;
+//double energy_bins[N_energy_bins+1] = {1000,1500,2000,4000,10000};
 //const int N_energy_bins = 23;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0),pow(10,4.1),pow(10,4.2),pow(10,4.3),pow(10,4.4)};
 const int N_energy_bins_log = 23;
@@ -651,7 +653,7 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, double norm_low, double norm_up, boo
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
         if (Hist_Bkg->GetBinCenter(i+1)<norm_low) continue;
         if (Hist_Bkg->GetBinCenter(i+1)>norm_up) continue;
-        if (Hist_Bkg->GetBinCenter(i+1)>mean+3.*rms) continue;
+        if (Hist_Bkg->GetBinCenter(i+1)>mean+5.*rms) continue;
         //if (Hist_Bkg->GetBinContent(i+1)==0) continue;
         double bkg = Hist_Bkg->GetBinContent(i+1);
         double data = Hist_SR->GetBinContent(i+1);
@@ -662,11 +664,11 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, double norm_low, double norm_up, boo
             //data = 0.;
             continue;
         }
-        //chi2_temp += pow(bkg-data,2)/Hist_SR->Integral();
+        chi2_temp += pow(bkg-data,2)/Hist_SR->Integral();
         //chi2_temp += pow(pow(bkg-data,2),0.5)/Hist_SR->Integral();
         //chi2_temp += pow(bkg-data,2)/(bkg+data);
         //chi2_temp += pow(pow(bkg-data,2),0.5)/(data_err);
-        chi2_temp += pow(bkg-data,2)/(data_err*data_err);
+        //chi2_temp += pow(bkg-data,2)/(data_err*data_err);
     }
     chi2_temp = 1./chi2_temp;
     return chi2_temp;
@@ -862,43 +864,44 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             //N_bins_for_deconv = 7680;
             //N_bins_for_deconv = 3840;
             //N_bins_for_deconv = 1920;
-            N_bins_for_deconv = 960;
+            //N_bins_for_deconv = 960;
+            N_bins_for_deconv = 120;
             Hist_Dark_SR_ErecS.push_back(TH1D("Hist_Dark_SR_ErecS_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_bins,energy_bins));
-            Hist_Dark_SR_MSCW.push_back(TH1D("Hist_Dark_SR_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Dark_SRB_MSCW.push_back(TH1D("Hist_Dark_SRB_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Dark_CR_MSCW.push_back(TH1D("Hist_Dark_CR_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Dark_ASR1_MSCW.push_back(TH1D("Hist_Dark_ASR1_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Dark_ACR1_MSCW.push_back(TH1D("Hist_Dark_ACR1_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Dark_ASR2_MSCW.push_back(TH1D("Hist_Dark_ASR2_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Dark_ACR2_MSCW.push_back(TH1D("Hist_Dark_ACR2_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Dark_BkgTemp_MSCW.push_back(TH1D("Hist_Dark_BkgTemp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Dark_Bkg_MSCW.push_back(TH1D("Hist_Dark_Bkg_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Dark_ABkg1Temp_MSCW.push_back(TH1D("Hist_Dark_ABkg1Temp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Dark_ABkg1_MSCW.push_back(TH1D("Hist_Dark_ABkg1_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Dark_ABkg2Temp_MSCW.push_back(TH1D("Hist_Dark_ABkg2Temp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Dark_ABkg2_MSCW.push_back(TH1D("Hist_Dark_ABkg2_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Dark_Deconv_MSCW.push_back(TH1D("Hist_Dark_Deconv_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Dark_TrueDeconv_MSCW.push_back(TH1D("Hist_Dark_TrueDeconv_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Dark_Elec_MSCW.push_back(TH1D("Hist_Dark_Elec_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
+            Hist_Dark_SR_MSCW.push_back(TH1D("Hist_Dark_SR_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Dark_SRB_MSCW.push_back(TH1D("Hist_Dark_SRB_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Dark_CR_MSCW.push_back(TH1D("Hist_Dark_CR_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Dark_ASR1_MSCW.push_back(TH1D("Hist_Dark_ASR1_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Dark_ACR1_MSCW.push_back(TH1D("Hist_Dark_ACR1_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Dark_ASR2_MSCW.push_back(TH1D("Hist_Dark_ASR2_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Dark_ACR2_MSCW.push_back(TH1D("Hist_Dark_ACR2_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Dark_BkgTemp_MSCW.push_back(TH1D("Hist_Dark_BkgTemp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Dark_Bkg_MSCW.push_back(TH1D("Hist_Dark_Bkg_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Dark_ABkg1Temp_MSCW.push_back(TH1D("Hist_Dark_ABkg1Temp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Dark_ABkg1_MSCW.push_back(TH1D("Hist_Dark_ABkg1_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Dark_ABkg2Temp_MSCW.push_back(TH1D("Hist_Dark_ABkg2Temp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Dark_ABkg2_MSCW.push_back(TH1D("Hist_Dark_ABkg2_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Dark_Deconv_MSCW.push_back(TH1D("Hist_Dark_Deconv_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Dark_TrueDeconv_MSCW.push_back(TH1D("Hist_Dark_TrueDeconv_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Dark_Elec_MSCW.push_back(TH1D("Hist_Dark_Elec_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
             Hist_Target_SR_ErecS.push_back(TH1D("Hist_Target_SR_ErecS_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_bins,energy_bins));
-            Hist_Target_SR_MSCW.push_back(TH1D("Hist_Target_SR_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_SRB_MSCW.push_back(TH1D("Hist_Target_SRB_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_CR_MSCW.push_back(TH1D("Hist_Target_CR_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_ASR1_MSCW.push_back(TH1D("Hist_Target_ASR1_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_ACR1_MSCW.push_back(TH1D("Hist_Target_ACR1_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_ASR2_MSCW.push_back(TH1D("Hist_Target_ASR2_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_ACR2_MSCW.push_back(TH1D("Hist_Target_ACR2_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_BkgTemp_MSCW.push_back(TH1D("Hist_Target_BkgTemp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_Bkg_MSCW.push_back(TH1D("Hist_Target_Bkg_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_ABkg1Temp_MSCW.push_back(TH1D("Hist_Target_ABkg1Temp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_ABkg1_MSCW.push_back(TH1D("Hist_Target_ABkg1_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_ABkg2Temp_MSCW.push_back(TH1D("Hist_Target_ABkg2Temp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_ABkg2_MSCW.push_back(TH1D("Hist_Target_ABkg2_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_Deconv_MSCW.push_back(TH1D("Hist_Target_Deconv_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_TrueDeconv_MSCW.push_back(TH1D("Hist_Target_TrueDeconv_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_Elec_MSCW.push_back(TH1D("Hist_Target_Elec_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_Ring_MSCW.push_back(TH1D("Hist_Target_Ring_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
-            Hist_Target_TotalBkg_MSCW.push_back(TH1D("Hist_Target_TotalBkg_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
+            Hist_Target_SR_MSCW.push_back(TH1D("Hist_Target_SR_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_SRB_MSCW.push_back(TH1D("Hist_Target_SRB_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_CR_MSCW.push_back(TH1D("Hist_Target_CR_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_ASR1_MSCW.push_back(TH1D("Hist_Target_ASR1_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_ACR1_MSCW.push_back(TH1D("Hist_Target_ACR1_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_ASR2_MSCW.push_back(TH1D("Hist_Target_ASR2_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_ACR2_MSCW.push_back(TH1D("Hist_Target_ACR2_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_BkgTemp_MSCW.push_back(TH1D("Hist_Target_BkgTemp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_Bkg_MSCW.push_back(TH1D("Hist_Target_Bkg_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_ABkg1Temp_MSCW.push_back(TH1D("Hist_Target_ABkg1Temp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_ABkg1_MSCW.push_back(TH1D("Hist_Target_ABkg1_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_ABkg2Temp_MSCW.push_back(TH1D("Hist_Target_ABkg2Temp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_ABkg2_MSCW.push_back(TH1D("Hist_Target_ABkg2_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_Deconv_MSCW.push_back(TH1D("Hist_Target_Deconv_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_TrueDeconv_MSCW.push_back(TH1D("Hist_Target_TrueDeconv_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_Elec_MSCW.push_back(TH1D("Hist_Target_Elec_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_Ring_MSCW.push_back(TH1D("Hist_Target_Ring_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
+            Hist_Target_TotalBkg_MSCW.push_back(TH1D("Hist_Target_TotalBkg_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-15,15));
             Hist_Target_SR_SkyMap.push_back(TH2D("Hist_Target_SR_SkyMap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",100,-2,2,100,-2,2));
             Hist_Target_CR_SkyMap.push_back(TH2D("Hist_Target_CR_SkyMap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",100,-2,2,100,-2,2));
             Hist_Target_Bkg_SkyMap.push_back(TH2D("Hist_Target_Bkg_SkyMap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",100,-2,2,100,-2,2));
@@ -1062,7 +1065,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             int n_rebins = 0;
             double rms = Hist_Target_SR_MSCW.at(e).GetRMS();
             for (int n_rebins=0;n_rebins<10;n_rebins++) {
-                if (Hist_Target_SR_MSCW.at(e).GetNbinsX()<=240) break;
+                if (Hist_Target_SR_MSCW.at(e).GetNbinsX()<=60) break;
                 double hist_integral = 0;
                 double hist_error = 0;
                 for (int b=0;b<Hist_Target_SR_MSCW.at(e).GetNbinsX();b++) {
@@ -1070,7 +1073,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     hist_error += Hist_Target_SR_MSCW.at(e).GetBinError(b+1);
                 }
                 double bin_width = Hist_Target_SR_MSCW.at(e).GetBinWidth(1);
-                if (hist_error/hist_integral>0.1) {
+                if (hist_error/hist_integral>0.05) {
                 //if (bin_width/rms<0.2 || hist_error/hist_integral>0.2) {
                         Hist_Dark_SR_MSCW.at(e).Rebin(2);
                         Hist_Dark_SRB_MSCW.at(e).Rebin(2);
@@ -1115,7 +1118,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         vector<double> N_rms;
         vector<double> N_mean;
         for (int e=0;e<N_energy_bins;e++) {
-                N_iter.push_back(15);
+                N_iter.push_back(50);
                 //if (energy_bins[e]>=400) N_iter.at(e) = 100;
                 //if (energy_bins[e]>=600) N_iter.at(e) = 100;
                 //if (energy_bins[e]>=800) N_iter.at(e) = 100;
@@ -1143,50 +1146,63 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_SRB_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_iter.at(e));
             double rms_begin = Hist_Target_Deconv_MSCW.at(e).GetRMS();
             double mean_begin = Hist_Target_Deconv_MSCW.at(e).GetMean();
-            std::cout << "Target, e " << energy_bins[e] << ", rms_begin = " << rms_begin << std::endl;
 
             double n_iter_final = N_iter.at(e);
             double chi2_best = 0.;
             for (int delta_n_iter = 1;delta_n_iter<=100;delta_n_iter++) {
-            for (int n_rms = 0; n_rms<=10;n_rms++) {
+            //for (int n_rms = 0; n_rms<=20;n_rms++) {
+            //for (int n_mean = 0; n_mean<=20;n_mean++) {
                   int n_iter = delta_n_iter;
+                  //int n_iter = N_iter.at(e);
                   double offset_begin = 0;
                   double chi2 = 0;
-                  double rms = rms_begin-0.5+double(n_rms)*0.1;
-                  myfunc->SetParameters(10.,mean_begin,rms);
+                  Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_SRB_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),n_iter);
+                  double rms_begin = Hist_Target_Deconv_MSCW.at(e).GetRMS();
+                  double mean_begin = Hist_Target_Deconv_MSCW.at(e).GetMean();
+                  double rms = rms_begin;
+                  double mean = mean_begin;
+                  //double rms = rms_begin-1.0+double(n_rms)*0.1;
+                  //double mean = mean_begin-1.0+double(n_mean)*0.1;
+                  myfunc->SetParameters(10.,mean,rms);
                   Hist_Target_Deconv_MSCW.at(e).Reset();
                   Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Target_SR_MSCW.at(e).Integral()*100);
                   Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),n_iter);
                   offset_begin = Hist_Target_SRB_MSCW.at(e).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
-                  offset_begin = ShiftAndNormalize(&Hist_Target_SRB_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Bkg_MSCW.at(e),offset_begin,-2.0,Norm_Upper,false);
+                  offset_begin = ShiftAndNormalize(&Hist_Target_SRB_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Bkg_MSCW.at(e),offset_begin,Norm_Lower,Norm_Upper,false);
                   chi2 += GetChi2(&Hist_Target_SRB_MSCW.at(e), &Hist_Target_Bkg_MSCW.at(e),-1.,Norm_Upper,false);
                   if (chi2_best<chi2) {
+                      //std::cout << "Target, e " << energy_bins[e] << ", mean_begin = " << mean_begin << std::endl;
+                      //std::cout << "Target, e " << energy_bins[e] << ", rms_begin = " << rms_begin << std::endl;
+                      //std::cout << "Target, e " << energy_bins[e] << ", mean = " << mean << std::endl;
+                      //std::cout << "Target, e " << energy_bins[e] << ", rms = " << rms << std::endl;
                       chi2_best = chi2;
                       N_rms.at(e) = rms;
+                      N_mean.at(e) = mean;
                       n_iter_final = n_iter;
                   } 
-            }
+            //}
+            //}
             }
             std::cout << "Target, e " << energy_bins[e] << ", n_iter_final = " << n_iter_final << std::endl;
             double rms = N_rms.at(e);
-            myfunc->SetParameters(10.,mean_begin,rms);
+            double mean = N_mean.at(e);
+            myfunc->SetParameters(10.,mean,rms);
             Hist_Target_Deconv_MSCW.at(e).Reset();
             Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Target_SR_MSCW.at(e).Integral()*100);
             Deconvolution(&Hist_Target_ACR1_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_ABkg1Temp_MSCW.at(e),n_iter_final);
             Deconvolution(&Hist_Target_ACR2_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_ABkg2Temp_MSCW.at(e),n_iter_final);
             Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),n_iter_final);
             Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_SR_MSCW.at(e),&Hist_Target_TrueDeconv_MSCW.at(e),n_iter_final);
-            std::cout << "Target, e " << energy_bins[e] << ", N_rms.at(e) = " << N_rms.at(e) << std::endl;
-            std::cout << "Target, e " << energy_bins[e] << ", mean = " << Hist_Target_Deconv_MSCW.at(e).GetMean() << std::endl;
-            std::cout << "Target, e " << energy_bins[e] << ", rms = " << Hist_Target_Deconv_MSCW.at(e).GetRMS() << std::endl;
+            std::cout << "Target, e " << energy_bins[e] << ", final mean = " << Hist_Target_Deconv_MSCW.at(e).GetMean() << std::endl;
+            std::cout << "Target, e " << energy_bins[e] << ", final rms = " << Hist_Target_Deconv_MSCW.at(e).GetRMS() << std::endl;
             std::cout << "Target, e " << energy_bins[e] << ", true Mean = " << Hist_Target_TrueDeconv_MSCW.at(e).GetMean() << std::endl;
             std::cout << "Target, e " << energy_bins[e] << ", true RMS = " << Hist_Target_TrueDeconv_MSCW.at(e).GetRMS() << std::endl;
             double offset_begin = 0;
             offset_begin = Hist_Target_SRB_MSCW.at(e).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
-            offset_begin = ShiftAndNormalize(&Hist_Target_ASR1_MSCW.at(e),&Hist_Target_ABkg1Temp_MSCW.at(e),&Hist_Target_ABkg1_MSCW.at(e),offset_begin,-2.0,Norm_Upper,false);
-            offset_begin = ShiftAndNormalize(&Hist_Target_ASR2_MSCW.at(e),&Hist_Target_ABkg2Temp_MSCW.at(e),&Hist_Target_ABkg2_MSCW.at(e),offset_begin,-2.0,Norm_Upper,false);
+            offset_begin = ShiftAndNormalize(&Hist_Target_ASR1_MSCW.at(e),&Hist_Target_ABkg1Temp_MSCW.at(e),&Hist_Target_ABkg1_MSCW.at(e),offset_begin,Norm_Lower,Norm_Upper,false);
+            offset_begin = ShiftAndNormalize(&Hist_Target_ASR2_MSCW.at(e),&Hist_Target_ABkg2Temp_MSCW.at(e),&Hist_Target_ABkg2_MSCW.at(e),offset_begin,Norm_Lower,Norm_Upper,false);
             offset_begin = Hist_Target_SRB_MSCW.at(e).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
-            offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Bkg_MSCW.at(e),offset_begin,-2.0,Norm_Upper,false);
+            offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Bkg_MSCW.at(e),offset_begin,Norm_Lower,Norm_Upper,false);
         }
 
         std::cout << "Dark run deconvolution... " << std::endl;
@@ -1200,50 +1216,63 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             Deconvolution(&Hist_Dark_CR_MSCW.at(e),&Hist_Dark_SRB_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),N_iter.at(e));
             double rms_begin = Hist_Dark_Deconv_MSCW.at(e).GetRMS();
             double mean_begin = Hist_Dark_Deconv_MSCW.at(e).GetMean();
-            std::cout << "Dark, e " << energy_bins[e] << ", rms_begin = " << rms_begin << std::endl;
 
             double n_iter_final = N_iter.at(e);
             double chi2_best = 0.;
             for (int delta_n_iter = 1;delta_n_iter<=100;delta_n_iter++) {
-            for (int n_rms = 0; n_rms<=10;n_rms++) {
+            //for (int n_rms = 0; n_rms<=20;n_rms++) {
+            //for (int n_mean = 0; n_mean<=20;n_mean++) {
                   int n_iter = delta_n_iter;
+                  //int n_iter = N_iter.at(e);
                   double offset_begin = 0;
                   double chi2 = 0;
-                  double rms = rms_begin-0.5+double(n_rms)*0.1;
-                  myfunc->SetParameters(10.,mean_begin,rms);
+                  Deconvolution(&Hist_Dark_CR_MSCW.at(e),&Hist_Dark_SRB_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),n_iter);
+                  double rms_begin = Hist_Dark_Deconv_MSCW.at(e).GetRMS();
+                  double mean_begin = Hist_Dark_Deconv_MSCW.at(e).GetMean();
+                  double rms = rms_begin;
+                  double mean = mean_begin;
+                  //double rms = rms_begin-1.0+double(n_rms)*0.1;
+                  //double mean = mean_begin-1.0+double(n_mean)*0.1;
+                  myfunc->SetParameters(10.,mean,rms);
                   Hist_Dark_Deconv_MSCW.at(e).Reset();
                   Hist_Dark_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Dark_SR_MSCW.at(e).Integral()*100);
                   Deconvolution(&Hist_Dark_CR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),n_iter);
                   offset_begin = Hist_Dark_SRB_MSCW.at(e).GetMean()-Hist_Dark_BkgTemp_MSCW.at(e).GetMean();
-                  offset_begin = ShiftAndNormalize(&Hist_Dark_SRB_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),&Hist_Dark_Bkg_MSCW.at(e),offset_begin,-2.0,Norm_Upper,false);
+                  offset_begin = ShiftAndNormalize(&Hist_Dark_SRB_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),&Hist_Dark_Bkg_MSCW.at(e),offset_begin,Norm_Lower,Norm_Upper,false);
                   chi2 += GetChi2(&Hist_Dark_SRB_MSCW.at(e), &Hist_Dark_Bkg_MSCW.at(e),-1.,Norm_Upper,false);
                   if (chi2_best<chi2) {
+                      //std::cout << "Dark, e " << energy_bins[e] << ", mean_begin = " << mean_begin << std::endl;
+                      //std::cout << "Dark, e " << energy_bins[e] << ", rms_begin = " << rms_begin << std::endl;
+                      //std::cout << "Dark, e " << energy_bins[e] << ", mean = " << mean << std::endl;
+                      //std::cout << "Dark, e " << energy_bins[e] << ", rms = " << rms << std::endl;
                       chi2_best = chi2;
                       N_rms.at(e) = rms;
+                      N_mean.at(e) = mean;
                       n_iter_final = n_iter;
                   } 
-            }
+            //}
+            //}
             }
             std::cout << "Dark, e " << energy_bins[e] << ", n_iter_final = " << n_iter_final << std::endl;
             double rms = N_rms.at(e);
-            myfunc->SetParameters(10.,mean_begin,rms);
+            double mean = N_mean.at(e);
+            myfunc->SetParameters(10.,mean,rms);
             Hist_Dark_Deconv_MSCW.at(e).Reset();
             Hist_Dark_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Dark_SR_MSCW.at(e).Integral()*100);
             Deconvolution(&Hist_Dark_ACR1_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_ABkg1Temp_MSCW.at(e),n_iter_final);
             Deconvolution(&Hist_Dark_ACR2_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_ABkg2Temp_MSCW.at(e),n_iter_final);
             Deconvolution(&Hist_Dark_CR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),n_iter_final);
             Deconvolution(&Hist_Dark_CR_MSCW.at(e),&Hist_Dark_SR_MSCW.at(e),&Hist_Dark_TrueDeconv_MSCW.at(e),n_iter_final);
-            std::cout << "Dark, e " << energy_bins[e] << ", N_rms.at(e) = " << N_rms.at(e) << std::endl;
-            std::cout << "Dark, e " << energy_bins[e] << ", mean = " << Hist_Dark_Deconv_MSCW.at(e).GetMean() << std::endl;
-            std::cout << "Dark, e " << energy_bins[e] << ", rms = " << Hist_Dark_Deconv_MSCW.at(e).GetRMS() << std::endl;
+            std::cout << "Dark, e " << energy_bins[e] << ", final mean = " << Hist_Dark_Deconv_MSCW.at(e).GetMean() << std::endl;
+            std::cout << "Dark, e " << energy_bins[e] << ", final rms = " << Hist_Dark_Deconv_MSCW.at(e).GetRMS() << std::endl;
             std::cout << "Dark, e " << energy_bins[e] << ", true Mean = " << Hist_Dark_TrueDeconv_MSCW.at(e).GetMean() << std::endl;
             std::cout << "Dark, e " << energy_bins[e] << ", true RMS = " << Hist_Dark_TrueDeconv_MSCW.at(e).GetRMS() << std::endl;
             double offset_begin = 0;
             offset_begin = Hist_Dark_SRB_MSCW.at(e).GetMean()-Hist_Dark_BkgTemp_MSCW.at(e).GetMean();
-            offset_begin = ShiftAndNormalize(&Hist_Dark_ASR1_MSCW.at(e),&Hist_Dark_ABkg1Temp_MSCW.at(e),&Hist_Dark_ABkg1_MSCW.at(e),offset_begin,-2.0,Norm_Upper,false);
-            offset_begin = ShiftAndNormalize(&Hist_Dark_ASR2_MSCW.at(e),&Hist_Dark_ABkg2Temp_MSCW.at(e),&Hist_Dark_ABkg2_MSCW.at(e),offset_begin,-2.0,Norm_Upper,false);
+            offset_begin = ShiftAndNormalize(&Hist_Dark_ASR1_MSCW.at(e),&Hist_Dark_ABkg1Temp_MSCW.at(e),&Hist_Dark_ABkg1_MSCW.at(e),offset_begin,Norm_Lower,Norm_Upper,false);
+            offset_begin = ShiftAndNormalize(&Hist_Dark_ASR2_MSCW.at(e),&Hist_Dark_ABkg2Temp_MSCW.at(e),&Hist_Dark_ABkg2_MSCW.at(e),offset_begin,Norm_Lower,Norm_Upper,false);
             offset_begin = Hist_Dark_SRB_MSCW.at(e).GetMean()-Hist_Dark_BkgTemp_MSCW.at(e).GetMean();
-            offset_begin = ShiftAndNormalize(&Hist_Dark_SR_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),&Hist_Dark_Bkg_MSCW.at(e),offset_begin,-2.0,Norm_Upper,false);
+            offset_begin = ShiftAndNormalize(&Hist_Dark_SR_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),&Hist_Dark_Bkg_MSCW.at(e),offset_begin,Norm_Lower,Norm_Upper,false);
         }
 
 
