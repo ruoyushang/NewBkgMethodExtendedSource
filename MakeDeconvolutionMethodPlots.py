@@ -29,12 +29,12 @@ global MSCL_lower_cut
 global MSCL_upper_cut
 global Depth_cut_width
 
-#Elev_lower_cut = 55
-#Elev_upper_cut = 85
+#Elev_lower_cut = 35
+#Elev_upper_cut = 55
+Elev_lower_cut = 55
+Elev_upper_cut = 85
 #Elev_lower_cut = 75
 #Elev_upper_cut = 85
-Elev_lower_cut = 35
-Elev_upper_cut = 55
 #Elev_lower_cut = 35
 #Elev_upper_cut = 85
 
@@ -395,14 +395,15 @@ def MakeDiagnosticPlot(Hists,legends,colors,title,name,doSum,doNorm):
         if Hists[h]!=0:
             Hists[h].SetLineColor(colors[h])
             Hists[h].GetXaxis().SetTitle(title)
-            Hists[h].GetXaxis().SetRangeUser(-2.0,Hists[0].GetMean()+3.*Hists[0].GetRMS())
+            if 'MSCW' in name:
+                Hists[h].GetXaxis().SetRangeUser(-2.0,Hists[0].GetMean()+3.*Hists[0].GetRMS())
             if legends[h]=='Ring':
                 Hists[h].SetLineWidth(3)
             if max_heigh < Hists[h].GetMaximum(): 
                 max_heigh = Hists[h].GetMaximum()
                 max_hist = h
 
-    Hists[max_hist].SetMinimum(0)
+    #Hists[max_hist].SetMinimum(0)
     Hists[max_hist].Draw("E")
     #Hists[0].SetMinimum(0)
     #Hists[0].Draw("E")
@@ -410,7 +411,7 @@ def MakeDiagnosticPlot(Hists,legends,colors,title,name,doSum,doNorm):
     if doSum:
         Hist_Sum = Hists[2].Clone()
         Hist_Sum.Add(Hists[1])
-        Hist_Sum.SetMinimum(0)
+        #Hist_Sum.SetMinimum(0)
         set_histStyle( Hist_Sum , 38)
         stack = ROOT.THStack("stack", "")
         stack.Add( Hist_Sum )
@@ -468,7 +469,9 @@ def MakeDiagnosticPlot(Hists,legends,colors,title,name,doSum,doNorm):
     lumilab5.SetNDC()
     lumilab5.SetTextSize(0.15)
     lumilab5.Draw()
-    #pad1.SetLogy()
+    if 'Energy' in name:
+        pad1.SetLogy()
+        pad1.SetLogx()
     c_both.SaveAs('output_plots/%s_%s_Elev%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Region))
 
 def Make2DSignificancePlot(Hist_SR,Hist_Bkg,xtitle,ytitle,name):
@@ -614,6 +617,22 @@ for s in source_list:
     #Make2DProjectionPlot(Hist_Target_ErecSDepth,'E [GeV]','Slant depth [37g/cm^{2}]','ErecS_vs_SlantDepth')
     Hist_Target_ElevDepth = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_ON_ElevDepth')
     #Make2DProjectionPlot(Hist_Target_ElevDepth,'Tel. elev.','Slant depth - d(E) [37g/cm^{2}]','Elev_vs_SlantDepth')
+
+    Hist_Target_SR_Energy = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_Energy')
+    Hist_Target_Bkg_Energy = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_Energy')
+    Hists = []
+    legends = []
+    colors = []
+    Hists += [Hist_Target_SR_Energy]
+    legends += ['SR']
+    colors += [4]
+    Hists += [Hist_Target_Bkg_Energy]
+    legends += ['Bkg']
+    colors += [2]
+    plotname = 'Target_Energy'
+    title = 'E [GeV]'
+    MakeDiagnosticPlot(Hists,legends,colors,title,plotname,False,False)
+
     for e in range(0,len(energy_list)-1):
         ErecS_lower_cut = energy_list[e]
         ErecS_upper_cut = energy_list[e+1]
@@ -652,7 +671,7 @@ for s in source_list:
 
         Hist_Target_SR_SkyMap = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_SkyMap')
         Hist_Target_Bkg_SkyMap = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_SkyMap')
-        #Make2DSignificancePlot(Hist_Target_SR_SkyMap,Hist_Target_Bkg_SkyMap,"RA","Dec","SkyMap_E%s"%(ErecS_lower_cut))
+        Make2DSignificancePlot(Hist_Target_SR_SkyMap,Hist_Target_Bkg_SkyMap,"RA","Dec","SkyMap_E%s"%(ErecS_lower_cut))
 
         Hist_Target_SR_Theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_Theta2')
         Hist_Target_Bkg_Theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_Theta2')
