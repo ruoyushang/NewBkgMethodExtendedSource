@@ -548,9 +548,9 @@ vector<int> GetRunList(string source) {
         return list;
 }
 bool FoV() {
-    //if (theta2<4.0) return true;
+    if (theta2<4.0) return true;
     //if (theta2<0.5) return true;
-    if (theta2<1.0) return true;
+    //if (theta2<1.0) return true;
     //if (theta2>0.2 && theta2<0.4) return true;
     return false;
 }
@@ -653,7 +653,7 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, double norm_low, double norm_up, boo
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
         if (Hist_Bkg->GetBinCenter(i+1)<norm_low) continue;
         if (Hist_Bkg->GetBinCenter(i+1)>norm_up) continue;
-        if (Hist_Bkg->GetBinCenter(i+1)>mean+5.*rms) continue;
+        //if (Hist_Bkg->GetBinCenter(i+1)>mean+5.*rms) continue;
         //if (Hist_Bkg->GetBinContent(i+1)==0) continue;
         double bkg = Hist_Bkg->GetBinContent(i+1);
         double data = Hist_SR->GetBinContent(i+1);
