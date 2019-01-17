@@ -84,10 +84,10 @@ double dec_sky = 0;
 //double energy_bins[N_energy_bins+1] = {1500,2000};
 //const int N_energy_bins = 10;
 //double energy_bins[N_energy_bins+1] = {150,200,250,300,400,600,1000,1500,2000,4000,10000};
-//const int N_energy_bins = 7;
-//double energy_bins[N_energy_bins+1] = {300,400,600,1000,1500,2000,4000,10000};
-const int N_energy_bins = 4;
-double energy_bins[N_energy_bins+1] = {1000,1500,2000,4000,10000};
+const int N_energy_bins = 7;
+double energy_bins[N_energy_bins+1] = {300,400,600,1000,1500,2000,4000,10000};
+//const int N_energy_bins = 4;
+//double energy_bins[N_energy_bins+1] = {1000,1500,2000,4000,10000};
 //const int N_energy_bins = 23;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0),pow(10,4.1),pow(10,4.2),pow(10,4.3),pow(10,4.4)};
 const int N_energy_bins_log = 23;
@@ -552,14 +552,14 @@ vector<int> GetRunList(string source) {
 bool FoV() {
     //if (theta2<4.0) return true;
     //if (theta2>2.0) return true;
-    if (theta2<0.5) return true;
-    //if (theta2<1.0) return true;
+    //if (theta2<0.5) return true;
+    if (theta2<1.0) return true;
     //if (theta2>0.2 && theta2<4.0) return true;
     return false;
 }
 bool RingFoV() {
-    if (theta2<0.5) return false;
-    //if (theta2<1.0) return false;
+    //if (theta2<0.5) return false;
+    if (theta2<1.0) return false;
     //if (theta2>4.0) return false;
     return true;
 }
@@ -654,18 +654,16 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, double norm_low, double norm_up, boo
     double mean = Hist_SR->GetMean();
     double rms = Hist_SR->GetRMS();
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
-        //if (Hist_Bkg->GetBinCenter(i+1)<norm_low) continue;
+        if (Hist_Bkg->GetBinCenter(i+1)<-2.) continue;
         if (Hist_Bkg->GetBinCenter(i+1)>norm_up) continue;
         //if (Hist_Bkg->GetBinCenter(i+1)>mean+8.*rms) continue;
         if (Hist_Bkg->GetBinCenter(i+1)>mean+4.*rms) continue;
-        //if (Hist_Bkg->GetBinContent(i+1)==0) continue;
         double bkg = Hist_Bkg->GetBinContent(i+1);
         double data = Hist_SR->GetBinContent(i+1);
         double bkg_err = Hist_Bkg->GetBinError(i+1);
         double data_err = Hist_SR->GetBinError(i+1);
-        if (data_err==0) data_err = 1.;
+        if (data_err==0) data_err = 0.1;
         if (!includeSR && Hist_Bkg->GetBinCenter(i+1)>-0.7 && Hist_Bkg->GetBinCenter(i+1)<Norm_Lower) {
-            //data = 0.;
             continue;
         }
         //chi2_temp += pow(bkg-data,2)/Hist_SR->Integral();
@@ -921,13 +919,13 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         }
 
         std::cout << "Getting dark runs... " << std::endl;
-        //vector<int> Dark_runlist = GetRunList("Crab");
-        vector<int> Dark_runlist = GetRunList("PKS1424");
+        vector<int> Dark_runlist = GetRunList("Crab");
+        //vector<int> Dark_runlist = GetRunList("PKS1424");
         for (int run=0;run<Dark_runlist.size();run++) {
                 char run_number[50];
                 sprintf(run_number, "%i", int(Dark_runlist[run]));
-                //filename = TString("$VERITAS_USER_DATA_DIR/Crab_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
-                filename = TString("$VERITAS_USER_DATA_DIR/PKS1424_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
+                filename = TString("$VERITAS_USER_DATA_DIR/Crab_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
+                //filename = TString("$VERITAS_USER_DATA_DIR/PKS1424_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
                 TFile*  input_file = TFile::Open(filename.c_str());
                 //std::cout << "Open " << filename << std::endl;
                 TTree* pointing_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/pointingDataReduced");
@@ -944,8 +942,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         Hist_Dark_TelElevAzim.Fill(TelElevation,TelAzimuth);
                 }
 
-                //TTree* Dark_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/data_off");
-                TTree* Dark_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/data_on");
+                TTree* Dark_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/data_off");
+                //TTree* Dark_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/data_on");
                 Dark_tree->SetBranchAddress("ErecS",&ErecS);
                 Dark_tree->SetBranchAddress("EChi2S",&EChi2S);
                 Dark_tree->SetBranchAddress("MSCW",&MSCW);
@@ -960,14 +958,14 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         if (e>=N_energy_bins) continue;
                         if (e<0) continue;
                         if (!QualitySelection()) continue;
-                        //if (FoV()) {
+                        if (FoV()) {
                             if (SignalSelectionMSCW()) Hist_Dark_SR_MSCW.at(e).Fill(MSCW);
                             if (ControlSelectionMSCW()) Hist_Dark_CR_MSCW.at(e).Fill(MSCW);
                             if (Aux1SignalSelectionMSCW()) Hist_Dark_ASR1_MSCW.at(e).Fill(MSCW);
                             if (Aux1ControlSelectionMSCW()) Hist_Dark_ACR1_MSCW.at(e).Fill(MSCW);
                             if (Aux2SignalSelectionMSCW()) Hist_Dark_ASR2_MSCW.at(e).Fill(MSCW);
                             if (Aux2ControlSelectionMSCW()) Hist_Dark_ACR2_MSCW.at(e).Fill(MSCW);
-                        //}
+                        }
                 }
                 input_file->Close();
 
