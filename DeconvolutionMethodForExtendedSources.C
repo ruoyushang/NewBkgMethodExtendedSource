@@ -39,9 +39,9 @@ double Target_Elev_cut_lower = 0;
 double Target_Elev_cut_upper = 0;
 
 double MSCW_cut_lower = -0.5;
-double MSCW_cut_upper = 0.5;
+double MSCW_cut_upper = 1.0;
 double MSCL_signal_cut_lower = -0.5;
-double MSCL_signal_cut_upper = 0.5;
+double MSCL_signal_cut_upper = 1.0;
 double MSCL_control_cut_lower = 1.0;
 double MSCL_control_cut_upper = 1.2;
 
@@ -117,13 +117,13 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR) {
     double mean = Hist_SR->GetMean();
     double rms = Hist_SR->GetRMS();
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
-        if (Hist_Bkg->GetBinCenter(i+1)<mean-8.*rms) continue;
-        if (Hist_Bkg->GetBinCenter(i+1)>mean+8.*rms) continue;
+        if (Hist_Bkg->GetBinCenter(i+1)<mean-3.*rms) continue;
+        if (Hist_Bkg->GetBinCenter(i+1)>mean+3.*rms) continue;
         double bkg = Hist_Bkg->GetBinContent(i+1);
         double data = Hist_SR->GetBinContent(i+1);
         double bkg_err = Hist_Bkg->GetBinError(i+1);
         double data_err = Hist_SR->GetBinError(i+1);
-        if (data_err==0) data_err = 0.1;
+        //if (data_err==0) data_err = 0.1;
         if (!includeSR && Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_upper) {
             continue;
         }
@@ -365,6 +365,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 char run_number[50];
                 sprintf(run_number, "%i", int(Target_runlist[run]));
                 filename = TString("$VERITAS_USER_DATA_DIR/"+TString(observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
+                if (TString(observation)=="Coma") {
+                  filename = TString("/veritas/userspace/brandon/VERITAS/Background/anasum/"+TString(run_number)+".anasum.root");
+                }
                 TFile*  input_file = TFile::Open(filename.c_str());
                 TTree* pointing_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/pointingDataReduced");
                 pointing_tree->SetBranchAddress("TelElevation",&TelElevation);
@@ -378,9 +381,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 }
 
                 TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
-                if (TString(observation)=="BrandonValidation") {
-                    root_file = "run_"+TString(run_number)+"/stereo/data_on";
-                }
                 TTree* Target_tree = (TTree*) input_file->Get(root_file);
                 Target_tree->SetBranchAddress("theta2",&theta2);
                 Target_tree->SetBranchAddress("ErecS",&ErecS);
@@ -477,6 +477,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
 
             double n_iter_final = N_iter.at(e);
             double chi2_best = 0.;
+            chi2_best = 0.;
             for (int delta_n_iter = 1;delta_n_iter<=100;delta_n_iter++) {
                   int n_iter = delta_n_iter;
                   //int n_iter = N_iter.at(e);
@@ -502,6 +503,49 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                       N_iter.at(e) = n_iter;
                   } 
             }
+            chi2_best = 0.;
+            std::cout << "Dark, e " << energy_bins[e] << ", initial mean = " << N_mean.at(e) << std::endl;
+            std::cout << "Dark, e " << energy_bins[e] << ", initial rms = " << N_rms.at(e) << std::endl;
+            std::cout << "Dark, e " << energy_bins[e] << ", n_iter_final = " << n_iter_final << std::endl;
+            for (int n_rms = 0; n_rms<=20;n_rms++) {
+                double offset_begin = 0;
+                double chi2 = 0;
+                double rms = N_rms.at(e)-0.5*N_rms.at(e)+double(n_rms)*1.0*N_rms.at(e)/20.;
+                double mean = N_mean.at(e);
+                myfunc->SetParameters(10.,mean,rms);
+                Hist_Dark_Deconv_MSCW.at(e).Reset();
+                Hist_Dark_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Dark_SR_MSCW.at(e).Integral()*100);
+                Deconvolution(&Hist_Dark_CR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),n_iter_final);
+                offset_begin = Hist_Dark_SR_MSCW.at(e).GetMean()-Hist_Dark_BkgTemp_MSCW.at(e).GetMean();
+                offset_begin = ShiftAndNormalize(&Hist_Dark_SR_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),&Hist_Dark_Bkg_MSCW.at(e),offset_begin,true);
+                chi2 = GetChi2(&Hist_Dark_SR_MSCW.at(e), &Hist_Dark_Bkg_MSCW.at(e),true);
+                if (chi2_best<chi2) {
+                    chi2_best = chi2;
+                    N_rms.at(e) = rms;
+                    N_mean.at(e) = mean;
+                } 
+            }
+            chi2_best = 0.;
+            for (int delta_n_iter = 1;delta_n_iter<=100;delta_n_iter++) {
+                  int n_iter = delta_n_iter;
+                  double offset_begin = 0;
+                  double chi2 = 0;
+                  double rms = N_rms.at(e);
+                  double mean = N_mean.at(e);
+                  myfunc->SetParameters(10.,mean,rms);
+                  Hist_Dark_Deconv_MSCW.at(e).Reset();
+                  Hist_Dark_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Dark_SR_MSCW.at(e).Integral()*100);
+                  Deconvolution(&Hist_Dark_CR_MSCW.at(e),&Hist_Dark_Deconv_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),n_iter);
+                  offset_begin = Hist_Dark_SR_MSCW.at(e).GetMean()-Hist_Dark_BkgTemp_MSCW.at(e).GetMean();
+                  offset_begin = ShiftAndNormalize(&Hist_Dark_SR_MSCW.at(e),&Hist_Dark_BkgTemp_MSCW.at(e),&Hist_Dark_Bkg_MSCW.at(e),offset_begin,true);
+                  chi2 = GetChi2(&Hist_Dark_SR_MSCW.at(e), &Hist_Dark_Bkg_MSCW.at(e),true);
+                  if (chi2_best<chi2) {
+                      chi2_best = chi2;
+                      n_iter_final = n_iter;
+                      N_iter.at(e) = n_iter;
+                  } 
+            }
+            chi2_best = 0.;
             std::cout << "Dark, e " << energy_bins[e] << ", initial mean = " << N_mean.at(e) << std::endl;
             std::cout << "Dark, e " << energy_bins[e] << ", initial rms = " << N_rms.at(e) << std::endl;
             std::cout << "Dark, e " << energy_bins[e] << ", n_iter_final = " << n_iter_final << std::endl;
@@ -551,6 +595,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
 
             double n_iter_final = N_iter.at(e);
             double chi2_best = 0.;
+            chi2_best = 0.;
             for (int delta_n_iter = 1;delta_n_iter<=100;delta_n_iter++) {
                   int n_iter = delta_n_iter;
                   //int n_iter = N_iter.at(e);
@@ -573,6 +618,46 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                       n_iter_final = n_iter;
                   } 
             }
+            chi2_best = 0.;
+            std::cout << "Target, e " << energy_bins[e] << ", initial mean = " << N_mean.at(e) << std::endl;
+            std::cout << "Target, e " << energy_bins[e] << ", initial rms = " << N_rms.at(e) << std::endl;
+            std::cout << "Target, e " << energy_bins[e] << ", n_iter_final = " << n_iter_final << std::endl;
+            for (int n_rms = 0; n_rms<=100;n_rms++) {
+                double offset_begin = N_shift.at(e);
+                double chi2 = 0;
+                double rms = N_rms.at(e)-0.5*N_rms.at(e)+double(n_rms)*1.0*N_rms.at(e)/100.;
+                double mean = N_mean.at(e);
+                myfunc->SetParameters(10.,mean,rms);
+                Hist_Target_Deconv_MSCW.at(e).Reset();
+                Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Target_SR_MSCW.at(e).Integral()*100);
+                Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),n_iter_final);
+                offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Bkg_MSCW.at(e),offset_begin,true);
+                chi2 = GetChi2(&Hist_Target_SR_MSCW.at(e), &Hist_Target_Bkg_MSCW.at(e),false);
+                if (chi2_best<chi2) {
+                    chi2_best = chi2;
+                    N_rms.at(e) = rms;
+                    N_mean.at(e) = mean;
+                } 
+            }
+            chi2_best = 0.;
+            for (int delta_n_iter = 1;delta_n_iter<=100;delta_n_iter++) {
+                  int n_iter = delta_n_iter;
+                  double offset_begin = N_shift.at(e);
+                  double chi2 = 0;
+                  double rms = N_rms.at(e);
+                  double mean = N_mean.at(e);
+                  myfunc->SetParameters(10.,mean,rms);
+                  Hist_Target_Deconv_MSCW.at(e).Reset();
+                  Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Target_SR_MSCW.at(e).Integral()*100);
+                  Deconvolution(&Hist_Target_CR_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),n_iter);
+                  offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Bkg_MSCW.at(e),offset_begin,true);
+                  chi2 = GetChi2(&Hist_Target_SR_MSCW.at(e), &Hist_Target_Bkg_MSCW.at(e),false);
+                  if (chi2_best<chi2) {
+                      chi2_best = chi2;
+                      n_iter_final = n_iter;
+                  } 
+            }
+            chi2_best = 0.;
             std::cout << "Target, e " << energy_bins[e] << ", initial mean = " << N_mean.at(e) << std::endl;
             std::cout << "Target, e " << energy_bins[e] << ", initial rms = " << N_rms.at(e) << std::endl;
             std::cout << "Target, e " << energy_bins[e] << ", n_iter_final = " << n_iter_final << std::endl;
