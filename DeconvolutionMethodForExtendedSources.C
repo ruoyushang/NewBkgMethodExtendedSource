@@ -140,6 +140,7 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
     double rms = Hist_SR->GetRMS();
     int norm_bin_low = 0;
     int norm_bin_up = 0;
+    double norm = Hist_BkgTemp->Integral();
     if (doShift) {
         for (int fit=0;fit<200;fit++) {
                 double shift = shift_begin-10.0+double(fit)*0.1;
@@ -148,6 +149,7 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
                         Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
                         Hist_Bkg->SetBinError(i+1,Hist_BkgTemp->GetBinError(b));
                 }
+                Hist_Bkg->Scale(norm/Hist_Bkg->Integral());
                 norm_bin_low = Hist_SR->FindBin(mean-8.*rms);
                 norm_bin_up = Hist_SR->FindBin(MSCW_cut_lower);
                 double SR_area1 = Hist_SR->Integral(norm_bin_low,norm_bin_up);
@@ -156,14 +158,25 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
                 norm_bin_up = Hist_SR->FindBin(mean+8.*rms);
                 double SR_area2 = Hist_SR->Integral(norm_bin_low,norm_bin_up);
                 double Bkg_area2 = Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
-                double scale = (SR_area1+SR_area2)/(Bkg_area1+Bkg_area2);
-                Hist_Bkg->Scale(scale);
-                double chi2_temp = GetChi2(Hist_SR, Hist_Bkg,false);
-                if (chi2<chi2_temp) {
-                    chi2 = chi2_temp;
-                    shift_fit = shift;
-                    scale_fit = scale;
-                } 
+                double scale_begin = (SR_area1+SR_area2)/(Bkg_area1+Bkg_area2);
+                for (int ds=0;ds<20;ds++) {
+                    double scale = scale_begin -0.2*scale_begin +0.4*scale_begin*double(ds)/20.;
+                    Hist_Bkg->Scale(norm/Hist_Bkg->Integral());
+                    Hist_Bkg->Scale(scale);
+                    double chi2_temp = GetChi2(Hist_SR, Hist_Bkg,false);
+                    if (chi2<chi2_temp) {
+                        chi2 = chi2_temp;
+                        shift_fit = shift;
+                        scale_fit = scale;
+                    } 
+                }
+                //    Hist_Bkg->Scale(scale_begin);
+                //    double chi2_temp = GetChi2(Hist_SR, Hist_Bkg,false);
+                //    if (chi2<chi2_temp) {
+                //        chi2 = chi2_temp;
+                //        shift_fit = shift;
+                //        scale_fit = scale_begin;
+                //    } 
         }
     }
     else {
@@ -174,16 +187,17 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
             Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
             Hist_Bkg->SetBinError(i+1,Hist_BkgTemp->GetBinError(b));
     }
-    norm_bin_low = Hist_SR->FindBin(mean-8.*rms);
-    norm_bin_up = Hist_SR->FindBin(MSCW_cut_lower);
-    double SR_area1 = Hist_SR->Integral(norm_bin_low,norm_bin_up);
-    double Bkg_area1 = Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
-    norm_bin_low = Hist_SR->FindBin(MSCW_cut_upper);
-    norm_bin_up = Hist_SR->FindBin(mean+8.*rms);
-    double SR_area2 = Hist_SR->Integral(norm_bin_low,norm_bin_up);
-    double Bkg_area2 = Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
-    double scale = (SR_area1+SR_area2)/(Bkg_area1+Bkg_area2);
-    Hist_Bkg->Scale(scale);
+    //norm_bin_low = Hist_SR->FindBin(mean-8.*rms);
+    //norm_bin_up = Hist_SR->FindBin(MSCW_cut_lower);
+    //double SR_area1 = Hist_SR->Integral(norm_bin_low,norm_bin_up);
+    //double Bkg_area1 = Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
+    //norm_bin_low = Hist_SR->FindBin(MSCW_cut_upper);
+    //norm_bin_up = Hist_SR->FindBin(mean+8.*rms);
+    //double SR_area2 = Hist_SR->Integral(norm_bin_low,norm_bin_up);
+    //double Bkg_area2 = Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
+    //double scale = (SR_area1+SR_area2)/(Bkg_area1+Bkg_area2);
+    Hist_Bkg->Scale(norm/Hist_Bkg->Integral());
+    Hist_Bkg->Scale(scale_fit);
     return shift_fit;
 }
 
