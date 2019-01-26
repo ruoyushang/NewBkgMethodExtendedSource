@@ -34,9 +34,13 @@ char Region[50] = "SR";
 
 double Elev_cut_lower = 0;
 double Elev_cut_upper = 0;
-
 double Target_Elev_cut_lower = 0;
 double Target_Elev_cut_upper = 0;
+
+double Azim_cut_lower = 0;
+double Azim_cut_upper = 0;
+double Target_Azim_cut_lower = 0;
+double Target_Azim_cut_upper = 0;
 
 double MSCW_cut_lower = -0.5;
 double MSCW_cut_upper = 0.5;
@@ -58,6 +62,8 @@ double Norm_Upper = 20.0;
 string  filename;
 double TelElevation = 0;
 double TelAzimuth = 0;
+double TelRAJ2000 = 0;
+double TelDecJ2000 = 0;
 double ErecS = 0;
 double EChi2S = 0;
 double MSCW = 0;
@@ -75,8 +81,8 @@ double dec_sky = 0;
 //double energy_bins[N_energy_bins+1] = {150,200,250,300,400,600,1000,1500,2000,4000,10000};
 //const int N_energy_bins = 7;
 //double energy_bins[N_energy_bins+1] = {300,400,600,1000,1500,2000,4000,10000};
-const int N_energy_bins = 4;
-double energy_bins[N_energy_bins+1] = {1000,1500,2000,4000,10000};
+const int N_energy_bins = 5;
+double energy_bins[N_energy_bins+1] = {1000,1500,2000,3000,4000,10000};
 
 int N_bins_for_deconv = 480;
 
@@ -290,7 +296,7 @@ void Convolution(TH1D* Hist_source, TH1D* Hist_response, TH1D* Hist_Conv) {
         }
 }
 
-void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower, double elev_upper) {
+void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower, double elev_upper, double azim_lower, double azim_upper) {
 
         //TH1::SetDefaultSumw2();
         sprintf(target, "%s", target_data.c_str());
@@ -298,6 +304,10 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         Target_Elev_cut_upper = elev_upper;
         Elev_cut_lower = elev_lower;
         Elev_cut_upper = elev_upper;
+        Target_Azim_cut_lower = azim_lower;
+        Target_Azim_cut_upper = azim_upper;
+        Azim_cut_lower = azim_lower;
+        Azim_cut_upper = azim_upper;
 
         if (TString(Region)=="VR") {
                 MSCW_cut_lower = 1.5;
@@ -310,7 +320,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
 
         TRandom rnd;
         TH2D Hist_Dark_TelElevAzim("Hist_Dark_TelElevAzim","",90,0,90,360,0,360);
+        TH2D Hist_Dark_TelRaDec("Hist_Dark_TelRaDec","",100,0,5,100,-1,1);
         TH2D Hist_Target_TelElevAzim("Hist_Target_TelElevAzim","",90,0,90,360,0,360);
+        TH2D Hist_Target_TelRaDec("Hist_Target_TelRaDec","",100,0,5,100,-1,1);
         TH1D Hist_Target_ON_MSCW_Alpha("Hist_Target_ON_MSCW_Alpha","",100,0,10);
         TH1D Hist_Target_OFF_MSCW_Alpha("Hist_Target_OFF_MSCW_Alpha","",100,0,10);
         vector<TH1D> Hist_Dark_SR_ErecS;
@@ -400,14 +412,19 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 TTree* pointing_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/pointingDataReduced");
                 pointing_tree->SetBranchAddress("TelElevation",&TelElevation);
                 pointing_tree->SetBranchAddress("TelAzimuth",&TelAzimuth);
+                pointing_tree->SetBranchAddress("TelRAJ2000",&TelRAJ2000);
+                pointing_tree->SetBranchAddress("TelDecJ2000",&TelDecJ2000);
                 pointing_tree->GetEntry(0);
                 if (TelElevation<Elev_cut_lower) continue;
                 if (TelElevation>Elev_cut_upper) continue;
+                if (TelAzimuth<Azim_cut_lower) continue;
+                if (TelAzimuth>Azim_cut_upper) continue;
                 //if (TelElevation<55.) continue;
                 //if (TelElevation>85.) continue;
                 for (int entry=0;entry<pointing_tree->GetEntries();entry++) {
                         pointing_tree->GetEntry(entry);
                         Hist_Dark_TelElevAzim.Fill(TelElevation,TelAzimuth);
+                        Hist_Dark_TelRaDec.Fill(TelRAJ2000,TelDecJ2000);
                 }
 
                 //TTree* Dark_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/data_off");
@@ -451,12 +468,17 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 TTree* pointing_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/pointingDataReduced");
                 pointing_tree->SetBranchAddress("TelElevation",&TelElevation);
                 pointing_tree->SetBranchAddress("TelAzimuth",&TelAzimuth);
+                pointing_tree->SetBranchAddress("TelRAJ2000",&TelRAJ2000);
+                pointing_tree->SetBranchAddress("TelDecJ2000",&TelDecJ2000);
                 pointing_tree->GetEntry(0);
                 if (TelElevation<Target_Elev_cut_lower) continue;
                 if (TelElevation>Target_Elev_cut_upper) continue;
+                if (TelAzimuth<Target_Azim_cut_lower) continue;
+                if (TelAzimuth>Target_Azim_cut_upper) continue;
                 for (int entry=0;entry<pointing_tree->GetEntries();entry++) {
                         pointing_tree->GetEntry(entry);
                         Hist_Target_TelElevAzim.Fill(TelElevation,TelAzimuth);
+                        Hist_Target_TelRaDec.Fill(TelRAJ2000,TelDecJ2000);
                 }
 
                 TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
@@ -693,7 +715,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         int norm_bin_up_ring = Hist_Target_ON_MSCW_Alpha.FindBin(Norm_Upper);
         double scale_ring = Hist_Target_ON_MSCW_Alpha.Integral(norm_bin_low_ring,norm_bin_up_ring)/Hist_Target_OFF_MSCW_Alpha.Integral(norm_bin_low_ring,norm_bin_up_ring);
 
-        TFile OutputFile("output/Deconvolution_"+TString(target)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_"+TString(Region)+".root","recreate"); 
+        TFile OutputFile("output/Deconvolution_"+TString(target)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_"+TString(Region)+".root","recreate"); 
         TTree InfoTree("InfoTree","info tree");
         InfoTree.Branch("MSCW_cut_lower",&MSCW_cut_lower,"MSCW_cut_lower/D");
         InfoTree.Branch("MSCW_cut_upper",&MSCW_cut_upper,"MSCW_cut_upper/D");
@@ -705,10 +727,16 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         InfoTree.Branch("Elev_cut_upper",&Elev_cut_upper,"Elev_cut_upper/D");
         InfoTree.Branch("Target_Elev_cut_lower",&Target_Elev_cut_lower,"Target_Elev_cut_lower/D");
         InfoTree.Branch("Target_Elev_cut_upper",&Target_Elev_cut_upper,"Target_Elev_cut_upper/D");
+        InfoTree.Branch("Azim_cut_lower",&Azim_cut_lower,"Azim_cut_lower/D");
+        InfoTree.Branch("Azim_cut_upper",&Azim_cut_upper,"Azim_cut_upper/D");
+        InfoTree.Branch("Target_Azim_cut_lower",&Target_Azim_cut_lower,"Target_Azim_cut_lower/D");
+        InfoTree.Branch("Target_Azim_cut_upper",&Target_Azim_cut_upper,"Target_Azim_cut_upper/D");
         InfoTree.Fill();
         InfoTree.Write();
         Hist_Target_TelElevAzim.Write();
+        Hist_Target_TelRaDec.Write();
         Hist_Dark_TelElevAzim.Write();
+        Hist_Dark_TelRaDec.Write();
         for (int e=0;e<N_energy_bins;e++) {
                 Hist_Dark_SR_MSCW.at(e).Write();
                 Hist_Dark_SR_MSCL.at(e).Write();
