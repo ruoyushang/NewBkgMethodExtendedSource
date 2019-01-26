@@ -39,7 +39,7 @@ double Target_Elev_cut_lower = 0;
 double Target_Elev_cut_upper = 0;
 
 double MSCW_cut_lower = -0.5;
-double MSCW_cut_upper = 1.0;
+double MSCW_cut_upper = 0.5;
 double MSCL_signal_cut_lower = -0.5;
 double MSCL_signal_cut_upper = 0.5;
 double MSCL_control_cut_lower = 0.8;
@@ -84,8 +84,9 @@ bool FoV() {
     //if (theta2<4.0) return true;
     //if (theta2>2.0) return true;
     //if (theta2<0.5) return true;
-    if (theta2<1.0) return true;
+    //if (theta2<1.0) return true;
     //if (theta2>2.0 && theta2<4.0) return true;
+    if (theta2>1.0 && theta2<3.0) return true;
     return false;
 }
 bool RingFoV() {
@@ -441,7 +442,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 char run_number[50];
                 sprintf(run_number, "%i", int(Target_runlist[run]));
                 filename = TString("$VERITAS_USER_DATA_DIR/"+TString(observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
-                if (TString(observation)=="Coma") {
+                if (TString(observation)=="Coma" || TString(observation)=="BrandonValidation") {
                   filename = TString("/veritas/userspace/brandon/VERITAS/Background/anasum/"+TString(run_number)+".anasum.root");
                 }
                 TFile*  input_file = TFile::Open(filename.c_str());
