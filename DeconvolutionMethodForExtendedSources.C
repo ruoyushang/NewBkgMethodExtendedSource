@@ -88,14 +88,8 @@ int N_bins_for_deconv = 480;
 
 bool FoV() {
     if (theta2>4.0) return false;
-    //if (theta2<4.0) return true;
-    //if (theta2<2.0) return true;
-    //if (theta2<0.5) return true;
-    if (theta2>0.5) return true;
-    //if (theta2<1.0) return true;
-    //if (theta2>2.0 && theta2<4.0) return true;
-    //if (theta2>1.0 && theta2<3.0) return true;
-    return false;
+    //if (theta2>0.5) return true;
+    return true;
 }
 bool RingFoV() {
     if (theta2>4.0) return false;
@@ -322,9 +316,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         }
 
         TRandom rnd;
-        TH2D Hist_Dark_TelElevAzim("Hist_Dark_TelElevAzim","",9,0,90,18,0,360);
+        TH2D Hist_Dark_TelElevAzim("Hist_Dark_TelElevAzim","",18,0,90,18,0,360);
         TH2D Hist_Dark_TelRaDec("Hist_Dark_TelRaDec","",100,0,5,100,-1,1);
-        TH2D Hist_Target_TelElevAzim("Hist_Target_TelElevAzim","",9,0,90,18,0,360);
+        TH2D Hist_Target_TelElevAzim("Hist_Target_TelElevAzim","",18,0,90,18,0,360);
         TH2D Hist_Target_TelRaDec("Hist_Target_TelRaDec","",100,0,5,100,-1,1);
         TH2D Hist_Target_TelRaDec_AfterCut("Hist_Target_TelRaDec_AfterCut","",100,0,5,100,-1,1);
         TH1D Hist_Target_ON_MSCW_Alpha("Hist_Target_ON_MSCW_Alpha","",100,0,10);
