@@ -87,19 +87,20 @@ double energy_bins[N_energy_bins+1] = {300,400,600,1000,1500,2000,4000,10000};
 int N_bins_for_deconv = 480;
 
 bool FoV() {
-    if (theta2<4.0) return true;
+    if (theta2>4.0) return false;
+    //if (theta2<4.0) return true;
     //if (theta2<2.0) return true;
     //if (theta2<0.5) return true;
+    if (theta2>0.5) return true;
     //if (theta2<1.0) return true;
     //if (theta2>2.0 && theta2<4.0) return true;
     //if (theta2>1.0 && theta2<3.0) return true;
     return false;
 }
 bool RingFoV() {
+    if (theta2>4.0) return false;
     if (theta2<0.5) return false;
     if (FoV()) return false;
-    //if (theta2<1.0) return false;
-    //if (theta2>4.0) return false;
     return true;
 }
 bool QualitySelection() {
@@ -373,9 +374,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         vector<TH2D> Hist_Target_SR_SkyMap;
         vector<TH2D> Hist_Target_CR_SkyMap;
         vector<TH2D> Hist_Target_Bkg_SkyMap;
-        vector<TH1D> Hist_Target_SR_Theta2;
-        vector<TH1D> Hist_Target_CR_Theta2;
-        vector<TH1D> Hist_Target_Bkg_Theta2;
         for (int e=0;e<N_energy_bins;e++) {
             char e_low[50];
             sprintf(e_low, "%i", int(energy_bins[e]));
@@ -728,6 +726,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 Hist_Dark_SR_MSCL.at(e).Scale(scale_target);
                 Hist_Dark_SRB_MSCW.at(e).Scale(scale_target);
                 Hist_Dark_Bkg_MSCW.at(e).Scale(scale_target);
+                Hist_Dark_theta2.at(e).Scale(scale_target);
         }
 
         // Get ring bkg
@@ -751,7 +750,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     Hist_Target_Bkg_theta2.at(e).SetBinContent(bin,Hist_Dark_theta2.at(e).GetBinContent(bin));
                     Hist_Target_Bkg_theta2.at(e).SetBinError(bin,Hist_Dark_theta2.at(e).GetBinError(bin));
                 }
-                double old_integral = (double) Hist_Target_Bkg_theta2.at(e).Integral();
+                //double old_integral = (double) Hist_Target_Bkg_theta2.at(e).Integral();
+                double old_integral = (double) Hist_Dark_SR_MSCW.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
                 std::cout << "total_bkg = " << total_bkg << std::endl;
                 std::cout << "old_integral = " << old_integral << std::endl;
                 Hist_Target_Bkg_theta2.at(e).Scale(total_bkg/old_integral);
