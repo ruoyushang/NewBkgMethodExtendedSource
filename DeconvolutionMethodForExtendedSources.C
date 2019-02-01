@@ -48,7 +48,7 @@ double Theta2_cut_upper = 0;
 
 // V6
 double MSCW_cut_lower = -0.5;
-double MSCW_cut_upper = 0.5;
+double MSCW_cut_upper = 1.0;
 double MSCL_signal_cut_lower = -0.5;
 double MSCL_signal_cut_upper = 0.5;
 double MSCL_control_cut_lower = 0.8;
@@ -135,12 +135,8 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR) {
     double mean = Hist_SR->GetMean();
     double rms = Hist_SR->GetRMS();
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
-        //if (Hist_SR->GetBinCenter(i+1)<mean-3.*rms) continue;
-        //if (Hist_SR->GetBinCenter(i+1)>mean+3.*rms) continue;
-        //if (Hist_SR->GetBinCenter(i+1)<mean-4.*rms) continue;
-        //if (Hist_SR->GetBinCenter(i+1)>mean+4.*rms) continue;
-        if (Hist_SR->GetBinCenter(i+1)<mean-5.*rms) continue;
-        if (Hist_SR->GetBinCenter(i+1)>mean+5.*rms) continue;
+        //if (Hist_SR->GetBinCenter(i+1)<mean-5.*rms) continue;
+        //if (Hist_SR->GetBinCenter(i+1)>mean+5.*rms) continue;
         //if (Hist_SR->GetBinCenter(i+1)<mean-6.*rms) continue;
         //if (Hist_SR->GetBinCenter(i+1)>mean+6.*rms) continue;
         //if (Hist_SR->GetBinCenter(i+1)<mean-8.*rms) continue;
