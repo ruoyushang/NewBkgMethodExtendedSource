@@ -783,7 +783,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 /// Do not include SR
                 //N_iter.at(e) = FindNIteration(&Hist_Target_SR_MSCW.at(e),&Hist_Target_CR_MSCW.at(e),&Hist_Target_Bkg_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),rms_begin,mean_begin,false);
                 std::cout << "Target, e " << energy_bins[e] << ", N_iter.at(e) = " << N_iter.at(e) << std::endl;
-                N_rms.at(e) = FindRMS(&Hist_Target_SR_MSCW.at(e),&Hist_Target_CR_MSCW.at(e),&Hist_Target_Bkg_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),rms_begin,mean_begin,N_iter.at(e),false);
+                N_rms.at(e) = FindRMS(&Hist_Target_SR_MSCW.at(e),&Hist_Target_CR_MSCW.at(e),&Hist_Target_Bkg_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),false);
                 std::cout << "Target, e " << energy_bins[e] << ", N_rms.at(e) = " << N_rms.at(e) << std::endl;
 
                 //N_iter.at(e) = FindNIteration(&Hist_Target_SR_MSCW.at(e),&Hist_Target_CR_MSCW.at(e),&Hist_Target_Bkg_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,false);
