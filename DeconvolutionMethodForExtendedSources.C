@@ -48,11 +48,11 @@ double Theta2_cut_upper = 0;
 
 // V6
 double MSCW_cut_lower = -0.5;
-double MSCW_cut_upper = 0.5;
+double MSCW_cut_upper = 1.0;
 double MSCL_signal_cut_lower = -0.5;
 double MSCL_signal_cut_upper = 0.5;
-double MSCL_control_cut_lower = 0.8;
-double MSCL_control_cut_upper = 1.2;
+double MSCL_control_cut_lower = 0.5;
+double MSCL_control_cut_upper = 1.0;
 
 // V4
 //double MSCW_cut_lower = -1.0;
@@ -91,9 +91,15 @@ double dec_sky = 0;
 //const int N_energy_bins = 5;
 //double energy_bins[N_energy_bins+1] =     {200,500,1000,2000,5000,10000};
 //int number_runs_included[N_energy_bins] = {2  ,4  ,8   ,16  ,64};
-const int N_energy_bins = 9;
-double energy_bins[N_energy_bins+1] =     {200,300,500,700,1000,1400,2000,3000,5000,10000};
-int number_runs_included[N_energy_bins] = {2  ,2  ,4  ,4  ,8   ,8   ,16  ,16  ,64};
+//const int N_energy_bins = 9;
+//double energy_bins[N_energy_bins+1] =     {200,300,500,700,1000,1400,2000,3000,5000,10000};
+//int number_runs_included[N_energy_bins] = {2  ,2  ,4  ,4  ,8   ,8   ,16  ,16  ,64};
+const int N_energy_bins = 6;
+double energy_bins[N_energy_bins+1] =     {1000,1200,1500,2000,3000,5000,10000};
+int number_runs_included[N_energy_bins] = {16  ,16  ,16  ,32  ,64  ,64};
+//const int N_energy_bins = 2;
+//double energy_bins[N_energy_bins+1] =     {3000,5000,10000};
+//int number_runs_included[N_energy_bins] = {16  ,64};
 
 int N_bins_for_deconv = 480;
 
@@ -154,7 +160,9 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR) {
             continue;
         }
         if ((data_err*data_err+bkg_err*bkg_err)==0) continue;
-        chi2_temp += pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
+        //double weight = 1.+1.*exp(-pow((Hist_Bkg->GetBinCenter(i+1)-0.25)/1.,2));
+        double weight = 1.;
+        chi2_temp += pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err)/weight;
     }
     chi2_temp = 1./chi2_temp;
     return chi2_temp;
@@ -538,7 +546,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             sprintf(e_up, "%i", int(energy_bins[e+1]));
             if (energy_bins[e]>=100.) N_bins_for_deconv = 1920;
             if (energy_bins[e]>=1000.) N_bins_for_deconv = 960;
-            if (energy_bins[e]>=3000.) N_bins_for_deconv = 480;
+            //if (energy_bins[e]>=3000.) N_bins_for_deconv = 480;
             Hist_Dark_SR_ErecS.push_back(TH1D("Hist_Dark_SR_ErecS_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_bins,energy_bins));
             Hist_Dark_SR_MSCW.push_back(TH1D("Hist_Dark_SR_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
             Hist_Dark_SR_MSCL.push_back(TH1D("Hist_Dark_SR_MSCL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-30,30));
