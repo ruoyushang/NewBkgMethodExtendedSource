@@ -16,11 +16,11 @@ source_list = []
 #source_list  += ['ComaV4']
 #source_list  += ['3C58']
 #source_list  += ['BrandonValidation']
-#source_list  += ['PKS1424']
+source_list  += ['PKS1424']
 #source_list  += ['Crab']
 #source_list  += ['CrabV4']
 #source_list  += ['H1426']
-source_list  += ['3C264']
+#source_list  += ['3C264']
 #source_list  += ['Ton599']
 #source_list  += ['IC443']
 
@@ -53,12 +53,13 @@ MSCW_lower_cut = -0.5
 MSCW_upper_cut = 0.6
 
 energy_list = []
-energy_list += [200]
-energy_list += [300]
-energy_list += [500]
-energy_list += [700]
+#energy_list += [200]
+#energy_list += [300]
+energy_list += [600]
+energy_list += [800]
 energy_list += [1000]
-energy_list += [1400]
+energy_list += [1200]
+energy_list += [1500]
 energy_list += [2000]
 energy_list += [3000]
 energy_list += [5000]
@@ -649,27 +650,27 @@ def MakeDiagnosticPlot(Hists,legends,colors,title,name,doSum,doNorm):
         pad1.SetLogx()
     c_both.SaveAs('output_plots/%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
 
-def Smooth2DMap(Hist_Old):
+def Smooth2DMap(Hist_Old,smooth_size):
 
     Hist_Smooth = Hist_Old.Clone()
+    bin_size = Hist_Old.GetXaxis().GetBinCenter(2)-Hist_Old.GetXaxis().GetBinCenter(1)
+    nbin_smooth = int(smooth_size/bin_size) + 1
     for bx1 in range(1,Hist_Old.GetNbinsX()+1):
         for by1 in range(1,Hist_Old.GetNbinsY()+1):
             bin_content = 0
             bin_error = 0
             locationx1 = Hist_Old.GetXaxis().GetBinCenter(bx1)
             locationy1 = Hist_Old.GetYaxis().GetBinCenter(by1)
-            for bx2 in range(bx1-20,bx1+20):
-                for by2 in range(by1-20,by1+20):
+            for bx2 in range(bx1-nbin_smooth,bx1+nbin_smooth):
+                for by2 in range(by1-nbin_smooth,by1+nbin_smooth):
                     if bx2>=1 and bx2<=Hist_Old.GetNbinsX():
                         if by2>=1 and by2<=Hist_Old.GetNbinsY():
-                            bin_content += Hist_Old.GetBinContent(bx2,by2)
-                            bin_error += pow(Hist_Old.GetBinError(bx2,by2),2)
-                    #locationx2 = Hist_Old.GetXaxis().GetBinCenter(bx2)
-                    #locationy2 = Hist_Old.GetYaxis().GetBinCenter(by2)
-                    #distance = pow(pow(locationx1-locationx2,2)+pow(locationy1-locationy2,2),0.5)
-                    #if distance<0.2:
-                    #    bin_content += Hist_Old.GetBinContent(bx2,by2)
-                    #    bin_error += Hist_Old.GetBinError(bx2,by2)
+                            locationx2 = Hist_Old.GetXaxis().GetBinCenter(bx2)
+                            locationy2 = Hist_Old.GetYaxis().GetBinCenter(by2)
+                            distance = pow(pow(locationx1-locationx2,2)+pow(locationy1-locationy2,2),0.5)
+                            if distance<smooth_size:
+                                bin_content += Hist_Old.GetBinContent(bx2,by2)
+                                bin_error += pow(Hist_Old.GetBinError(bx2,by2),2)
             Hist_Smooth.SetBinContent(bx1,by1,bin_content)
             Hist_Smooth.SetBinError(bx1,by1,pow(bin_error,0.5))
     return Hist_Smooth
@@ -712,14 +713,14 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,xtitle,ytitle,name):
 
     func = ROOT.TF1("func","gaus", -5, 5)
     func.SetParameters(10.,0.,1.0)
-    Hist_Sig = ROOT.TH1D("Hist_Sig","",100,-5,5)
+    Hist_Sig = ROOT.TH1D("Hist_Sig","",50,-5,5)
     for bx in range(0,Hist_Data.GetNbinsX()):
         for by in range(0,Hist_Data.GetNbinsY()):
             if not Hist_SR.GetBinContent(bx+1,by+1)==0:
                 content = Hist_Data.GetBinContent(bx+1,by+1)
                 Hist_Sig.Fill(content)
-    Hist_Model = ROOT.TH1D("Hist_Model","",100,-5,5)
-    Hist_Model.FillRandom("func",40000)
+    Hist_Model = ROOT.TH1D("Hist_Model","",50,-5,5)
+    Hist_Model.FillRandom("func",int(Hist_Sig.GetEntries()))
     pad1.SetLogy()
     Hist_Sig.Draw()
     Hist_Model.SetLineColor(2)
@@ -882,14 +883,14 @@ for s in source_list:
         legends = []
         colors = []
         Hists += [Hist_Target_SR_MSCW]
-        Hists[0].Rebin(4)
+        Hists[0].Rebin(2)
         if source=='2ndCrab':
             legends += ['Crab 2016 ON']
         else:
             legends += ['%s'%(source)]
         colors += [1]
         Hists += [Hist_Target_Bkg_MSCW]
-        Hists[1].Rebin(4)
+        Hists[1].Rebin(2)
         legends += ['Bkg']
         colors += [4]
         #Hists += [Hist_Target_Ring_MSCW]
@@ -990,9 +991,9 @@ for s in source_list:
         #title = 'MSCW'
         #MakeGaussianPlot(Hists,legends,colors,title,plotname,False,False)
 
-        #plotname = 'Target_SR_RaDec_E%s'%(ErecS_lower_cut)
-        #Hist_Target_SR_RaDec.Rebin2D(2,2)
-        #Hist_Target_Bkg_RaDec.Rebin2D(2,2)
-        #Hist_Target_SR_RaDec_Smooth = Smooth2DMap(Hist_Target_SR_RaDec)
-        #Hist_Target_Bkg_RaDec_Smooth = Smooth2DMap(Hist_Target_Bkg_RaDec)
-        #Make2DSignificancePlot(Hist_Target_SR_RaDec_Smooth,Hist_Target_Bkg_RaDec_Smooth,'RA','Dec',plotname)
+        plotname = 'Target_SR_RaDec_E%s'%(ErecS_lower_cut)
+        Hist_Target_SR_RaDec.Rebin2D(10,10)
+        Hist_Target_Bkg_RaDec.Rebin2D(10,10)
+        Hist_Target_SR_RaDec_Smooth = Smooth2DMap(Hist_Target_SR_RaDec,0.5)
+        Hist_Target_Bkg_RaDec_Smooth = Smooth2DMap(Hist_Target_Bkg_RaDec,0.5)
+        Make2DSignificancePlot(Hist_Target_SR_RaDec_Smooth,Hist_Target_Bkg_RaDec_Smooth,'RA','Dec',plotname)
