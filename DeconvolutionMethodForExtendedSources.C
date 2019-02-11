@@ -90,15 +90,15 @@ double theta2 = 0;
 double ra_sky = 0;
 double dec_sky = 0;
 
-const int N_energy_bins = 11;
-double energy_bins[N_energy_bins+1] =     {400,500,600,700,800,1000,1200,1500,2000,3000,5000,10000};
-int number_runs_included[N_energy_bins] = {4  ,4  ,8  ,8  ,32 ,32  ,32  ,32  ,32  ,64  ,64};
+const int N_energy_bins = 9;
+double energy_bins[N_energy_bins+1] =     {600,700,800,1000,1200,1500,2000,3000,5000,10000};
+int number_runs_included[N_energy_bins] = {8  ,8  ,32 ,32  ,32  ,32  ,32  ,64  ,64};
 //const int N_energy_bins = 8;
 //double energy_bins[N_energy_bins+1] =     {600,800,1000,1200,1500,2000,3000,5000,10000};
 //int number_runs_included[N_energy_bins] = {8  ,16 ,16  ,16  ,16  ,32  ,64  ,64};
-//const int N_energy_bins = 2;
-//double energy_bins[N_energy_bins+1] =     {3000,5000,10000};
-//int number_runs_included[N_energy_bins] = {16  ,64};
+//const int N_energy_bins = 1;
+//double energy_bins[N_energy_bins+1] =     {500,600};
+//int number_runs_included[N_energy_bins] = {100};
 
 int N_bins_for_deconv = 480;
 
@@ -134,7 +134,7 @@ bool ControlSelection1MSCW() {
 }
 bool ControlSelection2MSCW() {
     MSCL_control2_cut_upper = 1.55;
-    if (ErecS*1000.>=1500.) MSCL_control2_cut_upper = 1.55;
+    if (ErecS*1000.>=600.) MSCL_control2_cut_upper = 1.55;
     if (MSCL<MSCL_control2_cut_lower) return false;
     if (MSCL>MSCL_control2_cut_upper) return false;
     return true;
@@ -181,8 +181,8 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
     int norm_bin_up = 0;
     double norm = Hist_BkgTemp->Integral();
     if (doShift) {
-        for (int fit=0;fit<200;fit++) {
-                double shift = shift_begin-10.0+double(fit)*0.1;
+        for (int fit=0;fit<100;fit++) {
+                double shift = shift_begin-5.0+double(fit)*0.1;
                 for (int i=0;i<Hist_SR->GetNbinsX();i++) {
                         int b = Hist_SR->FindBin(Hist_SR->GetBinCenter(i+1)-shift);
                         Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
@@ -209,13 +209,6 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
                         scale_fit = scale;
                     } 
                 }
-                //    Hist_Bkg->Scale(scale_begin);
-                //    double chi2_temp = GetChi2(Hist_SR, Hist_Bkg,false);
-                //    if (chi2<chi2_temp) {
-                //        chi2 = chi2_temp;
-                //        shift_fit = shift;
-                //        scale_fit = scale_begin;
-                //    } 
         }
     }
     else {
@@ -226,15 +219,6 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
             Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
             Hist_Bkg->SetBinError(i+1,Hist_BkgTemp->GetBinError(b));
     }
-    //norm_bin_low = Hist_SR->FindBin(mean-8.*rms);
-    //norm_bin_up = Hist_SR->FindBin(MSCW_cut_lower);
-    //double SR_area1 = Hist_SR->Integral(norm_bin_low,norm_bin_up);
-    //double Bkg_area1 = Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
-    //norm_bin_low = Hist_SR->FindBin(MSCW_cut_upper);
-    //norm_bin_up = Hist_SR->FindBin(mean+8.*rms);
-    //double SR_area2 = Hist_SR->Integral(norm_bin_low,norm_bin_up);
-    //double Bkg_area2 = Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
-    //double scale = (SR_area1+SR_area2)/(Bkg_area1+Bkg_area2);
     Hist_Bkg->Scale(norm/Hist_Bkg->Integral());
     Hist_Bkg->Scale(scale_fit);
     return shift_fit;
@@ -302,6 +286,7 @@ double FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTemp, TH1
             rms_final = rms;
         } 
     }
+    std::cout << "chi2_best = " << chi2_best << std::endl;
     return rms_final;
 }
 void Convolution(TH1D* Hist_source, TH1D* Hist_response, TH1D* Hist_Conv) {
