@@ -92,7 +92,7 @@ double dec_sky = 0;
 
 const int N_energy_bins = 9;
 double energy_bins[N_energy_bins+1] =     {600,700,800,1000,1200,1500,2000,3000,5000,10000};
-int number_runs_included[N_energy_bins] = {8  ,8  ,32 ,32  ,32  ,32  ,32  ,64  ,64};
+int number_runs_included[N_energy_bins] = {4  ,4  ,16 ,32  ,32  ,32  ,32  ,32  ,32};
 //const int N_energy_bins = 8;
 //double energy_bins[N_energy_bins+1] =     {600,800,1000,1200,1500,2000,3000,5000,10000};
 //int number_runs_included[N_energy_bins] = {8  ,16 ,16  ,16  ,16  ,32  ,64  ,64};
