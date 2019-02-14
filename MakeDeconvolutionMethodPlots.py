@@ -17,14 +17,14 @@ source_list = []
 #source_list  += ['3C58']
 #source_list  += ['BrandonValidation']
 #source_list  += ['PKS1424']
-#source_list  += ['Crab']
+source_list  += ['Crab']
 #source_list  += ['CrabV4']
 #source_list  += ['H1426']
 #source_list  += ['3C264']
 #source_list  += ['Ton599']
 #source_list  += ['IC443']
 #source_list  += ['Segue1V6']
-source_list  += ['VA_Segue1']
+#source_list  += ['VA_Segue1']
 
 Region = 'SR'
 
@@ -61,15 +61,15 @@ energy_list = []
 #energy_list += [500]
 #energy_list += [550]
 
-#energy_list += [600]
-#energy_list += [700]
-#energy_list += [800]
-#energy_list += [1000]
-#energy_list += [1200]
-#energy_list += [1500]
+energy_list += [600]
+energy_list += [700]
+energy_list += [800]
+energy_list += [1000]
+energy_list += [1200]
+energy_list += [1500]
 energy_list += [2000]
-#energy_list += [3000]
-#energy_list += [5000]
+energy_list += [3000]
+energy_list += [5000]
 energy_list += [1e10]
 
 Variable = ''
@@ -843,7 +843,6 @@ for s in source_list:
         Hist_Target_SR_MSCL = SelectDiagnosticaHistograms(folder,'MSCL','SR','Target_SR_MSCL')
         Hist_Target_BkgCR1_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_BkgCR1_MSCW_Sum')
         Hist_Target_Deconv_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Deconv_MSCW')
-        Hist_Target_TrueDeconv_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_TrueDeconv_MSCW')
         Hist_Target_CR1_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR1_MSCW_Sum')
         Hist_Target_Ring_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Ring_MSCW')
         Hist_Target_Ring_MSCL = SelectDiagnosticaHistograms(folder,'MSCL','SR','Target_Ring_MSCL')
@@ -851,7 +850,26 @@ for s in source_list:
 
         Make2DProjectionPlot(Hist_Target_MSCLW,'MSCL','MSCW','Target_MSCLW_E%s'%(ErecS_lower_cut),True)
 
-        for sr in range(1,8):
+        Hist_Target_SR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_MSCW_Sum_Combined')
+        Hist_Target_BkgSR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_BkgSR_MSCW_Sum_Combined')
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_Target_SR_MSCW]
+        Hists[0].Rebin(2)
+        if source=='2ndCrab':
+            legends += ['Crab 2016 ON']
+        else:
+            legends += ['%s'%(source)]
+        colors += [1]
+        Hists += [Hist_Target_BkgSR_MSCW]
+        Hists[1].Rebin(2)
+        legends += ['Bkg']
+        colors += [4]
+        plotname = 'Target_SR_MSCW_Combined_E%s'%(ErecS_lower_cut)
+        title = 'MSCW'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False)
+        for sr in range(1,5):
             Hist_Target_SR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR%s_MSCW_Sum'%(sr))
             Hist_Target_BkgSR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_BkgSR%s_MSCW_Sum'%(sr))
             Hists = []
@@ -953,16 +971,6 @@ for s in source_list:
         #title = 'MSCW'
         #MakeDiagnosticPlot(Hists,legends,colors,title,plotname,False,False)
 
-
-        Hists = []
-        legends = []
-        colors = []
-        Hists += [Hist_Target_TrueDeconv_MSCW]
-        legends += ['true response']
-        colors += [4]
-        plotname = 'Target_Response_MSCW_E%s'%(ErecS_lower_cut)
-        title = 'MSCW'
-        MakeGaussianPlot(Hists,legends,colors,title,plotname,False,False)
 
         #Hists = []
         #legends = []

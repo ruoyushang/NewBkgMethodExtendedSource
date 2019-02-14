@@ -8,6 +8,56 @@
 
 vector<int> GetRunList(string source) {
         vector<int> list;
+        if (source=="VA_Segue1")
+        {
+            list.push_back(90952);
+            list.push_back(90953);
+            list.push_back(90954);
+            list.push_back(91004);
+            list.push_back(91005);
+            list.push_back(91006);
+            list.push_back(91029);
+            list.push_back(91030);
+            list.push_back(91031);
+            list.push_back(91054);
+            list.push_back(91055);
+            list.push_back(91110);
+            list.push_back(91132);
+            list.push_back(91133);
+            list.push_back(91156);
+            list.push_back(91157);
+            list.push_back(91158);
+            list.push_back(91185);
+            list.push_back(91186);
+            list.push_back(91210);
+            list.push_back(91211);
+            list.push_back(91212);
+            list.push_back(91232);
+            list.push_back(91233);
+            list.push_back(91234);
+            list.push_back(91237);
+            list.push_back(91238);
+            list.push_back(91261);
+            list.push_back(91262);
+            list.push_back(91263);
+            list.push_back(91264);
+            list.push_back(91265);
+            list.push_back(91284);
+            list.push_back(91285);
+            list.push_back(91286);
+            list.push_back(91287);
+            list.push_back(91288);
+            list.push_back(91303);
+            list.push_back(91304);
+            list.push_back(91425);
+            list.push_back(91631);
+            list.push_back(91670);
+            list.push_back(91671);
+            list.push_back(91672);
+            list.push_back(91743);
+            list.push_back(91744);
+            list.push_back(91745);
+        }
         if (source=="Segue1V6")
         {
             list.push_back(65381);
@@ -32,7 +82,6 @@ vector<int> GetRunList(string source) {
             list.push_back(66057);
             list.push_back(66058);
             list.push_back(66125);
-            list.push_back(66205);
             list.push_back(66206);
             list.push_back(66207);
             list.push_back(66565);
@@ -96,7 +145,6 @@ vector<int> GetRunList(string source) {
             list.push_back(72655);
             list.push_back(72735);
             list.push_back(72736);
-            list.push_back(72737);
             list.push_back(72739);
             list.push_back(72740);
             list.push_back(72828);

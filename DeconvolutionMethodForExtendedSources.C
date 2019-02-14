@@ -58,22 +58,32 @@ double Theta2_cut_lower = 0;
 double Theta2_cut_upper = 0;
 
 // EVDISP
+//double MSCW_cut_lower = -1.0;
+//double MSCW_cut_upper = 1.0;
+//const int Number_of_SR = 3;
+//double MSCL_signal_cut_lower[Number_of_SR] = {0.50,0.00,-0.50};
+//double MSCL_signal_cut_upper[Number_of_SR] = {1.00,0.50, 0.00};
+//double MSCL_control1_cut_lower = 1.00;
+//double MSCL_control1_cut_upper = 1.50;
+//double MSCL_control2_cut_lower = 1.50;
+//double MSCL_control2_cut_upper = 2.00;
+//
 double MSCW_cut_lower = -1.0;
 double MSCW_cut_upper = 1.0;
-const int Number_of_SR = 3;
-double MSCL_signal_cut_lower[Number_of_SR] = {0.50,0.00,-0.50};
-double MSCL_signal_cut_upper[Number_of_SR] = {1.00,0.50, 0.00};
-double MSCL_control1_cut_lower = 1.00;
-double MSCL_control1_cut_upper = 1.50;
-double MSCL_control2_cut_lower = 1.50;
-double MSCL_control2_cut_upper = 2.00;
+const int Number_of_SR = 4;
+double MSCL_signal_cut_lower[Number_of_SR] = {0.25,0.00,-0.25,-0.50};
+double MSCL_signal_cut_upper[Number_of_SR] = {0.50,0.25, 0.00,-0.25};
+double MSCL_control1_cut_lower = 0.50;
+double MSCL_control1_cut_upper = 0.75;
+double MSCL_control2_cut_lower = 0.75;
+double MSCL_control2_cut_upper = 1.00;
 //
 // VEGAS
 //double MSCW_cut_lower = 0.8;
 //double MSCW_cut_upper = 1.2;
-//const int Number_of_SR = 7;
-//double MSCL_signal_cut_lower[Number_of_SR] = {1.1,1.0,0.9,0.8,0.7,0.6,0.5};
-//double MSCL_signal_cut_upper[Number_of_SR] = {1.2,1.1,1.0,0.9,0.8,0.7,0.6};
+//const int Number_of_SR = 4;
+//double MSCL_signal_cut_lower[Number_of_SR] = {1.1,1.0,0.9,0.8};
+//double MSCL_signal_cut_upper[Number_of_SR] = {1.2,1.1,1.0,0.9};
 //double MSCL_control1_cut_lower = 1.2;
 //double MSCL_control1_cut_upper = 1.3;
 //double MSCL_control2_cut_lower = 1.3;
@@ -99,15 +109,15 @@ double theta2 = 0;
 double ra_sky = 0;
 double dec_sky = 0;
 
-//const int N_energy_bins = 9;
-//double energy_bins[N_energy_bins+1] =     {600,700,800,1000,1200,1500,2000,3000,5000,10000};
-//int number_runs_included[N_energy_bins] = {8  ,16  ,16 ,32  ,32  ,32  ,64  ,64  ,64};
-const int N_energy_bins = 1;
-double energy_bins[N_energy_bins+1] =     {800,1000};
-int number_runs_included[N_energy_bins] = {16};
+const int N_energy_bins = 9;
+double energy_bins[N_energy_bins+1] =     {600,700,800,1000,1200,1500,2000,3000,5000,10000};
+int number_runs_included[N_energy_bins] = {4  ,4  ,4  ,16  ,16  ,16  ,16  ,32  ,32};
 //const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] =     {2000,3000};
-//int number_runs_included[N_energy_bins] = {64};
+//double energy_bins[N_energy_bins+1] =     {800,1000};
+//int number_runs_included[N_energy_bins] = {1};
+//const int N_energy_bins = 1;
+//double energy_bins[N_energy_bins+1] =     {3000,5000};
+//int number_runs_included[N_energy_bins] = {32};
 
 int N_bins_for_deconv = 480;
 double MSCW_plot_lower = -30.;
@@ -152,7 +162,7 @@ double background(Double_t *x, Double_t *par) {
     return (1./par[0])*(x[0]+par[1])*exp(-pow((x[0]+par[1])/par[0],2));
 }
 double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR) {
-    if (Hist_SR->Integral()<Hist_Bkg->Integral()) return 0.;  // unphysical solution if the bkg is greater than the total events.
+    //if (Hist_SR->Integral()<Hist_Bkg->Integral()) return 0.;  // unphysical solution if the bkg is greater than the total events.
     double chi2_temp = 0.;
     double mean = Hist_SR->GetMean();
     double rms = Hist_SR->GetRMS();
@@ -172,7 +182,7 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR) {
         }
         if ((data_err*data_err+bkg_err*bkg_err)==0) continue;
         if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_lower) {
-            chi2_temp += 4.*pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
+            chi2_temp += 1.*pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
         }
         else
         {
@@ -181,6 +191,34 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR) {
     }
     chi2_temp = 1./chi2_temp;
     return chi2_temp;
+}
+void MakeBkgPrevious(TH1* Hist_SR,TH1* Hist_Bkg,TH1* Hist_Previous)
+{
+    for (int i=0;i<Hist_SR->GetNbinsX();i++)
+    {
+        if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_upper)
+        {
+            Hist_Previous->SetBinContent(i+1,Hist_Bkg->GetBinContent(i+1));
+            Hist_Previous->SetBinError(i+1,Hist_Bkg->GetBinError(i+1));
+        }
+        else
+        {
+            Hist_Previous->SetBinContent(i+1,Hist_SR->GetBinContent(i+1));
+            Hist_Previous->SetBinError(i+1,Hist_SR->GetBinError(i+1));
+        }
+    }
+}
+double Converge(TH1* Hist_Bkg)
+{
+    for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
+    {
+        if (Hist_Bkg->GetBinCenter(i+1)<0)
+        {
+            double old_content = Hist_Bkg->GetBinContent(i+1);
+            double new_content = old_content*exp(2.*Hist_Bkg->GetBinCenter(i+1));
+            Hist_Bkg->SetBinContent(i+1,new_content);
+        }
+    }
 }
 double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double shift_begin, bool doShift, bool includeSR) {
     double shift_fit = 0;
@@ -192,8 +230,8 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
     int norm_bin_up = 0;
     double norm = Hist_BkgTemp->Integral();
     if (doShift) {
-        for (int fit=0;fit<200;fit++) {
-                double shift = shift_begin-10.0+double(fit)*0.1;
+        for (int fit=0;fit<20;fit++) {
+                double shift = shift_begin+double(fit)*0.1;
                 for (int i=0;i<Hist_SR->GetNbinsX();i++) {
                         int b = Hist_SR->FindBin(Hist_SR->GetBinCenter(i+1)-shift);
                         Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
@@ -250,7 +288,12 @@ void Deconvolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Deconv, int n
         Double_t *response = new Double_t[N_bins];
         for (int i=0;i<N_bins;i++) {
             source[i] = max(Hist_source->GetBinContent(i+1),0.);
-            if (i<N_bins/2) response[i] = max(Hist_response->GetBinContent(i+1+N_bins/2),0.);
+            //if (Hist_source->GetBinCenter(i+1)<MSCW_cut_lower) source[i] = 0.;
+            if (i<N_bins/2) 
+            {
+                response[i] = max(Hist_response->GetBinContent(i+1+N_bins/2),0.);
+                //if (Hist_source->GetBinCenter(i+1+N_bins/2)<MSCW_cut_lower) source[i] = 0.;
+            }
             else response[i] = 0;
         }
         TSpectrum sp;
@@ -266,10 +309,10 @@ double FindNIteration(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTe
     chi2_best = 0.;
     TF1 *func = new TF1("func", "gaus", -50, 50);
     func->SetParameters(10.,1.5,0.5);
-    //for (int delta_n_iter = 1;delta_n_iter<=20;delta_n_iter++) {
-          //int n_iter = n_iter_begin-10+delta_n_iter;
     for (int delta_n_iter = 0;delta_n_iter<=20;delta_n_iter++) {
-          int n_iter = n_iter_begin-delta_n_iter;
+          int n_iter = n_iter_begin;
+          if (!includeSR) n_iter = n_iter_begin-delta_n_iter;
+          else n_iter = n_iter_begin-10+delta_n_iter;
           if (n_iter<=0) n_iter = 1;
           double offset_begin = 0;
           double chi2 = 0;
@@ -295,7 +338,9 @@ double FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTemp, TH1
     for (int n_rms = 0; n_rms<=50;n_rms++) {
         double offset_begin = 0;
         double chi2 = 0;
-        double rms = rms_begin-0.2*rms_begin+double(n_rms)*0.4*rms_begin/50.;
+        double rms = rms_begin;
+        if (includeSR) rms = rms_begin-0.5*rms_begin+double(n_rms)*1.0*rms_begin/50.;
+        else rms = rms_begin-0.5*rms_begin+double(n_rms)*1.0*rms_begin/50.;
         func->SetParameters(10.,mean,rms);
         Hist_Deconv->Reset();
         Hist_Deconv->FillRandom("func",Hist_SR->Integral()*100);
@@ -308,7 +353,6 @@ double FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTemp, TH1
             rms_final = rms;
         } 
     }
-    std::cout << "chi2_best = " << chi2_best << std::endl;
     return rms_final;
 }
 void Convolution(TH1D* Hist_source, TH1D* Hist_response, TH1D* Hist_Conv) {
@@ -602,6 +646,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         vector<TH1D> Hist_Target_CR2_MSCW;
         vector<TH1D> Hist_Target_CR2_MSCW_Sum;
         vector<TH1D> Hist_Target_BkgTemp_MSCW;
+        vector<TH1D> Hist_Target_BkgPrevious_MSCW;
         vector<vector<TH1D>> Hist_Target_BkgSR_MSCW;
         vector<TH1D> Hist_Target_BkgCR1_MSCW;
         vector<vector<TH1D>> Hist_Target_BkgSR_MSCW_Sum;
@@ -616,7 +661,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             sprintf(e_low, "%i", int(energy_bins[e]));
             char e_up[50];
             sprintf(e_up, "%i", int(energy_bins[e+1]));
-            if (energy_bins[e]>=100.) N_bins_for_deconv = 960;
+            if (energy_bins[e]>=100.) N_bins_for_deconv = 480;
             if (energy_bins[e]>=1500.) N_bins_for_deconv = 480;
             if (UseVegas)
             {
@@ -642,6 +687,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             Hist_Target_CR2_MSCW.push_back(TH1D("Hist_Target_CR2_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_CR2_MSCW_Sum.push_back(TH1D("Hist_Target_CR2_MSCW_Sum_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_BkgTemp_MSCW.push_back(TH1D("Hist_Target_BkgTemp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+            Hist_Target_BkgPrevious_MSCW.push_back(TH1D("Hist_Target_BkgPrevious_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_BkgCR1_MSCW.push_back(TH1D("Hist_Target_BkgCR1_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_BkgCR1_MSCW_Sum.push_back(TH1D("Hist_Target_BkgCR1_MSCW_Sum_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_Deconv_MSCW.push_back(TH1D("Hist_Target_Deconv_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
@@ -954,6 +1000,26 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 N_rms.at(e) = FindRMS(&Hist_Target_CR1_MSCW.at(e),&Hist_Target_CR2_MSCW.at(e),&Hist_Target_BkgCR1_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),true);
                 std::cout << "Target, e " << energy_bins[e] << ", N_rms.at(e) = " << N_rms.at(e) << std::endl;
 
+                N_iter.at(e) = FindNIteration(&Hist_Target_CR1_MSCW.at(e),&Hist_Target_CR2_MSCW.at(e),&Hist_Target_BkgCR1_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),true);
+                std::cout << "Target, e " << energy_bins[e] << ", N_iter.at(e) = " << N_iter.at(e) << std::endl;
+                N_rms.at(e) = FindRMS(&Hist_Target_CR1_MSCW.at(e),&Hist_Target_CR2_MSCW.at(e),&Hist_Target_BkgCR1_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),true);
+                std::cout << "Target, e " << energy_bins[e] << ", N_rms.at(e) = " << N_rms.at(e) << std::endl;
+
+                N_iter.at(e) = FindNIteration(&Hist_Target_CR1_MSCW.at(e),&Hist_Target_CR2_MSCW.at(e),&Hist_Target_BkgCR1_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),true);
+                std::cout << "Target, e " << energy_bins[e] << ", N_iter.at(e) = " << N_iter.at(e) << std::endl;
+                N_rms.at(e) = FindRMS(&Hist_Target_CR1_MSCW.at(e),&Hist_Target_CR2_MSCW.at(e),&Hist_Target_BkgCR1_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),true);
+                std::cout << "Target, e " << energy_bins[e] << ", N_rms.at(e) = " << N_rms.at(e) << std::endl;
+
+                N_iter.at(e) = FindNIteration(&Hist_Target_CR1_MSCW.at(e),&Hist_Target_CR2_MSCW.at(e),&Hist_Target_BkgCR1_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),true);
+                std::cout << "Target, e " << energy_bins[e] << ", N_iter.at(e) = " << N_iter.at(e) << std::endl;
+                N_rms.at(e) = FindRMS(&Hist_Target_CR1_MSCW.at(e),&Hist_Target_CR2_MSCW.at(e),&Hist_Target_BkgCR1_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),true);
+                std::cout << "Target, e " << energy_bins[e] << ", N_rms.at(e) = " << N_rms.at(e) << std::endl;
+
+                N_iter.at(e) = FindNIteration(&Hist_Target_CR1_MSCW.at(e),&Hist_Target_CR2_MSCW.at(e),&Hist_Target_BkgCR1_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),true);
+                std::cout << "Target, e " << energy_bins[e] << ", N_iter.at(e) = " << N_iter.at(e) << std::endl;
+                N_rms.at(e) = FindRMS(&Hist_Target_CR1_MSCW.at(e),&Hist_Target_CR2_MSCW.at(e),&Hist_Target_BkgCR1_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),true);
+                std::cout << "Target, e " << energy_bins[e] << ", N_rms.at(e) = " << N_rms.at(e) << std::endl;
+
                 myfunc->SetParameters(10.,mean_begin,N_rms.at(e));
                 Hist_Target_Deconv_MSCW.at(e).Reset();
                 Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Target_CR1_MSCW.at(e).Integral()*100);
@@ -961,40 +1027,56 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 double offset_begin = 0;
                 offset_begin = Hist_Target_CR1_MSCW.at(e).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
                 offset_begin = ShiftAndNormalize(&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgCR1_MSCW.at(e),offset_begin,true,true);
+                Converge(&Hist_Target_BkgCR1_MSCW.at(e));
 
                 N_mean.at(e) = mean_begin;
 
                 // estimate SR1 bkg
-                N_iter.at(e) = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),false);
-                std::cout << "Target, e " << energy_bins[e] << ", SR1_Niter = " << N_iter.at(e) << std::endl;
-                double SR1_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),false);
+                int SR1_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),false);
+                std::cout << "Target, e " << energy_bins[e] << ", SR1_Niter = " << SR1_Niter << std::endl;
+                double SR1_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,SR1_Niter,false);
                 std::cout << "Target, e " << energy_bins[e] << ", SR1_RMS = " << SR1_RMS << std::endl;
 
+                //SR1_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR1_RMS,mean_begin,SR1_Niter,false);
+                //std::cout << "Target, e " << energy_bins[e] << ", SR1_Niter = " << SR1_Niter << std::endl;
+                //SR1_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR1_RMS,mean_begin,SR1_Niter,false);
+                //std::cout << "Target, e " << energy_bins[e] << ", SR1_RMS = " << SR1_RMS << std::endl;
+
+                //double SR1_RMS = N_rms.at(e);
                 myfunc->SetParameters(10.,N_mean.at(e),SR1_RMS);
                 Hist_Target_Deconv_MSCW.at(e).Reset();
                 Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Target_SR_MSCW.at(e).at(0).Integral()*100);
 
-                Deconvolution(&Hist_Target_CR1_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),N_iter.at(e));
+                Deconvolution(&Hist_Target_CR1_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),SR1_Niter);
                 std::cout << "Target, e " << energy_bins[e] << ", final rms = " << Hist_Target_Deconv_MSCW.at(e).GetRMS() << std::endl;
                 offset_begin = Hist_Target_SR_MSCW.at(e).at(0).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
                 offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),offset_begin,true,false);
+                Converge(&Hist_Target_BkgSR_MSCW.at(e).at(0));
 
                 // estimate SR2 bkg
                 for (int s=1;s<Number_of_SR;s++)
                 {
-                    N_iter.at(e) = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),false);
-                    std::cout << "Target, e " << energy_bins[e] << ", SR2_Niter = " << N_iter.at(e) << std::endl;
-                    double SR_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),false);
+                    int SR_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),false);
+                    std::cout << "Target, e " << energy_bins[e] << ", SR2_Niter = " << SR_Niter << std::endl;
+                    double SR_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,SR_Niter,false);
                     std::cout << "Target, e " << energy_bins[e] << ", SR_RMS = " << SR_RMS << std::endl;
 
+                    //SR_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR_RMS,mean_begin,SR_Niter,false);
+                    //std::cout << "Target, e " << energy_bins[e] << ", SR1_Niter = " << SR_Niter << std::endl;
+                    //SR_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR_RMS,mean_begin,SR_Niter,false);
+                    //std::cout << "Target, e " << energy_bins[e] << ", SR_RMS = " << SR_RMS << std::endl;
+
+                    //double SR_RMS = N_rms.at(e);
                     myfunc->SetParameters(10.,N_mean.at(e),SR_RMS);
                     Hist_Target_Deconv_MSCW.at(e).Reset();
-                    Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Target_SR_MSCW.at(e).at(s).Integral()*100);
-
-                    Deconvolution(&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),N_iter.at(e));
+                    Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Target_SR_MSCW.at(e).at(0).Integral()*100);
+                    
+                    MakeBkgPrevious(&Hist_Target_SR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgPrevious_MSCW.at(e));
+                    Deconvolution(&Hist_Target_BkgPrevious_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),SR_Niter);
                     std::cout << "Target, e " << energy_bins[e] << ", final rms = " << Hist_Target_Deconv_MSCW.at(e).GetRMS() << std::endl;
                     offset_begin = Hist_Target_SR_MSCW.at(e).at(s).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
                     offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(s),offset_begin,true,false);
+                    Converge(&Hist_Target_BkgSR_MSCW.at(e).at(s));
                 }
 
 
