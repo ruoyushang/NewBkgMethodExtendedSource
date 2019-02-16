@@ -38,7 +38,7 @@
 #include <VAShowerData.h>
 
 // VEGAS
-bool UseVegas = false;
+bool UseVegas = true;
 
 char target[50] = "";
 char Region[50] = "SR";
@@ -60,23 +60,13 @@ double Theta2_cut_upper = 0;
 // EVDISP
 //double MSCW_cut_lower = -1.0;
 //double MSCW_cut_upper = 1.0;
-//const int Number_of_SR = 3;
-//double MSCL_signal_cut_lower[Number_of_SR] = {0.50,0.00,-0.50};
-//double MSCL_signal_cut_upper[Number_of_SR] = {1.00,0.50, 0.00};
-//double MSCL_control1_cut_lower = 1.00;
-//double MSCL_control1_cut_upper = 1.50;
-//double MSCL_control2_cut_lower = 1.50;
-//double MSCL_control2_cut_upper = 2.00;
-//
-double MSCW_cut_lower = -1.0;
-double MSCW_cut_upper = 1.0;
-const int Number_of_SR = 4;
-double MSCL_signal_cut_lower[Number_of_SR] = {0.25,0.00,-0.25,-0.50};
-double MSCL_signal_cut_upper[Number_of_SR] = {0.50,0.25, 0.00,-0.25};
-double MSCL_control1_cut_lower = 0.50;
-double MSCL_control1_cut_upper = 0.75;
-double MSCL_control2_cut_lower = 0.75;
-double MSCL_control2_cut_upper = 1.00;
+//const int Number_of_SR = 4;
+//double MSCL_signal_cut_lower[Number_of_SR] = {0.25,0.00,-0.25,-0.50};
+//double MSCL_signal_cut_upper[Number_of_SR] = {0.50,0.25, 0.00,-0.25};
+//double MSCL_control1_cut_lower = 0.50;
+//double MSCL_control1_cut_upper = 0.75;
+//double MSCL_control2_cut_lower = 0.75;
+//double MSCL_control2_cut_upper = 1.00;
 //
 // VEGAS
 //double MSCW_cut_lower = 0.8;
@@ -88,6 +78,16 @@ double MSCL_control2_cut_upper = 1.00;
 //double MSCL_control1_cut_upper = 1.3;
 //double MSCL_control2_cut_lower = 1.3;
 //double MSCL_control2_cut_upper = 1.4;
+
+double MSCW_cut_lower = 0.8;
+double MSCW_cut_upper = 1.2;
+const int Number_of_SR = 5;
+double MSCL_signal_cut_lower[Number_of_SR] = {1.2,1.1,1.0,0.9,0.8};
+double MSCL_signal_cut_upper[Number_of_SR] = {1.3,1.2,1.1,1.0,0.9};
+double MSCL_control1_cut_lower = 1.3;
+double MSCL_control1_cut_upper = 1.4;
+double MSCL_control2_cut_lower = 1.4;
+double MSCL_control2_cut_upper = 1.5;
 
 
 double Norm_Lower = MSCW_cut_upper;
@@ -231,7 +231,7 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
     double norm = Hist_BkgTemp->Integral();
     if (doShift) {
         for (int fit=0;fit<20;fit++) {
-                double shift = shift_begin+double(fit)*0.1;
+                double shift = shift_begin+double(fit)*0.1;  // Do not shift to the other direction!
                 for (int i=0;i<Hist_SR->GetNbinsX();i++) {
                         int b = Hist_SR->FindBin(Hist_SR->GetBinCenter(i+1)-shift);
                         Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
@@ -693,7 +693,14 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             Hist_Target_Deconv_MSCW.push_back(TH1D("Hist_Target_Deconv_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_Ring_MSCW.push_back(TH1D("Hist_Target_Ring_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_Ring_MSCL.push_back(TH1D("Hist_Target_Ring_MSCL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-            Hist_Target_MSCLW.push_back(TH2D("Hist_Target_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,5,100,0,10));
+            if (UseVegas)
+            {
+            Hist_Target_MSCLW.push_back(TH2D("Hist_Target_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+2,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control2_cut_upper,100,0,5));
+            }
+            else
+            {
+            Hist_Target_MSCLW.push_back(TH2D("Hist_Target_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+2,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control2_cut_upper,100,-1,15));
+            }
             vector<TH1D> Hist_Target_ThisE_SR_MSCW;
             vector<TH1D> Hist_Target_ThisE_SR_MSCW_Sum;
             vector<TH1D> Hist_Target_ThisE_BkgSR_MSCW;
