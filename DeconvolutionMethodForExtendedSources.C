@@ -67,7 +67,7 @@ double Theta2_cut_upper = 0;
 //double MSCL_control1_cut_upper = 0.75;
 //double MSCL_control2_cut_lower = 0.75;
 //double MSCL_control2_cut_upper = 1.00;
-//
+
 // VEGAS
 //double MSCW_cut_lower = 0.8;
 //double MSCW_cut_upper = 1.2;
@@ -79,15 +79,15 @@ double Theta2_cut_upper = 0;
 //double MSCL_control2_cut_lower = 1.3;
 //double MSCL_control2_cut_upper = 1.4;
 
-double MSCW_cut_lower = 0.8;
-double MSCW_cut_upper = 1.2;
-const int Number_of_SR = 5;
-double MSCL_signal_cut_lower[Number_of_SR] = {1.2,1.1,1.0,0.9,0.8};
-double MSCL_signal_cut_upper[Number_of_SR] = {1.3,1.2,1.1,1.0,0.9};
+double MSCW_cut_lower = 0.7;
+double MSCW_cut_upper = 1.3;
+const int Number_of_SR = 12;
+double MSCL_signal_cut_lower[Number_of_SR] = {1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75,0.70};
+double MSCL_signal_cut_upper[Number_of_SR] = {1.30,1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75};
 double MSCL_control1_cut_lower = 1.3;
-double MSCL_control1_cut_upper = 1.4;
-double MSCL_control2_cut_lower = 1.4;
-double MSCL_control2_cut_upper = 1.5;
+double MSCL_control1_cut_upper = 1.35;
+double MSCL_control2_cut_lower = 1.35;
+double MSCL_control2_cut_upper = 1.4;
 
 
 double Norm_Lower = MSCW_cut_upper;
@@ -109,15 +109,15 @@ double theta2 = 0;
 double ra_sky = 0;
 double dec_sky = 0;
 
-const int N_energy_bins = 9;
-double energy_bins[N_energy_bins+1] =     {600,700,800,1000,1200,1500,2000,3000,5000,10000};
-int number_runs_included[N_energy_bins] = {4  ,4  ,4  ,16  ,16  ,16  ,16  ,32  ,32};
-//const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] =     {800,1000};
-//int number_runs_included[N_energy_bins] = {1};
-//const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] =     {3000,5000};
-//int number_runs_included[N_energy_bins] = {32};
+//const int N_energy_bins = 12;
+//double energy_bins[N_energy_bins+1] =     {200,300,400,600,700,800,1000,1200,1500,2000,3000,5000,10000};
+//int number_runs_included[N_energy_bins] = {2  ,2  ,2  ,4  ,4  ,4  ,16  ,16  ,16  ,16  ,32  ,32};
+//const int N_energy_bins = 6;
+//double energy_bins[N_energy_bins+1] =     {200,300,400,600,700,800,1000};
+//int number_runs_included[N_energy_bins] = {2  ,2  ,2  ,4  ,4  ,4};
+const int N_energy_bins = 1;
+double energy_bins[N_energy_bins+1] =     {1200,1500};
+int number_runs_included[N_energy_bins] = {16};
 
 int N_bins_for_deconv = 480;
 double MSCW_plot_lower = -30.;
@@ -210,12 +210,19 @@ void MakeBkgPrevious(TH1* Hist_SR,TH1* Hist_Bkg,TH1* Hist_Previous)
 }
 double Converge(TH1* Hist_Bkg)
 {
+    double threshold = 0.;
+    double amplitude = 2.;
+    if (UseVegas) 
+    {
+        threshold = 1.;
+        amplitude = 20.;
+    }
     for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
     {
-        if (Hist_Bkg->GetBinCenter(i+1)<0)
+        if (Hist_Bkg->GetBinCenter(i+1)<threshold)
         {
             double old_content = Hist_Bkg->GetBinContent(i+1);
-            double new_content = old_content*exp(2.*Hist_Bkg->GetBinCenter(i+1));
+            double new_content = old_content*exp(amplitude*(Hist_Bkg->GetBinCenter(i+1)-threshold));
             Hist_Bkg->SetBinContent(i+1,new_content);
         }
     }
@@ -589,7 +596,10 @@ vector<int> FindRunSublist(string source, vector<int> Target_runlist, vector<int
         list_match = SortList(list_match);
         for (int run=0;run<list_match.size();run++)
         {
-                if (run>=number_runs_included-1) continue;
+                if (number_runs_included*2<=list_match.size())
+                {
+                    if (run>=number_runs_included-1) continue;
+                }
                 sublist.push_back(list_match.at(run).second);
                 already_used_runs->push_back(list_match.at(run).second);
                 std::cout << "list_match.at(run).first = " << list_match.at(run).first << std::endl;
@@ -661,8 +671,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             sprintf(e_low, "%i", int(energy_bins[e]));
             char e_up[50];
             sprintf(e_up, "%i", int(energy_bins[e+1]));
-            if (energy_bins[e]>=100.) N_bins_for_deconv = 480;
-            if (energy_bins[e]>=1500.) N_bins_for_deconv = 480;
+            if (energy_bins[e]>=100.) N_bins_for_deconv = 960;
+            if (energy_bins[e]>=1000.) N_bins_for_deconv = 480;
             if (UseVegas)
             {
               // if using MRSW and MRSL
@@ -831,7 +841,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         // VEGAS
 	                VAShowerData* sh = nullptr;
 	                pointing_tree->SetBranchAddress("S", &sh);
-                        for (int entry=0;entry<pointing_tree->GetEntries();entry++) {
+                        //for (int entry=0;entry<pointing_tree->GetEntries();entry++) {
+                        for (int entry=0;entry<1;entry++) {
                                 pointing_tree->GetEntry(entry);
                                 TelElevation = sh->fArrayTrackingElevation_Deg;
                                 TelAzimuth = sh->fArrayTrackingAzimuth_Deg;
@@ -1027,6 +1038,14 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 N_rms.at(e) = FindRMS(&Hist_Target_CR1_MSCW.at(e),&Hist_Target_CR2_MSCW.at(e),&Hist_Target_BkgCR1_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),true);
                 std::cout << "Target, e " << energy_bins[e] << ", N_rms.at(e) = " << N_rms.at(e) << std::endl;
 
+                //if (UseVegas) 
+                //{
+                //    N_iter.at(e) = FindNIteration(&Hist_Target_CR1_MSCW.at(e),&Hist_Target_CR2_MSCW.at(e),&Hist_Target_BkgCR1_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),true);
+                //    std::cout << "Target, e " << energy_bins[e] << ", N_iter.at(e) = " << N_iter.at(e) << std::endl;
+                //    N_rms.at(e) = FindRMS(&Hist_Target_CR1_MSCW.at(e),&Hist_Target_CR2_MSCW.at(e),&Hist_Target_BkgCR1_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),true);
+                //    std::cout << "Target, e " << energy_bins[e] << ", N_rms.at(e) = " << N_rms.at(e) << std::endl;
+                //}
+
                 myfunc->SetParameters(10.,mean_begin,N_rms.at(e));
                 Hist_Target_Deconv_MSCW.at(e).Reset();
                 Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Target_CR1_MSCW.at(e).Integral()*100);
@@ -1044,10 +1063,13 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 double SR1_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,SR1_Niter,false);
                 std::cout << "Target, e " << energy_bins[e] << ", SR1_RMS = " << SR1_RMS << std::endl;
 
-                //SR1_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR1_RMS,mean_begin,SR1_Niter,false);
-                //std::cout << "Target, e " << energy_bins[e] << ", SR1_Niter = " << SR1_Niter << std::endl;
-                //SR1_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR1_RMS,mean_begin,SR1_Niter,false);
-                //std::cout << "Target, e " << energy_bins[e] << ", SR1_RMS = " << SR1_RMS << std::endl;
+                //if (UseVegas) 
+                //{
+                //    SR1_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR1_RMS,mean_begin,SR1_Niter,false);
+                //    std::cout << "Target, e " << energy_bins[e] << ", SR1_Niter = " << SR1_Niter << std::endl;
+                //    SR1_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR1_RMS,mean_begin,SR1_Niter,false);
+                //    std::cout << "Target, e " << energy_bins[e] << ", SR1_RMS = " << SR1_RMS << std::endl;
+                //}
 
                 //double SR1_RMS = N_rms.at(e);
                 myfunc->SetParameters(10.,N_mean.at(e),SR1_RMS);
@@ -1068,10 +1090,13 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     double SR_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,SR_Niter,false);
                     std::cout << "Target, e " << energy_bins[e] << ", SR_RMS = " << SR_RMS << std::endl;
 
-                    //SR_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR_RMS,mean_begin,SR_Niter,false);
-                    //std::cout << "Target, e " << energy_bins[e] << ", SR1_Niter = " << SR_Niter << std::endl;
-                    //SR_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR_RMS,mean_begin,SR_Niter,false);
-                    //std::cout << "Target, e " << energy_bins[e] << ", SR_RMS = " << SR_RMS << std::endl;
+                    //if (UseVegas) 
+                    //{
+                    //    SR_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR_RMS,mean_begin,SR_Niter,false);
+                    //    std::cout << "Target, e " << energy_bins[e] << ", SR1_Niter = " << SR_Niter << std::endl;
+                    //    SR_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR_RMS,mean_begin,SR_Niter,false);
+                    //    std::cout << "Target, e " << energy_bins[e] << ", SR_RMS = " << SR_RMS << std::endl;
+                    //}
 
                     //double SR_RMS = N_rms.at(e);
                     myfunc->SetParameters(10.,N_mean.at(e),SR_RMS);
