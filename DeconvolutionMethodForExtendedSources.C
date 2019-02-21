@@ -38,8 +38,8 @@
 #include <VAShowerData.h>
 
 // VEGAS
-bool UseVegas =false;
-//bool UseVegas = true;
+//bool UseVegas =false;
+bool UseVegas = true;
 
 char target[50] = "";
 char Region[50] = "SR";
@@ -59,26 +59,46 @@ double Theta2_cut_lower = 0;
 double Theta2_cut_upper = 0;
 
 // EVDISP
-double MSCW_cut_lower = -1.0;
-double MSCW_cut_upper = 1.0;
-const int Number_of_SR = 4;
-double MSCL_signal_cut_lower[Number_of_SR] = {0.25,0.00,-0.25,-0.50};
-double MSCL_signal_cut_upper[Number_of_SR] = {0.50,0.25, 0.00,-0.25};
-double MSCL_control1_cut_lower = 0.50;
-double MSCL_control1_cut_upper = 0.75;
-double MSCL_control2_cut_lower = 0.75;
-double MSCL_control2_cut_upper = 1.00;
+//double MSCW_cut_lower = -1.0;
+//double MSCW_cut_upper = 1.0;
+//const int Number_of_SR = 4;
+//double MSCL_signal_cut_lower[Number_of_SR] = {0.25,0.00,-0.25,-0.50};
+//double MSCL_signal_cut_upper[Number_of_SR] = {0.50,0.25, 0.00,-0.25};
+//double MSCL_control1_cut_lower = 0.50;
+//double MSCL_control1_cut_upper = 0.75;
+//double MSCL_control2_cut_lower = 0.75;
+//double MSCL_control2_cut_upper = 1.00;
+
+//double MSCW_cut_lower = -1.0;
+//double MSCW_cut_upper = 1.0;
+//const int Number_of_SR = 2;
+//double MSCL_signal_cut_lower[Number_of_SR] = {0.75,0.50};
+//double MSCL_signal_cut_upper[Number_of_SR] = {1.00,0.75};
+//double MSCL_control1_cut_lower = 1.00;
+//double MSCL_control1_cut_upper = 1.25;
+//double MSCL_control2_cut_lower = 1.25;
+//double MSCL_control2_cut_upper = 1.50;
 
 // VEGAS
+double MSCW_cut_lower = 0.7;
+double MSCW_cut_upper = 1.3;
+const int Number_of_SR = 12;
+double MSCL_signal_cut_lower[Number_of_SR] = {1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75,0.70};
+double MSCL_signal_cut_upper[Number_of_SR] = {1.30,1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75};
+double MSCL_control1_cut_lower = 1.3;
+double MSCL_control1_cut_upper = 1.35;
+double MSCL_control2_cut_lower = 1.35;
+double MSCL_control2_cut_upper = 1.4;
+
 //double MSCW_cut_lower = 0.7;
 //double MSCW_cut_upper = 1.3;
-//const int Number_of_SR = 12;
-//double MSCL_signal_cut_lower[Number_of_SR] = {1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75,0.70};
-//double MSCL_signal_cut_upper[Number_of_SR] = {1.30,1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75};
-//double MSCL_control1_cut_lower = 1.3;
-//double MSCL_control1_cut_upper = 1.35;
-//double MSCL_control2_cut_lower = 1.35;
-//double MSCL_control2_cut_upper = 1.4;
+//const int Number_of_SR = 2;
+//double MSCL_signal_cut_lower[Number_of_SR] = {1.35,1.30};
+//double MSCL_signal_cut_upper[Number_of_SR] = {1.40,1.35};
+//double MSCL_control1_cut_lower = 1.40;
+//double MSCL_control1_cut_upper = 1.45;
+//double MSCL_control2_cut_lower = 1.45;
+//double MSCL_control2_cut_upper = 1.50;
 
 
 double Norm_Lower = MSCW_cut_upper;
@@ -100,12 +120,12 @@ double theta2 = 0;
 double ra_sky = 0;
 double dec_sky = 0;
 
-const int N_energy_bins = 12;
-double energy_bins[N_energy_bins+1] =     {200,300,400,600,700,800,1000,1200,1500,2000,3000,5000,10000};
-int number_runs_included[N_energy_bins] = {2  ,2  ,2  ,4  ,4  ,4  ,16  ,16  ,16  ,16  ,32  ,32};
 //const int N_energy_bins = 12;
 //double energy_bins[N_energy_bins+1] =     {200,300,400,600,700,800,1000,1200,1500,2000,3000,5000,10000};
-//int number_runs_included[N_energy_bins] = {8  ,8  ,8  ,8  ,8  ,8  ,8   ,8   ,8   ,8   ,8   ,8};
+//int number_runs_included[N_energy_bins] = {2  ,2  ,2  ,4  ,4  ,4  ,16  ,16  ,16  ,16  ,32  ,32};
+const int N_energy_bins = 12;
+double energy_bins[N_energy_bins+1] =     {200,300,400,600,700,800,1000,1200,1500,2000,3000,5000,10000};
+int number_runs_included[N_energy_bins] = {8  ,8  ,8  ,8  ,8  ,8  ,8   ,8   ,8   ,8   ,8   ,8};
 //const int N_energy_bins = 6;
 //double energy_bins[N_energy_bins+1] =     {200,300,400,600,700,800,1000};
 //int number_runs_included[N_energy_bins] = {2  ,2  ,2  ,4  ,4  ,4};
@@ -345,8 +365,8 @@ double FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTemp, TH1
         double chi2 = 0;
         double rms = rms_begin;
         if (includeSR) rms = rms_begin-0.5*rms_begin+double(n_rms)*1.0*rms_begin/50.;
-        //else rms = rms_begin-0.1*rms_begin+double(n_rms)*0.2*rms_begin/50.;
-        else rms = rms_begin-0.5*rms_begin+double(n_rms)*1.0*rms_begin/50.;
+        else rms = rms_begin-0.1*rms_begin+double(n_rms)*0.2*rms_begin/50.;
+        //else rms = rms_begin-0.5*rms_begin+double(n_rms)*1.0*rms_begin/50.;
         func->SetParameters(10.,mean,rms);
         Hist_Deconv->Reset();
         Hist_Deconv->FillRandom("func",Hist_SR->Integral()*100);
@@ -1043,6 +1063,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 std::cout << "Target, e " << energy_bins[e] << ", SR1_Niter = " << SR1_Niter << std::endl;
                 double SR1_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR1_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,SR1_Niter,false);
                 std::cout << "Target, e " << energy_bins[e] << ", SR1_RMS = " << SR1_RMS << std::endl;
+                N_rms.at(e) = SR1_RMS;
 
                 //if (UseVegas) 
                 //{
@@ -1070,6 +1091,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     std::cout << "Target, e " << energy_bins[e] << ", SR2_Niter = " << SR_Niter << std::endl;
                     double SR_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,SR_Niter,false);
                     std::cout << "Target, e " << energy_bins[e] << ", SR_RMS = " << SR_RMS << std::endl;
+                    N_rms.at(e) = SR_RMS;
 
                     //if (UseVegas) 
                     //{
@@ -1107,28 +1129,64 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 {
                     for (int s=0;s<Number_of_SR;s++)
                     {
-                        total_bkg_err += Hist_Target_BkgSR_MSCW.at(e).at(s).GetBinError(bin); // remember this error is correlated.
+                        total_bkg_err += pow(Hist_Target_BkgSR_MSCW.at(e).at(s).GetBinError(bin),2);
                     }
                 }
+                total_bkg_err = pow(total_bkg_err,0.5);
                 double scale_sky = total_bkg/old_integral;
                 double scale_sky_err = total_bkg_err/old_integral;
+                double nbins_theta2_plot = 0;
                 for (int bin=1;bin<=Hist_Target_Bkg_theta2.at(e).GetNbinsX();bin++)
                 {
+                    double bin_center = Hist_Target_CR_theta2.at(e).GetBinCenter(bin);
+                    if (bin_center<theta2_cut_lower_input || bin_center>theta2_cut_upper_input) continue;
+                    nbins_theta2_plot += 1.;
+                }
+                for (int bin=1;bin<=Hist_Target_Bkg_theta2.at(e).GetNbinsX();bin++)
+                {
+                    double bin_center = Hist_Target_CR_theta2.at(e).GetBinCenter(bin);
+                    if (bin_center<theta2_cut_lower_input || bin_center>theta2_cut_upper_input) continue;
                     double bin_content = Hist_Target_CR_theta2.at(e).GetBinContent(bin)*scale_sky;
                     double bin_error_1 = Hist_Target_CR_theta2.at(e).GetBinError(bin)*scale_sky;
                     double bin_error_2 = Hist_Target_CR_theta2.at(e).GetBinContent(bin)*scale_sky_err;
                     Hist_Target_Bkg_theta2.at(e).SetBinContent(bin,bin_content);
                     Hist_Target_Bkg_theta2.at(e).SetBinError(bin,pow(bin_error_1*bin_error_1+bin_error_2*bin_error_2,0.5));
+                    //
+                    //double bin_content = total_bkg/nbins_theta2_plot;
+                    //double bin_error = pow(pow(total_bkg_err,2)/nbins_theta2_plot,0.5);
+                    //Hist_Target_Bkg_theta2.at(e).SetBinContent(bin,bin_content);
+                    //Hist_Target_Bkg_theta2.at(e).SetBinError(bin,bin_error);
+                }
+                double nbins_radec_plot = 0;
+                for (int binx=1;binx<=Hist_Target_Bkg_RaDec.at(e).GetNbinsX();binx++)
+                {
+                    for (int biny=1;biny<=Hist_Target_Bkg_RaDec.at(e).GetNbinsY();biny++)
+                    {
+                        double bin_center_x = Hist_Target_CR_RaDec.at(e).GetXaxis()->GetBinCenter(binx);
+                        double bin_center_y = Hist_Target_CR_RaDec.at(e).GetYaxis()->GetBinCenter(biny);
+                        double bin_center_r = pow(bin_center_x*bin_center_x+bin_center_y*bin_center_y,0.5);
+                        if (bin_center_r<theta2_cut_lower_input || bin_center_r>theta2_cut_upper_input) continue;
+                        nbins_radec_plot += 1.;
+                    }
                 }
                 for (int binx=1;binx<=Hist_Target_Bkg_RaDec.at(e).GetNbinsX();binx++)
                 {
                     for (int biny=1;biny<=Hist_Target_Bkg_RaDec.at(e).GetNbinsY();biny++)
                     {
+                        double bin_center_x = Hist_Target_CR_RaDec.at(e).GetXaxis()->GetBinCenter(binx);
+                        double bin_center_y = Hist_Target_CR_RaDec.at(e).GetYaxis()->GetBinCenter(biny);
+                        double bin_center_r = pow(bin_center_x*bin_center_x+bin_center_y*bin_center_y,0.5);
+                        if (bin_center_r<theta2_cut_lower_input || bin_center_r>theta2_cut_upper_input) continue;
                         double bin_content = Hist_Target_CR_RaDec.at(e).GetBinContent(binx,biny)*scale_sky;
                         double bin_error_1 = Hist_Target_CR_RaDec.at(e).GetBinError(binx,biny)*scale_sky;
                         double bin_error_2 = Hist_Target_CR_RaDec.at(e).GetBinContent(binx,biny)*scale_sky_err;
                         Hist_Target_Bkg_RaDec.at(e).SetBinContent(binx,biny,bin_content);
                         Hist_Target_Bkg_RaDec.at(e).SetBinError(binx,biny,pow(bin_error_1*bin_error_1+bin_error_2*bin_error_2,0.5));
+                        //
+                        //double bin_content = total_bkg/nbins_radec_plot;
+                        //double bin_error = pow(pow(total_bkg_err,2)/nbins_radec_plot,0.5);
+                        //Hist_Target_Bkg_RaDec.at(e).SetBinContent(binx,biny,bin_content);
+                        //Hist_Target_Bkg_RaDec.at(e).SetBinError(binx,biny,bin_error);
                     }
                 }
 
