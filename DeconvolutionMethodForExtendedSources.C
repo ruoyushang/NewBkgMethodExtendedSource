@@ -38,8 +38,8 @@
 #include <VAShowerData.h>
 
 // VEGAS
-//bool UseVegas =false;
-bool UseVegas = true;
+bool UseVegas =false;
+//bool UseVegas = true;
 
 char target[50] = "";
 char Region[50] = "SR";
@@ -59,15 +59,15 @@ double Theta2_cut_lower = 0;
 double Theta2_cut_upper = 0;
 
 // EVDISP
-//double MSCW_cut_lower = -1.0;
-//double MSCW_cut_upper = 1.0;
-//const int Number_of_SR = 4;
-//double MSCL_signal_cut_lower[Number_of_SR] = {0.25,0.00,-0.25,-0.50};
-//double MSCL_signal_cut_upper[Number_of_SR] = {0.50,0.25, 0.00,-0.25};
-//double MSCL_control1_cut_lower = 0.50;
-//double MSCL_control1_cut_upper = 0.75;
-//double MSCL_control2_cut_lower = 0.75;
-//double MSCL_control2_cut_upper = 1.00;
+double MSCW_cut_lower = -1.0;
+double MSCW_cut_upper = 1.0;
+const int Number_of_SR = 4;
+double MSCL_signal_cut_lower[Number_of_SR] = {0.25,0.00,-0.25,-0.50};
+double MSCL_signal_cut_upper[Number_of_SR] = {0.50,0.25, 0.00,-0.25};
+double MSCL_control1_cut_lower = 0.50;
+double MSCL_control1_cut_upper = 0.75;
+double MSCL_control2_cut_lower = 0.75;
+double MSCL_control2_cut_upper = 1.00;
 
 //double MSCW_cut_lower = -1.0;
 //double MSCW_cut_upper = 1.0;
@@ -80,15 +80,15 @@ double Theta2_cut_upper = 0;
 //double MSCL_control2_cut_upper = 1.50;
 
 // VEGAS
-double MSCW_cut_lower = 0.7;
-double MSCW_cut_upper = 1.3;
-const int Number_of_SR = 12;
-double MSCL_signal_cut_lower[Number_of_SR] = {1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75,0.70};
-double MSCL_signal_cut_upper[Number_of_SR] = {1.30,1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75};
-double MSCL_control1_cut_lower = 1.3;
-double MSCL_control1_cut_upper = 1.35;
-double MSCL_control2_cut_lower = 1.35;
-double MSCL_control2_cut_upper = 1.4;
+//double MSCW_cut_lower = 0.7;
+//double MSCW_cut_upper = 1.3;
+//const int Number_of_SR = 12;
+//double MSCL_signal_cut_lower[Number_of_SR] = {1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75,0.70};
+//double MSCL_signal_cut_upper[Number_of_SR] = {1.30,1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75};
+//double MSCL_control1_cut_lower = 1.3;
+//double MSCL_control1_cut_upper = 1.35;
+//double MSCL_control2_cut_lower = 1.35;
+//double MSCL_control2_cut_upper = 1.4;
 
 //double MSCW_cut_lower = 0.7;
 //double MSCW_cut_upper = 1.3;
@@ -122,13 +122,10 @@ double dec_sky = 0;
 
 //const int N_energy_bins = 12;
 //double energy_bins[N_energy_bins+1] =     {200,300,400,600,700,800,1000,1200,1500,2000,3000,5000,10000};
-//int number_runs_included[N_energy_bins] = {2  ,2  ,2  ,4  ,4  ,4  ,16  ,16  ,16  ,16  ,32  ,32};
-const int N_energy_bins = 12;
-double energy_bins[N_energy_bins+1] =     {200,300,400,600,700,800,1000,1200,1500,2000,3000,5000,10000};
-int number_runs_included[N_energy_bins] = {8  ,8  ,8  ,8  ,8  ,8  ,8   ,8   ,8   ,8   ,8   ,8};
-//const int N_energy_bins = 6;
-//double energy_bins[N_energy_bins+1] =     {200,300,400,600,700,800,1000};
-//int number_runs_included[N_energy_bins] = {2  ,2  ,2  ,4  ,4  ,4};
+//int number_runs_included[N_energy_bins] = {8  ,8  ,8  ,8  ,8  ,8  ,8   ,8   ,8   ,8   ,8   ,8};
+const int N_energy_bins = 9;
+double energy_bins[N_energy_bins+1] =     {600,700,800,1000,1200,1500,2000,3000,5000,10000};
+int number_runs_included[N_energy_bins] = {8  ,8  ,8  ,8   ,8   ,8   ,8   ,8   ,8};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] =     {2000,3000};
 //int number_runs_included[N_energy_bins] = {8};
@@ -231,10 +228,10 @@ void Converge(TH1* Hist_Bkg)
         threshold = 1.;
         amplitude = 20.;
     }
-    //else
-    //{
-    //    return;
-    //}
+    else
+    {
+        return;
+    }
     for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
     {
         if (Hist_Bkg->GetBinCenter(i+1)<threshold)
@@ -365,8 +362,8 @@ double FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTemp, TH1
         double chi2 = 0;
         double rms = rms_begin;
         if (includeSR) rms = rms_begin-0.5*rms_begin+double(n_rms)*1.0*rms_begin/50.;
-        else rms = rms_begin-0.1*rms_begin+double(n_rms)*0.2*rms_begin/50.;
-        //else rms = rms_begin-0.5*rms_begin+double(n_rms)*1.0*rms_begin/50.;
+        //else rms = rms_begin-0.1*rms_begin+double(n_rms)*0.2*rms_begin/50.;
+        else rms = rms_begin-0.2*rms_begin+double(n_rms)*0.4*rms_begin/50.;
         func->SetParameters(10.,mean,rms);
         Hist_Deconv->Reset();
         Hist_Deconv->FillRandom("func",Hist_SR->Integral()*100);
@@ -690,8 +687,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             sprintf(e_low, "%i", int(energy_bins[e]));
             char e_up[50];
             sprintf(e_up, "%i", int(energy_bins[e+1]));
-            if (energy_bins[e]>=100.) N_bins_for_deconv = 960;
-            if (energy_bins[e]>=1000.) N_bins_for_deconv = 480;
+            if (energy_bins[e]>=100.) N_bins_for_deconv = 1920;
+            if (energy_bins[e]>=500.) N_bins_for_deconv = 960;
             if (UseVegas)
             {
               // if using MRSW and MRSL
