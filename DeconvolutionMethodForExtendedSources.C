@@ -127,11 +127,11 @@ double dec_sky = 0;
 const int N_energy_bins = 9;
 double energy_bins[N_energy_bins+1] =     {600,700,800,1000,1200,1500,2000,3000,5000,10000};
 int number_runs_included[N_energy_bins] = {8  ,8  ,8  ,8   ,8   ,8   ,8   ,8   ,8};
-//const int N_energy_bins = 9;
-//double energy_bins[N_energy_bins+1] =     {600,700,800,1000,1200,1500,2000,3000,5000,10000};
-//int number_runs_included[N_energy_bins] = {32 ,32 ,32 ,32  ,32  ,32  ,32  ,32  ,32};
+//const int N_energy_bins = 7;
+//double energy_bins[N_energy_bins+1] =     {800,1000,1200,1500,2000,3000,5000,10000};
+//int number_runs_included[N_energy_bins] = {32 ,32  ,32  ,32  ,32  ,32  ,32};
 //const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] =     {1000,1200};
+//double energy_bins[N_energy_bins+1] =     {1500,2000};
 //int number_runs_included[N_energy_bins] = {32};
 
 int N_bins_for_deconv = 480;
@@ -221,28 +221,80 @@ void MakeBkgPrevious(TH1* Hist_SR,TH1* Hist_Bkg,TH1* Hist_Previous)
         }
     }
 }
-void Converge(TH1* Hist_Bkg)
+double ConvergeFunction(double x, double threshold, double amplitude)
+{
+    if (x-threshold>0) return 1.;
+    return exp(amplitude*(x-threshold));
+    //return 1./(1.+exp(-1.*amplitude*(x-threshold)));
+}
+double FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bkg_Temp)
 {
     double threshold = 0.;
     double amplitude = 1.0;
+    double init_amplitude = 1.0;
+    double chi2_best = 0.;
     if (UseVegas) 
     {
-        threshold = 1.;
-        amplitude = 10.;
+        threshold = 1.1;
+        init_amplitude = 4.0;
     }
     else
     {
         threshold = 0.;
-        amplitude = 2.0;
+        init_amplitude = 2.0;
+    }
+    double data_counts = 0.;
+    for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
+    {
+        if (Hist_Bkg->GetBinCenter(i+1)>threshold) continue;
+        data_counts += Hist_SR->GetBinContent(i+1);
+    }
+    for (int amp=0;amp<100;amp++)
+    {
+        double try_amplitude = init_amplitude -0.1*init_amplitude + 10.0*init_amplitude*double(amp)/100.;
+        double chi2 = 0.;
+        for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
+        {
+            double old_content = Hist_Bkg->GetBinContent(i+1);
+            double new_content = old_content*ConvergeFunction(Hist_Bkg->GetBinCenter(i+1),threshold,try_amplitude);
+            double old_error = Hist_Bkg->GetBinError(i+1);
+            double new_error = old_error*ConvergeFunction(Hist_Bkg->GetBinCenter(i+1),threshold,try_amplitude);
+            Hist_Bkg_Temp->SetBinContent(i+1,new_content);
+        }
+        //chi2 = GetChi2(Hist_SR, Hist_Bkg_Temp,true);
+        double bkg_counts = 0.;
+        for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
+        {
+            if (Hist_Bkg->GetBinCenter(i+1)>threshold) continue;
+            bkg_counts += Hist_Bkg->GetBinContent(i+1);
+        }
+        if (bkg_counts-data_counts==0) continue;
+        chi2 = 1./pow(bkg_counts-data_counts,2);
+        if (chi2_best<chi2) {
+            chi2_best = chi2;
+            amplitude = try_amplitude;
+        } 
+    }
+    return amplitude;
+}
+void Converge(TH1* Hist_Bkg, double amplitude)
+{
+    double threshold = 0.;
+    if (UseVegas) 
+    {
+        threshold = 1.1;
+    }
+    else
+    {
+        threshold = 0.;
     }
     for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
     {
-        if (Hist_Bkg->GetBinCenter(i+1)<threshold)
-        {
-            double old_content = Hist_Bkg->GetBinContent(i+1);
-            double new_content = old_content*exp(amplitude*(Hist_Bkg->GetBinCenter(i+1)-threshold));
-            Hist_Bkg->SetBinContent(i+1,new_content);
-        }
+        double old_content = Hist_Bkg->GetBinContent(i+1);
+        double new_content = old_content*ConvergeFunction(Hist_Bkg->GetBinCenter(i+1),threshold,amplitude);
+        double old_error = Hist_Bkg->GetBinError(i+1);
+        double new_error = old_error*ConvergeFunction(Hist_Bkg->GetBinCenter(i+1),threshold,amplitude);
+        Hist_Bkg->SetBinContent(i+1,new_content);
     }
 }
 double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double shift_begin, bool doShift, bool includeSR) {
@@ -1031,6 +1083,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     double rms_begin = Hist_Target_Deconv_MSCW.at(e).GetRMS();
                     double mean_begin = Hist_Target_Deconv_MSCW.at(e).GetMean();
 
+                    std::cout << "Target, e " << energy_bins[e] << ", running CR " << c1 << std::endl;
+
                     N_iter.at(e) = FindNIteration(&Hist_Target_CR_MSCW.at(e).at(c1+1),&Hist_Target_CR_MSCW.at(e).at(c1),&Hist_Target_BkgCR_MSCW.at(e).at(c1+1),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),rms_begin,mean_begin,50,true);
                     std::cout << "Target, e " << energy_bins[e] << ", N_iter.at(e) = " << N_iter.at(e) << std::endl;
                     N_rms.at(e) = FindRMS(&Hist_Target_CR_MSCW.at(e).at(c1+1),&Hist_Target_CR_MSCW.at(e).at(c1),&Hist_Target_BkgCR_MSCW.at(e).at(c1+1),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),rms_begin,mean_begin,N_iter.at(e),true);
@@ -1074,7 +1128,12 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     double offset_begin = 0;
                     offset_begin = Hist_Target_CR_MSCW.at(e).at(c1+1).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
                     offset_begin = ShiftAndNormalize(&Hist_Target_CR_MSCW.at(e).at(c1+1),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgCR_MSCW.at(e).at(c1+1),offset_begin,true,true);
-                    Converge(&Hist_Target_BkgCR_MSCW.at(e).at(c1+1));
+                    double amplitude = FindConverge(&Hist_Target_CR_MSCW.at(e).at(c1+1),&Hist_Target_BkgCR_MSCW.at(e).at(c1+1),&Hist_Target_BkgTemp_MSCW.at(e));
+                    std::cout << "Target, e " << energy_bins[e] << ", amplitude = " << amplitude << std::endl;
+                    Converge(&Hist_Target_BkgCR_MSCW.at(e).at(c1+1),amplitude);
+
+                    Hist_Target_CR_MSCW_Sum.at(e).at(c1+1).Add(&Hist_Target_CR_MSCW.at(e).at(c1+1));
+                    Hist_Target_BkgCR_MSCW_Sum.at(e).at(c1+1).Add(&Hist_Target_BkgCR_MSCW.at(e).at(c1+1));
 
                     N_mean.at(e) = mean_begin;
 
@@ -1095,7 +1154,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         std::cout << "Target, e " << energy_bins[e] << ", final rms = " << Hist_Target_Deconv_MSCW.at(e).GetRMS() << std::endl;
                         offset_begin = Hist_Target_CR_MSCW.at(e).at(c2).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
                         offset_begin = ShiftAndNormalize(&Hist_Target_CR_MSCW.at(e).at(c2),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgCR_MSCW.at(e).at(c2),offset_begin,true,false);
-                        Converge(&Hist_Target_BkgCR_MSCW.at(e).at(c2));
+                        Converge(&Hist_Target_BkgCR_MSCW.at(e).at(c2),amplitude);
                     }
                     // estimate SR1 bkg
                     int SR1_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),false);
@@ -1113,7 +1172,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     std::cout << "Target, e " << energy_bins[e] << ", final rms = " << Hist_Target_Deconv_MSCW.at(e).GetRMS() << std::endl;
                     offset_begin = Hist_Target_SR_MSCW.at(e).at(0).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
                     offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),offset_begin,true,false);
-                    Converge(&Hist_Target_BkgSR_MSCW.at(e).at(0));
+                    Converge(&Hist_Target_BkgSR_MSCW.at(e).at(0),amplitude);
                     Hist_Target_BkgSR_MSCW_AllCR.at(e).at(0).Add(&Hist_Target_BkgSR_MSCW.at(e).at(0));
 
                     // estimate SR2 bkg
@@ -1134,7 +1193,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         std::cout << "Target, e " << energy_bins[e] << ", final rms = " << Hist_Target_Deconv_MSCW.at(e).GetRMS() << std::endl;
                         offset_begin = Hist_Target_SR_MSCW.at(e).at(s).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
                         offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(s),offset_begin,true,false);
-                        Converge(&Hist_Target_BkgSR_MSCW.at(e).at(s));
+                        Converge(&Hist_Target_BkgSR_MSCW.at(e).at(s),amplitude);
                         Hist_Target_BkgSR_MSCW_AllCR.at(e).at(s).Add(&Hist_Target_BkgSR_MSCW.at(e).at(s));
                     }
                 }
@@ -1225,11 +1284,11 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     Hist_Target_SR_MSCW_Sum_Combined.at(e).Add(&Hist_Target_SR_MSCW.at(e).at(s));
                     Hist_Target_BkgSR_MSCW_Sum.at(e).at(s).Add(&Hist_Target_BkgSR_MSCW_AllCR.at(e).at(s)); // this is summing over sublist, errors are not correlated.
                 }
-                for (int s=0;s<Number_of_CR;s++)
-                {
-                    Hist_Target_CR_MSCW_Sum.at(e).at(s).Add(&Hist_Target_CR_MSCW.at(e).at(s));
-                    Hist_Target_BkgCR_MSCW_Sum.at(e).at(s).Add(&Hist_Target_BkgCR_MSCW.at(e).at(s)); // this is summing over sublist, errors are not correlated.
-                }
+                //for (int s=0;s<Number_of_CR;s++)
+                //{
+                //    Hist_Target_CR_MSCW_Sum.at(e).at(s).Add(&Hist_Target_CR_MSCW.at(e).at(s));
+                //    Hist_Target_BkgCR_MSCW_Sum.at(e).at(s).Add(&Hist_Target_BkgCR_MSCW.at(e).at(s)); // this is summing over sublist, errors are not correlated.
+                //}
                 Hist_Target_Bkg_theta2_Sum.at(e).Add(&Hist_Target_Bkg_theta2.at(e));
                 Hist_Target_Bkg_RaDec_Sum.at(e).Add(&Hist_Target_Bkg_RaDec.at(e));
 
