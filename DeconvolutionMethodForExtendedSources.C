@@ -61,24 +61,12 @@ double Theta2_cut_upper = 0;
 // EVDISP
 double MSCW_cut_lower = -1.0;
 double MSCW_cut_upper = 1.0;
-const int Number_of_SR = 5;
-double MSCL_signal_cut_lower[Number_of_SR] = {0.50,0.25,0.00,-0.25,-0.50};
-double MSCL_signal_cut_upper[Number_of_SR] = {0.75,0.50,0.25, 0.00,-0.25};
-//const int Number_of_CR = 5;
-//double MSCL_control_cut_lower[Number_of_CR] = {1.75,1.50,1.25,1.00,0.75};
-//double MSCL_control_cut_upper[Number_of_CR] = {2.00,1.75,1.50,1.25,1.00};
+const int Number_of_SR = 4;
+double MSCL_signal_cut_lower[Number_of_SR] = {0.25,0.00,-0.25,-0.50};
+double MSCL_signal_cut_upper[Number_of_SR] = {0.50,0.25, 0.00,-0.25};
 const int Number_of_CR = 2;
-double MSCL_control_cut_lower[Number_of_CR] = {1.00,0.75};
-double MSCL_control_cut_upper[Number_of_CR] = {2.00,1.00};
-
-//double MSCW_cut_lower = -1.0;
-//double MSCW_cut_upper = 1.0;
-//const int Number_of_SR = 3;
-//double MSCL_signal_cut_lower[Number_of_SR] = {1.25,1.00,0.75};
-//double MSCL_signal_cut_upper[Number_of_SR] = {1.50,1.25,1.00};
-//const int Number_of_CR = 3;
-//double MSCL_control_cut_lower[Number_of_CR] = {2.00,1.75,1.50};
-//double MSCL_control_cut_upper[Number_of_CR] = {2.25,2.00,1.75};
+double MSCL_control_cut_lower[Number_of_CR] = {0.75,0.50};
+double MSCL_control_cut_upper[Number_of_CR] = {1.00,0.75};
 
 
 // VEGAS
@@ -87,19 +75,10 @@ double MSCL_control_cut_upper[Number_of_CR] = {2.00,1.00};
 //const int Number_of_SR = 12;
 //double MSCL_signal_cut_lower[Number_of_SR] = {1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75,0.70};
 //double MSCL_signal_cut_upper[Number_of_SR] = {1.30,1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75};
-//const int Number_of_CR = 6;
-//double MSCL_control_cut_lower[Number_of_CR] = {1.55,1.50,1.45,1.40,1.35,1.30};
-//double MSCL_control_cut_upper[Number_of_CR] = {1.60,1.55,1.50,1.45,1.40,1.35};
+//const int Number_of_CR = 2;
+//double MSCL_control_cut_lower[Number_of_CR] = {1.45,1.30};
+//double MSCL_control_cut_upper[Number_of_CR] = {1.65,1.45};
 
-//double MSCW_cut_lower = 0.7;
-//double MSCW_cut_upper = 1.3;
-//const int Number_of_SR = 2;
-//double MSCL_signal_cut_lower[Number_of_SR] = {1.35,1.30};
-//double MSCL_signal_cut_upper[Number_of_SR] = {1.40,1.35};
-//double MSCL_control1_cut_lower = 1.40;
-//double MSCL_control1_cut_upper = 1.45;
-//double MSCL_control2_cut_lower = 1.45;
-//double MSCL_control2_cut_upper = 1.50;
 
 
 double Norm_Lower = MSCW_cut_upper;
@@ -121,18 +100,15 @@ double theta2 = 0;
 double ra_sky = 0;
 double dec_sky = 0;
 
-//const int N_energy_bins = 11;
-//double energy_bins[N_energy_bins+1] =     {400,500,600,700,800,1000,1200,1500,2000,3000,5000,10000};
-//int number_runs_included[N_energy_bins] = {10 ,10 ,20 ,20 ,20 ,40  ,40  ,40  ,40  ,40  ,40};
-//const int N_energy_bins = 9;
-//double energy_bins[N_energy_bins+1] =     {600,700,800,1000,1200,1500,2000,3000,5000,10000};
-//int number_runs_included[N_energy_bins] = {8  ,8  ,8  ,8   ,8   ,8   ,8   ,8   ,8};
-//const int N_energy_bins = 7;
-//double energy_bins[N_energy_bins+1] =     {800,1000,1200,1500,2000,3000,5000,10000};
-//int number_runs_included[N_energy_bins] = {32 ,32  ,32  ,32  ,32  ,32  ,32};
-const int N_energy_bins = 1;
-double energy_bins[N_energy_bins+1] =     {500,600};
-int number_runs_included[N_energy_bins] = {40};
+//const int N_energy_bins = 13;
+//double energy_bins[N_energy_bins+1] =     {200,300,400,500,600,700,800,1000,1200,1500,2000,3000,5000,10000};
+//int number_runs_included[N_energy_bins] = {5  ,10 ,10 ,10 ,20 ,20 ,20 ,40  ,40  ,40  ,40  ,40  ,40};
+const int N_energy_bins = 10;
+double energy_bins[N_energy_bins+1] =     {562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
+int number_runs_included[N_energy_bins] = {20 ,20 ,20 ,20 ,20  ,20  ,20  ,20  ,20  ,20};
+//const int N_energy_bins = 1;
+//double energy_bins[N_energy_bins+1] =     {1122,1585};
+//int number_runs_included[N_energy_bins] = {40};
 
 int N_bins_for_deconv = 480;
 double MSCW_plot_lower = -30.;
@@ -146,10 +122,6 @@ bool FoV() {
 }
 bool RingFoV() {
     if (theta2<Theta2_cut_upper) return false;
-    return true;
-}
-bool QualitySelection() {
-    if (EmissionHeightChi2/EmissionHeight>0.2) return false;
     return true;
 }
 bool SignalSelectionMSCL() {
@@ -253,7 +225,8 @@ void MakeBkgPrevious(TH1* Hist_SR,TH1* Hist_Bkg,TH1* Hist_Previous)
 double ConvergeFunction(double x, double threshold, double amplitude)
 {
     if (x-threshold>0) return 1.;
-    return exp(amplitude*(x-threshold));
+    //return exp(amplitude*(x-threshold));
+    return exp(-pow(amplitude*(x-threshold),2));
     //return 1./(1.+exp(-1.*amplitude*(x-threshold)));
 }
 std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bkg_Temp)
@@ -267,7 +240,7 @@ std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bk
     double rms = Hist_SR->GetRMS();
     if (UseVegas) 
     {
-        threshold = 1.1;
+        threshold = mean-rms_threshold*rms;
         init_amplitude = 4.0;
     }
     else
@@ -539,7 +512,7 @@ vector<int> FindRunSublist(string source, vector<int> Target_runlist, vector<int
                     if (TString(observation)=="Coma" || TString(observation)=="BrandonValidation") {
                       filename = TString("/veritas/userspace/brandon/VERITAS/Background/anasum/"+TString(run_number)+".anasum.root");
                     }
-                    if (TString(observation)=="VA_Segue1")
+                    if (TString(observation)=="VA_Segue1" || TString(observation)=="VA_Geminga")
                     {
                       filename = TString("/veritas/upload/Geminga_Iowa/"+TString(run_number)+".stage4.root");
                     }
@@ -618,7 +591,7 @@ vector<int> FindRunSublist(string source, vector<int> Target_runlist, vector<int
                 if (TString(observation)=="Coma" || TString(observation)=="BrandonValidation") {
                   filename = TString("/veritas/userspace/brandon/VERITAS/Background/anasum/"+TString(run_number)+".anasum.root");
                 }
-                if (TString(observation)=="VA_Segue1")
+                if (TString(observation)=="VA_Segue1" || TString(observation)=="VA_Geminga")
                 {
                   filename = TString("/veritas/upload/Geminga_Iowa/"+TString(run_number)+".stage4.root");
                 }
@@ -842,9 +815,14 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
 
 
         std::cout << "Getting dark runs... " << std::endl;
-        vector<int> Dark_runlist = GetRunList("PKS1424");
+        vector<int> Dark_runlist = GetRunList("DarkSegue1V6");
         char Dark_observation[50];
-        sprintf(Dark_observation, "%s", "PKS1424");
+        sprintf(Dark_observation, "%s", "Segue1V6");
+        if (UseVegas) 
+        {
+            Dark_runlist = GetRunList("VA_DarkSegue1");
+            sprintf(Dark_observation, "%s", "VA_DarkSegue1");
+        }
         for (int e=0;e<N_energy_bins;e++)
         {
             std::cout << "=================================================================" << std::endl;
@@ -857,6 +835,10 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 sprintf(run_number, "%i", int(Dark_runlist[run]));
                 std::cout << "Reading run " << run_number << std::endl;
                 filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Dark_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
+                if (TString(Dark_observation)=="VA_DarkSegue1")
+                {
+                  filename = TString("/veritas/upload/Geminga_Iowa/"+TString(run_number)+".stage4.root");
+                }
                 TFile*  input_file = TFile::Open(filename.c_str());
                 TTree* pointing_tree = nullptr;
                 //if (!UseVegas) 
@@ -970,7 +952,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     }
                     int energy = Hist_Target_SR_ErecS.at(0).FindBin(ErecS*1000.)-1;
                     if (e!=energy) continue;
-                    if (!QualitySelection()) continue;
                     if (FoV()) {
                             if (SignalSelectionMSCL()) 
                             {
@@ -1049,7 +1030,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     if (TString(observation)=="Coma" || TString(observation)=="BrandonValidation") {
                       filename = TString("/veritas/userspace/brandon/VERITAS/Background/anasum/"+TString(run_number)+".anasum.root");
                     }
-                    if (TString(observation)=="VA_Segue1")
+                    if (TString(observation)=="VA_Segue1" || TString(observation)=="VA_Geminga")
                     {
                       filename = TString("/veritas/upload/Geminga_Iowa/"+TString(run_number)+".stage4.root");
                     }
@@ -1182,7 +1163,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         }
                         int energy = Hist_Target_SR_ErecS.at(0).FindBin(ErecS*1000.)-1;
                         if (e!=energy) continue;
-                        if (!QualitySelection()) continue;
                         if (MSCL<MSCL_signal_cut_upper[0]) {
                             if (theta2<0.1) {
                                 Hist_Target_ON_MSCW_Alpha.Fill(MSCW);
@@ -1313,21 +1293,12 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     N_mean.at(e) = mean_begin;
 
                     // estimate SR1 bkg
+                    MakeBkgPrevious(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgPrevious_MSCW.at(e));
                     std::cout << "Target, e " << energy_bins[e] << ", running CR " << c1 << " to SR " << 0 << std::endl;
-                    int SR1_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),false);
+                    int SR1_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgPrevious_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),false);
                     std::cout << "Target, e " << energy_bins[e] << ", SR2_Niter = " << SR1_Niter << std::endl;
-                    double SR1_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,SR1_Niter,false);
+                    double SR1_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgPrevious_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,SR1_Niter,false);
                     std::cout << "Target, e " << energy_bins[e] << ", SR_RMS = " << SR1_RMS << std::endl;
-
-                    //SR1_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR1_RMS,mean_begin,SR1_Niter,false);
-                    //std::cout << "Target, e " << energy_bins[e] << ", SR2_Niter = " << SR1_Niter << std::endl;
-                    //SR1_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR1_RMS,mean_begin,SR1_Niter,false);
-                    //std::cout << "Target, e " << energy_bins[e] << ", SR_RMS = " << SR1_RMS << std::endl;
-
-                    //SR1_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR1_RMS,mean_begin,SR1_Niter,false);
-                    //std::cout << "Target, e " << energy_bins[e] << ", SR2_Niter = " << SR1_Niter << std::endl;
-                    //SR1_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR1_RMS,mean_begin,SR1_Niter,false);
-                    //std::cout << "Target, e " << energy_bins[e] << ", SR_RMS = " << SR1_RMS << std::endl;
 
                     N_rms.at(e) = SR1_RMS;
 
@@ -1335,9 +1306,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     Hist_Target_Deconv_MSCW.at(e).Reset();
                     Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Target_SR_MSCW.at(e).at(0).Integral()*100);
                     
-                    //MakeBkgPrevious(&Hist_Target_SR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgPrevious_MSCW.at(e));
-                    //Deconvolution(&Hist_Target_BkgPrevious_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),SR_Niter);
-                    Deconvolution(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),SR1_Niter);
+                    Deconvolution(&Hist_Target_BkgPrevious_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),SR1_Niter);
+                    //Deconvolution(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),SR1_Niter);
                     std::cout << "Target, e " << energy_bins[e] << ", final rms = " << Hist_Target_Deconv_MSCW.at(e).GetRMS() << std::endl;
                     offset_begin = Hist_Target_SR_MSCW.at(e).at(0).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
                     offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),offset_begin,true,false);
@@ -1361,21 +1331,12 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     // estimate SR bkg
                     for (int s=1;s<Number_of_SR;s++)
                     {
+                        MakeBkgPrevious(&Hist_Target_SR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgPrevious_MSCW.at(e));
                         std::cout << "Target, e " << energy_bins[e] << ", running CR " << c1 << " to SR " << s << std::endl;
-                        int SR_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),false);
+                        int SR_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgPrevious_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),false);
                         std::cout << "Target, e " << energy_bins[e] << ", SR2_Niter = " << SR_Niter << std::endl;
-                        double SR_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,SR_Niter,false);
+                        double SR_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgPrevious_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,SR_Niter,false);
                         std::cout << "Target, e " << energy_bins[e] << ", SR_RMS = " << SR_RMS << std::endl;
-
-                        //SR_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR_RMS,mean_begin,SR_Niter,false);
-                        //std::cout << "Target, e " << energy_bins[e] << ", SR2_Niter = " << SR_Niter << std::endl;
-                        //SR_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR_RMS,mean_begin,SR_Niter,false);
-                        //std::cout << "Target, e " << energy_bins[e] << ", SR_RMS = " << SR_RMS << std::endl;
-
-                        //SR_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR_RMS,mean_begin,SR_Niter,false);
-                        //std::cout << "Target, e " << energy_bins[e] << ", SR2_Niter = " << SR_Niter << std::endl;
-                        //SR_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),SR_RMS,mean_begin,SR_Niter,false);
-                        //std::cout << "Target, e " << energy_bins[e] << ", SR_RMS = " << SR_RMS << std::endl;
 
                         N_rms.at(e) = SR_RMS;
 
@@ -1383,7 +1344,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         Hist_Target_Deconv_MSCW.at(e).Reset();
                         Hist_Target_Deconv_MSCW.at(e).FillRandom("myfunc",Hist_Target_SR_MSCW.at(e).at(0).Integral()*100);
                         
-                        MakeBkgPrevious(&Hist_Target_SR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgPrevious_MSCW.at(e));
                         Deconvolution(&Hist_Target_BkgPrevious_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),SR_Niter);
                         //Deconvolution(&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),SR_Niter);
                         std::cout << "Target, e " << energy_bins[e] << ", final rms = " << Hist_Target_Deconv_MSCW.at(e).GetRMS() << std::endl;
@@ -1424,16 +1384,17 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         {
             for (int s=0;s<Number_of_SR;s++)
             {
-                for (int bin=1;bin<=Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).GetNbinsX();bin++)
-                {
-                    // this is summing over SRs, errors are correlated.
-                    double old_content = Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).GetBinContent(bin);
-                    double old_error = Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).GetBinError(bin);
-                    double new_content = Hist_Target_BkgSR_MSCW_Sum.at(e).at(s).GetBinContent(bin);
-                    double new_error = Hist_Target_BkgSR_MSCW_Sum.at(e).at(s).GetBinError(bin);
-                    Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).SetBinContent(bin,old_content+new_content);
-                    Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).SetBinError(bin,old_error+new_error);
-                }
+                //for (int bin=1;bin<=Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).GetNbinsX();bin++)
+                //{
+                //    // this is summing over SRs, errors are correlated.
+                //    double old_content = Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).GetBinContent(bin);
+                //    double old_error = Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).GetBinError(bin);
+                //    double new_content = Hist_Target_BkgSR_MSCW_Sum.at(e).at(s).GetBinContent(bin);
+                //    double new_error = Hist_Target_BkgSR_MSCW_Sum.at(e).at(s).GetBinError(bin);
+                //    Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).SetBinContent(bin,old_content+new_content);
+                //    Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).SetBinError(bin,old_error+new_error);
+                //}
+                Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).Add(&Hist_Target_BkgSR_MSCW_Sum.at(e).at(s));
             }
         }
 
@@ -1446,8 +1407,12 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             int norm_bin_up_target = Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).FindBin(MSCW_cut_upper)-1;
             double total_bkg = 0;
             double total_sr = 0;
+            double total_sr_theta2 = 0;
             total_bkg = (double) Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
             total_sr = (double) Hist_Target_SR_MSCW_Sum_Combined.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
+            total_sr_theta2 = (double) Hist_Target_SR_theta2.at(e).Integral();
+            std::cout << e << ", total_sr_mscw = " << total_sr << std::endl;
+            std::cout << e << ", total_sr_theta2 = " << total_sr_theta2 << std::endl;
             double old_integral = (double) Hist_Target_CR_theta2.at(e).Integral();
             double old_integral_dark = (double) Hist_Dark_SR_theta2.at(e).Integral();
             double total_bkg_err = 0.;
