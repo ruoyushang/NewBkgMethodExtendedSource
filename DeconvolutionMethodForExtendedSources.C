@@ -38,8 +38,8 @@
 #include <VAShowerData.h>
 
 // VEGAS
-bool UseVegas =false;
-//bool UseVegas = true;
+//bool UseVegas =false;
+bool UseVegas = true;
 
 char target[50] = "";
 char Region[50] = "SR";
@@ -59,25 +59,31 @@ double Theta2_cut_lower = 0;
 double Theta2_cut_upper = 0;
 
 // EVDISP
-double MSCW_cut_lower = -1.0;
-double MSCW_cut_upper = 1.0;
-const int Number_of_SR = 4;
-double MSCL_signal_cut_lower[Number_of_SR] = {0.25,0.00,-0.25,-0.50};
-double MSCL_signal_cut_upper[Number_of_SR] = {0.50,0.25, 0.00,-0.25};
-const int Number_of_CR = 2;
-double MSCL_control_cut_lower[Number_of_CR] = {0.75,0.50};
-double MSCL_control_cut_upper[Number_of_CR] = {1.00,0.75};
+//double MSCW_cut_lower = -1.0;
+//double MSCW_cut_upper = 1.0;
+//const int Number_of_SR = 4;
+//double MSCL_signal_cut_lower[Number_of_SR] = {0.25,0.00,-0.25,-0.50};
+//double MSCL_signal_cut_upper[Number_of_SR] = {0.50,0.25, 0.00,-0.25};
+//const int Number_of_CR = 2;
+//double MSCL_control_cut_lower[Number_of_CR] = {0.75,0.50};
+//double MSCL_control_cut_upper[Number_of_CR] = {1.00,0.75};
 
 
 // VEGAS
-//double MSCW_cut_lower = 0.7;
-//double MSCW_cut_upper = 1.3;
-//const int Number_of_SR = 12;
-//double MSCL_signal_cut_lower[Number_of_SR] = {1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75,0.70};
-//double MSCL_signal_cut_upper[Number_of_SR] = {1.30,1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75};
+double MSCW_cut_lower = 0.7;
+double MSCW_cut_upper = 1.3;
+const int Number_of_SR = 12;
+double MSCL_signal_cut_lower[Number_of_SR] = {1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75,0.70};
+double MSCL_signal_cut_upper[Number_of_SR] = {1.30,1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75};
+const int Number_of_CR = 2;
+double MSCL_control_cut_lower[Number_of_CR] = {1.35,1.30};
+double MSCL_control_cut_upper[Number_of_CR] = {1.40,1.35};
+//const int Number_of_SR = 4;
+//double MSCL_signal_cut_lower[Number_of_SR] = {1.15,1.00,0.85,0.70};
+//double MSCL_signal_cut_upper[Number_of_SR] = {1.30,1.15,1.00,0.85};
 //const int Number_of_CR = 2;
 //double MSCL_control_cut_lower[Number_of_CR] = {1.45,1.30};
-//double MSCL_control_cut_upper[Number_of_CR] = {1.65,1.45};
+//double MSCL_control_cut_upper[Number_of_CR] = {1.60,1.45};
 
 
 
@@ -99,6 +105,7 @@ float EmissionHeightChi2 = 0;
 double theta2 = 0;
 double ra_sky = 0;
 double dec_sky = 0;
+vector<int> used_runs;
 
 //const int N_energy_bins = 13;
 //double energy_bins[N_energy_bins+1] =     {200,300,400,500,600,700,800,1000,1200,1500,2000,3000,5000,10000};
@@ -747,7 +754,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             if (UseVegas)
             {
               if (energy_bins[e]>=100.) N_bins_for_deconv = 960*2;
-              if (energy_bins[e]>=1000.) N_bins_for_deconv = 960*4;
+              if (energy_bins[e]>=1000.) N_bins_for_deconv = 960*2;
             }
             Hist_Target_SR_ErecS.push_back(TH1D("Hist_Target_SR_ErecS_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_bins,energy_bins));
             Hist_Target_SR_theta2.push_back(TH1D("Hist_Target_SR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",70,0,7));
@@ -1139,6 +1146,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         //Target_tree->SetBranchAddress("MWR",&MSCW);
                         //Target_tree->SetBranchAddress("MLR",&MSCL);
                     }
+                    used_runs.push_back(int(Sublist[run]));
                     for (int entry=0;entry<Target_tree->GetEntries();entry++) {
                         theta2 = 0;
                         ra_sky = 0;
@@ -1525,6 +1533,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         InfoTree.Branch("Azim_cut_upper",&Azim_cut_upper,"Azim_cut_upper/D");
         InfoTree.Branch("Target_Azim_cut_lower",&Target_Azim_cut_lower,"Target_Azim_cut_lower/D");
         InfoTree.Branch("Target_Azim_cut_upper",&Target_Azim_cut_upper,"Target_Azim_cut_upper/D");
+        InfoTree.Branch("used_runs","std::vector<int>",&used_runs);
         InfoTree.Fill();
         InfoTree.Write();
         Hist_Target_TelElevAzim.Write();
