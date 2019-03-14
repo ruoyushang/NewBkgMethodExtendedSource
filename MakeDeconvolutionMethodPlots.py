@@ -3,6 +3,7 @@ import sys,ROOT
 import array
 import math
 from array import *
+from ROOT import *
 
 ROOT.gStyle.SetOptStat(0)
 ROOT.TH1.SetDefaultSumw2()
@@ -14,17 +15,18 @@ folder = 'output'
 source = ''
 source_list = []
 #source_list  += ['ComaV4']
+#source_list  += ['CrabV4']
 #source_list  += ['3C58']
 #source_list  += ['BrandonValidation']
 #source_list  += ['PKS1424']
 source_list  += ['Crab']
-#source_list  += ['CrabV4']
 #source_list  += ['H1426']
 #source_list  += ['3C264']
 #source_list  += ['Ton599']
-#source_list  += ['IC443']
+#source_list  += ['IC443HotSpot']
 #source_list  += ['Segue1V6']
 #source_list  += ['VA_Segue1']
+#source_list  += ['VA_Geminga']
 
 Region = 'SR'
 
@@ -32,9 +34,10 @@ global MSCW_lower_cut
 global MSCW_upper_cut
 global MSCL_lower_cut
 global MSCL_upper_cut
-global Depth_cut_width
 
-Elev_lower_cut = 50
+#Elev_lower_cut = 20
+#Elev_upper_cut = 40
+Elev_lower_cut = 70
 Elev_upper_cut = 90
 Azim_lower_cut = 0
 Azim_upper_cut = 360
@@ -46,31 +49,27 @@ UseMethod1 = False
 UseMethod2 = True
 UseMethod3 = True
 
-Depth_cut_width = 10
 ErecS_lower_cut = 100
 ErecS_upper_cut = 1e10 
 MSCL_lower_cut = -0.5
 MSCL_upper_cut = 0.6
-MSCW_lower_cut = -0.5
-MSCW_upper_cut = 0.6
+MSCW_lower_cut = -1.0
+MSCW_upper_cut = 1.0
 
 energy_list = []
 #energy_list += [200]
-#energy_list += [400]
-#energy_list += [450]
-#energy_list += [500]
-#energy_list += [550]
-
-energy_list += [600]
-energy_list += [700]
-energy_list += [800]
-energy_list += [1000]
-energy_list += [1200]
-energy_list += [1500]
-energy_list += [2000]
-energy_list += [3000]
-energy_list += [5000]
-energy_list += [1e10]
+#energy_list += [282]
+energy_list += [398]
+energy_list += [473]
+energy_list += [562]
+energy_list += [794]
+energy_list += [1122]
+energy_list += [1585]
+energy_list += [2239]
+energy_list += [3162]
+energy_list += [4467]
+energy_list += [6310]
+energy_list += [8913]
 
 Variable = ''
 xtitle = ''
@@ -137,7 +136,6 @@ def MakeGaussianPlot(Hists,legends,colors,title,name,doSum,doNorm):
     global MSCW_upper_cut
     global MSCL_lower_cut
     global MSCL_upper_cut
-    global Depth_cut_width
 
     c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
     pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
@@ -220,7 +218,6 @@ def MakeReyleighPlot(Hists,legends,colors,title,name,doSum,doNorm):
     global MSCW_upper_cut
     global MSCL_lower_cut
     global MSCL_upper_cut
-    global Depth_cut_width
 
     c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
     pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
@@ -361,13 +358,24 @@ def MakeReyleighPlot(Hists,legends,colors,title,name,doSum,doNorm):
     legend.Draw("SAME")
     c_both.SaveAs('output_plots/Sig_%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
 
-def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm):
+def IntegralAndError(Hist,bin1,bin2):
+    
+    integral = 0
+    error = 0
+    for b in range(1,Hist.GetNbinsX()+1):
+        if b<bin1: continue
+        if b>bin2: continue
+        integral += Hist.GetBinContent(b)
+        error += pow(Hist.GetBinError(b),2)
+    error = pow(error,0.5)
+    return integral, error
+
+def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_upper):
     
     global MSCW_lower_cut
     global MSCW_upper_cut
     global MSCL_lower_cut
     global MSCL_upper_cut
-    global Depth_cut_width
 
     c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
     pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
@@ -390,6 +398,9 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm):
 
     pad1.cd()
 
+    norm_bin_low_target = Hists[0].FindBin(range_lower)
+    norm_bin_up_target = Hists[0].FindBin(range_upper)-1
+
     if doNorm:
         for h in range(1,len(Hists)):
             if Hists[h]!=0:
@@ -406,7 +417,7 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm):
         if Hists[h]!=0:
             Hists[h].SetLineColor(colors[h])
             Hists[h].GetXaxis().SetTitle(title)
-            if legends[h]=='Ring':
+            if legends[h]=='Bkg (OFF)':
                 Hists[h].SetLineWidth(3)
             if max_heigh < Hists[h].GetMaximum(): 
                 max_heigh = Hists[h].GetMaximum()
@@ -441,12 +452,19 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm):
         Hist_Err.SetMarkerSize(0)
         Hist_Err.Draw("e2 same")
 
-    Hist_Excess = Hists[0].Clone()
-    Hist_Excess.Add(Hists[1],-1.)
-    Hist_Excess.SetFillColor(0)
-    Hist_Excess.SetFillStyle(0)
-    Hist_Excess.SetLineColor(2)
-    Hist_Excess.Draw("e2 same")
+    #Hist_Excess = Hists[0].Clone()
+    #Hist_Excess.Add(Hists[1],-1.)
+    #Hist_Excess.SetFillColor(0)
+    #Hist_Excess.SetFillStyle(0)
+    #Hist_Excess.SetLineColor(2)
+    #Hist_Excess.Draw("e2 same")
+
+    line1 = ROOT.TLine(range_upper,Hists[max_hist].GetMaximum()*2,range_upper,Hists[max_hist].GetMinimum())
+    line1.SetLineStyle(1)
+    line1.SetLineColor(2)
+    line1.SetLineWidth(2)
+    line1.Draw()
+
 
     for h in range(0,len(Hists)):
         if Hists[h]!=0:
@@ -472,14 +490,34 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm):
     #if doSum:
     #    legend.AddEntry(Hist_Sum,'total bkg',"f")
     legend.Draw("SAME")
-    lumilab1 = ROOT.TLatex(0.15,0.75,'   ' )
+    lumilab1 = ROOT.TLatex(0.15,0.80,'E >%0.1f GeV'%(ErecS_lower_cut) )
     lumilab1.SetNDC()
     lumilab1.SetTextSize(0.15)
     lumilab1.Draw()
-    lumilab5 = ROOT.TLatex(0.15,0.20,'E >%0.1f GeV'%(ErecS_lower_cut) )
-    lumilab5.SetNDC()
-    lumilab5.SetTextSize(0.15)
-    lumilab5.Draw()
+    err_SR = 0
+    data_SR = 0
+    data_SR, err_SR = IntegralAndError(Hists[0],norm_bin_low_target,norm_bin_up_target)
+    err_bkg = 0
+    predict_bkg = 0
+    predict_bkg, err_bkg = IntegralAndError(Hists[1],norm_bin_low_target,norm_bin_up_target)
+    lumilab2 = ROOT.TLatex(0.15,0.60,'excess (RDBM) = %0.1f#pm%0.1f'%(data_SR-predict_bkg,pow(err_SR*err_SR+err_bkg*err_bkg,0.5)) )
+    lumilab2.SetNDC()
+    lumilab2.SetTextSize(0.15)
+    lumilab2.Draw()
+    sbratio = (data_SR-predict_bkg)/(predict_bkg)
+    sbratio_err = sbratio*pow(pow(pow(err_SR*err_SR+err_bkg*err_bkg,0.5)/(data_SR-predict_bkg),2)+pow(err_bkg/predict_bkg,2),0.5)
+    lumilab4 = ROOT.TLatex(0.15,0.40,'S/B = %0.3f#pm%0.3f'%(sbratio,sbratio_err) )
+    lumilab4.SetNDC()
+    lumilab4.SetTextSize(0.15)
+    lumilab4.Draw()
+    if len(Hists)>=3: 
+        err_ring = 0
+        ring_bkg = 0
+        ring_bkg, err_ring = IntegralAndError(Hists[2],norm_bin_low_target,norm_bin_up_target)
+        lumilab3 = ROOT.TLatex(0.15,0.20,'excess (OFF) = %0.1f#pm%0.1f'%(data_SR-ring_bkg,pow(err_SR*err_SR+err_ring*err_ring,0.5)) )
+        lumilab3.SetNDC()
+        lumilab3.SetTextSize(0.15)
+        lumilab3.Draw()
 
     pad2.cd()
     Hist_Band = Hist_Sum.Clone()
@@ -531,7 +569,6 @@ def MakeDiagnosticPlot(Hists,legends,colors,title,name,doSum,doNorm):
     global MSCW_upper_cut
     global MSCL_lower_cut
     global MSCL_upper_cut
-    global Depth_cut_width
 
     c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
     pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
@@ -623,25 +660,39 @@ def Smooth2DMap(Hist_Old,smooth_size):
             bin_error = 0
             locationx1 = Hist_Old.GetXaxis().GetBinCenter(bx1)
             locationy1 = Hist_Old.GetYaxis().GetBinCenter(by1)
-            for bx2 in range(bx1-nbin_smooth,bx1+nbin_smooth):
-                for by2 in range(by1-nbin_smooth,by1+nbin_smooth):
+            #for bx2 in range(bx1-nbin_smooth,bx1+nbin_smooth):
+            #    for by2 in range(by1-nbin_smooth,by1+nbin_smooth):
+            for bx2 in range(1,Hist_Old.GetNbinsX()+1):
+                for by2 in range(1,Hist_Old.GetNbinsY()+1):
                     if bx2>=1 and bx2<=Hist_Old.GetNbinsX():
                         if by2>=1 and by2<=Hist_Old.GetNbinsY():
                             locationx2 = Hist_Old.GetXaxis().GetBinCenter(bx2)
                             locationy2 = Hist_Old.GetYaxis().GetBinCenter(by2)
                             distance = pow(pow(locationx1-locationx2,2)+pow(locationy1-locationy2,2),0.5)
-                            if distance<smooth_size:
-                                bin_content += Hist_Old.GetBinContent(bx2,by2)
-                                bin_error += pow(Hist_Old.GetBinError(bx2,by2),2)
+                            #if distance<smooth_size:
+                            #    bin_content += Hist_Old.GetBinContent(bx2,by2)
+                            #    bin_error += pow(Hist_Old.GetBinError(bx2,by2),2)
+                            bin_content += ROOT.TMath.Gaus(distance,0,smooth_size)*Hist_Old.GetBinContent(bx2,by2)
+                            bin_error += pow(ROOT.TMath.Gaus(distance,0,smooth_size)*Hist_Old.GetBinError(bx2,by2),2)
             Hist_Smooth.SetBinContent(bx1,by1,bin_content)
             Hist_Smooth.SetBinError(bx1,by1,pow(bin_error,0.5))
     return Hist_Smooth
 
+def RooFitSmooth2DMap(Hist_Old,smooth_size):
+
+    Hist_Smooth = Hist_Old.Clone()
+    #x = ROOT.RooFit.RooRealVar("x","x",-5,5)
+    #y = ROOT.RooFit.RooRealVar("y","y",-5,5)
+    return Hist_Smooth
+
 def CalculateSignificance(s,b,err):
-    if (s+b)*(b+err*err)/(b*b+(s+b)*err*err)==0.: return 0.
+    if (b*b+(s+b)*err*err)==0.: return 0.
+    if (s+b)*(b+err*err)==0.: return 0.
     first_term = (s+b)*math.log((s+b)*(b+err*err)/(b*b+(s+b)*err*err))
     second_term = b*b/(err*err)*math.log(1.+err*err*s/(b*(b+err*err)))
-    result = pow(2*(first_term-second_term),0.5)
+    result = 0.
+    if first_term>second_term: result = pow(2*(first_term-second_term),0.5)
+    else: result = pow(2*(-first_term+second_term),0.5)
     if s>0: return result
     else: return -1.*result
 
@@ -673,6 +724,13 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,xtitle,ytitle,name):
     Hist_Data.Draw("COL4Z")
     canvas.SaveAs('output_plots/%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
 
+    Hist_Excess = Hist_SR.Clone()
+    Hist_Excess.Add(Hist_Bkg,-1.)
+    Hist_Excess.GetYaxis().SetTitle(ytitle)
+    Hist_Excess.GetXaxis().SetTitle(xtitle)
+    Hist_Excess.Draw("COL4Z")
+    canvas.SaveAs('output_plots/%s_Excess_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
+
     func = ROOT.TF1("func","gaus", -5, 8)
     func.SetParameters(10.,0.,1.0)
     Hist_Sig = ROOT.TH1D("Hist_Sig","",65,-5,8)
@@ -684,7 +742,7 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,xtitle,ytitle,name):
                 Hist_Sig.Fill(content)
                 locationx1 = Hist_Data.GetXaxis().GetBinCenter(bx)
                 locationy1 = Hist_Data.GetYaxis().GetBinCenter(by)
-                if (pow(locationx1*locationx1+locationy1*locationy1,0.5)>1.0):
+                if (pow(locationx1*locationx1+locationy1*locationy1,0.5)>0.5):
                     Hist_Sig_cut.Fill(content)
     Hist_Model = ROOT.TH1D("Hist_Model","",65,-5,8)
     Hist_Model.FillRandom("func",int(Hist_Sig.GetEntries()))
@@ -704,7 +762,7 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,xtitle,ytitle,name):
     legend.Clear()
     legend.AddEntry(Hist_Model,'true gaus',"pl")
     legend.AddEntry(Hist_Sig,'#theta^{2} #in [0,10]',"pl")
-    legend.AddEntry(Hist_Sig_cut,'#theta^{2} #in [1,10]',"pl")
+    legend.AddEntry(Hist_Sig_cut,'#theta^{2} #in [0.5,10]',"pl")
     legend.Draw("SAME")
     canvas.SaveAs('output_plots/Sig_%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
 
@@ -717,7 +775,7 @@ def Make2DProjectionPlot(Hist_Data,xtitle,ytitle,name,doProj):
     pad1.SetLeftMargin(0.15)
     pad1.SetTopMargin(0.15)
     pad1.SetBorderMode(0)
-    pad1.SetGrid()
+    #pad1.SetGrid()
     pad1.Draw()
     pad1.cd()
     Hist_Data.GetYaxis().SetTitle(ytitle)
@@ -734,6 +792,16 @@ def Make2DProjectionPlot(Hist_Data,xtitle,ytitle,name,doProj):
     Hist_1D.SetLineColor(2)
     if doProj: Hist_1D.Draw("E same")
     #pad1.SetLogz()
+    line1 = ROOT.TLine(-0.5,1.0,0.5,1.0)
+    line1.SetLineStyle(1)
+    line1.SetLineColor(2)
+    line1.SetLineWidth(2)
+    line1.Draw()
+    line2 = ROOT.TLine(0.5,1.0,0.5,0.12)
+    line2.SetLineStyle(1)
+    line2.SetLineColor(2)
+    line2.SetLineWidth(2)
+    line2.Draw()
     if 'ErecS' in name:
         f_mean = ROOT.TF1("f_mean","5.+log2(pow(x/0.08,0.4))",100,pow(10,4))
         f_mean.SetLineColor(2)
@@ -744,6 +812,7 @@ def Make2DProjectionPlot(Hist_Data,xtitle,ytitle,name,doProj):
         lumilab.SetTextSize(0.03)
         lumilab.Draw()
         pad1.SetLogx()
+    pad1.SetLogy()
     canvas.SaveAs('output_plots/%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
 
 def Make2DTrajectoryPlot(Hist_1,Hist_2,xtitle,ytitle,name):
@@ -808,6 +877,10 @@ for s in source_list:
     InfoTree.GetEntry(0)
     MSCW_lower_cut = InfoTree.MSCW_cut_lower
     MSCW_upper_cut = InfoTree.MSCW_cut_upper
+    Number_of_CR = InfoTree.Number_of_CR
+    Number_of_SR = InfoTree.Number_of_SR
+    used_runs = InfoTree.used_runs
+    exposure_hours = InfoTree.exposure_hours
 
     #Hist_Target_SR_Energy = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_Energy')
     #Hist_Target_Bkg_Energy = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_Energy')
@@ -837,18 +910,16 @@ for s in source_list:
         which_method = 'MSCW'
 
         Hist_Target_SR_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_theta2')
-        Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_theta2_Sum')
+        Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_theta2')
         Hist_Target_SR_RaDec = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_RaDec')
-        Hist_Target_Bkg_RaDec = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_RaDec_Sum')
+        Hist_Target_Bkg_RaDec = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_RaDec')
         Hist_Target_SR_MSCL = SelectDiagnosticaHistograms(folder,'MSCL','SR','Target_SR_MSCL')
-        Hist_Target_BkgCR1_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_BkgCR1_MSCW_Sum')
         Hist_Target_Deconv_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Deconv_MSCW')
-        Hist_Target_CR1_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR1_MSCW_Sum')
         Hist_Target_Ring_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Ring_MSCW')
         Hist_Target_Ring_MSCL = SelectDiagnosticaHistograms(folder,'MSCL','SR','Target_Ring_MSCL')
         Hist_Target_MSCLW = SelectDiagnosticaHistograms(folder,'MSCL','SR','Target_MSCLW')
 
-        Make2DProjectionPlot(Hist_Target_MSCLW,'MSCL','MSCW','Target_MSCLW_E%s'%(ErecS_lower_cut),True)
+        Make2DProjectionPlot(Hist_Target_MSCLW,'MSCL','MSCW','Target_MSCLW_E%s'%(ErecS_lower_cut),False)
 
         Hist_Target_SR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_MSCW_Sum_Combined')
         Hist_Target_BkgSR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_BkgSR_MSCW_Sum_Combined')
@@ -857,19 +928,23 @@ for s in source_list:
         colors = []
         Hists += [Hist_Target_SR_MSCW]
         Hists[0].Rebin(2)
-        if source=='2ndCrab':
-            legends += ['Crab 2016 ON']
-        else:
-            legends += ['%s'%(source)]
+        legends += ['%s ON'%(source)]
         colors += [1]
         Hists += [Hist_Target_BkgSR_MSCW]
         Hists[1].Rebin(2)
-        legends += ['Bkg']
+        legends += ['Bkg (RDBM)']
         colors += [4]
+        #Hists += [Hist_Target_Ring_MSCW]
+        #Hists[2].Rebin(2)
+        #legends += ['Bkg (OFF)']
+        #colors += [2]
         plotname = 'Target_SR_MSCW_Combined_E%s'%(ErecS_lower_cut)
         title = 'MSCW'
-        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False)
-        for sr in range(1,5):
+        #title = 'MSW'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_upper_cut)
+        #Number_of_SR = 0
+        #Number_of_CR = 0
+        for sr in range(1,Number_of_SR+1):
             Hist_Target_SR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR%s_MSCW_Sum'%(sr))
             Hist_Target_BkgSR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_BkgSR%s_MSCW_Sum'%(sr))
             Hists = []
@@ -877,37 +952,36 @@ for s in source_list:
             colors = []
             Hists += [Hist_Target_SR_MSCW]
             Hists[0].Rebin(2)
+            legends += ['%s ON'%(source)]
+            colors += [1]
+            Hists += [Hist_Target_BkgSR_MSCW]
+            Hists[1].Rebin(2)
+            legends += ['Bkg (RDBM)']
+            colors += [4]
+            plotname = 'Target_SR%s_MSCW_E%s'%(sr,ErecS_lower_cut)
+            title = 'MSCW'
+            MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_upper_cut)
+        for sr in range(1,Number_of_CR):
+            Hist_Target_CR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR%s_MSCW_Sum'%(sr))
+            Hist_Target_BkgCR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_BkgCR%s_MSCW_Sum'%(sr))
+            Hists = []
+            legends = []
+            colors = []
+            Hists += [Hist_Target_CR_MSCW]
+            Hists[0].Rebin(2)
             if source=='2ndCrab':
                 legends += ['Crab 2016 ON']
             else:
                 legends += ['%s'%(source)]
             colors += [1]
-            Hists += [Hist_Target_BkgSR_MSCW]
+            Hists += [Hist_Target_BkgCR_MSCW]
             Hists[1].Rebin(2)
             legends += ['Bkg']
             colors += [4]
-            plotname = 'Target_SR%s_MSCW_E%s'%(sr,ErecS_lower_cut)
+            plotname = 'Target_CR%s_MSCW_E%s'%(sr,ErecS_lower_cut)
             title = 'MSCW'
-            MakeChi2Plot(Hists,legends,colors,title,plotname,True,False)
+            MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,1000)
 
-
-        Hists = []
-        legends = []
-        colors = []
-        Hists += [Hist_Target_CR1_MSCW]
-        Hists[0].Rebin(2)
-        if source=='2ndCrab':
-            legends += ['Crab 2016 ON']
-        else:
-            legends += ['%s'%(source)]
-        colors += [1]
-        Hists += [Hist_Target_BkgCR1_MSCW]
-        Hists[1].Rebin(2)
-        legends += ['Bkg']
-        colors += [4]
-        plotname = 'Target_CR1_MSCW_E%s'%(ErecS_lower_cut)
-        title = 'MSCW'
-        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False)
 
         Hists = []
         legends = []
@@ -923,71 +997,19 @@ for s in source_list:
         colors += [4]
         plotname = 'Target_SR_theta2_E%s'%(ErecS_lower_cut)
         title = 'theta2'
-        Hists[0].Rebin(2)
-        Hists[1].Rebin(2)
-        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False)
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,0,10)
 
-        Hists = []
-        legends = []
-        colors = []
-        Hists += [Hist_Target_SR_MSCL]
-        if source=='2ndCrab':
-            legends += ['Crab 2016 ON']
-        else:
-            legends += ['%s'%(source)]
-        colors += [1]
-        plotname = 'Target_MSCL_E%s'%(ErecS_lower_cut)
-        title = 'MSCL'
-        MakeDiagnosticPlot(Hists,legends,colors,title,plotname,False,False)
+        plotname = 'Target_SR_RaDec_E%s'%(ErecS_lower_cut)
+        smooth_size = 0.05
+        if energy_list[e]>=1000: smooth_size = 0.1
+        if energy_list[e]>=3000: smooth_size = 0.2
+        Hist_Target_SR_RaDec.Rebin2D(4,4)
+        Hist_Target_Bkg_RaDec.Rebin2D(4,4)
+        Hist_Target_SR_RaDec_Smooth = Smooth2DMap(Hist_Target_SR_RaDec,smooth_size)
+        Hist_Target_Bkg_RaDec_Smooth = Smooth2DMap(Hist_Target_Bkg_RaDec,smooth_size)
+        Make2DSignificancePlot(Hist_Target_SR_RaDec_Smooth,Hist_Target_Bkg_RaDec_Smooth,'RA','Dec',plotname)
 
-
-        #Hists = []
-        #legends = []
-        #colors = []
-        #Hists += [Hist_Dark_SR_MSCW]
-        #legends += ['SR']
-        #colors += [1]
-        #Hists += [Hist_Dark_Bkg_MSCW]
-        #legends += ['Bkg']
-        #colors += [4]
-        ##Hists += [Hist_Dark_Elec_MSCW]
-        ##legends += ['residual']
-        ##colors += [3]
-        #plotname = 'Dark_Deconv_MSCW_E%s'%(ErecS_lower_cut)
-        #title = 'MSCW'
-        ##MakeDiagnosticPlot(Hists,legends,colors,title,plotname,False,False)
-        #MakeChi2Plot(Hists,legends,colors,title,plotname,True,False)
-
-        #Hists = []
-        #legends = []
-        #colors = []
-        #Hists += [Hist_Dark_SR_MSCW]
-        #legends += ['MSCL < 0.5']
-        #colors += [1]
-        #Hists += [Hist_Dark_CR_MSCW]
-        #legends += ['MSCL > 1.0']
-        #colors += [2]
-        #plotname = 'Dark_SRCR_MSCW_E%s'%(ErecS_lower_cut)
-        #title = 'MSCW'
-        #MakeDiagnosticPlot(Hists,legends,colors,title,plotname,False,False)
-
-
-        #Hists = []
-        #legends = []
-        #colors = []
-        #Hists += [Hist_Dark_TrueDeconv_MSCW]
-        #legends += ['true response']
-        #colors += [4]
-        #plotname = 'Dark_Response_MSCW_E%s'%(ErecS_lower_cut)
-        #title = 'MSCW'
-        #MakeGaussianPlot(Hists,legends,colors,title,plotname,False,False)
-
-        #plotname = 'Target_SR_RaDec_E%s'%(ErecS_lower_cut)
-        #smooth_size = 0.1
-        #if energy_list[e]>=1000: smooth_size = 0.2
-        #if energy_list[e]>=3000: smooth_size = 0.5
-        #Hist_Target_SR_RaDec.Rebin2D(5,5)
-        #Hist_Target_Bkg_RaDec.Rebin2D(5,5)
-        #Hist_Target_SR_RaDec_Smooth = Smooth2DMap(Hist_Target_SR_RaDec,smooth_size)
-        #Hist_Target_Bkg_RaDec_Smooth = Smooth2DMap(Hist_Target_Bkg_RaDec,smooth_size)
-        #Make2DSignificancePlot(Hist_Target_SR_RaDec_Smooth,Hist_Target_Bkg_RaDec_Smooth,'RA','Dec',plotname)
+    for run in range(0,len(used_runs)):
+        print 'using run %s'%(used_runs[run])
+    print '%s runs.'%(len(used_runs))
+    print 'exposure_hours = %s'%(exposure_hours)
