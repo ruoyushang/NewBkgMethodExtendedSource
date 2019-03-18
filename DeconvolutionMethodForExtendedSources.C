@@ -60,6 +60,7 @@ double Theta2_cut_upper = 0;
 
 // EVDISP
 double MSCW_cut_lower = -1.0;
+double MSCW_cut_blind = 1.5;
 double MSCW_cut_upper = 0.5;
 const int Number_of_SR = 5;
 double MSCL_signal_cut_lower[Number_of_SR] = {0.50,0.25,0.00,-0.25,-0.50};
@@ -71,6 +72,7 @@ double MSCL_control_cut_upper[Number_of_CR] = {1.25,1.00};
 
 // VEGAS
 //double MSCW_cut_lower = 0.7;
+//double MSCW_cut_blind = 1.3;
 //double MSCW_cut_upper = 1.3;
 //const int Number_of_SR = 12;
 //double MSCL_signal_cut_lower[Number_of_SR] = {1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75,0.70};
@@ -84,7 +86,7 @@ double MSCL_control_cut_upper[Number_of_CR] = {1.25,1.00};
 
 
 
-double Norm_Lower = MSCW_cut_upper;
+double Norm_Lower = MSCW_cut_blind;
 double Norm_Upper = 20.0;
 
 string  filename;
@@ -150,8 +152,8 @@ bool ControlSelectionMSCW(int whichCR) {
 }
 bool ControlSelectionTheta2()
 {
-    if (MSCL<MSCL_signal_cut_upper[0]*1.0 || MSCW<MSCW_cut_upper*1.0) return false;
-    if (MSCL>MSCL_signal_cut_upper[0]*3.0 || MSCW>MSCW_cut_upper*3.0) return false;
+    if (MSCL<MSCL_signal_cut_upper[0]*1.0 || MSCW<MSCW_cut_blind*1.0) return false;
+    if (MSCL>MSCL_signal_cut_upper[0]*3.0 || MSCW>MSCW_cut_blind*3.0) return false;
     return true;
 }
 double background(Double_t *x, Double_t *par) {
@@ -194,7 +196,7 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR) {
         double data = Hist_SR->GetBinContent(i+1);
         double bkg_err = Hist_Bkg->GetBinError(i+1);
         double data_err = Hist_SR->GetBinError(i+1);
-        if (!includeSR && Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_upper) {
+        if (!includeSR && Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind) {
             continue;
         }
         if ((data_err*data_err+bkg_err*bkg_err)==0) continue;
@@ -224,7 +226,7 @@ void AddSystematics2(TH1* Hist_CR,TH1* Hist_CRBkg, TH1* Hist_Bkg)
     double rms = Hist_CR->GetRMS();
     for (int i=0;i<Hist_CR->GetNbinsX();i++)
     {
-        if (Hist_CR->GetBinCenter(i+1)>MSCW_cut_upper) {
+        if (Hist_CR->GetBinCenter(i+1)>MSCW_cut_blind) {
             continue;
         }
         double rel_syst = 0.;
@@ -240,7 +242,7 @@ void AddSystematics2(TH1* Hist_CR,TH1* Hist_CRBkg, TH1* Hist_Bkg)
         double new_content = old_content+old_content*rel_syst;
         double old_err = Hist_Bkg->GetBinError(i+1);
         double new_err = Hist_Bkg->GetBinContent(i+1)*rel_syst;
-        if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_upper)
+        if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind)
         {
             //Hist_Bkg->SetBinContent(i+1,new_content);
             Hist_Bkg->SetBinError(i+1,pow(old_err*old_err+new_err*new_err,0.5));
@@ -256,7 +258,7 @@ void AddSystematics(TH1* Hist_SR,TH1* Hist_Bkg)
     for (int i=0;i<Hist_SR->GetNbinsX();i++)
     {
         if (Hist_SR->GetBinCenter(i+1)>mean+5.*rms) continue;
-        if (Hist_SR->GetBinCenter(i+1)<MSCW_cut_upper) {
+        if (Hist_SR->GetBinCenter(i+1)<MSCW_cut_blind) {
             continue;
         }
         Nbins += 1.;
@@ -274,7 +276,7 @@ void AddSystematics(TH1* Hist_SR,TH1* Hist_Bkg)
     {
         double old_err = Hist_Bkg->GetBinError(i+1);
         double new_err = Hist_Bkg->GetBinError(i+1)*rel_syst;
-        if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_upper)
+        if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind)
         {
             Hist_Bkg->SetBinError(i+1,pow(old_err*old_err+new_err*new_err,0.5));
         }
@@ -284,7 +286,7 @@ void MakeBkgPrevious(TH1* Hist_SR,TH1* Hist_Bkg,TH1* Hist_Previous)
 {
     for (int i=0;i<Hist_SR->GetNbinsX();i++)
     {
-        if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_upper)
+        if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind)
         {
             Hist_Previous->SetBinContent(i+1,Hist_Bkg->GetBinContent(i+1));
             Hist_Previous->SetBinError(i+1,Hist_Bkg->GetBinError(i+1));
@@ -331,7 +333,7 @@ std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bk
     }
     for (int th=0;th<50;th++)
     {
-        double try_threshold = MSCW_cut_lower + (MSCW_cut_upper-MSCW_cut_lower)*double(th)/50.;
+        double try_threshold = MSCW_cut_lower + (MSCW_cut_blind-MSCW_cut_lower)*double(th)/50.;
         double chi2 = 0.;
         norm_best = 0.;
         amplitude = init_amplitude;
@@ -343,7 +345,7 @@ std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bk
             double new_error = old_error*ConvergeFunction(Hist_Bkg->GetBinCenter(i+1),try_threshold,amplitude);
             Hist_Bkg_Temp->SetBinContent(i+1,new_content);
         }
-        //chi2 = GetChi2WithRange(Hist_SR, Hist_Bkg_Temp,MSCW_cut_lower,MSCW_cut_upper);
+        //chi2 = GetChi2WithRange(Hist_SR, Hist_Bkg_Temp,MSCW_cut_lower,MSCW_cut_blind);
         chi2 = GetChi2WithRange(Hist_SR, Hist_Bkg_Temp,-2,20);
         if (chi2_best<chi2) {
             chi2_best = chi2;
@@ -421,7 +423,7 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
                 norm_bin_up = Hist_SR->FindBin(MSCW_cut_lower);
                 double SR_area1 = Hist_SR->Integral(norm_bin_low,norm_bin_up);
                 double Bkg_area1 = Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
-                norm_bin_low = Hist_SR->FindBin(MSCW_cut_upper);
+                norm_bin_low = Hist_SR->FindBin(MSCW_cut_blind);
                 norm_bin_up = Hist_SR->FindBin(mean+8.*rms);
                 double SR_area2 = Hist_SR->Integral(norm_bin_low,norm_bin_up);
                 double Bkg_area2 = Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
@@ -795,15 +797,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         Theta2_cut_lower = theta2_cut_lower_input;
         Theta2_cut_upper = theta2_cut_upper_input;
 
-        //if (TString(Region)=="VR") {
-        //        MSCW_cut_lower = 1.5;
-        //        MSCW_cut_upper = 2.5;
-        //        MSCL_signal_cut_lower = 1.5;
-        //        MSCL_signal_cut_upper = 2.5;
-        //        MSCL_control_cut_lower = 2.5;
-        //        MSCL_control_cut_upper = 3.5;
-        //}
-
         TRandom rnd;
         TH2D Hist_Target_TelElevAzim("Hist_Target_TelElevAzim","",18,0,90,18,0,360);
         TH2D Hist_Target_TelRaDec("Hist_Target_TelRaDec","",100,0,5,100,-1,1);
@@ -1076,14 +1069,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                             }
                             if (UseVegas) 
                             {
-                                //if (MSCW<MSCW_cut_upper*1.0) 
-                                //{
-                                //    if (MSCL>MSCL_signal_cut_upper[0]*1.0) 
-                                //    {
-                                //        Hist_Dark_CR_theta2.at(e).Fill(theta2);
-                                //        Hist_Dark_CR_RaDec.at(e).Fill(ra_sky,dec_sky);
-                                //    }
-                                //}
                                 if (ControlSelectionTheta2()) 
                                 {
                                         Hist_Dark_CR_theta2.at(e).Fill(theta2);
@@ -1325,19 +1310,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                                 }
                                 if (UseVegas) 
                                 {
-                                    //if (MSCW<MSCW_cut_upper*1.0) 
-                                    //{
-                                    //    if (MSCL>MSCL_signal_cut_upper[0]*1.0) 
-                                    //    {
-                                    //        double weight = 0.;
-                                    //        double dark_cr = (double) Hist_Dark_CR_theta2.at(e).GetBinContent(Hist_Dark_CR_theta2.at(e).FindBin(theta2));
-                                    //        double dark_sr = (double) Hist_Dark_SR_theta2.at(e).GetBinContent(Hist_Dark_SR_theta2.at(e).FindBin(theta2));
-                                    //        if (dark_cr==0.) weight = 0.;
-                                    //        else weight = dark_sr/dark_cr;
-                                    //        Hist_Target_CR_theta2.at(e).Fill(theta2,weight);
-                                    //        Hist_Target_CR_RaDec.at(e).Fill(ra_sky,dec_sky,weight);
-                                    //    }
-                                    //}
                                     if (ControlSelectionTheta2()) 
                                     {
                                         double weight = 0.;
@@ -1669,7 +1641,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         {
             for (int bin=1;bin<=Hist_Target_SR_MSCW_Sum_Combined.at(e).GetNbinsX();bin++)
             {
-                int norm_bin_up_target = Hist_Target_SR_MSCW_Sum_Combined.at(e).FindBin(MSCW_cut_upper);
+                int norm_bin_up_target = Hist_Target_SR_MSCW_Sum_Combined.at(e).FindBin(MSCW_cut_blind);
                 double norm1 = Hist_Target_SR_MSCW_Sum_Combined.at(e).Integral(norm_bin_up_target,Hist_Target_SR_MSCW_Sum_Combined.at(e).GetNbinsX());
                 double norm2 = Hist_Target_Ring_MSCW.at(e).Integral(norm_bin_up_target,Hist_Target_SR_MSCW_Sum_Combined.at(e).GetNbinsX());
                 double scale = 0.;
@@ -1693,6 +1665,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         InfoTree.Branch("Number_of_SR",&Number_of_SR_new,"Number_of_SR/I");
         InfoTree.Branch("MSCW_cut_lower",&MSCW_cut_lower,"MSCW_cut_lower/D");
         InfoTree.Branch("MSCW_cut_upper",&MSCW_cut_upper,"MSCW_cut_upper/D");
+        InfoTree.Branch("MSCW_cut_blind",&MSCW_cut_blind,"MSCW_cut_blind/D");
         InfoTree.Branch("MSCL_cut_upper",&MSCL_signal_cut_upper[0],"MSCL_cut_upper/D");
         InfoTree.Branch("Elev_cut_lower",&Elev_cut_lower,"Elev_cut_lower/D");
         InfoTree.Branch("Elev_cut_upper",&Elev_cut_upper,"Elev_cut_upper/D");
