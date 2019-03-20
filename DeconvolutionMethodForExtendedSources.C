@@ -33,13 +33,17 @@
 #include "GetRunList.h"
 
 // VEGAS
+#define VEGAS
 #include "aclicPreProcCommands.h"
 #include <Riostream.h>
 #include <VAShowerData.h>
 
 // VEGAS
+#ifndef VEGAS
 bool UseVegas =false;
-//bool UseVegas = true;
+#else
+bool UseVegas = true;
+#endif
 
 char target[50] = "";
 char Region[50] = "SR";
@@ -58,18 +62,18 @@ double Target_Azim_cut_upper = 0;
 double Theta2_cut_lower = 0;
 double Theta2_cut_upper = 0;
 
+#ifndef VEGAS
 // EVDISP
 double MSCW_cut_lower = -1.0;
 double MSCW_cut_blind = 1.5;
-double MSCW_cut_upper = 0.5;
+double MSCW_cut_upper = 1.5;
 const int Number_of_SR = 5;
 double MSCL_signal_cut_lower[Number_of_SR] = {0.50,0.25,0.00,-0.25,-0.50};
 double MSCL_signal_cut_upper[Number_of_SR] = {0.75,0.50,0.25, 0.00,-0.25};
 const int Number_of_CR = 2;
 double MSCL_control_cut_lower[Number_of_CR] = {1.00,0.75};
 double MSCL_control_cut_upper[Number_of_CR] = {1.25,1.00};
-
-
+#else
 // VEGAS
 //double MSCW_cut_lower = 0.7;
 //double MSCW_cut_blind = 1.3;
@@ -77,13 +81,19 @@ double MSCL_control_cut_upper[Number_of_CR] = {1.25,1.00};
 //const int Number_of_SR = 12;
 //double MSCL_signal_cut_lower[Number_of_SR] = {1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75,0.70};
 //double MSCL_signal_cut_upper[Number_of_SR] = {1.30,1.25,1.20,1.15,1.10,1.05,1.00,0.95,0.90,0.85,0.80,0.75};
-////const int Number_of_CR = 5;
-////double MSCL_control_cut_lower[Number_of_CR] = {1.50,1.45,1.40,1.35,1.30};
-////double MSCL_control_cut_upper[Number_of_CR] = {1.55,1.50,1.45,1.40,1.35};
 //const int Number_of_CR = 2;
 //double MSCL_control_cut_lower[Number_of_CR] = {1.35,1.30};
 //double MSCL_control_cut_upper[Number_of_CR] = {1.40,1.35};
-
+double MSCW_cut_lower = 0.7;
+double MSCW_cut_blind = 1.3;
+double MSCW_cut_upper = 1.3;
+const int Number_of_SR = 6;
+double MSCL_signal_cut_lower[Number_of_SR] = {1.20,1.10,1.00,0.90,0.80,0.70};
+double MSCL_signal_cut_upper[Number_of_SR] = {1.30,1.20,1.10,1.00,0.90,0.80};
+const int Number_of_CR = 2;
+double MSCL_control_cut_lower[Number_of_CR] = {1.40,1.30};
+double MSCL_control_cut_upper[Number_of_CR] = {1.50,1.40};
+#endif
 
 
 double Norm_Lower = MSCW_cut_blind;
@@ -106,27 +116,31 @@ double theta2 = 0;
 double ra_sky = 0;
 double dec_sky = 0;
 vector<int> used_runs;
+vector<double> scale_sky_err_ratio;
 double exposure_hours = 0.;
 
-const int N_energy_bins = 16;
-double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
-int number_runs_included[N_energy_bins] = {5  ,5  ,5  ,5  ,5  ,5  ,5  ,5  ,5  ,5  ,5   ,5   ,5   ,5   ,20  ,20};
+//const int N_energy_bins = 16;
+//double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
+//int number_runs_included[N_energy_bins] = {5  ,5  ,5  ,5  ,5  ,5  ,5  ,5  ,5  ,5  ,5   ,5   ,5   ,5   ,20  ,20};
 //const int N_energy_bins = 12;
 //double energy_bins[N_energy_bins+1] =     {398,473,562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
 //int number_runs_included[N_energy_bins] = {5  ,5  ,5  ,5  ,5  ,5  ,5   ,5   ,5   ,5   ,20  ,20};
-//const int N_energy_bins = 6;
-//double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
-//int number_runs_included[N_energy_bins] = {5   ,5   ,5   ,5   ,20  ,20};
+const int N_energy_bins = 6;
+double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
+int number_runs_included[N_energy_bins] = {5   ,5   ,10   ,10  ,20  ,40};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] =     {1122,1585};
 //int number_runs_included[N_energy_bins] = {5};
+//const int N_energy_bins = 1;
+//double energy_bins[N_energy_bins+1] =     {6310,8912};
+//int number_runs_included[N_energy_bins] = {40};
 
 int N_bins_for_deconv = 480;
 double MSCW_plot_lower = -30.;
 double MSCW_plot_upper = 30.;
 
 bool FoV() {
-    if (theta2>10.0) return false;
+    //if (theta2>10.0) return false;
     if (theta2<Theta2_cut_lower) return false;
     if (theta2>Theta2_cut_upper) return false;
     return true;
@@ -333,7 +347,7 @@ std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bk
     }
     for (int th=0;th<50;th++)
     {
-        double try_threshold = MSCW_cut_lower + (MSCW_cut_blind-MSCW_cut_lower)*double(th)/50.;
+        double try_threshold = MSCW_cut_lower + (1.5-MSCW_cut_lower)*double(th)/50.;
         double chi2 = 0.;
         norm_best = 0.;
         amplitude = init_amplitude;
@@ -654,11 +668,13 @@ vector<int> FindRunSublist(string source, vector<int> Target_runlist, vector<int
                     {
                         pointing_tree = (TTree*) input_file->Get("ShowerEvents/ShowerEventsTree");
                         // VEGAS
+#ifdef VEGAS
 	                VAShowerData* sh = nullptr;
 	                pointing_tree->SetBranchAddress("S", &sh);
                         pointing_tree->GetEntry(0);
                         TelElevation = sh->fArrayTrackingElevation_Deg;
                         TelAzimuth = sh->fArrayTrackingAzimuth_Deg;
+#endif
                         if (TelElevation<Target_Elev_cut_lower) 
                         {
                             input_file->Close();
@@ -733,11 +749,13 @@ vector<int> FindRunSublist(string source, vector<int> Target_runlist, vector<int
                 {
                     pointing_tree = (TTree*) input_file->Get("ShowerEvents/ShowerEventsTree");
                     // VEGAS
+#ifdef VEGAS
 	            VAShowerData* sh = nullptr;
 	            pointing_tree->SetBranchAddress("S", &sh);
                     pointing_tree->GetEntry(0);
                     TelElevation = sh->fArrayTrackingElevation_Deg;
                     TelAzimuth = sh->fArrayTrackingAzimuth_Deg;
+#endif
                     if (TelElevation<Target_Elev_cut_lower) 
                     {
                         input_file->Close();
@@ -782,7 +800,7 @@ vector<int> FindRunSublist(string source, vector<int> Target_runlist, vector<int
         }
         return sublist;
 }
-void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower, double elev_upper, double azim_lower, double azim_upper, double theta2_cut_lower_input, double theta2_cut_upper_input) {
+void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower, double elev_upper, double azim_lower, double azim_upper, double theta2_cut_lower_input, double theta2_cut_upper_input, double MSCW_cut_blind_input, double MSCW_cut_upper_input) {
 
         //TH1::SetDefaultSumw2();
         sprintf(target, "%s", target_data.c_str());
@@ -796,6 +814,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         Azim_cut_upper = azim_upper;
         Theta2_cut_lower = theta2_cut_lower_input;
         Theta2_cut_upper = theta2_cut_upper_input;
+        MSCW_cut_upper = MSCW_cut_upper_input;
+        MSCW_cut_blind = MSCW_cut_blind_input;
 
         TRandom rnd;
         TH2D Hist_Target_TelElevAzim("Hist_Target_TelElevAzim","",18,0,90,18,0,360);
@@ -839,12 +859,13 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             char e_up[50];
             sprintf(e_up, "%i", int(energy_bins[e+1]));
             if (energy_bins[e]>=100.) N_bins_for_deconv = 960;
-            if (energy_bins[e]>=2000.) N_bins_for_deconv = 480;
-            if (energy_bins[e]>=5000.) N_bins_for_deconv = 240;
+            if (energy_bins[e]>=1000.) N_bins_for_deconv = 480;
+            if (energy_bins[e]>=3000.) N_bins_for_deconv = 480;
             if (UseVegas)
             {
-              if (energy_bins[e]>=100.) N_bins_for_deconv = 960*2;
-              if (energy_bins[e]>=1000.) N_bins_for_deconv = 960*2;
+              if (energy_bins[e]>=100.) N_bins_for_deconv = 960;
+              if (energy_bins[e]>=1000.) N_bins_for_deconv = 960;
+              if (energy_bins[e]>=3000.) N_bins_for_deconv = 960*2;
             }
             Hist_Target_SR_ErecS.push_back(TH1D("Hist_Target_SR_ErecS_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_bins,energy_bins));
             Hist_Target_SR_theta2.push_back(TH1D("Hist_Target_SR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1000,0,Theta2_cut_upper));
@@ -1015,13 +1036,10 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 if (UseVegas) root_file = "ShowerEvents/ShowerEventsTree";
                 TTree* Dark_tree = (TTree*) input_file->Get(root_file);
                 // VEGAS
+#ifdef VEGAS
 	        VAShowerData* sh = nullptr;
-                if (UseVegas)
-                {
 	            Dark_tree->SetBranchAddress("S", &sh);
-                }
-                else
-                {
+#else
                     Dark_tree->SetBranchAddress("theta2",&theta2);
                     Dark_tree->SetBranchAddress("ra",&ra_sky);
                     Dark_tree->SetBranchAddress("dec",&dec_sky);
@@ -1029,7 +1047,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     Dark_tree->SetBranchAddress("EChi2S",&EChi2S);
                     Dark_tree->SetBranchAddress("MSCW",&MSCW);
                     Dark_tree->SetBranchAddress("MSCL",&MSCL);
-                }
+#endif
                 for (int entry=0;entry<Dark_tree->GetEntries();entry++) {
                     theta2 = 0;
                     ra_sky = 0;
@@ -1041,6 +1059,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     Dark_tree->GetEntry(entry);
                     //theta2 = ra_sky*ra_sky+dec_sky*dec_sky;
                     // VEGAS
+#ifdef VEGAS
                     if (UseVegas)
                     {
                         if (sh->fAccurateShowerMaxHeight_KM<7.) continue;
@@ -1053,6 +1072,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         ra_sky = sh->fDirectionRA_J2000_Rad*180./TMath::Pi()-151.77;
                         dec_sky = sh->fDirectionDec_J2000_Rad*180./TMath::Pi()-16.08194;
                     }
+#endif
                     int energy = Hist_Target_SR_ErecS.at(0).FindBin(ErecS*1000.)-1;
                     if (e!=energy) continue;
                     if (FoV()) {
@@ -1195,6 +1215,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     {
                         pointing_tree = (TTree*) input_file->Get("ShowerEvents/ShowerEventsTree");
                         // VEGAS
+#ifdef VEGAS
 	                VAShowerData* sh = nullptr;
 	                pointing_tree->SetBranchAddress("S", &sh);
                         //for (int entry=0;entry<pointing_tree->GetEntries();entry++) {
@@ -1234,18 +1255,16 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                                 TelAzimuth = sh->fArrayTrackingAzimuth_Deg;
                                 Hist_Target_TelRaDec_AfterCut.Fill(TelRAJ2000,TelDecJ2000);
                         }
+#endif
                     }
                     TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
                     if (UseVegas) root_file = "ShowerEvents/ShowerEventsTree";
                     TTree* Target_tree = (TTree*) input_file->Get(root_file);
                     // VEGAS
+#ifdef VEGAS
 	            VAShowerData* sh = nullptr;
-                    if (UseVegas)
-                    {
 	                Target_tree->SetBranchAddress("S", &sh);
-                    }
-                    else
-                    {
+#else
                         Target_tree->SetBranchAddress("theta2",&theta2);
                         Target_tree->SetBranchAddress("ra",&ra_sky);
                         Target_tree->SetBranchAddress("dec",&dec_sky);
@@ -1256,7 +1275,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         Target_tree->SetBranchAddress("Time",&Time);
                         //Target_tree->SetBranchAddress("MWR",&MSCW);
                         //Target_tree->SetBranchAddress("MLR",&MSCL);
-                    }
+#endif
                     Target_tree->GetEntry(0);
                     double time_0 = Time;
                     Target_tree->GetEntry(Target_tree->GetEntries()-1);
@@ -1274,6 +1293,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         Target_tree->GetEntry(entry);
                         //theta2 = ra_sky*ra_sky+dec_sky*dec_sky;
                         // VEGAS
+#ifdef VEGAS
                         if (UseVegas)
                         {
                             if (sh->fAccurateShowerMaxHeight_KM<7.) continue;
@@ -1286,6 +1306,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                             ra_sky = sh->fDirectionRA_J2000_Rad*180./TMath::Pi()-151.77;
                             dec_sky = sh->fDirectionDec_J2000_Rad*180./TMath::Pi()-16.08194;
                         }
+#endif
                         int energy = Hist_Target_SR_ErecS.at(0).FindBin(ErecS*1000.)-1;
                         if (e!=energy) continue;
                         if (MSCL<MSCL_signal_cut_upper[0]) {
@@ -1558,10 +1579,22 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 total_bkg_err += pow(Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).GetBinError(bin),2);
             }
             total_bkg_err = pow(total_bkg_err,0.5);
+            std::cout << e << ", total_bkg = " << total_bkg << std::endl;
+            std::cout << e << ", total_bkg_err = " << total_bkg_err << std::endl;
+            double old_integral_err = 0.;
+            for (int bin=1;bin<=Hist_Target_CR_theta2.at(e).GetNbinsX();bin++)
+            {
+                old_integral_err += pow(Hist_Target_CR_theta2.at(e).GetBinError(bin),2);
+            }
+            old_integral_err = pow(old_integral_err,0.5);
             double scale_sky = total_bkg/old_integral;
             double scale_sky_dark = total_bkg/old_integral_dark;
-            double scale_sky_err = total_bkg_err/old_integral;
+            double scale_sky_err = scale_sky*scale_sky*(pow(total_bkg_err/total_bkg,2)+pow(old_integral_err/old_integral,2));
+            scale_sky_err = pow(scale_sky_err,0.5);
             double scale_sky_err_dark = total_bkg_err/old_integral_dark;
+            std::cout << e << ", scale_sky = " << scale_sky << std::endl;
+            std::cout << e << ", scale_sky_err = " << scale_sky_err << std::endl;
+            scale_sky_err_ratio.push_back(scale_sky_err/scale_sky);
             double nbins_theta2_plot = 0;
             for (int bin=1;bin<=Hist_Target_Bkg_theta2.at(e).GetNbinsX();bin++)
             {
@@ -1575,19 +1608,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 if (bin_center<theta2_cut_lower_input || bin_center>theta2_cut_upper_input) continue;
                 double bin_content = Hist_Target_CR_theta2.at(e).GetBinContent(bin)*scale_sky;
                 double bin_error_1 = Hist_Target_CR_theta2.at(e).GetBinError(bin)*scale_sky;
-                double bin_error_2 = Hist_Target_CR_theta2.at(e).GetBinContent(bin)*scale_sky_err;
+                //double bin_error_2 = Hist_Target_CR_theta2.at(e).GetBinContent(bin)*scale_sky_err;
                 Hist_Target_Bkg_theta2.at(e).SetBinContent(bin,bin_content);
-                Hist_Target_Bkg_theta2.at(e).SetBinError(bin,pow(bin_error_1*bin_error_1+bin_error_2*bin_error_2,0.5));
-                //double bin_content = Hist_Dark_SR_theta2.at(e).GetBinContent(bin)*scale_sky_dark;
-                //double bin_error_1 = Hist_Dark_SR_theta2.at(e).GetBinError(bin)*scale_sky_dark;
-                //double bin_error_2 = Hist_Dark_SR_theta2.at(e).GetBinContent(bin)*scale_sky_err_dark;
-                //Hist_Target_Bkg_theta2.at(e).SetBinContent(bin,bin_content);
-                //Hist_Target_Bkg_theta2.at(e).SetBinError(bin,pow(bin_error_1*bin_error_1+bin_error_2*bin_error_2,0.5));
-                //
-                //double bin_content = total_bkg/nbins_theta2_plot;
-                //double bin_error = pow(pow(total_bkg_err,2)/nbins_theta2_plot,0.5);
-                //Hist_Target_Bkg_theta2.at(e).SetBinContent(bin,bin_content);
-                //Hist_Target_Bkg_theta2.at(e).SetBinError(bin,bin_error);
+                Hist_Target_Bkg_theta2.at(e).SetBinError(bin,bin_error_1);
             }
             double nbins_radec_plot = 0;
             for (int binx=1;binx<=Hist_Target_Bkg_RaDec.at(e).GetNbinsX();binx++)
@@ -1615,16 +1638,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     double bin_error_2 = Hist_Target_CR_RaDec.at(e).GetBinContent(binx,biny)*scale_sky_err;
                     Hist_Target_Bkg_RaDec.at(e).SetBinContent(binx,biny,bin_content);
                     Hist_Target_Bkg_RaDec.at(e).SetBinError(binx,biny,pow(bin_error_1*bin_error_1+bin_error_2*bin_error_2,0.5));
-                    //double bin_content = Hist_Dark_SR_RaDec.at(e).GetBinContent(binx,biny)*scale_sky_dark;
-                    //double bin_error_1 = Hist_Dark_SR_RaDec.at(e).GetBinError(binx,biny)*scale_sky_dark;
-                    //double bin_error_2 = Hist_Dark_SR_RaDec.at(e).GetBinContent(binx,biny)*scale_sky_err_dark;
-                    //Hist_Target_Bkg_RaDec.at(e).SetBinContent(binx,biny,bin_content);
-                    //Hist_Target_Bkg_RaDec.at(e).SetBinError(binx,biny,pow(bin_error_1*bin_error_1+bin_error_2*bin_error_2,0.5));
-                    //
-                    //double bin_content = total_bkg/nbins_radec_plot;
-                    //double bin_error = pow(pow(total_bkg_err,2)/nbins_radec_plot,0.5);
-                    //Hist_Target_Bkg_RaDec.at(e).SetBinContent(binx,biny,bin_content);
-                    //Hist_Target_Bkg_RaDec.at(e).SetBinError(binx,biny,bin_error);
                 }
             }
             std::cout << "Hist_Target_SR_theta2.at(e).Integral() = " << Hist_Target_SR_theta2.at(e).Integral() << std::endl;
@@ -1666,6 +1679,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         InfoTree.Branch("MSCW_cut_lower",&MSCW_cut_lower,"MSCW_cut_lower/D");
         InfoTree.Branch("MSCW_cut_upper",&MSCW_cut_upper,"MSCW_cut_upper/D");
         InfoTree.Branch("MSCW_cut_blind",&MSCW_cut_blind,"MSCW_cut_blind/D");
+        InfoTree.Branch("MSCL_cut_lower",&MSCL_signal_cut_lower[Number_of_SR-1],"MSCL_cut_lower/D");
         InfoTree.Branch("MSCL_cut_upper",&MSCL_signal_cut_upper[0],"MSCL_cut_upper/D");
         InfoTree.Branch("Elev_cut_lower",&Elev_cut_lower,"Elev_cut_lower/D");
         InfoTree.Branch("Elev_cut_upper",&Elev_cut_upper,"Elev_cut_upper/D");
@@ -1676,6 +1690,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         InfoTree.Branch("Target_Azim_cut_lower",&Target_Azim_cut_lower,"Target_Azim_cut_lower/D");
         InfoTree.Branch("Target_Azim_cut_upper",&Target_Azim_cut_upper,"Target_Azim_cut_upper/D");
         InfoTree.Branch("used_runs","std::vector<int>",&used_runs);
+        InfoTree.Branch("scale_sky_err_ratio","std::vector<double>",&scale_sky_err_ratio);
         InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
         InfoTree.Fill();
         InfoTree.Write();
