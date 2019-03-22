@@ -33,10 +33,10 @@
 #include "GetRunList.h"
 
 // VEGAS
-#define VEGAS
-#include "aclicPreProcCommands.h"
-#include <Riostream.h>
-#include <VAShowerData.h>
+//#define VEGAS
+//#include "aclicPreProcCommands.h"
+//#include <Riostream.h>
+//#include <VAShowerData.h>
 
 // VEGAS
 #ifndef VEGAS
@@ -122,12 +122,12 @@ double exposure_hours = 0.;
 //const int N_energy_bins = 16;
 //double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
 //int number_runs_included[N_energy_bins] = {5  ,5  ,5  ,5  ,5  ,5  ,5  ,5  ,5  ,5  ,5   ,5   ,5   ,5   ,20  ,20};
-//const int N_energy_bins = 12;
-//double energy_bins[N_energy_bins+1] =     {398,473,562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
-//int number_runs_included[N_energy_bins] = {5  ,5  ,5  ,5  ,5  ,5  ,5   ,5   ,5   ,5   ,20  ,20};
-const int N_energy_bins = 6;
-double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
-int number_runs_included[N_energy_bins] = {5   ,5   ,10   ,10  ,20  ,40};
+const int N_energy_bins = 10;
+double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122};
+int number_runs_included[N_energy_bins] = {5  ,5  ,5  ,5  ,5  ,5  ,5  ,5  ,5  ,5};
+//const int N_energy_bins = 6;
+//double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
+//int number_runs_included[N_energy_bins] = {5   ,5   ,10   ,10  ,20  ,40};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] =     {1122,1585};
 //int number_runs_included[N_energy_bins] = {5};
@@ -858,7 +858,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             sprintf(e_low, "%i", int(energy_bins[e]));
             char e_up[50];
             sprintf(e_up, "%i", int(energy_bins[e+1]));
-            if (energy_bins[e]>=100.) N_bins_for_deconv = 960;
+            if (energy_bins[e]>=100.) N_bins_for_deconv = 960*2;
+            if (energy_bins[e]>=350.) N_bins_for_deconv = 960;
             if (energy_bins[e]>=1000.) N_bins_for_deconv = 480;
             if (energy_bins[e]>=3000.) N_bins_for_deconv = 480;
             if (UseVegas)
