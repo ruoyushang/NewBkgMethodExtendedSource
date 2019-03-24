@@ -120,12 +120,13 @@ double theta2 = 0;
 double ra_sky = 0;
 double dec_sky = 0;
 vector<int> used_runs;
-vector<double> scale_sky_err_ratio;
+vector<double> scale_skymap;
+vector<double> scale_err_skymap;
 double exposure_hours = 0.;
 
 const int N_energy_bins = 16;
 double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
-int number_runs_included[N_energy_bins] = {10 ,10 ,10 ,10 ,10 ,10 ,10 ,10 ,10 ,10 ,10  ,10  ,20  ,20  ,40  ,80};
+int number_runs_included[N_energy_bins] = {10 ,10 ,10 ,10 ,10 ,10 ,10 ,10 ,10 ,10 ,20  ,20  ,20  ,20  ,40  ,80};
 //const int N_energy_bins = 10;
 //double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122};
 //int number_runs_included[N_energy_bins] = {5  ,5  ,5  ,5  ,5  ,5  ,5  ,5  ,5  ,5};
@@ -236,6 +237,35 @@ void AddBkgStatistics(TH1* Hist_Bkg)
         double stat_err = pow(Hist_Bkg->GetBinContent(i+1),0.5);
         double old_err = Hist_Bkg->GetBinError(i+1);
         Hist_Bkg->SetBinError(i+1,pow(stat_err*stat_err+old_err*old_err,0.5));
+    }
+}
+void AddSystematics3(TH1* Hist_Bkg)
+{
+    double rel_syst = 0.;
+    double area_blind = 0.;
+    double area_unblind = 0.;
+    for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
+    {
+        if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_blind) {
+            area_unblind += pow(Hist_Bkg->GetBinContent(i+1),2);
+        }
+        else
+        {
+            area_blind += pow(Hist_Bkg->GetBinContent(i+1),2);
+        }
+    }
+    rel_syst = pow(area_blind/(area_blind+area_unblind),0.5);
+    for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
+    {
+        if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_blind) {
+            continue;
+        }
+        double old_err = Hist_Bkg->GetBinError(i+1);
+        double new_err = Hist_Bkg->GetBinContent(i+1)*rel_syst;
+        if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind)
+        {
+            Hist_Bkg->SetBinError(i+1,pow(old_err*old_err+new_err*new_err,0.5));
+        }
     }
 }
 void AddSystematics2(TH1* Hist_CR,TH1* Hist_CRBkg, TH1* Hist_Bkg)
@@ -962,9 +992,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             char e_up[50];
             sprintf(e_up, "%i", int(energy_bins[e+1]));
             if (energy_bins[e]>=100.) N_bins_for_deconv = 960*2;
-            if (energy_bins[e]>=350.) N_bins_for_deconv = 960;
-            if (energy_bins[e]>=1000.) N_bins_for_deconv = 480;
-            if (energy_bins[e]>=3000.) N_bins_for_deconv = 480;
+            if (energy_bins[e]>=350.) N_bins_for_deconv = 480*2;
+            if (energy_bins[e]>=1000.) N_bins_for_deconv = 240*2;
+            if (energy_bins[e]>=3000.) N_bins_for_deconv = 240*2;
             if (UseVegas)
             {
               if (energy_bins[e]>=100.) N_bins_for_deconv = 960;
@@ -972,11 +1002,11 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
               if (energy_bins[e]>=3000.) N_bins_for_deconv = 960*2;
             }
             Hist_Target_SR_ErecS.push_back(TH1D("Hist_Target_SR_ErecS_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_bins,energy_bins));
-            Hist_Target_SR_theta2.push_back(TH1D("Hist_Target_SR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1000,0,Theta2_upper_limit));
+            Hist_Target_SR_theta2.push_back(TH1D("Hist_Target_SR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,Theta2_upper_limit));
             Hist_Dark_SR_theta2.push_back(TH1D("Hist_Dark_SR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,Theta2_upper_limit));
             Hist_Dark_CR_theta2.push_back(TH1D("Hist_Dark_CR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,Theta2_upper_limit));
-            Hist_Target_Bkg_theta2.push_back(TH1D("Hist_Target_Bkg_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1000,0,Theta2_upper_limit));
-            Hist_Target_CR_theta2.push_back(TH1D("Hist_Target_CR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1000,0,Theta2_upper_limit));
+            Hist_Target_Bkg_theta2.push_back(TH1D("Hist_Target_Bkg_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,Theta2_upper_limit));
+            Hist_Target_CR_theta2.push_back(TH1D("Hist_Target_CR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,Theta2_upper_limit));
             Hist_Target_SR_RaDec.push_back(TH2D("Hist_Target_SR_RaDec_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",100,-2,2,100,-2,2));
             Hist_Dark_SR_RaDec.push_back(TH2D("Hist_Dark_SR_RaDec_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",10,-2,2,10,-2,2));
             Hist_Dark_CR_RaDec.push_back(TH2D("Hist_Dark_CR_RaDec_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",10,-2,2,10,-2,2));
@@ -1406,6 +1436,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(0));
                     AddSystematics(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgSR_MSCW.at(e).at(0));
                     AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0));
+                    //AddSystematics3(&Hist_Target_BkgSR_MSCW.at(e).at(0));
 
                     //double total_weight = 0.;
                     //for (int c2=0;c2<Number_of_CR-1;c2++)
@@ -1446,6 +1477,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(s));
                         AddSystematics(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s));
                         AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(s));
+                        //AddSystematics3(&Hist_Target_BkgSR_MSCW.at(e).at(s));
 
                         //double total_weight = 0.;
                         //for (int c2=0;c2<Number_of_CR-1;c2++)
@@ -1531,39 +1563,39 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             double scale_sky_err_dark = total_bkg_err/old_integral_dark;
             std::cout << e << ", scale_sky = " << scale_sky << std::endl;
             std::cout << e << ", scale_sky_err = " << scale_sky_err << std::endl;
-            scale_sky_err_ratio.push_back(scale_sky_err/scale_sky);
-            for (int bin=1;bin<=Hist_Target_Bkg_theta2.at(e).GetNbinsX();bin++)
-            {
-                double bin_center = Hist_Target_CR_theta2.at(e).GetBinCenter(bin);
-                //if (bin_center<theta2_cut_lower_input || bin_center>theta2_cut_upper_input) continue;
-                double bin_content = Hist_Target_CR_theta2.at(e).GetBinContent(bin)*scale_sky;
-                double bin_error_1 = Hist_Target_CR_theta2.at(e).GetBinError(bin)*scale_sky;
-                //double bin_error_2 = Hist_Target_CR_theta2.at(e).GetBinContent(bin)*scale_sky_err;
-                Hist_Target_Bkg_theta2.at(e).SetBinContent(bin,bin_content);
-                Hist_Target_Bkg_theta2.at(e).SetBinError(bin,bin_error_1);
-            }
-            for (int binx=1;binx<=Hist_Target_Bkg_RaDec.at(e).GetNbinsX();binx++)
-            {
-                for (int biny=1;biny<=Hist_Target_Bkg_RaDec.at(e).GetNbinsY();biny++)
-                {
-                    Hist_Target_Bkg_RaDec.at(e).SetBinContent(binx,biny,0);
-                    Hist_Target_Bkg_RaDec.at(e).SetBinError(binx,biny,0);
-                    double bin_center_x = Hist_Target_CR_RaDec.at(e).GetXaxis()->GetBinCenter(binx);
-                    double bin_center_y = Hist_Target_CR_RaDec.at(e).GetYaxis()->GetBinCenter(biny);
-                    double bin_center_r = pow(bin_center_x*bin_center_x+bin_center_y*bin_center_y,0.5);
-                    double bin_content = Hist_Target_CR_RaDec.at(e).GetBinContent(binx,biny)*scale_sky;
-                    double bin_error_1 = Hist_Target_CR_RaDec.at(e).GetBinError(binx,biny)*scale_sky;
-                    double bin_error_2 = Hist_Target_CR_RaDec.at(e).GetBinContent(binx,biny)*scale_sky_err;
-                    Hist_Target_Bkg_RaDec.at(e).SetBinContent(binx,biny,bin_content);
-                    Hist_Target_Bkg_RaDec.at(e).SetBinError(binx,biny,pow(bin_error_1*bin_error_1+bin_error_2*bin_error_2,0.5));
-                }
-            }
-            std::cout << "Hist_Target_SR_theta2.at(e).Integral() = " << Hist_Target_SR_theta2.at(e).Integral() << std::endl;
-            std::cout << "Hist_Target_CR_theta2.at(e).Integral() = " << Hist_Target_CR_theta2.at(e).Integral() << std::endl;
-            std::cout << "Hist_Target_Bkg_theta2.at(e).Integral() = " << Hist_Target_Bkg_theta2.at(e).Integral() << std::endl;
-            std::cout << "Hist_Target_SR_RaDec.at(e).Integral() = " << Hist_Target_SR_RaDec.at(e).Integral() << std::endl;
-            std::cout << "Hist_Target_CR_RaDec.at(e).Integral() = " << Hist_Target_CR_RaDec.at(e).Integral() << std::endl;
-            std::cout << "Hist_Target_Bkg_RaDec.at(e).Integral() = " << Hist_Target_Bkg_RaDec.at(e).Integral() << std::endl;
+            scale_skymap.push_back(scale_sky);
+            scale_err_skymap.push_back(scale_sky_err);
+            //for (int bin=1;bin<=Hist_Target_Bkg_theta2.at(e).GetNbinsX();bin++)
+            //{
+            //    double bin_center = Hist_Target_CR_theta2.at(e).GetBinCenter(bin);
+            //    double bin_content = Hist_Target_CR_theta2.at(e).GetBinContent(bin)*scale_sky;
+            //    double bin_error_1 = Hist_Target_CR_theta2.at(e).GetBinError(bin)*scale_sky;
+            //    //double bin_error_2 = Hist_Target_CR_theta2.at(e).GetBinContent(bin)*scale_sky_err;
+            //    Hist_Target_Bkg_theta2.at(e).SetBinContent(bin,bin_content);
+            //    Hist_Target_Bkg_theta2.at(e).SetBinError(bin,bin_error_1);
+            //}
+            //for (int binx=1;binx<=Hist_Target_Bkg_RaDec.at(e).GetNbinsX();binx++)
+            //{
+            //    for (int biny=1;biny<=Hist_Target_Bkg_RaDec.at(e).GetNbinsY();biny++)
+            //    {
+            //        Hist_Target_Bkg_RaDec.at(e).SetBinContent(binx,biny,0);
+            //        Hist_Target_Bkg_RaDec.at(e).SetBinError(binx,biny,0);
+            //        double bin_center_x = Hist_Target_CR_RaDec.at(e).GetXaxis()->GetBinCenter(binx);
+            //        double bin_center_y = Hist_Target_CR_RaDec.at(e).GetYaxis()->GetBinCenter(biny);
+            //        double bin_center_r = pow(bin_center_x*bin_center_x+bin_center_y*bin_center_y,0.5);
+            //        double bin_content = Hist_Target_CR_RaDec.at(e).GetBinContent(binx,biny)*scale_sky;
+            //        double bin_error_1 = Hist_Target_CR_RaDec.at(e).GetBinError(binx,biny)*scale_sky;
+            //        double bin_error_2 = Hist_Target_CR_RaDec.at(e).GetBinContent(binx,biny)*scale_sky_err;
+            //        Hist_Target_Bkg_RaDec.at(e).SetBinContent(binx,biny,bin_content);
+            //        Hist_Target_Bkg_RaDec.at(e).SetBinError(binx,biny,pow(bin_error_1*bin_error_1+bin_error_2*bin_error_2,0.5));
+            //    }
+            //}
+            //std::cout << "Hist_Target_SR_theta2.at(e).Integral() = " << Hist_Target_SR_theta2.at(e).Integral() << std::endl;
+            //std::cout << "Hist_Target_CR_theta2.at(e).Integral() = " << Hist_Target_CR_theta2.at(e).Integral() << std::endl;
+            //std::cout << "Hist_Target_Bkg_theta2.at(e).Integral() = " << Hist_Target_Bkg_theta2.at(e).Integral() << std::endl;
+            //std::cout << "Hist_Target_SR_RaDec.at(e).Integral() = " << Hist_Target_SR_RaDec.at(e).Integral() << std::endl;
+            //std::cout << "Hist_Target_CR_RaDec.at(e).Integral() = " << Hist_Target_CR_RaDec.at(e).Integral() << std::endl;
+            //std::cout << "Hist_Target_Bkg_RaDec.at(e).Integral() = " << Hist_Target_Bkg_RaDec.at(e).Integral() << std::endl;
         }
 
 
@@ -1609,7 +1641,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         InfoTree.Branch("Target_Azim_cut_lower",&Target_Azim_cut_lower,"Target_Azim_cut_lower/D");
         InfoTree.Branch("Target_Azim_cut_upper",&Target_Azim_cut_upper,"Target_Azim_cut_upper/D");
         InfoTree.Branch("used_runs","std::vector<int>",&used_runs);
-        InfoTree.Branch("scale_sky_err_ratio","std::vector<double>",&scale_sky_err_ratio);
+        InfoTree.Branch("scale_skymap","std::vector<double>",&scale_skymap);
+        InfoTree.Branch("scale_err_skymap","std::vector<double>",&scale_err_skymap);
         InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
         InfoTree.Fill();
         InfoTree.Write();
