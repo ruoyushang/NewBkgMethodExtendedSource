@@ -18,13 +18,13 @@ source_list = []
 #source_list  += ['CrabV4']
 #source_list  += ['3C58']
 #source_list  += ['BrandonValidation']
-#source_list  += ['PKS1424']
-#source_list  += ['Crab']
-#source_list  += ['H1426']
-#source_list  += ['3C264']
+source_list  += ['PKS1424']
+source_list  += ['Crab']
+source_list  += ['H1426']
+source_list  += ['3C264']
 #source_list  += ['Ton599']
 source_list  += ['IC443HotSpot']
-#source_list  += ['Segue1V6']
+source_list  += ['Segue1V6']
 #source_list  += ['VA_Segue1']
 #source_list  += ['VA_Geminga']
 
@@ -60,19 +60,19 @@ MSCW_upper_cut = 1.0
 MSCW_blind_cut = 1.0
 
 energy_list = []
-energy_list += [200]
-energy_list += [282]
-energy_list += [398]
-energy_list += [473]
-energy_list += [562]
-energy_list += [794]
+#energy_list += [200]
+#energy_list += [282]
+#energy_list += [398]
+#energy_list += [473]
+#energy_list += [562]
+#energy_list += [794]
 energy_list += [1122]
 energy_list += [1585]
-energy_list += [2239]
-energy_list += [3162]
-energy_list += [4467]
-energy_list += [6310]
-energy_list += [8913]
+#energy_list += [2239]
+#energy_list += [3162]
+#energy_list += [4467]
+#energy_list += [6310]
+#energy_list += [8913]
 
 Variable = ''
 xtitle = ''
@@ -548,24 +548,20 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     err_bkg = 0
     predict_bkg = 0
     predict_bkg, err_bkg = IntegralAndError(Hists[1],norm_bin_low_target,norm_bin_up_target)
-    lumilab2 = ROOT.TLatex(0.15,0.60,'excess (RDBM) = %0.1f#pm%0.1f'%(data_SR-predict_bkg,pow(err_SR*err_SR+err_bkg*err_bkg,0.5)) )
+    lumilab2 = ROOT.TLatex(0.15,0.60,'Excess (RDBM) = %0.1f#pm%0.1f'%(data_SR-predict_bkg,pow(err_SR*err_SR+err_bkg*err_bkg,0.5)) )
     lumilab2.SetNDC()
     lumilab2.SetTextSize(0.15)
     lumilab2.Draw()
+    lumilab3 = ROOT.TLatex(0.15,0.40,'Bkg (RDBM) = %0.1f#pm%0.1f'%(predict_bkg,err_bkg) )
+    lumilab3.SetNDC()
+    lumilab3.SetTextSize(0.15)
+    lumilab3.Draw()
     sbratio = (data_SR-predict_bkg)/(predict_bkg)
     sbratio_err = sbratio*pow(pow(pow(err_SR*err_SR+err_bkg*err_bkg,0.5)/(data_SR-predict_bkg),2)+pow(err_bkg/predict_bkg,2),0.5)
-    lumilab4 = ROOT.TLatex(0.15,0.40,'S/B = %0.3f#pm%0.3f'%(sbratio,sbratio_err) )
+    lumilab4 = ROOT.TLatex(0.15,0.20,'S/B = %0.3f#pm%0.3f'%(sbratio,sbratio_err) )
     lumilab4.SetNDC()
     lumilab4.SetTextSize(0.15)
     lumilab4.Draw()
-    if len(Hists)>=3: 
-        err_ring = 0
-        ring_bkg = 0
-        ring_bkg, err_ring = IntegralAndError(Hists[2],norm_bin_low_target,norm_bin_up_target)
-        lumilab3 = ROOT.TLatex(0.15,0.20,'excess (OFF) = %0.1f#pm%0.1f'%(data_SR-ring_bkg,pow(err_SR*err_SR+err_ring*err_ring,0.5)) )
-        lumilab3.SetNDC()
-        lumilab3.SetTextSize(0.15)
-        lumilab3.Draw()
 
     pad2.cd()
     Hist_Band = Hist_Sum.Clone()
@@ -980,7 +976,6 @@ for s in source_list:
         which_method = 'MSCW'
 
         Hist_Target_SR_RaDec = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_RaDec')
-        Hist_Target_Bkg_RaDec = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_RaDec')
         Hist_Target_SR_MSCL = SelectDiagnosticaHistograms(folder,'MSCL','SR','Target_SR_MSCL')
         Hist_Target_Deconv_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Deconv_MSCW')
         Hist_Target_Ring_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Ring_MSCW')
@@ -996,9 +991,11 @@ for s in source_list:
         legends = []
         colors = []
         Hists += [Hist_Target_SR_MSCW]
+        Hists[0].Rebin(2)
         legends += ['%s ON'%(source)]
         colors += [1]
         Hists += [Hist_Target_BkgSR_MSCW]
+        Hists[1].Rebin(2)
         legends += ['Bkg (RDBM)']
         colors += [4]
         #Hists += [Hist_Target_Ring_MSCW]
@@ -1008,7 +1005,7 @@ for s in source_list:
         plotname = 'Target_SR_MSCW_Combined_E%s'%(ErecS_lower_cut)
         title = 'MSCW'
         #title = 'MSW'
-        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut)
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_upper_cut)
         #Number_of_SR = 0
         #Number_of_CR = 0
         for sr in range(1,Number_of_SR+1):
@@ -1018,14 +1015,16 @@ for s in source_list:
             legends = []
             colors = []
             Hists += [Hist_Target_SR_MSCW]
+            Hists[0].Rebin(2)
             legends += ['%s ON'%(source)]
             colors += [1]
             Hists += [Hist_Target_BkgSR_MSCW]
+            Hists[1].Rebin(2)
             legends += ['Bkg (RDBM)']
             colors += [4]
             plotname = 'Target_SR%s_MSCW_E%s'%(sr,ErecS_lower_cut)
             title = 'MSCW'
-            MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut)
+            MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_upper_cut)
         for sr in range(1,Number_of_CR):
             Hist_Target_CR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR%s_MSCW_Sum'%(sr))
             Hist_Target_BkgCR_MSCW = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_BkgCR%s_MSCW_Sum'%(sr))
@@ -1033,22 +1032,24 @@ for s in source_list:
             legends = []
             colors = []
             Hists += [Hist_Target_CR_MSCW]
+            Hists[0].Rebin(2)
             if source=='2ndCrab':
                 legends += ['Crab 2016 ON']
             else:
                 legends += ['%s'%(source)]
             colors += [1]
             Hists += [Hist_Target_BkgCR_MSCW]
+            Hists[1].Rebin(2)
             legends += ['Bkg']
             colors += [4]
             plotname = 'Target_CR%s_MSCW_E%s'%(sr,ErecS_lower_cut)
             title = 'MSCW'
             MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,1000)
 
-        print 'scale_skymap[e] = %s'%(scale_skymap[e])
-        print 'scale_err_skymap[e] = %s'%(scale_err_skymap[e])
+        #print 'scale_skymap[e] = %s'%(scale_skymap[e])
+        #print 'scale_err_skymap[e] = %s'%(scale_err_skymap[e])
         Hist_Target_SR_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_theta2')
-        Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_theta2')
+        Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_theta2')
         e2p_file = open("e2p_ratio_%s.txt"%(low_energy_correction),"read")
         energy_string = '%s-%s'%(ErecS_lower_cut,ErecS_upper_cut)
         print energy_string
@@ -1066,8 +1067,8 @@ for s in source_list:
             Hist_Target_Bkg_theta2.Rebin(2)
             Hist_Target_SR_theta2.Rebin(2)
             n_merge = n_merge*2
-        Theta2HistScale(Hist_Target_Bkg_theta2,scale_skymap[e],scale_err_skymap[e])
-        Theta2HistScale(Hist_Target_Bkg_theta2,e2p_ratio+1.,e2p_error)
+        #Theta2HistScale(Hist_Target_Bkg_theta2,scale_skymap[e],scale_err_skymap[e])
+        #Theta2HistScale(Hist_Target_Bkg_theta2,e2p_ratio+1.,e2p_error)
         Hists = []
         legends = []
         colors = []
@@ -1085,7 +1086,7 @@ for s in source_list:
         MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,0,0.5)
 
         Hist_Target_SR_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_theta2')
-        Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_theta2')
+        Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_theta2')
         e2p_file = open("e2p_ratio_%s.txt"%(low_energy_correction),"read")
         energy_string = '%s-%s'%(ErecS_lower_cut,ErecS_upper_cut)
         print energy_string
@@ -1097,14 +1098,14 @@ for s in source_list:
                 e2p_error = float(line.split()[6])
         print e2p_ratio
         print e2p_error
-        ideal_nbins = float(Hist_Target_SR_theta2.Integral())/10.
+        ideal_nbins = float(Hist_Target_SR_theta2.Integral())/20.
         n_merge = 1
         while (Hist_Target_SR_theta2.GetNbinsX()>ideal_nbins and n_merge<64) or (n_merge<8):
             Hist_Target_Bkg_theta2.Rebin(2)
             Hist_Target_SR_theta2.Rebin(2)
             n_merge = n_merge*2
-        Theta2HistScale(Hist_Target_Bkg_theta2,scale_skymap[e],scale_err_skymap[e])
-        Theta2HistScale(Hist_Target_Bkg_theta2,e2p_ratio+1.,e2p_error)
+        #Theta2HistScale(Hist_Target_Bkg_theta2,scale_skymap[e],scale_err_skymap[e])
+        #Theta2HistScale(Hist_Target_Bkg_theta2,e2p_ratio+1.,e2p_error)
         Hists = []
         legends = []
         colors = []
@@ -1121,20 +1122,21 @@ for s in source_list:
         title = 'theta2'
         MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,0,Theta2_upper_limit)
 
-        plotname = 'Target_SR_RaDec_E%s'%(ErecS_lower_cut)
-        event_density = Hist_Target_SR_RaDec.Integral()/(2.*2.)
-        smooth_size = pow(3./event_density,0.5)
-        print 'smooth_size = %s'%(smooth_size)
-        #if smooth_size>0.2: smooth_size = 0.2
-        ideal_nbins = 4.*(2./smooth_size)
-        while Hist_Target_SR_RaDec.GetNbinsX()>ideal_nbins:
-            Hist_Target_SR_RaDec.Rebin2D(2,2)
-            Hist_Target_Bkg_RaDec.Rebin2D(2,2)
-        RaDecHistScale(Hist_Target_Bkg_RaDec,scale_skymap[e],scale_err_skymap[e])
-        RaDecHistScale(Hist_Target_Bkg_RaDec,e2p_ratio+1.,e2p_error)
-        Hist_Target_SR_RaDec_Smooth = Smooth2DMap(Hist_Target_SR_RaDec,smooth_size)
-        Hist_Target_Bkg_RaDec_Smooth = Smooth2DMap(Hist_Target_Bkg_RaDec,smooth_size)
-        Make2DSignificancePlot(Hist_Target_SR_RaDec_Smooth,Hist_Target_Bkg_RaDec_Smooth,'RA','Dec',plotname)
+        #Hist_Target_Bkg_RaDec = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_RaDec')
+        #plotname = 'Target_SR_RaDec_E%s'%(ErecS_lower_cut)
+        #event_density = Hist_Target_SR_RaDec.Integral()/(2.*2.)
+        #smooth_size = pow(10./event_density,0.5)
+        #print 'smooth_size = %s'%(smooth_size)
+        ##if smooth_size>0.2: smooth_size = 0.2
+        #ideal_nbins = 4.*(2./smooth_size)
+        #while Hist_Target_SR_RaDec.GetNbinsX()>ideal_nbins:
+        #    Hist_Target_SR_RaDec.Rebin2D(2,2)
+        #    Hist_Target_Bkg_RaDec.Rebin2D(2,2)
+        ##RaDecHistScale(Hist_Target_Bkg_RaDec,scale_skymap[e],scale_err_skymap[e])
+        ##RaDecHistScale(Hist_Target_Bkg_RaDec,e2p_ratio+1.,e2p_error)
+        #Hist_Target_SR_RaDec_Smooth = Smooth2DMap(Hist_Target_SR_RaDec,smooth_size)
+        #Hist_Target_Bkg_RaDec_Smooth = Smooth2DMap(Hist_Target_Bkg_RaDec,smooth_size)
+        #Make2DSignificancePlot(Hist_Target_SR_RaDec_Smooth,Hist_Target_Bkg_RaDec_Smooth,'RA','Dec',plotname)
 
     for run in range(0,len(used_runs)):
         print 'using run %s'%(used_runs[run])
