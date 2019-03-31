@@ -120,25 +120,26 @@ double theta2 = 0;
 double ra_sky = 0;
 double dec_sky = 0;
 vector<int> used_runs;
+vector<double> energy_vec;
 vector<double> scale_skymap;
 vector<double> scale_err_skymap;
 double exposure_hours = 0.;
 
-//const int N_energy_bins = 16;
-//double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
-//int number_runs_included[N_energy_bins] = {10 ,10 ,10 ,10 ,10 ,10 ,10 ,10 ,10 ,10 ,20  ,20  ,20  ,20  ,40  ,80};
+const int N_energy_bins = 16;
+double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
+int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,2   ,2   ,2   ,4   ,8   ,8};
 //const int N_energy_bins = 10;
 //double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122};
-//int number_runs_included[N_energy_bins] = {5  ,5  ,5  ,5  ,5  ,5  ,5  ,5  ,5  ,5};
+//int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1};
 //const int N_energy_bins = 6;
 //double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
-//int number_runs_included[N_energy_bins] = {1   ,1   ,1   ,1   ,1   ,1};
-const int N_energy_bins = 1;
-double energy_bins[N_energy_bins+1] =     {1122,1585};
-int number_runs_included[N_energy_bins] = {2};
-//const int N_energy_bins = 2;
-//double energy_bins[N_energy_bins+1] =     {4467,6310,8913};
-//int number_runs_included[N_energy_bins] = {40,40};
+//int number_runs_included[N_energy_bins] = {2   ,2   ,2   ,4   ,4   ,4};
+//const int N_energy_bins = 1;
+//double energy_bins[N_energy_bins+1] =     {1122,1585};
+//int number_runs_included[N_energy_bins] = {2};
+//const int N_energy_bins = 1;
+//double energy_bins[N_energy_bins+1] =     {473,562};
+//int number_runs_included[N_energy_bins] = {1};
 
 int N_bins_for_deconv = 480;
 double MSCW_plot_lower = -30.;
@@ -146,8 +147,10 @@ double MSCW_plot_upper = 30.;
 
 bool FoV() {
     //if (theta2<0.2) return false;
-    if (R2off<Theta2_cut_lower) return false;
-    if (R2off>Theta2_cut_upper) return false;
+    //if (R2off<Theta2_cut_lower) return false;
+    //if (R2off>Theta2_cut_upper) return false;
+    if (theta2<Theta2_cut_lower) return false;
+    if (theta2>Theta2_cut_upper) return false;
     return true;
 }
 bool RingFoV() {
@@ -989,6 +992,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         vector<TH1D> Hist_Target_Ring_MSCW;
         vector<TH1D> Hist_Target_Ring_MSCL;
         vector<TH2D> Hist_Target_MSCLW;
+        for (int e=0;e<=N_energy_bins;e++) {
+            energy_vec.push_back(energy_bins[e]);
+        }
         for (int e=0;e<N_energy_bins;e++) {
             char e_low[50];
             sprintf(e_low, "%i", int(energy_bins[e]));
@@ -997,7 +1003,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             if (energy_bins[e]>=100.) N_bins_for_deconv = 960;
             if (energy_bins[e]>=350.) N_bins_for_deconv = 960;
             if (energy_bins[e]>=1000.) N_bins_for_deconv = 480;
-            if (energy_bins[e]>=3000.) N_bins_for_deconv = 240;
+            if (energy_bins[e]>=2000.) N_bins_for_deconv = 240;
             if (energy_bins[e]>=6000.) N_bins_for_deconv = 120;
             if (UseVegas)
             {
@@ -1073,8 +1079,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
 
 
         std::cout << "Getting dark runs... " << std::endl;
-        vector<int> Dark_runlist = GetRunList("DarkSegue1V6");
-        if (TString(target)!="Segue1V6") Dark_runlist = GetRunList("DarkSegue1V6_All");
+        vector<int> Dark_runlist = GetRunList("Segue1AV6");
         char Dark_observation[50];
         sprintf(Dark_observation, "%s", "Segue1V6");
         if (UseVegas) 
@@ -1445,8 +1450,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),offset_begin,true,false);
                     Converge(&Hist_Target_BkgSR_MSCW.at(e).at(0),converge.first,converge.second);
                     AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(0));
-                    AddSystematics(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgSR_MSCW.at(e).at(0));
-                    AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0));
+                    //AddSystematics(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgSR_MSCW.at(e).at(0));
+                    //AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0));
                     //AddSystematics3(&Hist_Target_BkgSR_MSCW.at(e).at(0));
 
                     //double total_weight = 0.;
@@ -1488,8 +1493,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(s),offset_begin,true,false);
                         Converge(&Hist_Target_BkgSR_MSCW.at(e).at(s),converge.first,converge.second);
                         AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(s));
-                        AddSystematics(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s));
-                        AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(s));
+                        //AddSystematics(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s));
+                        //AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(s));
                         //AddSystematics3(&Hist_Target_BkgSR_MSCW.at(e).at(s));
 
                         //double total_weight = 0.;
@@ -1624,7 +1629,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
 
         int Number_of_CR_new = Number_of_CR;
         int Number_of_SR_new = Number_of_SR;
-        TFile OutputFile("output/Deconvolution_"+TString(target)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(Theta2_cut_lower))+"to"+std::to_string(int(Theta2_cut_upper))+"_MSCW"+std::to_string(int(10.*MSCW_cut_upper))+".root","recreate"); 
+        TFile OutputFile("output/Deconvolution_"+TString(target)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(Theta2_cut_lower))+"to"+std::to_string(int(Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+".root","recreate"); 
         TTree InfoTree("InfoTree","info tree");
         InfoTree.Branch("Number_of_CR",&Number_of_CR_new,"Number_of_CR/I");
         InfoTree.Branch("Number_of_SR",&Number_of_SR_new,"Number_of_SR/I");
@@ -1643,6 +1648,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         InfoTree.Branch("Target_Azim_cut_lower",&Target_Azim_cut_lower,"Target_Azim_cut_lower/D");
         InfoTree.Branch("Target_Azim_cut_upper",&Target_Azim_cut_upper,"Target_Azim_cut_upper/D");
         InfoTree.Branch("used_runs","std::vector<int>",&used_runs);
+        InfoTree.Branch("energy_vec","std::vector<double>",&energy_vec);
         InfoTree.Branch("scale_skymap","std::vector<double>",&scale_skymap);
         InfoTree.Branch("scale_err_skymap","std::vector<double>",&scale_err_skymap);
         InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
