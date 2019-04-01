@@ -138,7 +138,7 @@ int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1
 //double energy_bins[N_energy_bins+1] =     {1122,1585};
 //int number_runs_included[N_energy_bins] = {2};
 //const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] =     {473,562};
+//double energy_bins[N_energy_bins+1] =     {200,237};
 //int number_runs_included[N_energy_bins] = {1};
 
 int N_bins_for_deconv = 480;
@@ -503,7 +503,15 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
             Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
             Hist_Bkg->SetBinError(i+1,Hist_BkgTemp->GetBinError(b));
     }
-    Hist_Bkg->Scale(norm/Hist_Bkg->Integral());
+    if (Hist_Bkg->Integral()==0) 
+    {
+        std::cout << "Hist_Bkg->Integral() = 0!!!" << std::endl;
+        Hist_Bkg->Scale(0.);
+    }
+    else 
+    {
+        Hist_Bkg->Scale(norm/Hist_Bkg->Integral());
+    }
     Hist_Bkg->Scale(scale_fit);
     return shift_fit;
 }
@@ -743,7 +751,10 @@ vector<int> FindRunSublist(string source, vector<int> Target_runlist, vector<int
         double dec_this = 0;
         char observation[50];
         sprintf(observation, "%s", source.c_str());
-        if (TString(source)=="2ndCrab") sprintf(observation, "%s", "Crab");
+        if (TString(source)=="CrabA") sprintf(observation, "%s", "Crab");
+        if (TString(source)=="CrabB") sprintf(observation, "%s", "Crab");
+        if (TString(source)=="Segue1AV6") sprintf(observation, "%s", "Segue1V6");
+        if (TString(source)=="Segue1BV6") sprintf(observation, "%s", "Segue1V6");
         for (int run=0;run<Target_runlist.size();run++) {
                 char run_number[50];
                 bool skip_this_run = false;
@@ -1182,7 +1193,10 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         std::cout << "Getting target runs... " << std::endl;
         char observation[50];
         sprintf(observation, "%s", target);
-        if (TString(target)=="2ndCrab") sprintf(observation, "%s", "Crab");
+        if (TString(target)=="CrabA") sprintf(observation, "%s", "Crab");
+        if (TString(target)=="CrabB") sprintf(observation, "%s", "Crab");
+        if (TString(target)=="Segue1AV6") sprintf(observation, "%s", "Segue1V6");
+        if (TString(target)=="Segue1BV6") sprintf(observation, "%s", "Segue1V6");
         vector<int> already_used_runs;
         vector<int> Target_runlist = GetRunList(target);
 
@@ -1449,7 +1463,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     offset_begin = Hist_Target_SR_MSCW.at(e).at(0).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
                     offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),offset_begin,true,false);
                     Converge(&Hist_Target_BkgSR_MSCW.at(e).at(0),converge.first,converge.second);
-                    AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(0));
+                    //AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(0));
                     //AddSystematics(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgSR_MSCW.at(e).at(0));
                     //AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0));
                     //AddSystematics3(&Hist_Target_BkgSR_MSCW.at(e).at(0));
@@ -1492,7 +1506,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         offset_begin = Hist_Target_SR_MSCW.at(e).at(s).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
                         offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(s),offset_begin,true,false);
                         Converge(&Hist_Target_BkgSR_MSCW.at(e).at(s),converge.first,converge.second);
-                        AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(s));
+                        //AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(s));
                         //AddSystematics(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s));
                         //AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(s));
                         //AddSystematics3(&Hist_Target_BkgSR_MSCW.at(e).at(s));

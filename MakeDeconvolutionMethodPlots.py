@@ -19,12 +19,14 @@ source_list = []
 #source_list  += ['3C58']
 #source_list  += ['BrandonValidation']
 #source_list  += ['PKS1424']
-source_list  += ['Crab']
+#source_list  += ['CrabA']
+#source_list  += ['CrabB']
 #source_list  += ['H1426']
 #source_list  += ['3C264']
 #source_list  += ['Ton599']
 #source_list  += ['IC443HotSpot']
-source_list  += ['Segue1V6']
+#source_list  += ['Segue1AV6']
+source_list  += ['Segue1BV6']
 #source_list  += ['VA_Segue1']
 #source_list  += ['VA_Geminga']
 
@@ -39,12 +41,17 @@ global MSCL_upper_cut
 
 #Elev_lower_cut = 20
 #Elev_upper_cut = 40
-Elev_lower_cut = 70
-Elev_upper_cut = 90
+Elev_lower_cut = 50
+Elev_upper_cut = 70
+#Elev_lower_cut = 70
+#Elev_upper_cut = 90
 Azim_lower_cut = 0
 Azim_upper_cut = 360
 
 Theta2_lower_cut = 0
+#Theta2_upper_cut = 1
+#Theta2_upper_cut = 2
+#Theta2_upper_cut = 4
 Theta2_upper_cut = 10
 mscw_cut = 'MSCWCut10'
 mscw_blind = 'MSCWBlind15'
@@ -143,6 +150,69 @@ def set_histStyle( hist , color):
     hist.SetMarkerColor(color)
     hist.SetFillStyle(1001)
     pass
+
+def MakeComparisonPlot(Hists,legends,colors,title,name):
+    
+    global MSCW_lower_cut
+    global MSCW_upper_cut
+    global MSCW_blind_cut
+    global MSCL_lower_cut
+    global MSCL_upper_cut
+
+    c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
+    pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
+    pad3.SetBottomMargin(0.0)
+    pad3.SetTopMargin(0.03)
+    pad3.SetBorderMode(1)
+    pad1 = ROOT.TPad("pad1","pad1",0,0,1,1)
+    pad1.SetBottomMargin(0.15)
+    pad1.SetTopMargin(0.0)
+    pad1.SetBorderMode(0)
+    pad1.Draw()
+    pad3.Draw()
+
+    pad1.cd()
+
+    max_heigh = 0
+    max_hist = 0
+    mean = []
+    rms = []
+    amp = []
+    for h in range(0,len(Hists)):
+        mean += [0]
+        rms += [0]
+        amp += [0]
+        if Hists[h]!=0:
+            Hists[h].GetXaxis().SetTitle(title)
+            if max_heigh < Hists[h].GetMaximum(): 
+                max_heigh = Hists[h].GetMaximum()
+                max_hist = h
+
+    Hists[max_hist].SetMinimum(0)
+    Hists[max_hist].Draw("E")
+
+    for h in range(0,len(Hists)):
+        if Hists[h]!=0:
+            Hists[h].SetLineColor(colors[h])
+            Hists[h].Draw("E same")
+
+    pad3.cd()
+    legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.15)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+    legend.Clear()
+    for h in range(0,len(Hists)):
+        if Hists[h]!=0:
+            legend.AddEntry(Hists[h],legends[h],"pl")
+    legend.Draw("SAME")
+
+    pad1.SetLogx()
+
+    c_both.SaveAs('output_plots/%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
 
 def MakeGaussianPlot(Hists,legends,colors,title,name,doSum,doNorm):
     
@@ -943,9 +1013,16 @@ def Make2DTrajectoryPlot(Hist_1,Hist_2,xtitle,ytitle,name):
     #canvas2.SaveAs('output_plots/%s_%s_Lego.pdf'%(name,source))
 
 
-for s in source_list:
+Hist_e2p = []
+legend_e2p = []
+color_e2p = []
+for s in range(0,len(source_list)):
 
-    source = s
+    source = source_list[s]
+    Hist_e2p += [ROOT.TH1D("Hist_e2p_%s"%(source),"",len(energy_list)-1,array('d',energy_list))]
+    legend_e2p += [source]
+    color_e2p += [s+1]
+
     ErecS_lower_cut = 0
     ErecS_upper_cut = 1e10
     #FilePath = '%s/Deconvolution_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.root'%(folder,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region)
@@ -964,6 +1041,7 @@ for s in source_list:
     Number_of_CR = InfoTree.Number_of_CR
     Number_of_SR = InfoTree.Number_of_SR
     used_runs = InfoTree.used_runs
+    energy_vec = InfoTree.energy_vec
     scale_skymap = InfoTree.scale_skymap
     scale_err_skymap = InfoTree.scale_err_skymap
     exposure_hours = InfoTree.exposure_hours
@@ -992,6 +1070,10 @@ for s in source_list:
     for e in range(0,len(energy_list)-1):
         ErecS_lower_cut = energy_list[e]
         ErecS_upper_cut = energy_list[e+1]
+
+        evec_match = 0
+        for evec in range(0,len(energy_vec)-1):
+            if energy_list[e]==energy_vec[evec]: evec_match = evec
 
         which_method = 'MSCW'
 
@@ -1063,8 +1145,8 @@ for s in source_list:
             title = 'MSCW'
             MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,1000)
 
-        #print 'scale_skymap[e] = %s'%(scale_skymap[e])
-        #print 'scale_err_skymap[e] = %s'%(scale_err_skymap[e])
+        #print 'scale_skymap[evec_match] = %s'%(scale_skymap[evec_match])
+        #print 'scale_err_skymap[evec_match] = %s'%(scale_err_skymap[evec_match])
         Hist_Target_SR_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_theta2')
         #Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_theta2')
         Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_theta2')
@@ -1085,7 +1167,7 @@ for s in source_list:
             Hist_Target_Bkg_theta2.Rebin(2)
             Hist_Target_SR_theta2.Rebin(2)
             n_merge = n_merge*2
-        Theta2HistScale(Hist_Target_Bkg_theta2,scale_skymap[e],scale_err_skymap[e])
+        Theta2HistScale(Hist_Target_Bkg_theta2,scale_skymap[evec_match],scale_err_skymap[evec_match])
         Theta2HistScale(Hist_Target_Bkg_theta2,e2p_ratio+1.,e2p_error)
         Hists = []
         legends = []
@@ -1120,7 +1202,7 @@ for s in source_list:
             Hist_Target_Bkg_theta2.Rebin(2)
             Hist_Target_SR_theta2.Rebin(2)
             n_merge = n_merge*2
-        Theta2HistScale(Hist_Target_Bkg_theta2,scale_skymap[e],scale_err_skymap[e])
+        Theta2HistScale(Hist_Target_Bkg_theta2,scale_skymap[evec_match],scale_err_skymap[evec_match])
         Theta2HistScale(Hist_Target_Bkg_theta2,e2p_ratio+1.,e2p_error)
         Hists = []
         legends = []
@@ -1147,7 +1229,7 @@ for s in source_list:
         #while Hist_Target_SR_RaDec.GetNbinsX()>ideal_nbins:
         #    Hist_Target_SR_RaDec.Rebin2D(2,2)
         #    Hist_Target_Bkg_RaDec.Rebin2D(2,2)
-        #RaDecHistScale(Hist_Target_Bkg_RaDec,scale_skymap[e],scale_err_skymap[e])
+        #RaDecHistScale(Hist_Target_Bkg_RaDec,scale_skymap[evec_match],scale_err_skymap[evec_match])
         #RaDecHistScale(Hist_Target_Bkg_RaDec,e2p_ratio+1.,e2p_error)
         #Hist_Target_SR_RaDec_Smooth = Smooth2DMap(Hist_Target_SR_RaDec,smooth_size,False)
         #Hist_Target_Bkg_RaDec_Smooth = Smooth2DMap(Hist_Target_Bkg_RaDec,smooth_size,True)
@@ -1167,3 +1249,7 @@ for s in source_list:
         s2b_err = 0.
         s2b, s2b_err = S2B_ratio(Hist_Target_SR_MSCW, Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut)
         print 'E %s-%s, S/B = %0.3f +/- %0.3f'%(ErecS_lower_cut,ErecS_upper_cut,s2b,s2b_err)
+        Hist_e2p[len(Hist_e2p)-1].SetBinContent(e,s2b)
+        Hist_e2p[len(Hist_e2p)-1].SetBinError(e,s2b_err)
+
+MakeComparisonPlot(Hist_e2p,legend_e2p,color_e2p,'E [GeV]','Target_e2p_ratio')
