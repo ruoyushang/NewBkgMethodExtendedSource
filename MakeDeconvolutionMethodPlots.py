@@ -18,15 +18,14 @@ source_list = []
 #source_list  += ['CrabV4']
 #source_list  += ['3C58']
 #source_list  += ['BrandonValidation']
-#source_list  += ['PKS1424']
-#source_list  += ['CrabA']
-#source_list  += ['CrabB']
-#source_list  += ['H1426']
-#source_list  += ['3C264']
+source_list  += ['PKS1424']
+#source_list  += ['Crab']
+source_list  += ['H1426']
+source_list  += ['3C264']
 #source_list  += ['Ton599']
-#source_list  += ['IC443HotSpot']
+source_list  += ['IC443HotSpot']
 #source_list  += ['Segue1AV6']
-source_list  += ['Segue1BV6']
+#source_list  += ['Segue1BV6']
 #source_list  += ['VA_Segue1']
 #source_list  += ['VA_Geminga']
 
@@ -42,9 +41,9 @@ global MSCL_upper_cut
 #Elev_lower_cut = 20
 #Elev_upper_cut = 40
 Elev_lower_cut = 50
-Elev_upper_cut = 70
+#Elev_upper_cut = 70
 #Elev_lower_cut = 70
-#Elev_upper_cut = 90
+Elev_upper_cut = 90
 Azim_lower_cut = 0
 Azim_upper_cut = 360
 
@@ -53,7 +52,7 @@ Theta2_lower_cut = 0
 #Theta2_upper_cut = 2
 #Theta2_upper_cut = 4
 Theta2_upper_cut = 10
-mscw_cut = 'MSCWCut10'
+mscw_cut = 'MSCWCut5'
 mscw_blind = 'MSCWBlind15'
 
 UseMethod1 = False
@@ -69,16 +68,16 @@ MSCW_upper_cut = 1.0
 MSCW_blind_cut = 1.0
 
 energy_list = []
-energy_list += [200]
-energy_list += [237]
-energy_list += [282]
-energy_list += [335]
-energy_list += [398]
-energy_list += [473]
-energy_list += [562]
-energy_list += [663]
-energy_list += [794]
-energy_list += [937]
+#energy_list += [200]
+#energy_list += [237]
+#energy_list += [282]
+#energy_list += [335]
+#energy_list += [398]
+#energy_list += [473]
+#energy_list += [562]
+#energy_list += [663]
+#energy_list += [794]
+#energy_list += [937]
 energy_list += [1122]
 energy_list += [1585]
 energy_list += [2239]
@@ -883,7 +882,7 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,xtitle,ytitle,name):
     Hist_Sig_cut = ROOT.TH1D("Hist_Sig_cut","",65,-5,8)
     for bx in range(0,Hist_Data.GetNbinsX()):
         for by in range(0,Hist_Data.GetNbinsY()):
-            if not Hist_SR.GetBinContent(bx+1,by+1)==0:
+            if not Hist_SR.GetBinContent(bx+1,by+1)==0 and not Hist_Bkg.GetBinContent(bx+1,by+1)==0:
                 content = Hist_Data.GetBinContent(bx+1,by+1)
                 Hist_Sig.Fill(content)
                 locationx1 = Hist_Data.GetXaxis().GetBinCenter(bx)
@@ -1216,6 +1215,38 @@ for s in range(0,len(source_list)):
         plotname = 'Target_SR_theta2_E%s'%(ErecS_lower_cut)
         title = 'theta2'
         MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,0,Theta2_upper_limit)
+
+        #Hist_Target_SR_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_theta2')
+        #Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_theta2')
+        #e2p_file = open("e2p_ratio_%s.txt"%(mscw_cut),"read")
+        #energy_string = '%s-%s'%(ErecS_lower_cut,ErecS_upper_cut)
+        #print energy_string
+        #e2p_ratio = 0
+        #e2p_error = 0
+        #for line in e2p_file:
+        #    if energy_string in line:
+        #        e2p_ratio = float(line.split()[4])
+        #        e2p_error = float(line.split()[6])
+        #print e2p_ratio
+        #print e2p_error
+        #ideal_nbins = float(Hist_Target_SR_theta2.Integral())/50.
+        #n_merge = 1
+        #while (Hist_Target_SR_theta2.GetNbinsX()>ideal_nbins and n_merge<64) or (n_merge<8):
+        #    Hist_Target_Bkg_theta2.Rebin(2)
+        #    Hist_Target_SR_theta2.Rebin(2)
+        #    n_merge = n_merge*2
+        #Hists = []
+        #legends = []
+        #colors = []
+        #Hists += [Hist_Target_SR_theta2]
+        #legends += ['%s'%(source)]
+        #colors += [1]
+        #Hists += [Hist_Target_Bkg_theta2]
+        #legends += ['Bkg']
+        #colors += [4]
+        #plotname = 'Target_CR_theta2_E%s'%(ErecS_lower_cut)
+        #title = 'theta2'
+        #MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,0,Theta2_upper_limit)
 
         ##Hist_Target_Bkg_RaDec = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_RaDec')
         #Hist_Target_Bkg_RaDec = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_RaDec')

@@ -125,20 +125,20 @@ vector<double> scale_skymap;
 vector<double> scale_err_skymap;
 double exposure_hours = 0.;
 
-const int N_energy_bins = 16;
-double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
-int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,2   ,2   ,2   ,4   ,8   ,8};
-//const int N_energy_bins = 10;
-//double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122};
-//int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1};
-//const int N_energy_bins = 6;
-//double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
-//int number_runs_included[N_energy_bins] = {2   ,2   ,2   ,4   ,4   ,4};
+//const int N_energy_bins = 16;
+//double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
+//int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,2   ,2   ,2   ,4   ,8   ,8};
+//const int N_energy_bins = 11;
+//double energy_bins[N_energy_bins+1] =     {200,282,398,562,794,1122,1585,2239,3162,4467,6310,8913};
+//int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,2   ,2   ,2   ,4   ,8   ,8};
+const int N_energy_bins = 6;
+double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
+int number_runs_included[N_energy_bins] = {2   ,2   ,2   ,4   ,8   ,8};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] =     {1122,1585};
 //int number_runs_included[N_energy_bins] = {2};
 //const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] =     {200,237};
+//double energy_bins[N_energy_bins+1] =     {282,335};
 //int number_runs_included[N_energy_bins] = {1};
 
 int N_bins_for_deconv = 480;
@@ -184,6 +184,18 @@ double background(Double_t *x, Double_t *par) {
 double Kernel(Double_t *x, Double_t *par) {
     double xx =x[0];
     return exp(-0.5*pow((xx)/(par[0]),2));
+}
+double GetLinearUncWithRange(TH1* Hist_Bkg, double lower_end, double upper_end) {
+    double total_err = 0.;
+    for (int i=0;i<Hist_Bkg->GetNbinsX();i++) {
+        double bkg = Hist_Bkg->GetBinContent(i+1);
+        double bkg_err = Hist_Bkg->GetBinError(i+1);
+        if (Hist_Bkg->GetBinCenter(i+1)<lower_end || Hist_Bkg->GetBinCenter(i+1)>upper_end) {
+            continue;
+        }
+        total_err += bkg_err;
+    }
+    return total_err;
 }
 double GetChi2WithRange(TH1* Hist_SR, TH1* Hist_Bkg, double lower_end, double upper_end) {
     double chi2_temp = 0.;
@@ -488,7 +500,7 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
                 Hist_Bkg->Scale(norm/Hist_Bkg->Integral());
                 Hist_Bkg->Scale(scale);
                 double chi2_temp = GetChi2(Hist_SR, Hist_Bkg,includeSR);
-                if (chi2<chi2_temp) {
+                if (chi2<chi2_temp && Hist_Bkg->Integral()!=0) {
                     chi2 = chi2_temp;
                     shift_fit = shift;
                     scale_fit = scale;
@@ -995,6 +1007,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         vector<TH1D> Hist_Target_BkgPrevious_MSCW;
         vector<vector<TH1D>> Hist_Target_BkgSR_MSCW;
         vector<vector<TH1D>> Hist_Target_BkgSR_MSCW_AllCR;
+        vector<double> Weight_Target_BkgSR_MSCW_AllCR;
         vector<vector<TH1D>> Hist_Target_BkgCR_MSCW;
         vector<vector<TH1D>> Hist_Target_BkgSR_MSCW_Sum;
         vector<vector<TH1D>> Hist_Target_BkgCR_MSCW_Sum;
@@ -1213,6 +1226,11 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
 
         TF1 *myfunc = new TF1("myfunc",Kernel,-50.,50.,1);
         myfunc->SetParameter(0,0.5);
+
+        for (int s=0;s<Number_of_SR;s++)
+        {
+                Weight_Target_BkgSR_MSCW_AllCR.push_back(0.);
+        }
 
         for (int e=0;e<N_energy_bins;e++)
         {
@@ -1468,19 +1486,14 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     //AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0));
                     //AddSystematics3(&Hist_Target_BkgSR_MSCW.at(e).at(0));
 
-                    //double total_weight = 0.;
-                    //for (int c2=0;c2<Number_of_CR-1;c2++)
-                    //{
-                    //    total_weight += ((double(Number_of_SR)-double(0))+(double(c2)+1.));
-                    //}
-                    //double weight = ((double(Number_of_SR)-double(0))+(double(c1)+1.))/total_weight;
-                    double total_weight = 0.;
-                    for (int c2=0;c2<Number_of_CR-1;c2++)
+                    double weight = GetLinearUncWithRange(&Hist_Target_BkgSR_MSCW.at(e).at(0),MSCW_cut_lower,MSCW_cut_blind);
+                    std::cout << "weight = " << weight << std::endl; 
+                    if (weight!=0) 
                     {
-                        total_weight += 1.;
+                        weight = 1./weight;
+                        Weight_Target_BkgSR_MSCW_AllCR.at(0) += weight;
+                        Hist_Target_BkgSR_MSCW_AllCR.at(e).at(0).Add(&Hist_Target_BkgSR_MSCW.at(e).at(0),weight);
                     }
-                    double weight = 1./total_weight;
-                    Hist_Target_BkgSR_MSCW_AllCR.at(e).at(0).Add(&Hist_Target_BkgSR_MSCW.at(e).at(0),weight);
 
                     // estimate SR bkg
                     for (int s=1;s<Number_of_SR;s++)
@@ -1511,31 +1524,38 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                         //AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(s));
                         //AddSystematics3(&Hist_Target_BkgSR_MSCW.at(e).at(s));
 
-                        //double total_weight = 0.;
-                        //for (int c2=0;c2<Number_of_CR-1;c2++)
-                        //{
-                        //    total_weight += ((double(Number_of_SR)-double(s))+(double(c2)+1.));
-                        //}
-                        //double weight = ((double(Number_of_SR)-double(s))+(double(c1)+1.))/total_weight;
-                        double total_weight = 0.;
-                        for (int c2=0;c2<Number_of_CR-1;c2++)
+                        double weight = GetLinearUncWithRange(&Hist_Target_BkgSR_MSCW.at(e).at(s),MSCW_cut_lower,MSCW_cut_blind);
+                        std::cout << "weight = " << weight << std::endl; 
+                        if (Hist_Target_BkgSR_MSCW.at(e).at(s).Integral()!=0) 
                         {
-                            total_weight += 1.;
+                            weight = 1./weight;
+                            Weight_Target_BkgSR_MSCW_AllCR.at(s) += weight;
+                            Hist_Target_BkgSR_MSCW_AllCR.at(e).at(s).Add(&Hist_Target_BkgSR_MSCW.at(e).at(s),weight);
                         }
-                        double weight = 1./total_weight;
-                        Hist_Target_BkgSR_MSCW_AllCR.at(e).at(s).Add(&Hist_Target_BkgSR_MSCW.at(e).at(s),weight);
 
                     }
                 }
-                //for (int s=0;s<Number_of_SR;s++)
-                //{
-                //    Hist_Target_BkgSR_MSCW_AllCR.at(e).at(s).Scale(1./(double (Number_of_CR)-1.));
-                //}
+                for (int s=0;s<Number_of_SR;s++)
+                {
+                    if (Weight_Target_BkgSR_MSCW_AllCR.at(s)!=0) 
+                    {
+                        Hist_Target_BkgSR_MSCW_AllCR.at(e).at(s).Scale(1./Weight_Target_BkgSR_MSCW_AllCR.at(s));
+                    }
+                    Weight_Target_BkgSR_MSCW_AllCR.at(s) = 0.;
+                }
                 for (int s=0;s<Number_of_SR;s++)
                 {
                     Hist_Target_SR_MSCW_Sum.at(e).at(s).Add(&Hist_Target_SR_MSCW.at(e).at(s));
                     Hist_Target_SR_MSCW_Sum_Combined.at(e).Add(&Hist_Target_SR_MSCW.at(e).at(s));
                     Hist_Target_BkgSR_MSCW_Sum.at(e).at(s).Add(&Hist_Target_BkgSR_MSCW_AllCR.at(e).at(s)); // this is summing over sublist, errors are not correlated.
+                }
+                for (int run=0;run<Sublist.size();run++)
+                {
+                    std::cout << "run " << int(Sublist[run]) << std::endl;
+                }
+                for (int s=0;s<Number_of_SR;s++)
+                {
+                    std::cout << "Hist_Target_BkgSR_MSCW_Sum.at(e).at("<< s<< ").Integral() = " << Hist_Target_BkgSR_MSCW_Sum.at(e).at(s).Integral() << std::endl;
                 }
             }
         }
