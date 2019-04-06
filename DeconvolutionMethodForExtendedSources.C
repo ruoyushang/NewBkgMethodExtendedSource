@@ -127,13 +127,13 @@ double exposure_hours = 0.;
 
 //const int N_energy_bins = 16;
 //double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
-//int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,2   ,2   ,2   ,4   ,8   ,8};
-//const int N_energy_bins = 11;
-//double energy_bins[N_energy_bins+1] =     {200,282,398,562,794,1122,1585,2239,3162,4467,6310,8913};
-//int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,2   ,2   ,2   ,4   ,8   ,8};
-const int N_energy_bins = 6;
-double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
-int number_runs_included[N_energy_bins] = {2   ,2   ,2   ,4   ,8   ,8};
+//int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,2   ,2   ,4   ,4   ,8   ,8};
+const int N_energy_bins = 11;
+double energy_bins[N_energy_bins+1] =     {200,282,398,562,794,1122,1585,2239,3162,4467,6310,8913};
+int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,2   ,2   ,4   ,4   ,8   ,8};
+//const int N_energy_bins = 6;
+//double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
+//int number_runs_included[N_energy_bins] = {2   ,2   ,4   ,4   ,8   ,8};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] =     {1122,1585};
 //int number_runs_included[N_energy_bins] = {2};
@@ -144,6 +144,9 @@ int number_runs_included[N_energy_bins] = {2   ,2   ,2   ,4   ,8   ,8};
 int N_bins_for_deconv = 480;
 double MSCW_plot_lower = -30.;
 double MSCW_plot_upper = 30.;
+
+TH2D Hist_Target_TelElevAzim("Hist_Target_TelElevAzim","",18,0,90,18,0,360);
+TH2D Hist_Target_TelRaDec("Hist_Target_TelRaDec","",100,0,5,100,-1,1);
 
 bool FoV() {
     //if (theta2<0.2) return false;
@@ -397,9 +400,9 @@ std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bk
     for (int th=0;th<50;th++)
     {
 #ifdef VEGAS
-        double try_threshold = MSCW_cut_lower + (1.5-MSCW_cut_lower)*double(th)/50.;
+        double try_threshold = -1.0 + (1.5-(-1.0))*double(th)/50.;
 #else
-        double try_threshold = MSCW_cut_lower + (2.0-MSCW_cut_lower)*double(th)/50.;
+        double try_threshold = 0.7 + (2.0-0.7)*double(th)/50.;
 #endif
         double chi2 = 0.;
         norm_best = 0.;
@@ -627,7 +630,7 @@ void Convolution(TH1D* Hist_source, TH1D* Hist_response, TH1D* Hist_Conv) {
             Hist_Conv->SetBinContent(i,conv);
         }
 }
-bool PointingSelection(string file_name,int run)
+bool PointingSelection(string file_name,int run, bool fillHist)
 {
     char run_number[50];
     sprintf(run_number, "%i", int(run));
@@ -640,12 +643,8 @@ bool PointingSelection(string file_name,int run)
         pointing_tree->SetBranchAddress("TelAzimuth",&TelAzimuth);
         pointing_tree->SetBranchAddress("TelRAJ2000",&TelRAJ2000);
         pointing_tree->SetBranchAddress("TelDecJ2000",&TelDecJ2000);
-        //for (int entry=0;entry<pointing_tree->GetEntries();entry++) {
-        //        pointing_tree->GetEntry(entry);
-        //        Hist_Target_TelElevAzim.Fill(TelElevation,TelAzimuth);
-        //        Hist_Target_TelRaDec.Fill(TelRAJ2000,TelDecJ2000);
-        //}
-        pointing_tree->GetEntry(0);
+        double total_entries = (double)pointing_tree->GetEntries();
+        pointing_tree->GetEntry(int(total_entries/2.));
         if (TelElevation<Target_Elev_cut_lower) 
         {
             input_file->Close();
@@ -666,10 +665,14 @@ bool PointingSelection(string file_name,int run)
             input_file->Close();
             return false;
         }
-        //for (int entry=0;entry<pointing_tree->GetEntries();entry++) {
-        //        pointing_tree->GetEntry(entry);
-        //        Hist_Target_TelRaDec_AfterCut.Fill(TelRAJ2000,TelDecJ2000);
-        //}
+        if (fillHist)
+        {
+            //for (int entry=0;entry<pointing_tree->GetEntries();entry++) {
+            //        pointing_tree->GetEntry(entry);
+                    Hist_Target_TelElevAzim.Fill(TelElevation,TelAzimuth);
+                    Hist_Target_TelRaDec.Fill(TelRAJ2000,TelDecJ2000);
+            //}
+        }
     }
     else
     {
@@ -686,7 +689,8 @@ bool PointingSelection(string file_name,int run)
         //        Hist_Target_TelElevAzim.Fill(TelElevation,TelAzimuth);
         //        Hist_Target_TelRaDec.Fill(TelRAJ2000,TelDecJ2000);
         //}
-        pointing_tree->GetEntry(0);
+        double total_entries = (double)pointing_tree->GetEntries();
+        pointing_tree->GetEntry(int(total_entries/2.));
         TelElevation = sh->fArrayTrackingElevation_Deg;
         TelAzimuth = sh->fArrayTrackingAzimuth_Deg;
         if (TelElevation<Target_Elev_cut_lower) 
@@ -798,7 +802,8 @@ vector<int> FindRunSublist(string source, vector<int> Target_runlist, vector<int
                         pointing_tree->SetBranchAddress("TelAzimuth",&TelAzimuth);
                         pointing_tree->SetBranchAddress("TelRAJ2000",&TelRAJ2000);
                         pointing_tree->SetBranchAddress("TelDecJ2000",&TelDecJ2000);
-                        pointing_tree->GetEntry(0);
+                        double total_entries = (double)pointing_tree->GetEntries();
+                        pointing_tree->GetEntry(int(total_entries/2.));
                         if (TelElevation<Target_Elev_cut_lower) 
                         {
                             input_file->Close();
@@ -827,7 +832,8 @@ vector<int> FindRunSublist(string source, vector<int> Target_runlist, vector<int
 #ifdef VEGAS
 	                VAShowerData* sh = nullptr;
 	                pointing_tree->SetBranchAddress("S", &sh);
-                        pointing_tree->GetEntry(0);
+                        double total_entries = (double)pointing_tree->GetEntries();
+                        pointing_tree->GetEntry(int(total_entries/2.));
                         TelElevation = sh->fArrayTrackingElevation_Deg;
                         TelAzimuth = sh->fArrayTrackingAzimuth_Deg;
 #endif
@@ -879,7 +885,8 @@ vector<int> FindRunSublist(string source, vector<int> Target_runlist, vector<int
                     pointing_tree->SetBranchAddress("TelAzimuth",&TelAzimuth);
                     pointing_tree->SetBranchAddress("TelRAJ2000",&TelRAJ2000);
                     pointing_tree->SetBranchAddress("TelDecJ2000",&TelDecJ2000);
-                    pointing_tree->GetEntry(0);
+                    double total_entries = (double)pointing_tree->GetEntries();
+                    pointing_tree->GetEntry(int(total_entries/2.));
                     if (TelElevation<Target_Elev_cut_lower) 
                     {
                         input_file->Close();
@@ -908,7 +915,8 @@ vector<int> FindRunSublist(string source, vector<int> Target_runlist, vector<int
 #ifdef VEGAS
 	            VAShowerData* sh = nullptr;
 	            pointing_tree->SetBranchAddress("S", &sh);
-                    pointing_tree->GetEntry(0);
+                    double total_entries = (double)pointing_tree->GetEntries();
+                    pointing_tree->GetEntry(int(total_entries/2.));
                     TelElevation = sh->fArrayTrackingElevation_Deg;
                     TelAzimuth = sh->fArrayTrackingAzimuth_Deg;
 #endif
@@ -980,8 +988,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
 #endif
 
         TRandom rnd;
-        TH2D Hist_Target_TelElevAzim("Hist_Target_TelElevAzim","",18,0,90,18,0,360);
-        TH2D Hist_Target_TelRaDec("Hist_Target_TelRaDec","",100,0,5,100,-1,1);
         TH2D Hist_Target_TelRaDec_AfterCut("Hist_Target_TelRaDec_AfterCut","",100,0,5,100,-1,1);
         TH1D Hist_Target_ON_MSCW_Alpha("Hist_Target_ON_MSCW_Alpha","",100,0,10);
         TH1D Hist_Target_OFF_MSCW_Alpha("Hist_Target_OFF_MSCW_Alpha","",100,0,10);
@@ -1103,7 +1109,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
 
 
         std::cout << "Getting dark runs... " << std::endl;
-        vector<int> Dark_runlist = GetRunList("Segue1AV6");
+        vector<int> Dark_runlist = GetRunList("Segue1V6");
         char Dark_observation[50];
         sprintf(Dark_observation, "%s", "Segue1V6");
         if (UseVegas) 
@@ -1130,7 +1136,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                   filename = TString("/veritas/upload/Geminga_Iowa/"+TString(run_number)+".stage4.root");
                 }
 
-                if (!PointingSelection(filename,int(Dark_runlist[run]))) continue;
+                if (!PointingSelection(filename,int(Dark_runlist[run]),false)) continue;
 
                 TFile*  input_file = TFile::Open(filename.c_str());
                 TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
@@ -1276,7 +1282,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                       filename = TString("/veritas/upload/Geminga_Iowa/"+TString(run_number)+".stage4.root");
                     }
 
-                    if (!PointingSelection(filename,int(Sublist[run]))) continue;
+                    if (!PointingSelection(filename,int(Sublist[run]),true)) continue;
 
                     TFile*  input_file = TFile::Open(filename.c_str());
                     TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
@@ -1526,7 +1532,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
 
                         double weight = GetLinearUncWithRange(&Hist_Target_BkgSR_MSCW.at(e).at(s),MSCW_cut_lower,MSCW_cut_blind);
                         std::cout << "weight = " << weight << std::endl; 
-                        if (Hist_Target_BkgSR_MSCW.at(e).at(s).Integral()!=0) 
+                        if (weight!=0) 
                         {
                             weight = 1./weight;
                             Weight_Target_BkgSR_MSCW_AllCR.at(s) += weight;
@@ -1663,7 +1669,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
 
         int Number_of_CR_new = Number_of_CR;
         int Number_of_SR_new = Number_of_SR;
-        TFile OutputFile("output/Deconvolution_"+TString(target)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(Theta2_cut_lower))+"to"+std::to_string(int(Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+".root","recreate"); 
+        TFile OutputFile("output/Deconvolution_"+TString(target)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+".root","recreate"); 
         TTree InfoTree("InfoTree","info tree");
         InfoTree.Branch("Number_of_CR",&Number_of_CR_new,"Number_of_CR/I");
         InfoTree.Branch("Number_of_SR",&Number_of_SR_new,"Number_of_SR/I");
