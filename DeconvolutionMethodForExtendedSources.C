@@ -65,7 +65,7 @@ double Theta2_upper_limit = 0;
 
 #ifndef VEGAS
 // EVDISP
-double MSCW_cut_lower = -1.0;
+double MSCW_cut_lower = -0.8;
 double MSCW_cut_blind = 1.5;
 double MSCW_cut_upper = 1.5;
 const int Number_of_SR = 5;
@@ -138,7 +138,7 @@ int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,2   ,2   ,4   ,4 
 //double energy_bins[N_energy_bins+1] =     {1122,1585};
 //int number_runs_included[N_energy_bins] = {2};
 //const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] =     {282,335};
+//double energy_bins[N_energy_bins+1] =     {282,398};
 //int number_runs_included[N_energy_bins] = {1};
 
 int N_bins_for_deconv = 480;
@@ -400,9 +400,9 @@ std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bk
     for (int th=0;th<50;th++)
     {
 #ifdef VEGAS
-        double try_threshold = -1.0 + (1.5-(-1.0))*double(th)/50.;
+        double try_threshold = MSCW_cut_lower + (1.5-MSCW_cut_lower)*double(th)/50.;
 #else
-        double try_threshold = 0.7 + (2.0-0.7)*double(th)/50.;
+        double try_threshold = MSCW_cut_lower + (2.0-MSCW_cut_lower)*double(th)/50.;
 #endif
         double chi2 = 0.;
         norm_best = 0.;
