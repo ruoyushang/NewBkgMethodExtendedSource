@@ -123,6 +123,10 @@ vector<int> used_runs;
 vector<double> energy_vec;
 vector<double> scale_skymap;
 vector<double> scale_err_skymap;
+vector<double> scale_LZA_skymap;
+vector<double> scale_LZA_err_skymap;
+vector<double> scale_SZA_skymap;
+vector<double> scale_SZA_err_skymap;
 double exposure_hours = 0.;
 
 //const int N_energy_bins = 16;
@@ -425,9 +429,9 @@ std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bk
             threshold = try_threshold;
         } 
     }
-    for (int amp=0;amp<1000;amp++)
+    for (int amp=0;amp<10000;amp++)
     {
-        double try_amplitude = 0.01*init_amplitude + 10.0*init_amplitude*double(amp)/1000.;
+        double try_amplitude = 0.01*init_amplitude + 100.0*init_amplitude*double(amp)/10000.;
         double norm = 0.;
         for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
         {
@@ -1646,8 +1650,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             total_sr_theta2 = (double) Hist_Target_SR_theta2.at(e).Integral();
             std::cout << e << ", total_sr_mscw = " << total_sr << std::endl;
             std::cout << e << ", total_sr_theta2 = " << total_sr_theta2 << std::endl;
-            double old_integral = (double) Hist_Target_CR_theta2.at(e).Integral();
-            double old_integral_dark = (double) Hist_Dark_SR_theta2.at(e).Integral();
             double total_bkg_err = 0.;
             for (int bin=norm_bin_low_target;bin<=norm_bin_up_target;bin++)
             {
@@ -1656,6 +1658,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             total_bkg_err = pow(total_bkg_err,0.5);
             std::cout << e << ", total_bkg = " << total_bkg << std::endl;
             std::cout << e << ", total_bkg_err = " << total_bkg_err << std::endl;
+
+            double old_integral = (double) Hist_Target_CR_theta2.at(e).Integral();
             double old_integral_err = 0.;
             for (int bin=1;bin<=Hist_Target_CR_theta2.at(e).GetNbinsX();bin++)
             {
@@ -1663,18 +1667,48 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             }
             old_integral_err = pow(old_integral_err,0.5);
             double scale_sky = total_bkg/old_integral;
-            double scale_sky_dark = total_bkg/old_integral_dark;
             double scale_sky_err = scale_sky*scale_sky*(pow(total_bkg_err/total_bkg,2)+pow(old_integral_err/old_integral,2));
             scale_sky_err = pow(scale_sky_err,0.5);
-            double scale_sky_err_dark = total_bkg_err/old_integral_dark;
             std::cout << e << ", scale_sky = " << scale_sky << std::endl;
             std::cout << e << ", scale_sky_err = " << scale_sky_err << std::endl;
             scale_skymap.push_back(scale_sky);
             scale_err_skymap.push_back(scale_sky_err);
+
+            double old_LZA_integral = (double) Hist_TargetLZA_CR_theta2.at(e).Integral();
+            double old_LZA_integral_err = 0.;
+            for (int bin=1;bin<=Hist_TargetLZA_CR_theta2.at(e).GetNbinsX();bin++)
+            {
+                old_LZA_integral_err += pow(Hist_TargetLZA_CR_theta2.at(e).GetBinError(bin),2);
+            }
+            old_LZA_integral_err = pow(old_LZA_integral_err,0.5);
+            double scale_LZA_sky = total_bkg/old_LZA_integral;
+            double scale_LZA_sky_err = scale_LZA_sky*scale_LZA_sky*(pow(total_bkg_err/total_bkg,2)+pow(old_LZA_integral_err/old_LZA_integral,2));
+            scale_LZA_sky_err = pow(scale_LZA_sky_err,0.5);
+            std::cout << e << ", scale_LZA_sky = " << scale_LZA_sky << std::endl;
+            std::cout << e << ", scale_LZA_sky_err = " << scale_LZA_sky_err << std::endl;
+            scale_LZA_skymap.push_back(scale_LZA_sky);
+            scale_LZA_err_skymap.push_back(scale_LZA_sky_err);
+
+            double old_SZA_integral = (double) Hist_TargetSZA_CR_theta2.at(e).Integral();
+            double old_SZA_integral_err = 0.;
+            for (int bin=1;bin<=Hist_TargetSZA_CR_theta2.at(e).GetNbinsX();bin++)
+            {
+                old_SZA_integral_err += pow(Hist_TargetSZA_CR_theta2.at(e).GetBinError(bin),2);
+            }
+            old_SZA_integral_err = pow(old_SZA_integral_err,0.5);
+            double scale_SZA_sky = total_bkg/old_SZA_integral;
+            double scale_SZA_sky_err = scale_SZA_sky*scale_SZA_sky*(pow(total_bkg_err/total_bkg,2)+pow(old_SZA_integral_err/old_SZA_integral,2));
+            scale_SZA_sky_err = pow(scale_SZA_sky_err,0.5);
+            std::cout << e << ", scale_SZA_sky = " << scale_SZA_sky << std::endl;
+            std::cout << e << ", scale_SZA_sky_err = " << scale_SZA_sky_err << std::endl;
+            scale_SZA_skymap.push_back(scale_SZA_sky);
+            scale_SZA_err_skymap.push_back(scale_SZA_sky_err);
+
             std::cout << "Hist_Target_SR_theta2.at(e).Integral() = " << Hist_Target_SR_theta2.at(e).Integral() << std::endl;
             std::cout << "Hist_Target_CR_theta2.at(e).Integral() = " << Hist_Target_CR_theta2.at(e).Integral() << std::endl;
             std::cout << "Hist_Target_SR_RaDec.at(e).Integral() = " << Hist_Target_SR_RaDec.at(e).Integral() << std::endl;
             std::cout << "Hist_Target_CR_RaDec.at(e).Integral() = " << Hist_Target_CR_RaDec.at(e).Integral() << std::endl;
+
         }
 
 
@@ -1723,6 +1757,10 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         InfoTree.Branch("energy_vec","std::vector<double>",&energy_vec);
         InfoTree.Branch("scale_skymap","std::vector<double>",&scale_skymap);
         InfoTree.Branch("scale_err_skymap","std::vector<double>",&scale_err_skymap);
+        InfoTree.Branch("scale_LZA_skymap","std::vector<double>",&scale_LZA_skymap);
+        InfoTree.Branch("scale_LZA_err_skymap","std::vector<double>",&scale_LZA_err_skymap);
+        InfoTree.Branch("scale_SZA_skymap","std::vector<double>",&scale_SZA_skymap);
+        InfoTree.Branch("scale_SZA_err_skymap","std::vector<double>",&scale_SZA_err_skymap);
         InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
         InfoTree.Fill();
         InfoTree.Write();
