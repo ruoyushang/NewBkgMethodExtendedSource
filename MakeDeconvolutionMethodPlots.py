@@ -18,13 +18,15 @@ source_list = []
 #source_list  += ['CrabV4']
 #source_list  += ['3C58']
 #source_list  += ['BrandonValidation']
-#source_list  += ['PKS1424']
+source_list  += ['PKS1424']
 #source_list  += ['Crab']
 #source_list  += ['H1426']
 #source_list  += ['3C264']
 #source_list  += ['Ton599']
 #source_list  += ['IC443HotSpot']
-source_list  += ['Segue1V6']
+#source_list  += ['MGRO_J1908_V5']
+#source_list  += ['Segue1V6']
+#source_list  += ['Segue1V5']
 #source_list  += ['VA_Segue1']
 #source_list  += ['VA_Geminga']
 
@@ -42,9 +44,13 @@ Elev_upper_list = []
 Azim_lower_list = []
 Azim_upper_list = []
 Elev_lower_list += [50]
-Elev_upper_list += [70]
+Elev_upper_list += [90]
 Azim_lower_list += [0]
 Azim_upper_list += [360]
+#Elev_lower_list += [50]
+#Elev_upper_list += [70]
+#Azim_lower_list += [0]
+#Azim_upper_list += [360]
 #Elev_lower_list += [70]
 #Elev_upper_list += [90]
 #Azim_lower_list += [0]
@@ -68,9 +74,9 @@ Elev_upper_cut = 70
 Azim_lower_cut = 0
 Azim_upper_cut = 360
 
-Theta2_lower_cut = 0
+Theta2_lower_cut = 2
 Theta2_upper_cut = 100
-mscw_cut = 'MSCWCut5'
+mscw_cut = 'MSCWCut15'
 mscw_blind = 'MSCWBlind15'
 
 UseMethod1 = False
@@ -86,23 +92,18 @@ MSCW_upper_cut = 1.0
 MSCW_blind_cut = 1.0
 
 energy_list = []
-energy_list += [200]
-#energy_list += [237]
-energy_list += [282]
-#energy_list += [335]
-energy_list += [398]
-#energy_list += [473]
-energy_list += [562]
-#energy_list += [663]
-energy_list += [794]
-#energy_list += [937]
+#energy_list += [200]
+#energy_list += [282]
+#energy_list += [398]
+#energy_list += [562]
+#energy_list += [794]
 energy_list += [1122]
 energy_list += [1585]
-energy_list += [2239]
-energy_list += [3162]
-energy_list += [4467]
-energy_list += [6310]
-energy_list += [8913]
+#energy_list += [2239]
+#energy_list += [3162]
+#energy_list += [4467]
+#energy_list += [6310]
+#energy_list += [8913]
 
 Variable = ''
 xtitle = ''
@@ -121,10 +122,7 @@ def SelectDiagnosticaHistograms(folder,method,isSR,var):
 
     Hist_Data = ROOT.TH1D("Hist_Data","",1,0,1)
 
-    #FilePath = '%s/Deconvolution_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.root'%(folder,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region)
     FilePath = '%s/Deconvolution_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s_%s.root'%(folder,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,mscw_cut,mscw_blind)
-    #FilePath = '%s/Deconvolution_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_MSCWCut10_MSCWBlind15.root'%(folder,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut)
-    #print 'Read %s'%(FilePath)
     InputFile=ROOT.TFile(FilePath)
     
     HistList = InputFile.GetListOfKeys()
@@ -168,7 +166,7 @@ def set_histStyle( hist , color):
     hist.SetFillStyle(1001)
     pass
 
-def MakeComparisonPlot(Hists,legends,colors,title,name):
+def MakeGaussComparisonPlot(Hists,legends,colors,title,name):
     
     global MSCW_lower_cut
     global MSCW_upper_cut
@@ -181,7 +179,71 @@ def MakeComparisonPlot(Hists,legends,colors,title,name):
     pad3.SetBottomMargin(0.0)
     pad3.SetTopMargin(0.03)
     pad3.SetBorderMode(1)
-    pad1 = ROOT.TPad("pad1","pad1",0,0,1,1)
+    pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.8)
+    pad1.SetBottomMargin(0.15)
+    pad1.SetTopMargin(0.0)
+    pad1.SetBorderMode(0)
+    pad1.Draw()
+    pad3.Draw()
+
+    pad1.cd()
+
+    max_heigh = 0
+    max_hist = 0
+    mean = []
+    rms = []
+    amp = []
+    for h in range(0,len(Hists)):
+        mean += [0]
+        rms += [0]
+        amp += [0]
+        if Hists[h]!=0:
+            Hists[h].GetXaxis().SetTitle(title)
+            if max_heigh < Hists[h].GetMaximum(): 
+                max_heigh = Hists[h].GetMaximum()
+                max_hist = h
+
+    #Hists[max_hist].SetMinimum(0)
+    #Hists[max_hist].SetMaximum(1)
+    Hists[max_hist].Draw("E")
+
+    for h in range(0,len(Hists)):
+        if Hists[h]!=0:
+            Hists[h].SetLineColor(colors[h])
+            Hists[h].Draw("E same")
+
+    pad3.cd()
+    legend = ROOT.TLegend(0.1,0.1,0.94,0.9)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.15)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+    legend.Clear()
+    for h in range(0,len(Hists)):
+        if Hists[h]!=0:
+            legend.AddEntry(Hists[h],'%s, mean = %.5f, RMS = %.5f'%(legends[h],Hists[h].GetMean(),Hists[h].GetRMS()),"pl")
+    legend.Draw("SAME")
+
+    pad1.SetLogy()
+
+    c_both.SaveAs('output_plots/%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
+
+def MakeComparisonPlot(Hists,legends,colors,title,name,maxhight,logx):
+    
+    global MSCW_lower_cut
+    global MSCW_upper_cut
+    global MSCW_blind_cut
+    global MSCL_lower_cut
+    global MSCL_upper_cut
+
+    c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
+    pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
+    pad3.SetBottomMargin(0.0)
+    pad3.SetTopMargin(0.03)
+    pad3.SetBorderMode(1)
+    pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.8)
     pad1.SetBottomMargin(0.15)
     pad1.SetTopMargin(0.0)
     pad1.SetBorderMode(0)
@@ -206,7 +268,7 @@ def MakeComparisonPlot(Hists,legends,colors,title,name):
                 max_hist = h
 
     Hists[max_hist].SetMinimum(0)
-    Hists[max_hist].SetMaximum(1)
+    if not maxhight==0: Hists[max_hist].SetMaximum(maxhight)
     Hists[max_hist].Draw("E")
 
     for h in range(0,len(Hists)):
@@ -228,9 +290,9 @@ def MakeComparisonPlot(Hists,legends,colors,title,name):
             legend.AddEntry(Hists[h],legends[h],"pl")
     legend.Draw("SAME")
 
-    pad1.SetLogx()
+    if logx: pad1.SetLogx()
 
-    c_both.SaveAs('output_plots/%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
+    c_both.SaveAs('output_plots/%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
 
 def MakeGaussianPlot(Hists,legends,colors,title,name,doSum,doNorm):
     
@@ -553,6 +615,10 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
 
     norm_bin_low_target = Hists[0].FindBin(range_lower)
     norm_bin_up_target = Hists[0].FindBin(range_upper)-1
+    if 'fine_theta2' in name:
+        norm_bin_low_target = Hists[0].FindBin(0)
+        norm_bin_up_target = Hists[0].FindBin(0.5)-1
+    if norm_bin_up_target<norm_bin_low_target: norm_bin_up_target+=1
 
     if doNorm:
         for h in range(1,len(Hists)):
@@ -616,7 +682,7 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     #Hist_Excess.SetLineColor(2)
     #Hist_Excess.Draw("e2 same")
 
-    line1 = ROOT.TLine(range_upper,Hists[max_hist].GetMaximum()*2,range_upper,Hists[max_hist].GetMinimum())
+    line1 = ROOT.TLine(Hists[max_hist].GetBinLowEdge(norm_bin_up_target+1),Hists[max_hist].GetMaximum()*2,Hists[max_hist].GetBinLowEdge(norm_bin_up_target+1),0)
     line1.SetLineStyle(1)
     line1.SetLineColor(2)
     line1.SetLineWidth(2)
@@ -691,7 +757,7 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     Hist_Band.GetYaxis().SetTitleSize(0.13)
     Hist_Band.GetYaxis().SetNdivisions(505)
     Hist_Band.SetMaximum(5)
-    Hist_Band.SetMinimum(0)
+    Hist_Band.SetMinimum(-5)
     Hist_Band.GetXaxis().SetRangeUser(low_end,high_end)
     Hist_Band.Draw("e2")
     Hist_Ratio = Hists[0].Clone()
@@ -701,7 +767,7 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
         nbkg = Hist_Sum.GetBinContent(b+1)
         ebkg = Hist_Sum.GetBinError(b+1)
         if not (ebkg*ebkg+edata*edata)==0:
-            Hist_Ratio.SetBinContent(b+1,pow((ndata-nbkg)*(ndata-nbkg)/(ebkg*ebkg+edata*edata),0.5))
+            Hist_Ratio.SetBinContent(b+1,(ndata-nbkg)/abs(ndata-nbkg)*pow((ndata-nbkg)*(ndata-nbkg)/(ebkg*ebkg+edata*edata),0.5))
         else:
             Hist_Ratio.SetBinContent(b+1,0)
         Hist_Ratio.SetBinError(b+1,0)
@@ -879,8 +945,7 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,xtitle,ytitle,name):
             NSR_Err = Hist_SR.GetBinError(bx+1,by+1)
             NBkg = Hist_Bkg.GetBinContent(bx+1,by+1)
             NBkg_Err = Hist_Bkg.GetBinError(bx+1,by+1)
-            #Sig = (NSR-NBkg)/(pow(NSR_Err*NSR_Err+NBkg_Err*NBkg_Err,0.5))
-            Sig = CalculateSignificance(NSR-NBkg,NBkg,NBkg_Err)
+            Sig = 3.*CalculateSignificance(NSR-NBkg,NBkg,NBkg_Err)
             Hist_Data.SetBinContent(bx+1,by+1,Sig)
     Hist_Data.GetYaxis().SetTitle(ytitle)
     Hist_Data.GetXaxis().SetTitle(xtitle)
@@ -910,25 +975,16 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,xtitle,ytitle,name):
                     Hist_Sig_cut.Fill(content)
     Hist_Model = ROOT.TH1D("Hist_Model","",65,-5,8)
     Hist_Model.FillRandom("func",int(Hist_Sig.GetEntries()))
-    pad1.SetLogy()
-    Hist_Sig.Draw()
-    Hist_Sig_cut.SetLineColor(3)
-    Hist_Sig_cut.Draw("same")
-    Hist_Model.SetLineColor(2)
-    Hist_Model.Draw("same")
-    legend = ROOT.TLegend(0.6,0.65,0.9,0.85)
-    legend.SetTextFont(42)
-    legend.SetBorderSize(0)
-    legend.SetTextSize(0.03)
-    legend.SetFillColor(0)
-    legend.SetFillStyle(0)
-    legend.SetLineColor(0)
-    legend.Clear()
-    legend.AddEntry(Hist_Model,'true gaus',"pl")
-    legend.AddEntry(Hist_Sig,'#theta^{2} #in [0,10]',"pl")
-    legend.AddEntry(Hist_Sig_cut,'#theta^{2} #in [0.5,10]',"pl")
-    legend.Draw("SAME")
-    canvas.SaveAs('output_plots/Sig_%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
+    Hist_list = []
+    legend_list = []
+    color_list = []
+    Hist_list += [Hist_Model]
+    legend_list += ['Normal']
+    color_list += [2]
+    Hist_list += [Hist_Sig]
+    legend_list += ['Data']
+    color_list += [4]
+    MakeGaussComparisonPlot(Hist_list,legend_list,color_list,'significance','Target_SigDist')
 
 def Make2DProjectionPlot(Hist_Data,xtitle,ytitle,name,doProj):
 
@@ -1034,6 +1090,7 @@ def Make2DTrajectoryPlot(Hist_1,Hist_2,xtitle,ytitle,name):
 Hist_e2p = []
 legend_e2p = []
 color_e2p = []
+
 for s in range(0,len(source_list)):
 
     for elev in range(0,len(Elev_lower_list)):
@@ -1055,10 +1112,7 @@ for s in range(0,len(source_list)):
 
         ErecS_lower_cut = 0
         ErecS_upper_cut = 1e10
-        #FilePath = '%s/Deconvolution_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.root'%(folder,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region)
         FilePath = '%s/Deconvolution_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s_%s.root'%(folder,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,mscw_cut,mscw_blind)
-        #FilePath = '%s/Deconvolution_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_MSCWCut10_MSCWBlind15.root'%(folder,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut)
-        #print 'Read %s'%(FilePath)
         TargetFile=ROOT.TFile(FilePath)
         InfoTree = TargetFile.Get("InfoTree")
         InfoTree.GetEntry(0)
@@ -1164,7 +1218,6 @@ for s in range(0,len(source_list)):
             #print 'scale_skymap[evec_match] = %s'%(scale_skymap[evec_match])
             #print 'scale_err_skymap[evec_match] = %s'%(scale_err_skymap[evec_match])
             Hist_Target_SR_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_theta2')
-            #Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_theta2')
             Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_theta2')
             e2p_file = open("e2p_ratio_%s.txt"%(mscw_cut),"read")
             energy_string = '%s-%s'%(ErecS_lower_cut,ErecS_upper_cut)
@@ -1199,7 +1252,6 @@ for s in range(0,len(source_list)):
             MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,0,0.5)
 
             Hist_Target_SR_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_theta2')
-            #Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_theta2')
             Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_theta2')
             e2p_file = open("e2p_ratio_%s.txt"%(mscw_cut),"read")
             energy_string = '%s-%s'%(ErecS_lower_cut,ErecS_upper_cut)
@@ -1233,47 +1285,60 @@ for s in range(0,len(source_list)):
             title = 'theta2'
             MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,0,Theta2_upper_limit)
 
-            #Hist_Target_SR_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_theta2')
-            #Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_theta2')
-            #e2p_file = open("e2p_ratio_%s.txt"%(mscw_cut),"read")
-            #energy_string = '%s-%s'%(ErecS_lower_cut,ErecS_upper_cut)
-            #print energy_string
-            #e2p_ratio = 0
-            #e2p_error = 0
-            #for line in e2p_file:
-            #    if energy_string in line:
-            #        e2p_ratio = float(line.split()[4])
-            #        e2p_error = float(line.split()[6])
-            #print e2p_ratio
-            #print e2p_error
-            #ideal_nbins = float(Hist_Target_SR_theta2.Integral())/50.
-            #n_merge = 1
-            #while (Hist_Target_SR_theta2.GetNbinsX()>ideal_nbins and n_merge<64) or (n_merge<8):
-            #    Hist_Target_Bkg_theta2.Rebin(2)
-            #    Hist_Target_SR_theta2.Rebin(2)
-            #    n_merge = n_merge*2
-            #Hists = []
-            #legends = []
-            #colors = []
-            #Hists += [Hist_Target_SR_theta2]
-            #legends += ['%s %s'%(source,tele_pointing)]
-            #colors += [1]
-            #Hists += [Hist_Target_Bkg_theta2]
-            #legends += ['Bkg']
-            #colors += [4]
-            #plotname = 'Target_CR_theta2_E%s'%(ErecS_lower_cut)
-            #title = 'theta2'
-            #MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,0,Theta2_upper_limit)
+            Hist_Target_SR_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_SR_theta2')
+            Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_theta2')
+            Hist_TargetLZA_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','TargetLZA_CR_theta2')
+            Hist_TargetSZA_Bkg_theta2 = SelectDiagnosticaHistograms(folder,'MSCW','SR','TargetSZA_CR_theta2')
+            e2p_file = open("e2p_ratio_%s.txt"%(mscw_cut),"read")
+            energy_string = '%s-%s'%(ErecS_lower_cut,ErecS_upper_cut)
+            print energy_string
+            e2p_ratio = 0
+            e2p_error = 0
+            for line in e2p_file:
+                if energy_string in line:
+                    e2p_ratio = float(line.split()[4])
+                    e2p_error = float(line.split()[6])
+            print e2p_ratio
+            print e2p_error
+            ideal_nbins = float(Hist_Target_SR_theta2.Integral())/50.
+            n_merge = 1
+            while (Hist_Target_SR_theta2.GetNbinsX()>ideal_nbins and n_merge<64) or (n_merge<8):
+                Hist_Target_Bkg_theta2.Rebin(2)
+                Hist_TargetLZA_Bkg_theta2.Rebin(2)
+                Hist_TargetSZA_Bkg_theta2.Rebin(2)
+                Hist_Target_SR_theta2.Rebin(2)
+                n_merge = n_merge*2
+            Theta2HistScale(Hist_Target_Bkg_theta2,scale_skymap[evec_match],scale_err_skymap[evec_match])
+            Theta2HistScale(Hist_Target_Bkg_theta2,e2p_ratio+1.,e2p_error)
+            Theta2HistScale(Hist_TargetLZA_Bkg_theta2,scale_skymap[evec_match],scale_err_skymap[evec_match])
+            Theta2HistScale(Hist_TargetLZA_Bkg_theta2,e2p_ratio+1.,e2p_error)
+            Theta2HistScale(Hist_TargetSZA_Bkg_theta2,scale_skymap[evec_match],scale_err_skymap[evec_match])
+            Theta2HistScale(Hist_TargetSZA_Bkg_theta2,e2p_ratio+1.,e2p_error)
+            Hists = []
+            legends = []
+            colors = []
+            Hists += [Hist_Target_Bkg_theta2]
+            legends += ['50-90']
+            colors += [1]
+            Hists += [Hist_TargetLZA_Bkg_theta2]
+            legends += ['50-70']
+            colors += [2]
+            Hists += [Hist_TargetSZA_Bkg_theta2]
+            legends += ['70-90']
+            colors += [3]
+            plotname = 'Target_diff_theta2_E%s'%(ErecS_lower_cut)
+            title = 'theta2'
+            MakeComparisonPlot(Hists,legends,colors,title,plotname,0,False)
 
-            ##Hist_Target_Bkg_RaDec = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_Bkg_RaDec')
+
             #Hist_Target_Bkg_RaDec = SelectDiagnosticaHistograms(folder,'MSCW','SR','Target_CR_RaDec')
             #plotname = 'Target_SR_RaDec_E%s'%(ErecS_lower_cut)
             #event_density = Hist_Target_SR_RaDec.Integral()/(2.*2.)
-            #smooth_size = 0.05
+            #smooth_size = 0.1
             ##smooth_size = pow(10./event_density,0.5)
             ##print 'smooth_size = %s'%(smooth_size)
             ##if smooth_size>0.2: smooth_size = 0.2
-            #ideal_nbins = 16.*(2./smooth_size)
+            #ideal_nbins = 32.*(2./smooth_size)
             #while Hist_Target_SR_RaDec.GetNbinsX()>ideal_nbins:
             #    Hist_Target_SR_RaDec.Rebin2D(2,2)
             #    Hist_Target_Bkg_RaDec.Rebin2D(2,2)
@@ -1300,4 +1365,4 @@ for s in range(0,len(source_list)):
             Hist_e2p[len(Hist_e2p)-1].SetBinContent(e,s2b)
             Hist_e2p[len(Hist_e2p)-1].SetBinError(e,s2b_err)
 
-MakeComparisonPlot(Hist_e2p,legend_e2p,color_e2p,'E [GeV]','Target_e2p_ratio')
+MakeComparisonPlot(Hist_e2p,legend_e2p,color_e2p,'E [GeV]','Target_e2p_ratio',0.5,True)
