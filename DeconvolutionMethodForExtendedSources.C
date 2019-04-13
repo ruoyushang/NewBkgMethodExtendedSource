@@ -74,7 +74,7 @@ double Theta2_upper_limit = 0;
 //const int Number_of_CR = 2;
 //double MSCL_control_cut_lower[Number_of_CR] = {2.00,0.75};
 //double MSCL_control_cut_upper[Number_of_CR] = {3.25,2.00};
-double MSCW_cut_lower = -0.8;
+double MSCW_cut_lower = -0.8;  // set this to -1.5 for V5
 double MSCW_cut_blind = 1.5;
 double MSCW_cut_upper = 1.5;
 const int Number_of_SR = 5;
@@ -390,13 +390,17 @@ double ConvergeFunction(double x, double threshold, double amplitude)
     //return 0.;
     //return 1./(1.+exp(-1.*(x-(threshold))/amplitude));
 
-    if (x-(threshold+2.*amplitude)>=0.) return 1.;
-    if (x-(threshold)<0.) return 0.;
-    return 0.5+0.5*(x-(threshold+amplitude))/amplitude;
+    //if (x-(threshold+2.*amplitude)>=0.) return 1.;
+    //if (x-(threshold)<0.) return 0.;
+    //return 0.5+0.5*(x-(threshold+amplitude))/amplitude;
 
-    //if (x-(threshold)>=0.) return 1.;
-    //if (x-(threshold-2.*amplitude)<0.) return 0.;
-    //return 1./exp(-1.*(x-threshold)/amplitude);
+    if (x-(threshold+amplitude)>=0.) return 1.;
+    if (x-(threshold)<0.) return 0.;
+    return pow((x-threshold)/amplitude,2);
+
+    //if (x-(threshold+2.*amplitude)>=0.) return 1.;
+    //if (x-(threshold)<0.) return 0.;
+    //return exp((x-(threshold+2.*amplitude))/amplitude);
 
 }
 double FindConvergeThreshold(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bkg_Temp, double amplitude)
@@ -1044,7 +1048,7 @@ vector<int> FindRunSublist(string source, vector<int> Target_runlist, vector<int
         }
         return sublist;
 }
-void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower, double elev_upper, double azim_lower, double azim_upper, double theta2_cut_lower_input, double theta2_cut_upper_input, double MSCW_cut_blind_input, double MSCW_cut_upper_input) {
+void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower, double elev_upper, double azim_lower, double azim_upper, double theta2_cut_lower_input, double theta2_cut_upper_input, double MSCW_cut_blind_input, double MSCW_cut_upper_input, double MSCW_cut_lower_input) {
 
         //TH1::SetDefaultSumw2();
         sprintf(target, "%s", target_data.c_str());
@@ -1058,6 +1062,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         Azim_cut_upper = azim_upper;
         Theta2_cut_lower = theta2_cut_lower_input;
         Theta2_cut_upper = theta2_cut_upper_input;
+        MSCW_cut_lower = MSCW_cut_lower_input;
         MSCW_cut_upper = MSCW_cut_upper_input;
         MSCW_cut_blind = MSCW_cut_blind_input;
 
