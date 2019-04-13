@@ -65,6 +65,15 @@ double Theta2_upper_limit = 0;
 
 #ifndef VEGAS
 // EVDISP
+//double MSCW_cut_lower = -0.8;
+//double MSCW_cut_blind = 1.5;
+//double MSCW_cut_upper = 1.5;
+//const int Number_of_SR = 1;
+//double MSCL_signal_cut_lower[Number_of_SR] = {-0.50};
+//double MSCL_signal_cut_upper[Number_of_SR] = { 0.75};
+//const int Number_of_CR = 2;
+//double MSCL_control_cut_lower[Number_of_CR] = {2.00,0.75};
+//double MSCL_control_cut_upper[Number_of_CR] = {3.25,2.00};
 double MSCW_cut_lower = -0.8;
 double MSCW_cut_blind = 1.5;
 double MSCW_cut_upper = 1.5;
@@ -375,45 +384,38 @@ void MakeBkgPrevious(TH1* Hist_SR,TH1* Hist_Bkg,TH1* Hist_Previous)
 }
 double ConvergeFunction(double x, double threshold, double amplitude)
 {
-    //if (x-threshold>0) return 1.;
-    //if (!UseVegas) 
-    //{
-    //    //return exp(-pow(amplitude*(x-threshold),2));
-    //    return exp(amplitude*(x-threshold));
-    //}
-    //else
-    //{
-    //    return exp(amplitude*(x-threshold));
-    //}
-    return 1./(1.+exp(-1.*amplitude*(x-threshold)));
+    //return 1.;
+    //
+    //if (x-(threshold)>=0.) return 1.;
+    //return 0.;
+    //return 1./(1.+exp(-1.*(x-(threshold))/amplitude));
+
+    if (x-(threshold+2.*amplitude)>=0.) return 1.;
+    if (x-(threshold)<0.) return 0.;
+    return 0.5+0.5*(x-(threshold+amplitude))/amplitude;
+
+    //if (x-(threshold)>=0.) return 1.;
+    //if (x-(threshold-2.*amplitude)<0.) return 0.;
+    //return 1./exp(-1.*(x-threshold)/amplitude);
+
 }
-std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bkg_Temp)
+double FindConvergeThreshold(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bkg_Temp, double amplitude)
 {
     double threshold = 0.;
-    double amplitude = 1.0;
-    double init_amplitude = 1.0;
     double chi2_best = 0.;
     double norm_best = 0.;
     double mean = Hist_SR->GetMean();
     double rms = Hist_SR->GetRMS();
-    if (UseVegas) 
-    {
-        init_amplitude = 10.0;
-    }
-    else
-    {
-        init_amplitude = 2.0;
-    }
+
     for (int th=0;th<50;th++)
     {
 #ifdef VEGAS
-        double try_threshold = MSCW_cut_lower + (1.5-MSCW_cut_lower)*double(th)/50.;
+        double try_threshold = MSCW_cut_lower + (MSCW_cut_blind-MSCW_cut_lower)*double(th)/50.;
 #else
-        double try_threshold = MSCW_cut_lower + (2.0-MSCW_cut_lower)*double(th)/50.;
+        double try_threshold = MSCW_cut_lower + (MSCW_cut_blind-MSCW_cut_lower)*double(th)/50.;
 #endif
         double chi2 = 0.;
-        norm_best = 0.;
-        amplitude = init_amplitude;
+        double norm = 0.;
         for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
         {
             double old_content = Hist_Bkg->GetBinContent(i+1);
@@ -423,16 +425,49 @@ std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bk
             Hist_Bkg_Temp->SetBinContent(i+1,new_content);
         }
         //chi2 = GetChi2WithRange(Hist_SR, Hist_Bkg_Temp,MSCW_cut_lower,MSCW_cut_blind);
-        chi2 = GetChi2WithRange(Hist_SR, Hist_Bkg_Temp,-2,mean);
-        if (chi2_best<chi2) {
-            chi2_best = chi2;
+        //if (chi2_best<chi2) {
+        //    chi2_best = chi2;
+        //    threshold = try_threshold;
+        //} 
+        double data_counts = 0.;
+        for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
+        {
+            if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_lower) continue;
+            if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_blind) continue;
+            data_counts += Hist_SR->GetBinContent(i+1);
+        }
+        double bkg_counts = 0.;
+        for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
+        {
+            if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_lower) continue;
+            if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_blind) continue;
+            bkg_counts += Hist_Bkg_Temp->GetBinContent(i+1);
+        }
+        if (bkg_counts-data_counts==0) continue;
+        norm = 1./pow(bkg_counts-data_counts,2);
+        if (norm_best<norm) {
+            norm_best = norm;
             threshold = try_threshold;
         } 
     }
-    for (int amp=0;amp<10000;amp++)
+    return threshold;
+}
+double FindConvergeAmplitude(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bkg_Temp, double threshold, double init_amplitude)
+{
+    double amplitude = 1.0;
+    double chi2_best = 0.;
+    double norm_best = 0.;
+    double mean = Hist_SR->GetMean();
+    double rms = Hist_SR->GetRMS();
+
+    for (int amp=0;amp<1000;amp++)
     {
-        double try_amplitude = 0.01*init_amplitude + 100.0*init_amplitude*double(amp)/10000.;
+        //double try_amplitude = 0.01*init_amplitude + 100.0*init_amplitude*double(amp)/10000.;
+        //double try_amplitude = 0.05 + (MSCW_cut_blind-MSCW_cut_lower)*double(amp)/1000.;
+        //double try_amplitude = 0. + MSCW_cut_blind*double(amp)/1000.;
+        double try_amplitude = 0. + 2.0*double(amp)/1000.;
         double norm = 0.;
+        double chi2 = 0.;
         for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
         {
             double old_content = Hist_Bkg->GetBinContent(i+1);
@@ -441,25 +476,63 @@ std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bk
             double new_error = old_error*ConvergeFunction(Hist_Bkg->GetBinCenter(i+1),threshold,try_amplitude);
             Hist_Bkg_Temp->SetBinContent(i+1,new_content);
         }
-        double data_counts = 0.;
-        for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
-        {
-            if (Hist_Bkg->GetBinCenter(i+1)>mean) continue;
-            data_counts += Hist_SR->GetBinContent(i+1);
-        }
-        double bkg_counts = 0.;
-        for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
-        {
-            if (Hist_Bkg->GetBinCenter(i+1)>mean) continue;
-            bkg_counts += Hist_Bkg_Temp->GetBinContent(i+1);
-        }
-        if (bkg_counts-data_counts==0) continue;
-        norm = 1./pow(bkg_counts-data_counts,2);
-        if (norm_best<norm) {
-            norm_best = norm;
+        chi2 = GetChi2WithRange(Hist_SR, Hist_Bkg_Temp,MSCW_cut_lower,MSCW_cut_blind);
+        if (chi2_best<chi2) {
+            chi2_best = chi2;
             amplitude = try_amplitude;
         } 
+        //double data_counts = 0.;
+        //for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
+        //{
+        //    if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_lower) continue;
+        //    if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_blind) continue;
+        //    data_counts += Hist_SR->GetBinContent(i+1);
+        //}
+        //double bkg_counts = 0.;
+        //for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
+        //{
+        //    if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_lower) continue;
+        //    if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_blind) continue;
+        //    bkg_counts += Hist_Bkg_Temp->GetBinContent(i+1);
+        //}
+        //if (bkg_counts-data_counts==0) continue;
+        //norm = 1./pow(bkg_counts-data_counts,2);
+        //if (norm_best<norm) {
+        //    norm_best = norm;
+        //    amplitude = try_amplitude;
+        //} 
     }
+    return amplitude;
+}
+std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bkg_Temp)
+{
+    double threshold = 0.;
+    double amplitude = 1.0;
+    double init_amplitude = 1.0;
+    double chi2_best = 0.;
+    double norm_best = 0.;
+    double mean = Hist_Bkg->GetMean();
+    double rms = Hist_Bkg->GetRMS();
+    if (UseVegas) 
+    {
+        //init_amplitude = 10.0;
+        init_amplitude = 0.1;
+    }
+    else
+    {
+        //init_amplitude = 2.0;
+        init_amplitude = 0.5;
+    }
+    // try a few iterations if possible
+    //threshold = FindConvergeThreshold(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,init_amplitude);
+    //amplitude = FindConvergeAmplitude(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,threshold,init_amplitude);
+    //threshold = FindConvergeThreshold(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,amplitude);
+    //amplitude = FindConvergeAmplitude(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,threshold,amplitude);
+    //threshold = FindConvergeThreshold(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,amplitude);
+    //amplitude = FindConvergeAmplitude(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,threshold,amplitude);
+    //threshold = mean-1.7*rms;
+    threshold = MSCW_cut_lower;
+    amplitude = FindConvergeAmplitude(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,threshold,init_amplitude);
     std::cout << "found threshold = " << threshold << ", amplitude = " << amplitude << std::endl;
     return std::make_pair(threshold,amplitude);
 }
