@@ -130,26 +130,20 @@ double ra_sky = 0;
 double dec_sky = 0;
 vector<int> used_runs;
 vector<double> energy_vec;
-vector<double> scale_skymap;
-vector<double> scale_err_skymap;
-vector<double> scale_LZA_skymap;
-vector<double> scale_LZA_err_skymap;
-vector<double> scale_SZA_skymap;
-vector<double> scale_SZA_err_skymap;
 double exposure_hours = 0.;
 
 //const int N_energy_bins = 16;
 //double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
 //int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,2   ,2   ,4   ,4   ,8   ,8};
-//const int N_energy_bins = 11;
-//double energy_bins[N_energy_bins+1] =     {200,282,398,562,794,1122,1585,2239,3162,4467,6310,8913};
-//int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,2   ,2   ,4   ,4   ,8   ,8};
+const int N_energy_bins = 11;
+double energy_bins[N_energy_bins+1] =     {200,282,398,562,794,1122,1585,2239,3162,4467,6310,8913};
+int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,2   ,2   ,4   ,4   ,8   ,8};
 //const int N_energy_bins = 6;
 //double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
 //int number_runs_included[N_energy_bins] = {2   ,2   ,4   ,4   ,8   ,8};
-const int N_energy_bins = 1;
-double energy_bins[N_energy_bins+1] =     {1122,1585};
-int number_runs_included[N_energy_bins] = {2};
+//const int N_energy_bins = 1;
+//double energy_bins[N_energy_bins+1] =     {1122,1585};
+//int number_runs_included[N_energy_bins] = {2};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] =     {2239,3162};
 //int number_runs_included[N_energy_bins] = {4};
@@ -191,10 +185,13 @@ bool ControlSelectionMSCW(int whichCR) {
     if (MSCL>MSCL_control_cut_upper[whichCR]) return false;
     return true;
 }
-bool ControlSelectionTheta2()
+bool ControlSelectionTheta2(int whichSR)
 {
-    if (MSCL<MSCL_signal_cut_upper[0]*1.0 || MSCW<MSCW_cut_blind*1.0) return false;
-    if (MSCL>MSCL_signal_cut_upper[0]*3.0 || MSCW>MSCW_cut_blind*3.0) return false;
+    double deltaL = MSCL_signal_cut_upper[0]-MSCL_signal_cut_lower[0];
+    if (MSCL<MSCL_signal_cut_upper[0]+(whichSR)*deltaL) return false;
+    if (MSCL>MSCL_signal_cut_upper[0]+(whichSR+1)*deltaL) return false;
+    if (MSCW<MSCW_cut_blind*1.0) return false;
+    if (MSCW>MSCW_cut_blind*3.0) return false;
     return true;
 }
 double background(Double_t *x, Double_t *par) {
@@ -1076,20 +1073,18 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         TH1D Hist_Target_OFF_MSCW_Alpha("Hist_Target_OFF_MSCW_Alpha","",100,0,10);
         vector<int> Run_sublist;
         vector<TH1D> Hist_Target_SR_ErecS;
-        vector<TH1D> Hist_Target_SR_theta2;
-        vector<TH1D> Hist_Dark_SR_theta2;
-        vector<TH1D> Hist_DarkLZA_SR_theta2;
-        vector<TH1D> Hist_DarkSZA_SR_theta2;
-        vector<TH1D> Hist_Dark_CR_theta2;
-        vector<TH1D> Hist_DarkLZA_CR_theta2;
-        vector<TH1D> Hist_DarkSZA_CR_theta2;
-        vector<TH1D> Hist_Target_CR_theta2;
-        vector<TH1D> Hist_TargetLZA_CR_theta2;
-        vector<TH1D> Hist_TargetSZA_CR_theta2;
-        vector<TH2D> Hist_Target_SR_RaDec;
-        vector<TH2D> Hist_Dark_SR_RaDec;
-        vector<TH2D> Hist_Dark_CR_RaDec;
-        vector<TH2D> Hist_Target_CR_RaDec;
+        vector<vector<TH1D>> Hist_Target_SR_theta2;
+        vector<vector<TH1D>> Hist_Dark_SR_theta2;
+        vector<vector<TH1D>> Hist_DarkLZA_SR_theta2;
+        vector<vector<TH1D>> Hist_DarkSZA_SR_theta2;
+        vector<vector<TH1D>> Hist_Dark_CR_theta2;
+        vector<vector<TH1D>> Hist_DarkLZA_CR_theta2;
+        vector<vector<TH1D>> Hist_DarkSZA_CR_theta2;
+        vector<vector<TH1D>> Hist_Target_CR_theta2;
+        vector<vector<TH1D>> Hist_TargetLZA_CR_theta2;
+        vector<vector<TH1D>> Hist_TargetSZA_CR_theta2;
+        vector<vector<TH2D>> Hist_Target_SR_RaDec;
+        vector<vector<TH2D>> Hist_Target_CR_RaDec;
         vector<vector<TH1D>> Hist_Target_SR_MSCW;
         vector<vector<TH1D>> Hist_Target_SR_MSCW_Sum;
         vector<vector<TH1D>> Hist_Target_CR_MSCW;
@@ -1106,8 +1101,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         vector<vector<TH1D>> Hist_Target_BkgCR_MSCW_Sum;
         vector<TH1D> Hist_Target_BkgSR_MSCW_Sum_Combined;
         vector<TH1D> Hist_Target_Deconv_MSCW;
-        vector<TH1D> Hist_Target_Ring_MSCW;
-        vector<TH1D> Hist_Target_Ring_MSCL;
         vector<TH2D> Hist_Target_MSCLW;
         for (int e=0;e<=N_energy_bins;e++) {
             energy_vec.push_back(energy_bins[e]);
@@ -1117,7 +1110,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             sprintf(e_low, "%i", int(energy_bins[e]));
             char e_up[50];
             sprintf(e_up, "%i", int(energy_bins[e+1]));
-            if (energy_bins[e]>=100.) N_bins_for_deconv = 960;
+            if (energy_bins[e]>=100.) N_bins_for_deconv = 1920;
             if (energy_bins[e]>=350.) N_bins_for_deconv = 960;
             if (energy_bins[e]>=1000.) N_bins_for_deconv = 480;
             if (energy_bins[e]>=2000.) N_bins_for_deconv = 240;
@@ -1129,26 +1122,10 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
               if (energy_bins[e]>=3000.) N_bins_for_deconv = 960*2;
             }
             Hist_Target_SR_ErecS.push_back(TH1D("Hist_Target_SR_ErecS_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_bins,energy_bins));
-            Hist_Target_SR_theta2.push_back(TH1D("Hist_Target_SR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,Theta2_upper_limit));
-            Hist_Dark_SR_theta2.push_back(TH1D("Hist_Dark_SR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,Theta2_upper_limit));
-            Hist_DarkLZA_SR_theta2.push_back(TH1D("Hist_DarkLZA_SR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,Theta2_upper_limit));
-            Hist_DarkSZA_SR_theta2.push_back(TH1D("Hist_DarkSZA_SR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,Theta2_upper_limit));
-            Hist_Dark_CR_theta2.push_back(TH1D("Hist_Dark_CR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,Theta2_upper_limit));
-            Hist_DarkLZA_CR_theta2.push_back(TH1D("Hist_DarkLZA_CR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,Theta2_upper_limit));
-            Hist_DarkSZA_CR_theta2.push_back(TH1D("Hist_DarkSZA_CR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,Theta2_upper_limit));
-            Hist_Target_CR_theta2.push_back(TH1D("Hist_Target_CR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,Theta2_upper_limit));
-            Hist_TargetLZA_CR_theta2.push_back(TH1D("Hist_TargetLZA_CR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,Theta2_upper_limit));
-            Hist_TargetSZA_CR_theta2.push_back(TH1D("Hist_TargetSZA_CR_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,Theta2_upper_limit));
-            Hist_Target_SR_RaDec.push_back(TH2D("Hist_Target_SR_RaDec_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",100,-2,2,100,-2,2));
-            Hist_Dark_SR_RaDec.push_back(TH2D("Hist_Dark_SR_RaDec_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",10,-2,2,10,-2,2));
-            Hist_Dark_CR_RaDec.push_back(TH2D("Hist_Dark_CR_RaDec_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",10,-2,2,10,-2,2));
-            Hist_Target_CR_RaDec.push_back(TH2D("Hist_Target_CR_RaDec_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",100,-2,2,100,-2,2));
             Hist_Target_SR_MSCL.push_back(TH1D("Hist_Target_SR_MSCL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_BkgTemp_MSCW.push_back(TH1D("Hist_Target_BkgTemp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_BkgPrevious_MSCW.push_back(TH1D("Hist_Target_BkgPrevious_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_Deconv_MSCW.push_back(TH1D("Hist_Target_Deconv_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-            Hist_Target_Ring_MSCW.push_back(TH1D("Hist_Target_Ring_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-            Hist_Target_Ring_MSCL.push_back(TH1D("Hist_Target_Ring_MSCL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             if (UseVegas)
             {
             Hist_Target_MSCLW.push_back(TH2D("Hist_Target_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],100,0,5));
@@ -1166,6 +1143,18 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             vector<TH1D> Hist_Target_ThisE_CR_MSCW_Sum;
             vector<TH1D> Hist_Target_ThisE_BkgCR_MSCW;
             vector<TH1D> Hist_Target_ThisE_BkgCR_MSCW_Sum;
+            vector<TH1D> Hist_Target_ThisE_SR_theta2;
+            vector<TH1D> Hist_Dark_ThisE_SR_theta2;
+            vector<TH1D> Hist_DarkLZA_ThisE_SR_theta2;
+            vector<TH1D> Hist_DarkSZA_ThisE_SR_theta2;
+            vector<TH1D> Hist_Dark_ThisE_CR_theta2;
+            vector<TH1D> Hist_DarkLZA_ThisE_CR_theta2;
+            vector<TH1D> Hist_DarkSZA_ThisE_CR_theta2;
+            vector<TH1D> Hist_Target_ThisE_CR_theta2;
+            vector<TH1D> Hist_TargetLZA_ThisE_CR_theta2;
+            vector<TH1D> Hist_TargetSZA_ThisE_CR_theta2;
+            vector<TH2D> Hist_Target_ThisE_SR_RaDec;
+            vector<TH2D> Hist_Target_ThisE_CR_RaDec;
             for (int s=0;s<Number_of_SR;s++)
             {
                 char nsr[50];
@@ -1175,12 +1164,36 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 Hist_Target_ThisE_BkgSR_MSCW.push_back(TH1D("Hist_Target_BkgSR"+TString(nsr)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_BkgSR_MSCW_AllCR.push_back(TH1D("Hist_Target_BkgSR"+TString(nsr)+"_MSCW_AllCR_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_BkgSR_MSCW_Sum.push_back(TH1D("Hist_Target_BkgSR"+TString(nsr)+"_MSCW_Sum_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_Target_ThisE_SR_theta2.push_back(TH1D("Hist_Target_SR"+TString(nsr)+"_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,Theta2_upper_limit));
+                Hist_Dark_ThisE_SR_theta2.push_back(TH1D("Hist_Dark_SR"+TString(nsr)+"_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,Theta2_upper_limit));
+                Hist_DarkLZA_ThisE_SR_theta2.push_back(TH1D("Hist_DarkLZA_SR"+TString(nsr)+"_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,Theta2_upper_limit));
+                Hist_DarkSZA_ThisE_SR_theta2.push_back(TH1D("Hist_DarkSZA_SR"+TString(nsr)+"_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,Theta2_upper_limit));
+                Hist_Dark_ThisE_CR_theta2.push_back(TH1D("Hist_Dark_CR"+TString(nsr)+"_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,Theta2_upper_limit));
+                Hist_DarkLZA_ThisE_CR_theta2.push_back(TH1D("Hist_DarkLZA_CR"+TString(nsr)+"_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,Theta2_upper_limit));
+                Hist_DarkSZA_ThisE_CR_theta2.push_back(TH1D("Hist_DarkSZA_CR"+TString(nsr)+"_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,Theta2_upper_limit));
+                Hist_Target_ThisE_CR_theta2.push_back(TH1D("Hist_Target_CR"+TString(nsr)+"_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,Theta2_upper_limit));
+                Hist_TargetLZA_ThisE_CR_theta2.push_back(TH1D("Hist_TargetLZA_CR"+TString(nsr)+"_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,Theta2_upper_limit));
+                Hist_TargetSZA_ThisE_CR_theta2.push_back(TH1D("Hist_TargetSZA_CR"+TString(nsr)+"_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,Theta2_upper_limit));
+                Hist_Target_ThisE_SR_RaDec.push_back(TH2D("Hist_Target_SR"+TString(nsr)+"_RaDec_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",100,-2,2,100,-2,2));
+                Hist_Target_ThisE_CR_RaDec.push_back(TH2D("Hist_Target_CR"+TString(nsr)+"_RaDec_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",100,-2,2,100,-2,2));
             }
             Hist_Target_SR_MSCW.push_back(Hist_Target_ThisE_SR_MSCW);
             Hist_Target_SR_MSCW_Sum.push_back(Hist_Target_ThisE_SR_MSCW_Sum);
             Hist_Target_BkgSR_MSCW.push_back(Hist_Target_ThisE_BkgSR_MSCW);
             Hist_Target_BkgSR_MSCW_AllCR.push_back(Hist_Target_ThisE_BkgSR_MSCW_AllCR);
             Hist_Target_BkgSR_MSCW_Sum.push_back(Hist_Target_ThisE_BkgSR_MSCW_Sum);
+            Hist_Target_SR_theta2.push_back(Hist_Target_ThisE_SR_theta2);
+            Hist_Dark_SR_theta2.push_back(Hist_Dark_ThisE_SR_theta2);
+            Hist_DarkLZA_SR_theta2.push_back(Hist_DarkLZA_ThisE_SR_theta2);
+            Hist_DarkSZA_SR_theta2.push_back(Hist_DarkSZA_ThisE_SR_theta2);
+            Hist_Dark_CR_theta2.push_back(Hist_Dark_ThisE_CR_theta2);
+            Hist_DarkLZA_CR_theta2.push_back(Hist_DarkLZA_ThisE_CR_theta2);
+            Hist_DarkSZA_CR_theta2.push_back(Hist_DarkSZA_ThisE_CR_theta2);
+            Hist_Target_CR_theta2.push_back(Hist_Target_ThisE_CR_theta2);
+            Hist_TargetLZA_CR_theta2.push_back(Hist_TargetLZA_ThisE_CR_theta2);
+            Hist_TargetSZA_CR_theta2.push_back(Hist_TargetSZA_ThisE_CR_theta2);
+            Hist_Target_SR_RaDec.push_back(Hist_Target_ThisE_SR_RaDec);
+            Hist_Target_CR_RaDec.push_back(Hist_Target_ThisE_CR_RaDec);
             Hist_Target_SR_MSCW_Sum_Combined.push_back(TH1D("Hist_Target_SR_MSCW_Sum_Combined_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_BkgSR_MSCW_Sum_Combined.push_back(TH1D("Hist_Target_BkgSR_MSCW_Sum_Combined_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             for (int s=0;s<Number_of_CR;s++)
@@ -1217,14 +1230,15 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         {
             std::cout << "=================================================================" << std::endl;
             std::cout << "Dark, e " << energy_bins[e] << std::endl;
-            Hist_Dark_SR_theta2.at(e).Reset();
-            Hist_DarkLZA_SR_theta2.at(e).Reset();
-            Hist_DarkSZA_SR_theta2.at(e).Reset();
-            Hist_Dark_CR_theta2.at(e).Reset();
-            Hist_DarkLZA_CR_theta2.at(e).Reset();
-            Hist_DarkSZA_CR_theta2.at(e).Reset();
-            Hist_Dark_SR_RaDec.at(e).Reset();
-            Hist_Dark_CR_RaDec.at(e).Reset();
+            for (int s=0;s<Number_of_SR;s++)
+            {
+                Hist_Dark_SR_theta2.at(e).at(s).Reset();
+                Hist_DarkLZA_SR_theta2.at(e).at(s).Reset();
+                Hist_DarkSZA_SR_theta2.at(e).at(s).Reset();
+                Hist_Dark_CR_theta2.at(e).at(s).Reset();
+                Hist_DarkLZA_CR_theta2.at(e).at(s).Reset();
+                Hist_DarkSZA_CR_theta2.at(e).at(s).Reset();
+            }
             for (int run=0;run<Dark_runlist.size();run++)
             {
                 char run_number[50];
@@ -1300,35 +1314,36 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                                     {
                                         if (nominal_dark)
                                         {
-                                            Hist_Dark_SR_theta2.at(e).Fill(R2off);
-                                            Hist_Dark_SR_RaDec.at(e).Fill(Xoff,Yoff);
+                                            Hist_Dark_SR_theta2.at(e).at(s).Fill(R2off);
                                         }
                                         if (LZA_dark)
                                         {
-                                            Hist_DarkLZA_SR_theta2.at(e).Fill(R2off);
+                                            Hist_DarkLZA_SR_theta2.at(e).at(s).Fill(R2off);
                                         }
                                         if (SZA_dark)
                                         {
-                                            Hist_DarkSZA_SR_theta2.at(e).Fill(R2off);
+                                            Hist_DarkSZA_SR_theta2.at(e).at(s).Fill(R2off);
                                         }
                                     }
                                 }
                             }
-                            if (ControlSelectionTheta2()) 
+                            for (int s=0;s<Number_of_SR;s++)
                             {
-                                    if (nominal_dark)
-                                    {
-                                        Hist_Dark_CR_theta2.at(e).Fill(R2off);
-                                        Hist_Dark_CR_RaDec.at(e).Fill(Xoff,Yoff);
-                                    }
-                                    if (LZA_dark)
-                                    {
-                                        Hist_DarkLZA_CR_theta2.at(e).Fill(R2off);
-                                    }
-                                    if (SZA_dark)
-                                    {
-                                        Hist_DarkSZA_CR_theta2.at(e).Fill(R2off);
-                                    }
+                                if (ControlSelectionTheta2(s)) 
+                                {
+                                        if (nominal_dark)
+                                        {
+                                            Hist_Dark_CR_theta2.at(e).at(s).Fill(R2off);
+                                        }
+                                        if (LZA_dark)
+                                        {
+                                            Hist_DarkLZA_CR_theta2.at(e).at(s).Fill(R2off);
+                                        }
+                                        if (SZA_dark)
+                                        {
+                                            Hist_DarkSZA_CR_theta2.at(e).at(s).Fill(R2off);
+                                        }
+                                }
                             }
                     }
                 }
@@ -1485,32 +1500,35 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                                     {
                                         if (SignalSelectionMSCW(s))
                                         {
-                                            Hist_Target_SR_theta2.at(e).Fill(theta2);
-                                            Hist_Target_SR_RaDec.at(e).Fill(ra_sky,dec_sky);
+                                            Hist_Target_SR_theta2.at(e).at(s).Fill(theta2);
+                                            Hist_Target_SR_RaDec.at(e).at(s).Fill(ra_sky,dec_sky);
                                         }
                                     }
                                 }
-                                if (ControlSelectionTheta2()) 
+                                for (int s=0;s<Number_of_SR;s++)
                                 {
-                                    double weight = 0.;
-                                    double dark_cr = (double) Hist_Dark_CR_theta2.at(e).GetBinContent(Hist_Dark_CR_theta2.at(e).GetXaxis()->FindBin(R2off));
-                                    double dark_sr = (double) Hist_Dark_SR_theta2.at(e).GetBinContent(Hist_Dark_SR_theta2.at(e).GetXaxis()->FindBin(R2off));
-                                    if (dark_cr==0.) weight = 0.;
-                                    else weight = dark_sr/dark_cr;
-                                    Hist_Target_CR_theta2.at(e).Fill(theta2,weight);
-                                    Hist_Target_CR_RaDec.at(e).Fill(ra_sky,dec_sky,weight);
+                                    if (ControlSelectionTheta2(s)) 
+                                    {
+                                        double weight = 0.;
+                                        double dark_cr = (double) Hist_Dark_CR_theta2.at(e).at(s).GetBinContent(Hist_Dark_CR_theta2.at(e).at(s).GetXaxis()->FindBin(R2off));
+                                        double dark_sr = (double) Hist_Dark_SR_theta2.at(e).at(s).GetBinContent(Hist_Dark_SR_theta2.at(e).at(s).GetXaxis()->FindBin(R2off));
+                                        if (dark_cr==0.) weight = 0.;
+                                        else weight = dark_sr/dark_cr;
+                                        Hist_Target_CR_theta2.at(e).at(s).Fill(theta2,weight);
+                                        Hist_Target_CR_RaDec.at(e).at(s).Fill(ra_sky,dec_sky,weight);
 
-                                    double dark_lza_cr = (double) Hist_DarkLZA_CR_theta2.at(e).GetBinContent(Hist_DarkLZA_CR_theta2.at(e).GetXaxis()->FindBin(R2off));
-                                    double dark_lza_sr = (double) Hist_DarkLZA_SR_theta2.at(e).GetBinContent(Hist_DarkLZA_SR_theta2.at(e).GetXaxis()->FindBin(R2off));
-                                    if (dark_lza_cr==0.) weight = 0.;
-                                    else weight = dark_lza_sr/dark_lza_cr;
-                                    Hist_TargetLZA_CR_theta2.at(e).Fill(theta2,weight);
+                                        double dark_lza_cr = (double) Hist_DarkLZA_CR_theta2.at(e).at(s).GetBinContent(Hist_DarkLZA_CR_theta2.at(e).at(s).GetXaxis()->FindBin(R2off));
+                                        double dark_lza_sr = (double) Hist_DarkLZA_SR_theta2.at(e).at(s).GetBinContent(Hist_DarkLZA_SR_theta2.at(e).at(s).GetXaxis()->FindBin(R2off));
+                                        if (dark_lza_cr==0.) weight = 0.;
+                                        else weight = dark_lza_sr/dark_lza_cr;
+                                        Hist_TargetLZA_CR_theta2.at(e).at(s).Fill(theta2,weight);
 
-                                    double dark_sza_cr = (double) Hist_DarkSZA_CR_theta2.at(e).GetBinContent(Hist_DarkSZA_CR_theta2.at(e).GetXaxis()->FindBin(R2off));
-                                    double dark_sza_sr = (double) Hist_DarkSZA_SR_theta2.at(e).GetBinContent(Hist_DarkSZA_SR_theta2.at(e).GetXaxis()->FindBin(R2off));
-                                    if (dark_sza_cr==0.) weight = 0.;
-                                    else weight = dark_sza_sr/dark_sza_cr;
-                                    Hist_TargetSZA_CR_theta2.at(e).Fill(theta2,weight);
+                                        double dark_sza_cr = (double) Hist_DarkSZA_CR_theta2.at(e).at(s).GetBinContent(Hist_DarkSZA_CR_theta2.at(e).at(s).GetXaxis()->FindBin(R2off));
+                                        double dark_sza_sr = (double) Hist_DarkSZA_SR_theta2.at(e).at(s).GetBinContent(Hist_DarkSZA_SR_theta2.at(e).at(s).GetXaxis()->FindBin(R2off));
+                                        if (dark_sza_cr==0.) weight = 0.;
+                                        else weight = dark_sza_sr/dark_sza_cr;
+                                        Hist_TargetSZA_CR_theta2.at(e).at(s).Fill(theta2,weight);
+                                    }
                                 }
                                 for (int s=0;s<Number_of_SR;s++)
                                 {
@@ -1522,13 +1540,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                                 }
                                 Hist_Target_SR_MSCL.at(e).Fill(MSCL);
                                 Hist_Target_MSCLW.at(e).Fill(MSCL,MSCW);
-                        }
-                        if (RingFoV()) 
-                        {
-                                for (int s=0;s<Number_of_SR;s++)
-                                {
-                                    if (SignalSelectionMSCW(s)) Hist_Target_Ring_MSCW.at(e).Fill(MSCW);
-                                }
                         }
                     }
                     input_file->Close();
@@ -1711,105 +1722,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             }
         }
 
-        // predict bkg theta2 distribution
-        for (int e=0;e<N_energy_bins;e++)
-        {
-            std::cout << "====================================================" << std::endl;
-            std::cout << "Producing skymap and theta2 plot." << std::endl;
-            int norm_bin_low_target = Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).FindBin(MSCW_cut_lower);
-            int norm_bin_up_target = Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).FindBin(MSCW_cut_upper)-1;
-            double total_bkg = 0;
-            double total_sr = 0;
-            double total_sr_theta2 = 0;
-            total_bkg = (double) Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
-            total_sr = (double) Hist_Target_SR_MSCW_Sum_Combined.at(e).Integral(norm_bin_low_target,norm_bin_up_target);
-            total_sr_theta2 = (double) Hist_Target_SR_theta2.at(e).Integral();
-            std::cout << e << ", total_sr_mscw = " << total_sr << std::endl;
-            std::cout << e << ", total_sr_theta2 = " << total_sr_theta2 << std::endl;
-            double total_bkg_err = 0.;
-            //for (int bin=norm_bin_low_target;bin<=norm_bin_up_target;bin++)
-            //{
-            //    total_bkg_err += pow(Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).GetBinError(bin),2);
-            //}
-            //total_bkg_err = pow(total_bkg_err,0.5);
-            for (int bin=norm_bin_low_target;bin<=norm_bin_up_target;bin++)
-            {
-                total_bkg_err += Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).GetBinError(bin);
-            }
-            std::cout << e << ", total_bkg = " << total_bkg << std::endl;
-            std::cout << e << ", total_bkg_err = " << total_bkg_err << std::endl;
-
-            double old_integral = (double) Hist_Target_CR_theta2.at(e).Integral();
-            double old_integral_err = 0.;
-            for (int bin=1;bin<=Hist_Target_CR_theta2.at(e).GetNbinsX();bin++)
-            {
-                old_integral_err += pow(Hist_Target_CR_theta2.at(e).GetBinError(bin),2);
-            }
-            old_integral_err = pow(old_integral_err,0.5);
-            double scale_sky = total_bkg/old_integral;
-            //double scale_sky_err = scale_sky*scale_sky*(pow(total_bkg_err/total_bkg,2)+pow(old_integral_err/old_integral,2));
-            double scale_sky_err = scale_sky*scale_sky*(pow(total_bkg_err/total_bkg,2));
-            scale_sky_err = pow(scale_sky_err,0.5);
-            std::cout << e << ", scale_sky = " << scale_sky << std::endl;
-            std::cout << e << ", scale_sky_err = " << scale_sky_err << std::endl;
-            scale_skymap.push_back(scale_sky);
-            scale_err_skymap.push_back(scale_sky_err);
-
-            double old_LZA_integral = (double) Hist_TargetLZA_CR_theta2.at(e).Integral();
-            double old_LZA_integral_err = 0.;
-            for (int bin=1;bin<=Hist_TargetLZA_CR_theta2.at(e).GetNbinsX();bin++)
-            {
-                old_LZA_integral_err += pow(Hist_TargetLZA_CR_theta2.at(e).GetBinError(bin),2);
-            }
-            old_LZA_integral_err = pow(old_LZA_integral_err,0.5);
-            double scale_LZA_sky = total_bkg/old_LZA_integral;
-            //double scale_LZA_sky_err = scale_LZA_sky*scale_LZA_sky*(pow(total_bkg_err/total_bkg,2)+pow(old_LZA_integral_err/old_LZA_integral,2));
-            double scale_LZA_sky_err = scale_LZA_sky*scale_LZA_sky*(pow(total_bkg_err/total_bkg,2));
-            scale_LZA_sky_err = pow(scale_LZA_sky_err,0.5);
-            std::cout << e << ", scale_LZA_sky = " << scale_LZA_sky << std::endl;
-            std::cout << e << ", scale_LZA_sky_err = " << scale_LZA_sky_err << std::endl;
-            scale_LZA_skymap.push_back(scale_LZA_sky);
-            scale_LZA_err_skymap.push_back(scale_LZA_sky_err);
-
-            double old_SZA_integral = (double) Hist_TargetSZA_CR_theta2.at(e).Integral();
-            double old_SZA_integral_err = 0.;
-            for (int bin=1;bin<=Hist_TargetSZA_CR_theta2.at(e).GetNbinsX();bin++)
-            {
-                old_SZA_integral_err += pow(Hist_TargetSZA_CR_theta2.at(e).GetBinError(bin),2);
-            }
-            old_SZA_integral_err = pow(old_SZA_integral_err,0.5);
-            double scale_SZA_sky = total_bkg/old_SZA_integral;
-            //double scale_SZA_sky_err = scale_SZA_sky*scale_SZA_sky*(pow(total_bkg_err/total_bkg,2)+pow(old_SZA_integral_err/old_SZA_integral,2));
-            double scale_SZA_sky_err = scale_SZA_sky*scale_SZA_sky*(pow(total_bkg_err/total_bkg,2));
-            scale_SZA_sky_err = pow(scale_SZA_sky_err,0.5);
-            std::cout << e << ", scale_SZA_sky = " << scale_SZA_sky << std::endl;
-            std::cout << e << ", scale_SZA_sky_err = " << scale_SZA_sky_err << std::endl;
-            scale_SZA_skymap.push_back(scale_SZA_sky);
-            scale_SZA_err_skymap.push_back(scale_SZA_sky_err);
-
-            std::cout << "Hist_Target_SR_theta2.at(e).Integral() = " << Hist_Target_SR_theta2.at(e).Integral() << std::endl;
-            std::cout << "Hist_Target_CR_theta2.at(e).Integral() = " << Hist_Target_CR_theta2.at(e).Integral() << std::endl;
-            std::cout << "Hist_Target_SR_RaDec.at(e).Integral() = " << Hist_Target_SR_RaDec.at(e).Integral() << std::endl;
-            std::cout << "Hist_Target_CR_RaDec.at(e).Integral() = " << Hist_Target_CR_RaDec.at(e).Integral() << std::endl;
-
-        }
-
-
-        // Ring model
-        for (int e=0;e<N_energy_bins;e++)
-        {
-            for (int bin=1;bin<=Hist_Target_SR_MSCW_Sum_Combined.at(e).GetNbinsX();bin++)
-            {
-                int norm_bin_up_target = Hist_Target_SR_MSCW_Sum_Combined.at(e).FindBin(MSCW_cut_blind);
-                double norm1 = Hist_Target_SR_MSCW_Sum_Combined.at(e).Integral(norm_bin_up_target,Hist_Target_SR_MSCW_Sum_Combined.at(e).GetNbinsX());
-                double norm2 = Hist_Target_Ring_MSCW.at(e).Integral(norm_bin_up_target,Hist_Target_SR_MSCW_Sum_Combined.at(e).GetNbinsX());
-                double scale = 0.;
-                if (norm2!=0) scale = norm1/norm2;
-                Hist_Target_Ring_MSCW.at(e).Scale(scale);
-            }
-        }
-
-
 
 
         int norm_bin_low_ring = Hist_Target_ON_MSCW_Alpha.FindBin(Norm_Lower);
@@ -1820,7 +1732,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         int Number_of_SR_new = Number_of_SR;
         TString ConvergeOrNot = "";
         if (!DoConverge) ConvergeOrNot = "_NoConverge";
-        TFile OutputFile("output_tmp/Deconvolution_"+TString(target)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate"); 
+        TFile OutputFile("output_Apr15/Deconvolution_"+TString(target)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate"); 
         TTree InfoTree("InfoTree","info tree");
         InfoTree.Branch("Number_of_CR",&Number_of_CR_new,"Number_of_CR/I");
         InfoTree.Branch("Number_of_SR",&Number_of_SR_new,"Number_of_SR/I");
@@ -1840,12 +1752,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         InfoTree.Branch("Target_Azim_cut_upper",&Target_Azim_cut_upper,"Target_Azim_cut_upper/D");
         InfoTree.Branch("used_runs","std::vector<int>",&used_runs);
         InfoTree.Branch("energy_vec","std::vector<double>",&energy_vec);
-        InfoTree.Branch("scale_skymap","std::vector<double>",&scale_skymap);
-        InfoTree.Branch("scale_err_skymap","std::vector<double>",&scale_err_skymap);
-        InfoTree.Branch("scale_LZA_skymap","std::vector<double>",&scale_LZA_skymap);
-        InfoTree.Branch("scale_LZA_err_skymap","std::vector<double>",&scale_LZA_err_skymap);
-        InfoTree.Branch("scale_SZA_skymap","std::vector<double>",&scale_SZA_skymap);
-        InfoTree.Branch("scale_SZA_err_skymap","std::vector<double>",&scale_SZA_err_skymap);
         InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
         InfoTree.Fill();
         InfoTree.Write();
@@ -1853,24 +1759,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         Hist_Target_TelRaDec.Write();
         Hist_Target_TelRaDec_AfterCut.Write();
         for (int e=0;e<N_energy_bins;e++) {
-                Hist_Target_SR_theta2.at(e).Write();
-                Hist_Dark_SR_theta2.at(e).Write();
-                Hist_DarkLZA_SR_theta2.at(e).Write();
-                Hist_DarkSZA_SR_theta2.at(e).Write();
-                Hist_Dark_CR_theta2.at(e).Write();
-                Hist_DarkLZA_CR_theta2.at(e).Write();
-                Hist_DarkSZA_CR_theta2.at(e).Write();
-                Hist_Target_CR_theta2.at(e).Write();
-                Hist_TargetLZA_CR_theta2.at(e).Write();
-                Hist_TargetSZA_CR_theta2.at(e).Write();
-                Hist_Target_SR_RaDec.at(e).Write();
-                Hist_Dark_SR_RaDec.at(e).Write();
-                Hist_Dark_CR_RaDec.at(e).Write();
-                Hist_Target_CR_RaDec.at(e).Write();
                 Hist_Target_SR_MSCL.at(e).Write();
                 Hist_Target_Deconv_MSCW.at(e).Write();
-                Hist_Target_Ring_MSCW.at(e).Write();
-                Hist_Target_Ring_MSCL.at(e).Write();
                 Hist_Target_MSCLW.at(e).Write();
                 Hist_Target_SR_MSCW_Sum_Combined.at(e).Write();
                 Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).Write();
@@ -1878,6 +1768,18 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 {
                     Hist_Target_SR_MSCW_Sum.at(e).at(s).Write();
                     Hist_Target_BkgSR_MSCW_Sum.at(e).at(s).Write();
+                    Hist_Target_SR_theta2.at(e).at(s).Write();
+                    Hist_Dark_SR_theta2.at(e).at(s).Write();
+                    Hist_DarkLZA_SR_theta2.at(e).at(s).Write();
+                    Hist_DarkSZA_SR_theta2.at(e).at(s).Write();
+                    Hist_Dark_CR_theta2.at(e).at(s).Write();
+                    Hist_DarkLZA_CR_theta2.at(e).at(s).Write();
+                    Hist_DarkSZA_CR_theta2.at(e).at(s).Write();
+                    Hist_Target_CR_theta2.at(e).at(s).Write();
+                    Hist_TargetLZA_CR_theta2.at(e).at(s).Write();
+                    Hist_TargetSZA_CR_theta2.at(e).at(s).Write();
+                    Hist_Target_SR_RaDec.at(e).at(s).Write();
+                    Hist_Target_CR_RaDec.at(e).at(s).Write();
                 }
                 for (int s=0;s<Number_of_CR;s++)
                 {
