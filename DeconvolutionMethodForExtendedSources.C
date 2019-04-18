@@ -135,15 +135,15 @@ double exposure_hours = 0.;
 //const int N_energy_bins = 16;
 //double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
 //int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,2   ,2   ,4   ,4   ,8   ,8};
-const int N_energy_bins = 11;
-double energy_bins[N_energy_bins+1] =     {200,282,398,562,794,1122,1585,2239,3162,4467,6310,8913};
-int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,2   ,2   ,4   ,4   ,8   ,8};
+//const int N_energy_bins = 11;
+//double energy_bins[N_energy_bins+1] =     {200,282,398,562,794,1122,1585,2239,3162,4467,6310,8913};
+//int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,2   ,2   ,4   ,4   ,8   ,8};
 //const int N_energy_bins = 6;
 //double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
 //int number_runs_included[N_energy_bins] = {2   ,2   ,4   ,4   ,8   ,8};
-//const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] =     {1122,1585};
-//int number_runs_included[N_energy_bins] = {2};
+const int N_energy_bins = 1;
+double energy_bins[N_energy_bins+1] =     {1122,1585};
+int number_runs_included[N_energy_bins] = {2};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] =     {2239,3162};
 //int number_runs_included[N_energy_bins] = {4};
@@ -155,6 +155,8 @@ int N_bins_for_deconv = 480;
 double MSCW_plot_lower = -30.;
 double MSCW_plot_upper = 30.;
 
+TH1D Hist_Target_TelElev("Hist_Target_TelElev","",18,0,90);
+TH1D Hist_Dark_TelElev("Hist_Dark_TelElev","",18,0,90);
 TH2D Hist_Target_TelElevAzim("Hist_Target_TelElevAzim","",18,0,90,18,0,360);
 TH2D Hist_Target_TelRaDec("Hist_Target_TelRaDec","",100,0,5,100,-1,1);
 
@@ -250,13 +252,7 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR) {
             continue;
         }
         if ((data_err*data_err+bkg_err*bkg_err)==0) continue;
-        if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_lower) {
-            chi2_temp += 1.*pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
-        }
-        else
-        {
-            chi2_temp += pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
-        }
+        chi2_temp += pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
     }
     chi2_temp = 1./chi2_temp;
     return chi2_temp;
@@ -561,8 +557,8 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
     double norm = Hist_BkgTemp->Integral();
     Hist_Bkg->Reset();
     if (doShift) {
-        for (int fit=0;fit<20;fit++) {
-                double shift = shift_begin+double(fit)*0.1;  // Do not shift to the other direction!
+        for (int fit=0;fit<200;fit++) {
+                double shift = shift_begin+double(fit)*0.01;  // Do not shift to the other direction!
                 for (int i=0;i<Hist_SR->GetNbinsX();i++) {
                         int b = Hist_SR->FindBin(Hist_SR->GetBinCenter(i+1)-shift);
                         Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
@@ -708,6 +704,37 @@ void Convolution(TH1D* Hist_source, TH1D* Hist_response, TH1D* Hist_Conv) {
             }
             Hist_Conv->SetBinContent(i,conv);
         }
+}
+
+double PointingDistribution(string file_name,int run, bool isDark, bool fillHist)
+{
+    char run_number[50];
+    sprintf(run_number, "%i", int(run));
+    TFile*  input_file = TFile::Open(file_name.c_str());
+    TTree* pointing_tree = nullptr;
+    if (!UseVegas) 
+    {
+        pointing_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/pointingDataReduced");
+        pointing_tree->SetBranchAddress("TelElevation",&TelElevation);
+        pointing_tree->SetBranchAddress("TelAzimuth",&TelAzimuth);
+        pointing_tree->SetBranchAddress("TelRAJ2000",&TelRAJ2000);
+        pointing_tree->SetBranchAddress("TelDecJ2000",&TelDecJ2000);
+        double total_entries = (double)pointing_tree->GetEntries();
+        pointing_tree->GetEntry(int(total_entries/2.));
+        if (fillHist)
+        {
+                if (isDark)
+                {
+                    Hist_Dark_TelElev.Fill(TelElevation);
+                }
+                else
+                {
+                    Hist_Target_TelElev.Fill(TelElevation);
+                }
+        }
+    }
+    input_file->Close();
+    return TelElevation;
 }
 bool PointingSelection(string file_name,int run, bool fillHist, double Elev_cut_lower, double Elev_cut_upper, double Azim_cut_lower, double Azim_cut_upper)
 {
@@ -1212,10 +1239,10 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         }
 
 
-        std::cout << "Getting dark runs... " << std::endl;
-        vector<int> Dark_runlist = GetRunList("Segue1V6");
+        std::cout << "Getting dark pointing distributions... " << std::endl;
+        vector<int> Dark_runlist = GetRunList("DarkField");
         char Dark_observation[50];
-        sprintf(Dark_observation, "%s", "Segue1V6");
+        sprintf(Dark_observation, "%s", "DarkField");
         if (TString(target)=="Segue1V5" || TString(target)=="MGRO_J1908_V5")
         {
             Dark_runlist = GetRunList("Segue1V5");
@@ -1226,6 +1253,43 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
             Dark_runlist = GetRunList("VA_DarkSegue1");
             sprintf(Dark_observation, "%s", "VA_DarkSegue1");
         }
+        for (int run=0;run<Dark_runlist.size();run++)
+        {
+            char run_number[50];
+            sprintf(run_number, "%i", int(Dark_runlist[run]));
+            //std::cout << "Reading run " << run_number << std::endl;
+            filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Dark_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
+            if (TString(Dark_observation)=="VA_DarkSegue1")
+            {
+              filename = TString("/veritas/upload/Geminga_Iowa/"+TString(run_number)+".stage4.root");
+            }
+
+            double tel_elev = PointingDistribution(filename,int(Dark_runlist[run]), true, true);
+        }
+
+        std::cout << "Getting target pointing distributions... " << std::endl;
+        char observation[50];
+        sprintf(observation, "%s", target);
+        if (TString(target)=="CrabA") sprintf(observation, "%s", "Crab");
+        if (TString(target)=="CrabB") sprintf(observation, "%s", "Crab");
+        if (TString(target)=="Segue1AV6") sprintf(observation, "%s", "Segue1V6");
+        if (TString(target)=="Segue1BV6") sprintf(observation, "%s", "Segue1V6");
+        vector<int> Target_runlist = GetRunList(target);
+        for (int run=0;run<Target_runlist.size();run++)
+        {
+            char run_number[50];
+            sprintf(run_number, "%i", int(Target_runlist[run]));
+            //std::cout << "Reading run " << run_number << std::endl;
+            filename = TString("$VERITAS_USER_DATA_DIR/"+TString(observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
+            if (TString(observation)=="VA_Segue1" || TString(observation)=="VA_Geminga")
+            {
+              filename = TString("/veritas/upload/Geminga_Iowa/"+TString(run_number)+".stage4.root");
+            }
+
+            double tel_elev = PointingDistribution(filename,int(Target_runlist[run]), false, true);
+        }
+
+        std::cout << "Getting dark runs... " << std::endl;
         for (int e=0;e<N_energy_bins;e++)
         {
             std::cout << "=================================================================" << std::endl;
@@ -1257,6 +1321,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                 if (PointingSelection(filename,int(Dark_runlist[run]),false,50,90,0,360)) nominal_dark = true;
                 if (PointingSelection(filename,int(Dark_runlist[run]),false,50,70,0,360)) LZA_dark = true;
                 if (PointingSelection(filename,int(Dark_runlist[run]),false,70,90,0,360)) SZA_dark = true;
+                double tel_elev = PointingDistribution(filename,int(Dark_runlist[run]), true, false);
 
                 TFile*  input_file = TFile::Open(filename.c_str());
                 TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
@@ -1314,7 +1379,12 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                                     {
                                         if (nominal_dark)
                                         {
-                                            Hist_Dark_SR_theta2.at(e).at(s).Fill(R2off);
+                                            int elev_bin = Hist_Dark_TelElev.FindBin(tel_elev);
+                                            double n_dark = Hist_Dark_TelElev.GetBinContent(elev_bin);
+                                            double n_target = Hist_Target_TelElev.GetBinContent(elev_bin);
+                                            double weight = 0;
+                                            if (n_dark!=0) weight = n_target/n_dark;
+                                            Hist_Dark_SR_theta2.at(e).at(s).Fill(R2off,weight);
                                         }
                                         if (LZA_dark)
                                         {
@@ -1333,7 +1403,12 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                                 {
                                         if (nominal_dark)
                                         {
-                                            Hist_Dark_CR_theta2.at(e).at(s).Fill(R2off);
+                                            int elev_bin = Hist_Dark_TelElev.FindBin(tel_elev);
+                                            double n_dark = Hist_Dark_TelElev.GetBinContent(elev_bin);
+                                            double n_target = Hist_Target_TelElev.GetBinContent(elev_bin);
+                                            double weight = 0;
+                                            if (n_dark!=0) weight = n_target/n_dark;
+                                            Hist_Dark_CR_theta2.at(e).at(s).Fill(R2off,weight);
                                         }
                                         if (LZA_dark)
                                         {
@@ -1353,14 +1428,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
 
 
         std::cout << "Getting target runs... " << std::endl;
-        char observation[50];
-        sprintf(observation, "%s", target);
-        if (TString(target)=="CrabA") sprintf(observation, "%s", "Crab");
-        if (TString(target)=="CrabB") sprintf(observation, "%s", "Crab");
-        if (TString(target)=="Segue1AV6") sprintf(observation, "%s", "Segue1V6");
-        if (TString(target)=="Segue1BV6") sprintf(observation, "%s", "Segue1V6");
         vector<int> already_used_runs;
-        vector<int> Target_runlist = GetRunList(target);
 
         vector<int> N_iter;
         vector<double> N_rms;
@@ -1732,7 +1800,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         int Number_of_SR_new = Number_of_SR;
         TString ConvergeOrNot = "";
         if (!DoConverge) ConvergeOrNot = "_NoConverge";
-        TFile OutputFile("output_Apr15/Deconvolution_"+TString(target)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate"); 
+        TFile OutputFile("output_Apr17/Deconvolution_"+TString(target)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate"); 
         TTree InfoTree("InfoTree","info tree");
         InfoTree.Branch("Number_of_CR",&Number_of_CR_new,"Number_of_CR/I");
         InfoTree.Branch("Number_of_SR",&Number_of_SR_new,"Number_of_SR/I");
