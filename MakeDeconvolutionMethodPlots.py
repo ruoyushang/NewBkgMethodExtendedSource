@@ -10,7 +10,7 @@ ROOT.TH1.SetDefaultSumw2()
 ROOT.TH1.AddDirectory(False) # without this, the histograms returned from a function will be non-type
 ROOT.gStyle.SetPaintTextFormat("0.3f")
 
-folder = 'output_Apr17'
+folder = 'output_Apr19'
 blindness = 'Deconvolution'
 converge = ''
 #converge = '_NoConverge'
@@ -28,12 +28,13 @@ source_list = []
 #source_list  += ['3C58']
 #source_list  += ['BrandonValidation']
 #source_list  += ['Segue1V6']
-source_list  += ['PKS1424']
+#source_list  += ['PKS1424']
 #source_list  += ['Crab']
-#source_list  += ['H1426']
-#source_list  += ['3C264']
+source_list  += ['H1426']
+source_list  += ['3C264']
 #source_list  += ['Ton599']
 #source_list  += ['IC443HotSpot']
+#source_list  += ['DarkField']
 #source_list  += ['MGRO_J1908_V5']
 #source_list  += ['Segue1V5']
 #source_list  += ['VA_Segue1']
@@ -100,11 +101,11 @@ energy_list = []
 #energy_list += [794]
 energy_list += [1122]
 energy_list += [1585]
-#energy_list += [2239]
-#energy_list += [3162]
-#energy_list += [4467]
-#energy_list += [6310]
-#energy_list += [8913]
+energy_list += [2239]
+energy_list += [3162]
+energy_list += [4467]
+energy_list += [6310]
+energy_list += [8913]
 
 Variable = ''
 xtitle = ''
@@ -229,6 +230,105 @@ def MakeGaussComparisonPlot(Hists,legends,colors,title,name):
 
     c_both.SaveAs('output_plots/%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
 
+def MakeComparisonPlotNoRatio(Hists,legends,colors,title,name,minheight,maxheight,logx,logy):
+    
+    c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
+    pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
+    pad3.SetBottomMargin(0.0)
+    pad3.SetTopMargin(0.03)
+    pad3.SetBorderMode(1)
+    pad1 = ROOT.TPad("pad1","pad1",0,0.4,1,0.8)
+    pad1.SetBottomMargin(0.1)
+    pad1.SetTopMargin(0.0)
+    pad1.SetBorderMode(0)
+    pad2 = ROOT.TPad("pad2","pad2",0,0,1,0.4)
+    pad2.SetBottomMargin(0.2)
+    pad2.SetTopMargin(0.1)
+    pad2.SetBorderMode(0)
+    if logy: pad1.SetGrid()
+    pad2.Draw()
+    pad1.Draw()
+    pad3.Draw()
+
+    pad1.cd()
+    if logy: pad1.SetLogy()
+
+    max_heigh = 0
+    max_hist = 0
+    mean = []
+    rms = []
+    amp = []
+    for h in range(0,len(Hists)):
+        mean += [0]
+        rms += [0]
+        amp += [0]
+        if Hists[h]!=0:
+            Hists[h].GetXaxis().SetTitle(title)
+            if max_heigh < Hists[h].GetMaximum(): 
+                max_heigh = Hists[h].GetMaximum()
+                max_hist = h
+
+    if 'MSCW' in name:
+        low_end = Hists[0].GetMean()-3.*Hists[0].GetRMS()
+        high_end = Hists[0].GetMean()+3.*Hists[0].GetRMS()
+        for h in range(0,len(Hists)):
+            Hists[h].GetXaxis().SetRangeUser(low_end,high_end)
+
+    if not logy: Hists[max_hist].SetMinimum(0)
+    if not maxheight==0: Hists[max_hist].SetMaximum(maxheight)
+    Hists[max_hist].SetMinimum(minheight)
+    Hists[max_hist].GetXaxis().SetTitle(title)
+    Hists[max_hist].GetXaxis().SetTitleOffset(0.6)
+    Hists[max_hist].GetXaxis().SetTitleSize(0.06)
+    Hists[max_hist].GetXaxis().SetLabelSize(0.06)
+    Hists[max_hist].GetYaxis().SetLabelSize(0.06)
+    Hists[max_hist].GetYaxis().SetTitleOffset(0.5)
+    Hists[max_hist].GetYaxis().SetTitle("R = data / bkg")
+    Hists[max_hist].GetYaxis().SetTitleSize(0.08)
+    Hists[max_hist].Draw("E")
+
+    for h in range(0,len(Hists)):
+        if Hists[h]!=0:
+            Hists[h].SetLineColor(colors[h])
+            Hists[h].Draw("E same")
+
+    pad3.cd()
+    legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.15)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+    legend.Clear()
+    for h in range(0,len(Hists)):
+        if Hists[h]!=0:
+            legend.AddEntry(Hists[h],legends[h],"pl")
+    legend.Draw("SAME")
+
+    if logx: 
+        pad1.SetLogx()
+
+    pad2.cd()
+    Hist_Sig = ROOT.TH1D("Hist_Sig","",20,-8,8)
+    for h in range(0,len(Hists)):
+        for b in range(0,Hists[h].GetNbinsX()):
+            if not Hists[h].GetBinError(b+1)==0:
+                Hist_Sig.Fill((Hists[h].GetBinContent(b+1)-1.)/Hists[h].GetBinError(b+1))
+    Hist_Sig.GetXaxis().SetLabelSize(0.06)
+    Hist_Sig.GetYaxis().SetLabelSize(0.06)
+    Hist_Sig.GetXaxis().SetTitleSize(0.06)
+    Hist_Sig.GetXaxis().SetTitle('s = (R-1)/#DeltaR')
+    Hist_Sig.GetXaxis().SetTitleOffset(1.0)
+    Hist_Sig.Draw("E")
+
+    lumilab1 = ROOT.TLatex(0.15,0.80,'mean = %0.1f, RMS = %0.1f'%(Hist_Sig.GetMean(),Hist_Sig.GetRMS()) )
+    lumilab1.SetNDC()
+    lumilab1.SetTextSize(0.10)
+    lumilab1.Draw()
+
+    c_both.SaveAs('output_plots/%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
+
 def MakeComparisonPlot(Hists,legends,colors,title,name,maxhight,logx,logy):
     
     c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
@@ -270,9 +370,11 @@ def MakeComparisonPlot(Hists,legends,colors,title,name,maxhight,logx,logy):
     if 'MSCW' in name:
         low_end = Hists[0].GetMean()-3.*Hists[0].GetRMS()
         high_end = Hists[0].GetMean()+3.*Hists[0].GetRMS()
-        Hists[max_hist].GetXaxis().SetRangeUser(low_end,high_end)
+        for h in range(0,len(Hists)):
+            Hists[h].GetXaxis().SetRangeUser(low_end,high_end)
 
     if not logy: Hists[max_hist].SetMinimum(0)
+    else: Hists[max_hist].SetMinimum(0.1)
     if not maxhight==0: Hists[max_hist].SetMaximum(maxhight)
     Hists[max_hist].Draw("E")
 
@@ -297,7 +399,7 @@ def MakeComparisonPlot(Hists,legends,colors,title,name,maxhight,logx,logy):
     legend.Draw("SAME")
 
     pad2.cd()
-    Hist_Band = Hists[max_hist].Clone()
+    Hist_Band = Hists[0].Clone()
     for b in range(0,Hist_Band.GetNbinsX()):
         Hist_Band.SetBinContent(b+1,1)
         Hist_Band.SetBinError(b+1,0.0)
@@ -644,7 +746,7 @@ def S2B_ratio(Hist_SR, Hist_Bkg,range_lower,range_upper,syst):
         #sbratio_err = predict_bkg/data_SR*pow(pow(err_SR/data_SR,2)+pow(err_bkg/predict_bkg,2),0.5)
     return sbratio, sbratio_err
 
-def Variation_ratio(Hist_SR, Hist_Bkg,range_lower,range_upper,syst):
+def Variation_ratio(Hist_SR, Hist_Bkg,range_lower,range_upper,syst,e2p_ratio):
 
     norm_bin_low_target = Hist_SR.FindBin(range_lower)
     norm_bin_up_target = Hist_Bkg.FindBin(range_upper)-1
@@ -654,6 +756,7 @@ def Variation_ratio(Hist_SR, Hist_Bkg,range_lower,range_upper,syst):
     err_bkg = 0
     predict_bkg = 0
     predict_bkg, err_bkg = IntegralAndSystError(Hist_Bkg,norm_bin_low_target,norm_bin_up_target,syst)
+    predict_bkg = predict_bkg*(1.+e2p_ratio)
     sbratio = 0
     sbratio_err = 0
     if not predict_bkg==0 and not data_SR==0:
@@ -1163,6 +1266,10 @@ Hist_e2p = []
 legend_e2p = []
 color_e2p = []
 
+Hist_ruo_predict = []
+legend_ruo_predict = []
+color_ruo_predict = []
+
 Hist_dark_predict = []
 legend_dark_predict = []
 color_dark_predict = []
@@ -1182,16 +1289,6 @@ for s in range(0,len(source_list)):
         if Azim_lower_cut>=180: tele_pointing = '(west)'
         if Azim_upper_cut<=180: tele_pointing = '(east)'
         source = source_list[s]
-        Hist_e2p += [ROOT.TH1D("Hist_e2p_%s"%(source),"",len(energy_list)-1,array('d',energy_list))]
-        legend_e2p += ['%s %s'%(source,tele_pointing)]
-        Hist_dark_predict += [ROOT.TH1D("Hist_dark_predict_%s"%(source),"",len(energy_list)-1,array('d',energy_list))]
-        legend_dark_predict += ['%s %s'%(source,tele_pointing)]
-        if s+elev<4:
-            color_e2p += [s+elev+1]
-            color_dark_predict += [s+elev+1]
-        else:
-            color_e2p += [s+elev+2]
-            color_dark_predict += [s+elev+2]
 
         ErecS_lower_cut = 0
         ErecS_upper_cut = 1e10
@@ -1211,6 +1308,20 @@ for s in range(0,len(source_list)):
         energy_vec = InfoTree.energy_vec
         exposure_hours = InfoTree.exposure_hours
 
+        Hist_e2p += [ROOT.TH1D("Hist_e2p_%s"%(source),"",len(energy_list)-1,array('d',energy_list))]
+        legend_e2p += ['%s %s (%0.1f hrs)'%(source,tele_pointing,exposure_hours)]
+        Hist_ruo_predict += [ROOT.TH1D("Hist_ruo_predict_%s"%(source),"",len(energy_list)-1,array('d',energy_list))]
+        legend_ruo_predict += ['%s %s (%0.1f hrs)'%(source,tele_pointing,exposure_hours)]
+        Hist_dark_predict += [ROOT.TH1D("Hist_dark_predict_%s"%(source),"",len(energy_list)-1,array('d',energy_list))]
+        legend_dark_predict += ['%s %s (%0.1f hrs)'%(source,tele_pointing,exposure_hours)]
+        if s+elev<4:
+            color_e2p += [s+elev+1]
+            color_ruo_predict += [s+elev+1]
+            color_dark_predict += [s+elev+1]
+        else:
+            color_e2p += [s+elev+2]
+            color_ruo_predict += [s+elev+2]
+            color_dark_predict += [s+elev+2]
 
         Hist_Target_TelElevAzim = SelectDiagnosticaHistograms(folder,source,'Target_TelElevAzim',False)
         Make2DProjectionPlot(Hist_Target_TelElevAzim,'Elev','Azim','Target_TelElevAzim',False)
@@ -1225,12 +1336,12 @@ for s in range(0,len(source_list)):
 
             which_method = 'MSCW'
 
-            Hist_Target_SR_MSCL = SelectDiagnosticaHistograms(folder,source,'Target_SR_MSCL',False)
-            Hist_Target_Deconv_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_Deconv_MSCW',False)
-            Hist_Target_MSCLW = SelectDiagnosticaHistograms(folder,source,'Target_MSCLW',False)
-
-            Make2DProjectionPlot(Hist_Target_MSCLW,'MSCL','MSCW','Target_MSCLW_E%s'%(ErecS_lower_cut),False)
-            #Make2DProjectionPlot(Hist_Target_MSCLW,'MSL','MSW','Target_MSCLW_E%s'%(ErecS_lower_cut),False)
+            if doMSCW:
+                Hist_Target_SR_MSCL = SelectDiagnosticaHistograms(folder,source,'Target_SR_MSCL',False)
+                Hist_Target_Deconv_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_Deconv_MSCW',False)
+                Hist_Target_MSCLW = SelectDiagnosticaHistograms(folder,source,'Target_MSCLW',False)
+                Make2DProjectionPlot(Hist_Target_MSCLW,'MSCL','MSCW','Target_MSCLW_E%s'%(ErecS_lower_cut),False)
+                #Make2DProjectionPlot(Hist_Target_MSCLW,'MSL','MSW','Target_MSCLW_E%s'%(ErecS_lower_cut),False)
 
             if doMSCW:
                 Hist_Target_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_SR1_MSCW_Sum',False)
@@ -1287,13 +1398,26 @@ for s in range(0,len(source_list)):
                 legends = []
                 colors = []
                 count = 0
-                plotname = 'Target_SR_MSCW_E%s'%(ErecS_lower_cut)
+                plotname = 'Target_MultiSR_MSCW_E%s'%(ErecS_lower_cut)
                 title = 'MSCW'
                 for sr in SRs_included:
                     Hist_Target_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_SR%s_MSCW_Sum'%(sr),False)
                     Hists += [Hist_Target_SR_MSCW]
                     count += 1
-                    legends += ['%s'%(count)]
+                    legends += ['L-%s'%(count-1)]
+                    colors += [count]
+                MakeComparisonPlot(Hists,legends,colors,title,plotname,0,False,True)
+                Hists = []
+                legends = []
+                colors = []
+                count = 0
+                plotname = 'Target_MultiBkgSR_MSCW_E%s'%(ErecS_lower_cut)
+                title = 'MSCW'
+                for sr in SRs_included:
+                    Hist_Target_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_BkgSR%s_MSCW_Sum'%(sr),False)
+                    Hists += [Hist_Target_SR_MSCW]
+                    count += 1
+                    legends += ['L-%s'%(count-1)]
                     colors += [count]
                 MakeComparisonPlot(Hists,legends,colors,title,plotname,0,False,True)
 
@@ -1435,46 +1559,6 @@ for s in range(0,len(source_list)):
                 title = 'theta2'
                 MakeComparisonPlot(Hists,legends,colors,title,plotname,0,False,False)
 
-        if doRaDec:
-            ErecS_lower_cut = energy_list[0]
-            ErecS_upper_cut = energy_list[1]
-            Hist_Target_SRall_RaDec = SelectDiagnosticaHistograms(folder,source,'Target_SR1_RaDec',False)
-            Hist_Target_BkgSRall_RaDec = SelectDiagnosticaHistograms(folder,source,'Target_CR1_RaDec',False)
-            Hist_Target_SRall_RaDec.Reset()
-            Hist_Target_BkgSRall_RaDec.Reset()
-            smooth_size = 0.1
-            ideal_nbins = 32.*(2./smooth_size)
-            plotname = 'Target_SR_RaDec_E%s'%(ErecS_lower_cut)
-            while Hist_Target_SRall_RaDec.GetNbinsX()>ideal_nbins:
-                Hist_Target_SRall_RaDec.Rebin2D(2,2)
-                Hist_Target_BkgSRall_RaDec.Rebin2D(2,2)
-            for e in range(0,len(energy_list)-1):
-                ErecS_lower_cut = energy_list[e]
-                ErecS_upper_cut = energy_list[e+1]
-                for sr in SRs_included:
-                    Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,source,'Target_CR%s_theta2'%(sr),False)
-                    Hist_Target_BkgSR_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_BkgSR%s_MSCW_Sum'%(sr),False)
-                    scalesky, scalesky_err = GetSkyScaleFactor(Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_Target_Bkg_theta2)
-                    Hist_Target_SR_RaDec = SelectDiagnosticaHistograms(folder,source,'Target_SR%s_RaDec'%(sr),False)
-                    Hist_Target_Bkg_RaDec = SelectDiagnosticaHistograms(folder,source,'Target_CR%s_RaDec'%(sr),False)
-                    while Hist_Target_SR_RaDec.GetNbinsX()>ideal_nbins:
-                        Hist_Target_SR_RaDec.Rebin2D(2,2)
-                        Hist_Target_Bkg_RaDec.Rebin2D(2,2)
-                    Hist_e2p_SR_MSCW = SelectDiagnosticaHistograms(e2p_folder,e2p_source,'Target_SR%s_MSCW_Sum'%(sr),True)
-                    Hist_e2p_BkgSR_MSCW = SelectDiagnosticaHistograms(e2p_folder,e2p_source,'Target_BkgSR%s_MSCW_Sum'%(sr),True)
-                    e2p_ratio = 0
-                    e2p_error = 0
-                    e2p_ratio, e2p_error = S2B_ratio(Hist_e2p_SR_MSCW,Hist_e2p_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
-                    if 1.0*e2p_error>=e2p_ratio:
-                        e2p_ratio = 0
-                        e2p_error = 0
-                    RaDecHistScale(Hist_Target_Bkg_RaDec,scalesky,scalesky_err)
-                    RaDecHistScale(Hist_Target_Bkg_RaDec,e2p_ratio+1.,e2p_error)
-                    Hist_Target_SRall_RaDec.Add(Hist_Target_SR_RaDec)
-                    Hist_Target_BkgSRall_RaDec.Add(Hist_Target_Bkg_RaDec)
-            Hist_Target_SRall_RaDec_smooth = Smooth2DMap(Hist_Target_SRall_RaDec,smooth_size,False)
-            Hist_Target_BkgSRall_RaDec_smooth = Smooth2DMap(Hist_Target_BkgSRall_RaDec,smooth_size,False)
-            Make2DSignificancePlot(Hist_Target_SRall_RaDec_smooth,Hist_Target_BkgSRall_RaDec_smooth,'RA','Dec',plotname)
 
         for run in range(0,len(used_runs)):
             print 'using run %s'%(used_runs[run])
@@ -1490,17 +1574,28 @@ for s in range(0,len(source_list)):
             Hist_Target_BkgSR_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_BkgSR_MSCW_Sum_Combined',False)
             s2b = 0.
             s2b_err = 0.
-            #s2b, s2b_err = S2B_ratio(Hist_Target_SR_MSCW, Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
-            s2b, s2b_err = Variation_ratio(Hist_Target_SR_MSCW, Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
-            d2b, d2b_err = Variation_ratio(Hist_Target_SR_MSCW, Hist_Dark_SR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
+            s2b, s2b_err = S2B_ratio(Hist_Target_SR_MSCW, Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
+            Hist_e2p_SR_MSCW = SelectDiagnosticaHistograms(e2p_folder,e2p_source,'Target_SR_MSCW_Sum_Combined',True)
+            Hist_e2p_BkgSR_MSCW = SelectDiagnosticaHistograms(e2p_folder,e2p_source,'Target_BkgSR_MSCW_Sum_Combined',True)
+            e2p_ratio = 0
+            e2p_error = 0
+            e2p_ratio, e2p_error = S2B_ratio(Hist_e2p_SR_MSCW,Hist_e2p_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
+            if 1.0*e2p_error>=e2p_ratio:
+                e2p_ratio = 0
+                e2p_error = 0
+            r2b, r2b_err = Variation_ratio(Hist_Target_SR_MSCW, Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1,e2p_ratio)
+            d2b, d2b_err = Variation_ratio(Hist_Target_SR_MSCW, Hist_Dark_SR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1,0)
             print 'E %s-%s, S/B = %0.3f +/- %0.3f'%(ErecS_lower_cut,ErecS_upper_cut,s2b,s2b_err)
             Hist_e2p[len(Hist_e2p)-1].SetBinContent(e+1,s2b)
             Hist_e2p[len(Hist_e2p)-1].SetBinError(e+1,s2b_err)
+            Hist_ruo_predict[len(Hist_ruo_predict)-1].SetBinContent(e+1,r2b)
+            Hist_ruo_predict[len(Hist_ruo_predict)-1].SetBinError(e+1,r2b_err)
             Hist_dark_predict[len(Hist_dark_predict)-1].SetBinContent(e+1,d2b)
             Hist_dark_predict[len(Hist_dark_predict)-1].SetBinError(e+1,d2b_err)
 
-MakeComparisonPlot(Hist_e2p,legend_e2p,color_e2p,'E [GeV]','Target_e2p_ratio',1.4,True,False)
-MakeComparisonPlot(Hist_dark_predict,legend_dark_predict,color_dark_predict,'E [GeV]','Dark_predict_ratio',1.4,True,False)
+MakeComparisonPlot(Hist_e2p,legend_e2p,color_e2p,'E [GeV]','Target_e2p_ratio',0.5,True,False)
+MakeComparisonPlotNoRatio(Hist_ruo_predict,legend_ruo_predict,color_ruo_predict,'E [GeV]','Ruo_predict_ratio',0.6,1.4,True,False)
+MakeComparisonPlotNoRatio(Hist_dark_predict,legend_dark_predict,color_dark_predict,'E [GeV]','Dark_predict_ratio',0.6,1.4,True,False)
 
 for e in range(0,len(energy_list)-1):
     Hist_mscw = []
@@ -1546,3 +1641,56 @@ for e in range(0,len(energy_list)-1):
             Hist_mscw += [Hist_Target_SR_MSCW_Combined]
     plotname = 'Target_MultiSource_MSCW_E%s'%(ErecS_lower_cut)
     MakeComparisonPlot(Hist_mscw,legend_mscw,color_mscw,'MSCW',plotname,0,False,True)
+
+if doRaDec:
+    source = source_list[0]
+    ErecS_lower_cut = energy_list[0]
+    ErecS_upper_cut = energy_list[1]
+    Hist_Target_SRall_RaDec = SelectDiagnosticaHistograms(folder,source,'Target_SR1_RaDec',False)
+    Hist_Target_BkgSRall_RaDec = SelectDiagnosticaHistograms(folder,source,'Target_CR1_RaDec',False)
+    Hist_Target_SRall_RaDec.Reset()
+    Hist_Target_BkgSRall_RaDec.Reset()
+    for s in range(0,len(source_list)):
+        for elev in range(0,len(Elev_lower_list)):
+            Elev_lower_cut = Elev_lower_list[elev]
+            Elev_upper_cut = Elev_upper_list[elev]
+            Azim_lower_cut = Azim_lower_list[elev]
+            Azim_upper_cut = Azim_upper_list[elev]
+            tele_pointing = ''
+            if Elev_lower_cut>=70: tele_pointing = '(up)'
+            if Elev_upper_cut<=70: tele_pointing = '(down)'
+            if Azim_lower_cut>=180: tele_pointing = '(west)'
+            if Azim_upper_cut<=180: tele_pointing = '(east)'
+            smooth_size = 0.1
+            ideal_nbins = 32.*(2./smooth_size)
+            plotname = 'Target_SR_RaDec_E%s'%(ErecS_lower_cut)
+            while Hist_Target_SRall_RaDec.GetNbinsX()>ideal_nbins:
+                Hist_Target_SRall_RaDec.Rebin2D(2,2)
+                Hist_Target_BkgSRall_RaDec.Rebin2D(2,2)
+            for e in range(0,len(energy_list)-1):
+                ErecS_lower_cut = energy_list[e]
+                ErecS_upper_cut = energy_list[e+1]
+                for sr in SRs_included:
+                    Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,source,'Target_CR%s_theta2'%(sr),False)
+                    Hist_Target_BkgSR_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_BkgSR%s_MSCW_Sum'%(sr),False)
+                    scalesky, scalesky_err = GetSkyScaleFactor(Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_Target_Bkg_theta2)
+                    Hist_Target_SR_RaDec = SelectDiagnosticaHistograms(folder,source,'Target_SR%s_RaDec'%(sr),False)
+                    Hist_Target_Bkg_RaDec = SelectDiagnosticaHistograms(folder,source,'Target_CR%s_RaDec'%(sr),False)
+                    while Hist_Target_SR_RaDec.GetNbinsX()>ideal_nbins:
+                        Hist_Target_SR_RaDec.Rebin2D(2,2)
+                        Hist_Target_Bkg_RaDec.Rebin2D(2,2)
+                    Hist_e2p_SR_MSCW = SelectDiagnosticaHistograms(e2p_folder,e2p_source,'Target_SR%s_MSCW_Sum'%(sr),True)
+                    Hist_e2p_BkgSR_MSCW = SelectDiagnosticaHistograms(e2p_folder,e2p_source,'Target_BkgSR%s_MSCW_Sum'%(sr),True)
+                    e2p_ratio = 0
+                    e2p_error = 0
+                    e2p_ratio, e2p_error = S2B_ratio(Hist_e2p_SR_MSCW,Hist_e2p_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
+                    if 1.0*e2p_error>=e2p_ratio:
+                        e2p_ratio = 0
+                        e2p_error = 0
+                    RaDecHistScale(Hist_Target_Bkg_RaDec,scalesky,scalesky_err)
+                    RaDecHistScale(Hist_Target_Bkg_RaDec,e2p_ratio+1.,e2p_error)
+                    Hist_Target_SRall_RaDec.Add(Hist_Target_SR_RaDec)
+                    Hist_Target_BkgSRall_RaDec.Add(Hist_Target_Bkg_RaDec)
+    Hist_Target_SRall_RaDec_smooth = Smooth2DMap(Hist_Target_SRall_RaDec,smooth_size,False)
+    Hist_Target_BkgSRall_RaDec_smooth = Smooth2DMap(Hist_Target_BkgSRall_RaDec,smooth_size,False)
+    Make2DSignificancePlot(Hist_Target_SRall_RaDec_smooth,Hist_Target_BkgSRall_RaDec_smooth,'RA','Dec',plotname)
