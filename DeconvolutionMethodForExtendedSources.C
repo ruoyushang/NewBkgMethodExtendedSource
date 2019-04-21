@@ -133,21 +133,18 @@ vector<int> used_runs;
 vector<double> energy_vec;
 double exposure_hours = 0.;
 
-//const int N_energy_bins = 16;
-//double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
-//int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,2   ,2   ,4   ,4   ,8   ,8};
-//const int N_energy_bins = 11;
-//double energy_bins[N_energy_bins+1] =     {200,282,398,562,794,1122,1585,2239,3162,4467,6310,8913};
-//int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,2  ,2  ,2   ,2   ,4   ,4   ,8   ,64};
+const int N_energy_bins = 11;
+double energy_bins[N_energy_bins+1] =     {200,282,398,562,794,1122,1585,2239,3162,4467,6310,8913};
+int number_runs_included[N_energy_bins] = {2  ,2  ,2  ,2  ,2  ,4   ,4   ,8   ,8   ,16  ,64};
 //const int N_energy_bins = 6;
 //double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
 //int number_runs_included[N_energy_bins] = {4   ,4   ,8   ,8   ,16   ,64};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] =     {1122,1585};
-//int number_runs_included[N_energy_bins] = {2};
-const int N_energy_bins = 1;
-double energy_bins[N_energy_bins+1] =     {2239,3162};
-int number_runs_included[N_energy_bins] = {4};
+//int number_runs_included[N_energy_bins] = {4};
+//const int N_energy_bins = 1;
+//double energy_bins[N_energy_bins+1] =     {2239,3162};
+//int number_runs_included[N_energy_bins] = {4};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] =     {398,562};
 //int number_runs_included[N_energy_bins] = {1};
@@ -654,11 +651,11 @@ double FindNIteration(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTe
     TF1 *func = new TF1("func",Kernel,-50.,50.,1);
     func->SetParameter(0,0.5);
     int nbins = Hist_SR->GetNbinsX();
-    for (int delta_n_iter = 0;delta_n_iter<=20;delta_n_iter++) {
+    for (int delta_n_iter = 0;delta_n_iter<=10;delta_n_iter++) {
           int n_iter = n_iter_begin;
           //if (!includeSR) n_iter = n_iter_begin-delta_n_iter;
           //else n_iter = n_iter_begin-10+delta_n_iter;
-          n_iter = n_iter_begin-10+delta_n_iter;
+          n_iter = n_iter_begin-4+delta_n_iter;
           //if (nbins==480 && n_iter<=4) n_iter = 4;
           //if (nbins==240 && n_iter<=1) n_iter = 1;
           if (n_iter<=1) n_iter = 1;
@@ -1147,7 +1144,7 @@ vector<int> FindRunSublist(string source, vector<int> Target_runlist, vector<int
         }
         return sublist;
 }
-void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower, double elev_upper, double azim_lower, double azim_upper, double theta2_cut_lower_input, double theta2_cut_upper_input, double MSCW_cut_blind_input, double MSCW_cut_upper_input, double MSCW_cut_lower_input,bool DoConverge) {
+void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int NTelMax, double elev_lower, double elev_upper, double azim_lower, double azim_upper, double theta2_cut_lower_input, double theta2_cut_upper_input, double MSCW_cut_blind_input, double MSCW_cut_upper_input, double MSCW_cut_lower_input,bool DoConverge) {
 
         //TH1::SetDefaultSumw2();
         sprintf(target, "%s", target_data.c_str());
@@ -1454,7 +1451,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
 #endif
                     int energy = Hist_Target_SR_ErecS.at(0).FindBin(ErecS*1000.)-1;
                     if (e!=energy) continue;
-                    if (!SelectNImages(3,4)) continue;
+                    if (!SelectNImages(NTelMin,NTelMax)) continue;
                     if (FoV()) {
                             if (SignalSelectionMSCL()) 
                             {
@@ -1649,7 +1646,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                                 Hist_Target_OFF_MSCW_Alpha.Fill(MSCW);
                             }
                         }
-                        if (!SelectNImages(3,4)) continue;
+                        if (!SelectNImages(NTelMin,NTelMax)) continue;
                         if (FoV()) {
                                 if (SignalSelectionMSCL()) 
                                 {
@@ -1717,12 +1714,12 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
                     std::cout << "Target, e " << energy_bins[e] << ", mean_begin = " << mean_begin << std::endl;
                     std::cout << "Target, e " << energy_bins[e] << ", rms_begin = " << rms_begin << std::endl;
 
-                    N_iter.at(e) = FindNIteration(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_CR_MSCW.at(e).at(c1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),rms_begin,mean_begin,20,true);
+                    N_iter.at(e) = FindNIteration(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_CR_MSCW.at(e).at(c1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),rms_begin,mean_begin,5,true);
                     std::cout << "Target, e " << energy_bins[e] << ", N_iter.at(e) = " << N_iter.at(e) << std::endl;
                     N_rms.at(e) = FindRMS(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_CR_MSCW.at(e).at(c1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),rms_begin,mean_begin,N_iter.at(e),true);
                     std::cout << "Target, e " << energy_bins[e] << ", N_rms.at(e) = " << N_rms.at(e) << std::endl;
 
-                    N_iter.at(e) = FindNIteration(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_CR_MSCW.at(e).at(c1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),true);
+                    //N_iter.at(e) = FindNIteration(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_CR_MSCW.at(e).at(c1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),true);
                     std::cout << "Target, e " << energy_bins[e] << ", N_iter.at(e) = " << N_iter.at(e) << std::endl;
                     N_rms.at(e) = FindRMS(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_CR_MSCW.at(e).at(c1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),N_rms.at(e),mean_begin,N_iter.at(e),true);
                     std::cout << "Target, e " << energy_bins[e] << ", N_rms.at(e) = " << N_rms.at(e) << std::endl;
@@ -1886,7 +1883,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, double elev_lower
         int Number_of_SR_new = Number_of_SR;
         TString ConvergeOrNot = "";
         if (!DoConverge) ConvergeOrNot = "_NoConverge";
-        TFile OutputFile("output_Apr19/Deconvolution_"+TString(target)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate"); 
+        TFile OutputFile("output_Apr20/Deconvolution_"+TString(target)+"_Ntel"+std::to_string(NTelMin)+"to"+std::to_string(NTelMax)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate"); 
         TTree InfoTree("InfoTree","info tree");
         InfoTree.Branch("Number_of_CR",&Number_of_CR_new,"Number_of_CR/I");
         InfoTree.Branch("Number_of_SR",&Number_of_SR_new,"Number_of_SR/I");
