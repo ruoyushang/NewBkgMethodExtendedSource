@@ -146,10 +146,10 @@ const int N_energy_bins = 1;
 double energy_bins[N_energy_bins+1] =     {1122,1585};
 int number_runs_included[N_energy_bins] = {2};
 //const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] =     {2239,3162};
-//int number_runs_included[N_energy_bins] = {4};
+//double energy_bins[N_energy_bins+1] =     {6310,8913};
+//int number_runs_included[N_energy_bins] = {8};
 //const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] =     {398,562};
+//double energy_bins[N_energy_bins+1] =     {282,398};
 //int number_runs_included[N_energy_bins] = {1};
 
 int N_bins_for_deconv = 480;
@@ -258,6 +258,7 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR) {
         if (!includeSR && Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind) {
             continue;
         }
+        if (Hist_Bkg->GetBinCenter(i+1)<mean) continue;
         if ((data_err*data_err+bkg_err*bkg_err)==0) continue;
         chi2_temp += pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
     }
@@ -649,7 +650,8 @@ void Deconvolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Deconv, int n
 
 double FindNIteration(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTemp, TH1* Hist_Deconv, double rms, double mean, int n_iter_begin, bool includeSR) {
     //return 3;
-    return 4;
+    //return 4;
+    return 5;
     //double integral = (double)Hist_SR->Integral();
     //double RMS = (double)Hist_SR->GetRMS();
     //double bin_width = Hist_SR->GetBinLowEdge(2) - Hist_SR->GetBinLowEdge(1);
@@ -1201,10 +1203,10 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         vector<vector<TH2D>> Hist_Target_SR_RaDec;
         vector<vector<TH2D>> Hist_Target_CR_RaDec;
         vector<vector<TH1D>> Hist_Target_SR_MSCW;
-        vector<vector<TH1D>> Hist_Target_SR_MSCW_Sum;
+        vector<vector<TH1D>> Hist_Target_SR_MSCW_SumRuns;
         vector<vector<TH1D>> Hist_Target_CR_MSCW;
-        vector<vector<TH1D>> Hist_Target_CR_MSCW_Sum;
-        vector<TH1D> Hist_Target_SR_MSCW_Sum_Combined;
+        vector<vector<TH1D>> Hist_Target_CR_MSCW_SumRuns;
+        vector<TH1D> Hist_Target_SR_MSCW_SumRuns_SumSRs;
         vector<TH1D> Hist_Target_SR_MSCL;
         vector<TH1D> Hist_Target_BkgTemp_MSCW;
         vector<TH1D> Hist_Target_BkgPrevious_MSCW;
@@ -1212,9 +1214,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         vector<vector<TH1D>> Hist_Target_BkgSR_MSCW_AllCR;
         vector<double> Weight_Target_BkgSR_MSCW_AllCR;
         vector<vector<TH1D>> Hist_Target_BkgCR_MSCW;
-        vector<vector<TH1D>> Hist_Target_BkgSR_MSCW_Sum;
-        vector<vector<TH1D>> Hist_Target_BkgCR_MSCW_Sum;
-        vector<TH1D> Hist_Target_BkgSR_MSCW_Sum_Combined;
+        vector<vector<TH1D>> Hist_Target_BkgSR_MSCW_SumRuns;
+        vector<vector<TH1D>> Hist_Target_BkgCR_MSCW_SumRuns;
+        vector<TH1D> Hist_Target_BkgSR_MSCW_SumRuns_SumSRs;
         vector<TH1D> Hist_Target_Deconv_MSCW;
         vector<TH2D> Hist_Target_MSCLW;
         for (int e=0;e<=N_energy_bins;e++) {
@@ -1253,14 +1255,14 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
             Hist_Target_MSCLW.push_back(TH2D("Hist_Target_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],100,-1,15));
             }
             vector<TH1D> Hist_Target_ThisE_SR_MSCW;
-            vector<TH1D> Hist_Target_ThisE_SR_MSCW_Sum;
+            vector<TH1D> Hist_Target_ThisE_SR_MSCW_SumRuns;
             vector<TH1D> Hist_Target_ThisE_BkgSR_MSCW;
             vector<TH1D> Hist_Target_ThisE_BkgSR_MSCW_AllCR;
-            vector<TH1D> Hist_Target_ThisE_BkgSR_MSCW_Sum;
+            vector<TH1D> Hist_Target_ThisE_BkgSR_MSCW_SumRuns;
             vector<TH1D> Hist_Target_ThisE_CR_MSCW;
-            vector<TH1D> Hist_Target_ThisE_CR_MSCW_Sum;
+            vector<TH1D> Hist_Target_ThisE_CR_MSCW_SumRuns;
             vector<TH1D> Hist_Target_ThisE_BkgCR_MSCW;
-            vector<TH1D> Hist_Target_ThisE_BkgCR_MSCW_Sum;
+            vector<TH1D> Hist_Target_ThisE_BkgCR_MSCW_SumRuns;
             vector<TH1D> Hist_Target_ThisE_SR_theta2;
             vector<TH1D> Hist_Dark_ThisE_SR_theta2;
             vector<TH1D> Hist_DarkLZA_ThisE_SR_theta2;
@@ -1278,10 +1280,10 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                 char nsr[50];
                 sprintf(nsr, "%i", int(s+1));
                 Hist_Target_ThisE_SR_MSCW.push_back(TH1D("Hist_Target_SR"+TString(nsr)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-                Hist_Target_ThisE_SR_MSCW_Sum.push_back(TH1D("Hist_Target_SR"+TString(nsr)+"_MSCW_Sum_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_Target_ThisE_SR_MSCW_SumRuns.push_back(TH1D("Hist_Target_SR"+TString(nsr)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_BkgSR_MSCW.push_back(TH1D("Hist_Target_BkgSR"+TString(nsr)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_BkgSR_MSCW_AllCR.push_back(TH1D("Hist_Target_BkgSR"+TString(nsr)+"_MSCW_AllCR_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-                Hist_Target_ThisE_BkgSR_MSCW_Sum.push_back(TH1D("Hist_Target_BkgSR"+TString(nsr)+"_MSCW_Sum_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_Target_ThisE_BkgSR_MSCW_SumRuns.push_back(TH1D("Hist_Target_BkgSR"+TString(nsr)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_SR_theta2.push_back(TH1D("Hist_Target_SR"+TString(nsr)+"_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,Theta2_upper_limit));
                 Hist_Dark_ThisE_SR_theta2.push_back(TH1D("Hist_Dark_SR"+TString(nsr)+"_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,Theta2_upper_limit));
                 Hist_DarkLZA_ThisE_SR_theta2.push_back(TH1D("Hist_DarkLZA_SR"+TString(nsr)+"_theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,Theta2_upper_limit));
@@ -1296,10 +1298,10 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                 Hist_Target_ThisE_CR_RaDec.push_back(TH2D("Hist_Target_CR"+TString(nsr)+"_RaDec_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",100,-2,2,100,-2,2));
             }
             Hist_Target_SR_MSCW.push_back(Hist_Target_ThisE_SR_MSCW);
-            Hist_Target_SR_MSCW_Sum.push_back(Hist_Target_ThisE_SR_MSCW_Sum);
+            Hist_Target_SR_MSCW_SumRuns.push_back(Hist_Target_ThisE_SR_MSCW_SumRuns);
             Hist_Target_BkgSR_MSCW.push_back(Hist_Target_ThisE_BkgSR_MSCW);
             Hist_Target_BkgSR_MSCW_AllCR.push_back(Hist_Target_ThisE_BkgSR_MSCW_AllCR);
-            Hist_Target_BkgSR_MSCW_Sum.push_back(Hist_Target_ThisE_BkgSR_MSCW_Sum);
+            Hist_Target_BkgSR_MSCW_SumRuns.push_back(Hist_Target_ThisE_BkgSR_MSCW_SumRuns);
             Hist_Target_SR_theta2.push_back(Hist_Target_ThisE_SR_theta2);
             Hist_Dark_SR_theta2.push_back(Hist_Dark_ThisE_SR_theta2);
             Hist_DarkLZA_SR_theta2.push_back(Hist_DarkLZA_ThisE_SR_theta2);
@@ -1312,21 +1314,21 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
             Hist_TargetSZA_CR_theta2.push_back(Hist_TargetSZA_ThisE_CR_theta2);
             Hist_Target_SR_RaDec.push_back(Hist_Target_ThisE_SR_RaDec);
             Hist_Target_CR_RaDec.push_back(Hist_Target_ThisE_CR_RaDec);
-            Hist_Target_SR_MSCW_Sum_Combined.push_back(TH1D("Hist_Target_SR_MSCW_Sum_Combined_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-            Hist_Target_BkgSR_MSCW_Sum_Combined.push_back(TH1D("Hist_Target_BkgSR_MSCW_Sum_Combined_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+            Hist_Target_SR_MSCW_SumRuns_SumSRs.push_back(TH1D("Hist_Target_SR_MSCW_SumRuns_SumSRs_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+            Hist_Target_BkgSR_MSCW_SumRuns_SumSRs.push_back(TH1D("Hist_Target_BkgSR_MSCW_SumRuns_SumSRs_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             for (int s=0;s<Number_of_CR;s++)
             {
                 char nCR[50];
                 sprintf(nCR, "%i", int(s+1));
                 Hist_Target_ThisE_CR_MSCW.push_back(TH1D("Hist_Target_CR"+TString(nCR)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-                Hist_Target_ThisE_CR_MSCW_Sum.push_back(TH1D("Hist_Target_CR"+TString(nCR)+"_MSCW_Sum_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_Target_ThisE_CR_MSCW_SumRuns.push_back(TH1D("Hist_Target_CR"+TString(nCR)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_BkgCR_MSCW.push_back(TH1D("Hist_Target_BkgCR"+TString(nCR)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-                Hist_Target_ThisE_BkgCR_MSCW_Sum.push_back(TH1D("Hist_Target_BkgCR"+TString(nCR)+"_MSCW_Sum_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_Target_ThisE_BkgCR_MSCW_SumRuns.push_back(TH1D("Hist_Target_BkgCR"+TString(nCR)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             }
             Hist_Target_CR_MSCW.push_back(Hist_Target_ThisE_CR_MSCW);
-            Hist_Target_CR_MSCW_Sum.push_back(Hist_Target_ThisE_CR_MSCW_Sum);
+            Hist_Target_CR_MSCW_SumRuns.push_back(Hist_Target_ThisE_CR_MSCW_SumRuns);
             Hist_Target_BkgCR_MSCW.push_back(Hist_Target_ThisE_BkgCR_MSCW);
-            Hist_Target_BkgCR_MSCW_Sum.push_back(Hist_Target_ThisE_BkgCR_MSCW_Sum);
+            Hist_Target_BkgCR_MSCW_SumRuns.push_back(Hist_Target_ThisE_BkgCR_MSCW_SumRuns);
         }
 
 
@@ -1768,8 +1770,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                     std::pair <double,double> converge = FindConverge(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e));
                     if (DoConverge) Converge(&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),converge.first,converge.second);
 
-                    Hist_Target_CR_MSCW_Sum.at(e).at(c1).Add(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1));
-                    Hist_Target_BkgCR_MSCW_Sum.at(e).at(c1).Add(&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1));
+                    Hist_Target_CR_MSCW_SumRuns.at(e).at(c1).Add(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1));
+                    Hist_Target_BkgCR_MSCW_SumRuns.at(e).at(c1).Add(&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1));
 
                     N_mean.at(e) = mean_begin;
 
@@ -1865,9 +1867,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                 }
                 for (int s=0;s<Number_of_SR;s++)
                 {
-                    Hist_Target_SR_MSCW_Sum.at(e).at(s).Add(&Hist_Target_SR_MSCW.at(e).at(s));
-                    Hist_Target_SR_MSCW_Sum_Combined.at(e).Add(&Hist_Target_SR_MSCW.at(e).at(s));
-                    Hist_Target_BkgSR_MSCW_Sum.at(e).at(s).Add(&Hist_Target_BkgSR_MSCW_AllCR.at(e).at(s)); // this is summing over sublist, errors are not correlated.
+                    Hist_Target_SR_MSCW_SumRuns.at(e).at(s).Add(&Hist_Target_SR_MSCW.at(e).at(s));
+                    Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).Add(&Hist_Target_SR_MSCW.at(e).at(s));
+                    Hist_Target_BkgSR_MSCW_SumRuns.at(e).at(s).Add(&Hist_Target_BkgSR_MSCW_AllCR.at(e).at(s)); // this is summing over sublist, errors are not correlated.
                 }
                 for (int run=0;run<Sublist.size();run++)
                 {
@@ -1875,7 +1877,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                 }
                 for (int s=0;s<Number_of_SR;s++)
                 {
-                    std::cout << "Hist_Target_BkgSR_MSCW_Sum.at(e).at("<< s<< ").Integral() = " << Hist_Target_BkgSR_MSCW_Sum.at(e).at(s).Integral() << std::endl;
+                    std::cout << "Hist_Target_BkgSR_MSCW_SumRuns.at(e).at("<< s<< ").Integral() = " << Hist_Target_BkgSR_MSCW_SumRuns.at(e).at(s).Integral() << std::endl;
                 }
             }
         }
@@ -1883,7 +1885,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         {
             for (int s=0;s<Number_of_SR;s++)
             {
-                Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).Add(&Hist_Target_BkgSR_MSCW_Sum.at(e).at(s));
+                Hist_Target_BkgSR_MSCW_SumRuns_SumSRs.at(e).Add(&Hist_Target_BkgSR_MSCW_SumRuns.at(e).at(s));
             }
         }
 
@@ -1927,12 +1929,12 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                 Hist_Target_SR_MSCL.at(e).Write();
                 Hist_Target_Deconv_MSCW.at(e).Write();
                 Hist_Target_MSCLW.at(e).Write();
-                Hist_Target_SR_MSCW_Sum_Combined.at(e).Write();
-                Hist_Target_BkgSR_MSCW_Sum_Combined.at(e).Write();
+                Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).Write();
+                Hist_Target_BkgSR_MSCW_SumRuns_SumSRs.at(e).Write();
                 for (int s=0;s<Number_of_SR;s++)
                 {
-                    Hist_Target_SR_MSCW_Sum.at(e).at(s).Write();
-                    Hist_Target_BkgSR_MSCW_Sum.at(e).at(s).Write();
+                    Hist_Target_SR_MSCW_SumRuns.at(e).at(s).Write();
+                    Hist_Target_BkgSR_MSCW_SumRuns.at(e).at(s).Write();
                     Hist_Target_SR_theta2.at(e).at(s).Write();
                     Hist_Dark_SR_theta2.at(e).at(s).Write();
                     Hist_DarkLZA_SR_theta2.at(e).at(s).Write();
@@ -1948,8 +1950,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                 }
                 for (int s=0;s<Number_of_CR;s++)
                 {
-                    Hist_Target_CR_MSCW_Sum.at(e).at(s).Write();
-                    Hist_Target_BkgCR_MSCW_Sum.at(e).at(s).Write();
+                    Hist_Target_CR_MSCW_SumRuns.at(e).at(s).Write();
+                    Hist_Target_BkgCR_MSCW_SumRuns.at(e).at(s).Write();
                 }
         }
         OutputFile.Close();
