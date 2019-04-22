@@ -147,7 +147,7 @@ double energy_bins[N_energy_bins+1] =     {1122,1585};
 int number_runs_included[N_energy_bins] = {2};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] =     {6310,8913};
-//int number_runs_included[N_energy_bins] = {8};
+//int number_runs_included[N_energy_bins] = {32};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] =     {282,398};
 //int number_runs_included[N_energy_bins] = {1};
@@ -235,13 +235,8 @@ double GetChi2WithRange(TH1* Hist_SR, TH1* Hist_Bkg, double lower_end, double up
             continue;
         }
         if ((data_err*data_err+bkg_err*bkg_err)==0) continue;
-        if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_lower) {
-            chi2_temp += 1.*pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
-        }
-        else
-        {
-            chi2_temp += pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
-        }
+        //chi2_temp += pow(pow(bkg-data,2),0.5);
+        chi2_temp += pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
     }
     chi2_temp = 1./chi2_temp;
     return chi2_temp;
@@ -258,8 +253,8 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR) {
         if (!includeSR && Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind) {
             continue;
         }
-        if (Hist_Bkg->GetBinCenter(i+1)<mean) continue;
         if ((data_err*data_err+bkg_err*bkg_err)==0) continue;
+        //chi2_temp += pow(pow(bkg-data,2),0.5);
         chi2_temp += pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
     }
     chi2_temp = 1./chi2_temp;
@@ -397,7 +392,7 @@ double ConvergeFunction(double x, double threshold, double amplitude)
 
     if (x-(threshold+amplitude)>=0.) return 1.;
     if (x-(threshold)<0.) return 0.;
-    return pow((x-threshold)/amplitude,1);
+    return pow((x-threshold)/amplitude,2);
 
     //if (x-(threshold+2.*amplitude)>=0.) return 1.;
     //if (x-(threshold)<0.) return 0.;
@@ -429,31 +424,31 @@ double FindConvergeThreshold(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bkg_Temp, do
             double new_error = old_error*ConvergeFunction(Hist_Bkg->GetBinCenter(i+1),try_threshold,amplitude);
             Hist_Bkg_Temp->SetBinContent(i+1,new_content);
         }
-        //chi2 = GetChi2WithRange(Hist_SR, Hist_Bkg_Temp,MSCW_cut_lower,MSCW_cut_blind);
-        //if (chi2_best<chi2) {
-        //    chi2_best = chi2;
-        //    threshold = try_threshold;
-        //} 
-        double data_counts = 0.;
-        for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
-        {
-            if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_lower) continue;
-            if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_blind) continue;
-            data_counts += Hist_SR->GetBinContent(i+1);
-        }
-        double bkg_counts = 0.;
-        for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
-        {
-            if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_lower) continue;
-            if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_blind) continue;
-            bkg_counts += Hist_Bkg_Temp->GetBinContent(i+1);
-        }
-        if (bkg_counts-data_counts==0) continue;
-        norm = 1./pow(bkg_counts-data_counts,2);
-        if (norm_best<norm) {
-            norm_best = norm;
+        chi2 = GetChi2WithRange(Hist_SR, Hist_Bkg_Temp,MSCW_cut_lower,mean);
+        if (chi2_best<chi2) {
+            chi2_best = chi2;
             threshold = try_threshold;
         } 
+        //double data_counts = 0.;
+        //for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
+        //{
+        //    if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_lower) continue;
+        //    if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_blind) continue;
+        //    data_counts += Hist_SR->GetBinContent(i+1);
+        //}
+        //double bkg_counts = 0.;
+        //for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
+        //{
+        //    if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_lower) continue;
+        //    if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_blind) continue;
+        //    bkg_counts += Hist_Bkg_Temp->GetBinContent(i+1);
+        //}
+        //if (bkg_counts-data_counts==0) continue;
+        //norm = 1./pow(bkg_counts-data_counts,2);
+        //if (norm_best<norm) {
+        //    norm_best = norm;
+        //    threshold = try_threshold;
+        //} 
     }
     return threshold;
 }
@@ -548,6 +543,8 @@ std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bk
     //threshold = mean-1.7*rms;
     threshold = MSCW_cut_lower;
     amplitude = FindConvergeAmplitude(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,threshold,init_amplitude);
+    threshold = FindConvergeThreshold(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,amplitude);
+    amplitude = FindConvergeAmplitude(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,threshold,amplitude);
     std::cout << "found threshold = " << threshold << ", amplitude = " << amplitude << std::endl;
     return std::make_pair(threshold,amplitude);
 }
@@ -649,9 +646,9 @@ void Deconvolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Deconv, int n
 }
 
 double FindNIteration(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTemp, TH1* Hist_Deconv, double rms, double mean, int n_iter_begin, bool includeSR) {
-    //return 3;
+    return 3;
     //return 4;
-    return 5;
+    //return 5;
     //double integral = (double)Hist_SR->Integral();
     //double RMS = (double)Hist_SR->GetRMS();
     //double bin_width = Hist_SR->GetBinLowEdge(2) - Hist_SR->GetBinLowEdge(1);
@@ -1768,6 +1765,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                     offset_begin = Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
                     offset_begin = ShiftAndNormalize(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),offset_begin,true,true);
                     std::pair <double,double> converge = FindConverge(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e));
+                    double delta_threshold = Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1).GetMean()-converge.first;
+                    double new_threshold = Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1).GetMean()-delta_threshold;
                     if (DoConverge) Converge(&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),converge.first,converge.second);
 
                     Hist_Target_CR_MSCW_SumRuns.at(e).at(c1).Add(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1));
@@ -1799,6 +1798,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                     std::cout << "Target, e " << energy_bins[e] << ", final rms = " << Hist_Target_Deconv_MSCW.at(e).GetRMS() << std::endl;
                     offset_begin = Hist_Target_SR_MSCW.at(e).at(0).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
                     offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),offset_begin,true,false);
+                    delta_threshold = Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1).GetMean()-converge.first;
+                    new_threshold = Hist_Target_BkgSR_MSCW.at(e).at(0).GetMean()-delta_threshold;
                     if (DoConverge) Converge(&Hist_Target_BkgSR_MSCW.at(e).at(0),converge.first,converge.second);
                     //AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(0));
                     //AddSystematics(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgSR_MSCW.at(e).at(0));
@@ -1840,6 +1841,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                         std::cout << "Target, e " << energy_bins[e] << ", final rms = " << Hist_Target_Deconv_MSCW.at(e).GetRMS() << std::endl;
                         offset_begin = Hist_Target_SR_MSCW.at(e).at(s).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
                         offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(s),offset_begin,true,false);
+                        delta_threshold = Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1).GetMean()-converge.first;
+                        new_threshold = Hist_Target_BkgSR_MSCW.at(e).at(s).GetMean()-delta_threshold;
                         if (DoConverge) Converge(&Hist_Target_BkgSR_MSCW.at(e).at(s),converge.first,converge.second);
                         //AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(s));
                         //AddSystematics(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s));
