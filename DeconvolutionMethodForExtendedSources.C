@@ -397,7 +397,7 @@ double ConvergeFunction(double x, double threshold, double amplitude)
 
     if (x-(threshold+amplitude)>=0.) return 1.;
     if (x-(threshold)<0.) return 0.;
-    return pow((x-threshold)/amplitude,2);
+    return pow((x-threshold)/amplitude,1);
 
     //if (x-(threshold+2.*amplitude)>=0.) return 1.;
     //if (x-(threshold)<0.) return 0.;
