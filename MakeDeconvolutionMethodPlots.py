@@ -10,13 +10,14 @@ ROOT.TH1.SetDefaultSumw2()
 ROOT.TH1.AddDirectory(False) # without this, the histograms returned from a function will be non-type
 ROOT.gStyle.SetPaintTextFormat("0.3f")
 
-folder = 'output_Apr19'
+folder = 'output_Apr20'
 blindness = 'Deconvolution'
 converge = ''
 #converge = '_NoConverge'
+NTel = "_Ntel3to4"
 
-e2p_source = 'DarkField'
-e2p_folder = 'output_Apr16'
+e2p_source = 'Segue1V6'
+e2p_folder = 'output_Apr20'
 doTheta2 = False
 doRaDec = False
 doMSCW = True
@@ -27,11 +28,11 @@ source_list = []
 #source_list  += ['CrabV4']
 #source_list  += ['3C58']
 #source_list  += ['BrandonValidation']
-#source_list  += ['Segue1V6']
+source_list  += ['Segue1V6']
 #source_list  += ['PKS1424']
 #source_list  += ['Crab']
-source_list  += ['H1426']
-source_list  += ['3C264']
+#source_list  += ['H1426']
+#source_list  += ['3C264']
 #source_list  += ['Ton599']
 #source_list  += ['IC443HotSpot']
 #source_list  += ['DarkField']
@@ -47,8 +48,8 @@ Elev_lower_list = []
 Elev_upper_list = []
 Azim_lower_list = []
 Azim_upper_list = []
-Elev_lower_list += [50]
-Elev_upper_list += [90]
+Elev_lower_list += [73]
+Elev_upper_list += [75]
 Azim_lower_list += [0]
 Azim_upper_list += [360]
 #Elev_lower_list += [50]
@@ -101,11 +102,11 @@ energy_list = []
 #energy_list += [794]
 energy_list += [1122]
 energy_list += [1585]
-energy_list += [2239]
-energy_list += [3162]
-energy_list += [4467]
-energy_list += [6310]
-energy_list += [8913]
+#energy_list += [2239]
+#energy_list += [3162]
+#energy_list += [4467]
+#energy_list += [6310]
+#energy_list += [8913]
 
 Variable = ''
 xtitle = ''
@@ -126,9 +127,9 @@ def SelectDiagnosticaHistograms(folder,which_source,var,isOFF):
 
     theta2_lower = Theta2_lower_cut
     theta2_upper = Theta2_upper_cut
-    FilePath = '%s/%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s_%s%s.root'%(folder,blindness,which_source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,theta2_lower,theta2_upper,mscw_cut,mscw_blind,converge)
-    if isOFF:
-        FilePath = '%s/%s_%s_Elev50to90_Azim0to360_Theta22to100_%s_%s%s.root'%(folder,blindness,which_source,mscw_cut,mscw_blind,converge)
+    FilePath = '%s/%s_%s%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s_%s%s.root'%(folder,blindness,which_source,NTel,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,theta2_lower,theta2_upper,mscw_cut,mscw_blind,converge)
+    #if isOFF:
+    #    FilePath = '%s/%s_%s%s_Elev50to90_Azim0to360_Theta22to100_%s_%s%s.root'%(folder,blindness,which_source,NTel,mscw_cut,mscw_blind,converge)
     InputFile=ROOT.TFile(FilePath)
     
     HistList = InputFile.GetListOfKeys()
@@ -310,7 +311,7 @@ def MakeComparisonPlotNoRatio(Hists,legends,colors,title,name,minheight,maxheigh
         pad1.SetLogx()
 
     pad2.cd()
-    Hist_Sig = ROOT.TH1D("Hist_Sig","",20,-8,8)
+    Hist_Sig = ROOT.TH1D("Hist_Sig","",32,-8,8)
     for h in range(0,len(Hists)):
         for b in range(0,Hists[h].GetNbinsX()):
             if not Hists[h].GetBinError(b+1)==0:
@@ -512,6 +513,89 @@ def MakeGaussianPlot(Hists,legends,colors,title,name,doSum,doNorm):
     legend.Draw("SAME")
     c_both.SaveAs('output_plots/%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
 
+def MakeBlindReyleighPlot(Hists,legends,colors,title,name,doSum,doNorm):
+    
+    c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
+    pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
+    pad3.SetBottomMargin(0.0)
+    pad3.SetTopMargin(0.03)
+    pad3.SetBorderMode(1)
+    pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.8)
+    pad1.SetBottomMargin(0.15)
+    pad1.SetTopMargin(0.0)
+    pad1.SetBorderMode(0)
+    pad1.Draw()
+    pad3.Draw()
+    pad1.SetLogy()
+
+    pad1.cd()
+
+    if doNorm:
+        for h in range(1,len(Hists)):
+            if Hists[h]!=0:
+                scale = Hists[0].Integral()/Hists[h].Integral()
+                Hists[h].Scale(scale)
+
+    max_heigh = 0
+    max_hist = 0
+    mean = []
+    rms = []
+    amp = []
+    for h in range(0,len(Hists)):
+        mean += [-1]
+        rms += [0]
+        amp += [0]
+        if Hists[h]!=0:
+            Hists[h].SetLineColor(colors[h])
+            Hists[h].GetXaxis().SetTitle(title)
+            Hists[h].GetXaxis().SetRangeUser(-2.0,Hists[0].GetMean()+3.*Hists[0].GetRMS())
+            if max_heigh < Hists[h].GetMaximum(): 
+                max_heigh = Hists[h].GetMaximum()
+                max_hist = h
+
+    #Hists[max_hist].SetMinimum(0)
+    Hists[max_hist].Draw("E")
+
+    power1 = 2
+    power2 = 2
+    func = ROOT.TF1("func","[1]*pow(x+1,%s)*exp(-0.5*pow((x+1)/[0],%s))"%(power1,power2), -1.0, 20.5)
+    func.SetParameter(0,3.)
+    func.SetParameter(1,100.)
+    func.SetParName(0,"RMS")
+    func.SetParName(1,"Amp")
+
+    for h in range(0,2):
+        if Hists[h]!=0:
+            Hists[h].Draw("E same")
+    for h in range(0,len(Hists)):
+        Hists[h].Fit("func","","",2.0,20.0)
+        rms[h] = func.GetParameter(0)
+        amp[h] = func.GetParameter(1)
+
+    Hists[0].SetLineWidth(3)
+    Hists[0].Draw("E")
+    func_result = []
+    for h in range(0,len(Hists)):
+        Hists[h].SetLineWidth(3)
+        Hists[h].Draw("E same")
+        func_result += [ROOT.TF1("func_result_%s"%(h),"%0.3f*pow(x+1,%s)*exp(-0.5*pow((x+1)/%0.3f,%s))"%(amp[h],power1,rms[h],power2), -1.0, 20.5)]
+        func_result[h].Draw("same")
+
+    pad3.cd()
+    legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.15)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+    legend.Clear()
+    for h in range(0,len(Hists)):
+        if Hists[h]!=0:
+            legend.AddEntry(Hists[h],legends[h]+"(%0.2f,%0.2f)"%(mean[h],rms[h]),"pl")
+    legend.Draw("SAME")
+    c_both.SaveAs('output_plots/BlindFit_%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
+
 def MakeReyleighPlot(Hists,legends,colors,title,name,doSum,doNorm):
     
     c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
@@ -539,7 +623,7 @@ def MakeReyleighPlot(Hists,legends,colors,title,name,doSum,doNorm):
     mean = []
     rms = []
     amp = []
-    for h in range(0,2):
+    for h in range(0,len(Hists)):
         mean += [0]
         rms += [0]
         amp += [0]
@@ -551,14 +635,14 @@ def MakeReyleighPlot(Hists,legends,colors,title,name,doSum,doNorm):
                 max_heigh = Hists[h].GetMaximum()
                 max_hist = h
 
-    Hists[max_hist].SetMinimum(0)
+    #Hists[max_hist].SetMinimum(0)
     Hists[max_hist].Draw("E")
 
     power1 = 2
     power2 = 2
     func = ROOT.TF1("func","[2]*pow(x-[1],%s)*exp(-0.5*pow((x-[1])/[0],%s))"%(power1,power2), -1.0, 20.5)
     func.SetParameter(0,3.)
-    func.SetParameter(1,0.)
+    func.SetParameter(1,-0.9)
     func.SetParameter(2,100.)
     func.SetParName(0,"RMS")
     func.SetParName(1,"shift")
@@ -567,17 +651,20 @@ def MakeReyleighPlot(Hists,legends,colors,title,name,doSum,doNorm):
     for h in range(0,2):
         if Hists[h]!=0:
             Hists[h].Draw("E same")
-    Hists[0].Fit("func","","",-1.0,20.0)
-    rms[0] = func.GetParameter(0)
-    mean[0] = func.GetParameter(1)
-    amp[0] = func.GetParameter(2)
-    Hists[1].Fit("func","","",-1.0,20.0)
-    rms[1] = func.GetParameter(0)
-    mean[1] = func.GetParameter(1)
-    amp[1] = func.GetParameter(2)
+    for h in range(0,len(Hists)):
+        Hists[h].Fit("func","","",-1.0,20.0)
+        rms[h] = func.GetParameter(0)
+        mean[h] = func.GetParameter(1)
+        amp[h] = func.GetParameter(2)
 
     Hists[0].SetLineWidth(3)
-    Hists[0].Draw("E same")
+    Hists[0].Draw("E")
+    for h in range(0,len(Hists)):
+        Hists[h].SetLineWidth(3)
+        Hists[h].Draw("E same")
+        func_result = ROOT.TF1("func_result","[0]*pow(x-%0.3f,%s)*exp(-0.5*pow((x-%0.3f)/%0.3f,%s))"%(mean[h],power1,mean[h],rms[h],power2), -1.0, 20.5)
+        #Hists[3].Fit("func_result","","",2.0,20.0)
+        func_result.Draw("same")
 
     pad3.cd()
     legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
@@ -588,70 +675,12 @@ def MakeReyleighPlot(Hists,legends,colors,title,name,doSum,doNorm):
     legend.SetFillStyle(0)
     legend.SetLineColor(0)
     legend.Clear()
-    for h in range(0,2):
+    for h in range(0,len(Hists)):
         if Hists[h]!=0:
             legend.AddEntry(Hists[h],legends[h]+"(%0.2f,%0.2f)"%(mean[h],rms[h]),"pl")
     legend.Draw("SAME")
-    c_both.SaveAs('output_plots/Aux_%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
+    c_both.SaveAs('output_plots/Fit_%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
 
-    pad1.cd()
-    max_heigh = 0
-    max_hist = 0
-    for h in range(2,4):
-        mean += [0]
-        rms += [0]
-        amp += [0]
-        if Hists[h]!=0:
-            Hists[h].SetLineColor(colors[h])
-            Hists[h].GetXaxis().SetTitle(title)
-            Hists[h].GetXaxis().SetRangeUser(-2.0,Hists[0].GetMean()+3.*Hists[0].GetRMS())
-            if max_heigh < Hists[h].GetMaximum(): 
-                max_heigh = Hists[h].GetMaximum()
-                max_hist = h
-
-    Hists[max_hist].SetMinimum(0)
-    Hists[max_hist].Draw("E")
-
-    func = ROOT.TF1("func","[2]*pow(x-[1],%s)*exp(-0.5*pow((x-[1])/[0],%s))"%(power1,power2), -1.0, 20.5)
-    func.SetParameter(0,3.)
-    func.SetParameter(1,0.)
-    func.SetParameter(2,100.)
-    func.SetParName(0,"RMS")
-    func.SetParName(1,"shift")
-    func.SetParName(2,"Amp")
-
-    for h in range(2,4):
-        if Hists[h]!=0:
-            Hists[h].Draw("E same")
-    Hists[2].Fit("func","","",-1.0,20.0)
-    rms[2] = func.GetParameter(0)
-    mean[2] = func.GetParameter(1)
-    amp[2] = func.GetParameter(2)
-
-    rms[3] = rms[1]-rms[0]+rms[2]
-    mean[3] = mean[1]-mean[0]+mean[2]
-    amp[3] = amp[1]/amp[0]*amp[2]
-    func_result = ROOT.TF1("func_result","[0]*pow(x-%0.3f,%s)*exp(-0.5*pow((x-%0.3f)/%0.3f,%s))"%(mean[3],power1,mean[3],rms[3],power2), -1.0, 20.5)
-    Hists[3].Fit("func_result","","",2.0,20.0)
-    func_result.Draw("same")
-
-    Hists[3].SetLineWidth(3)
-    Hists[3].Draw("E same")
-
-    pad3.cd()
-    legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
-    legend.SetTextFont(42)
-    legend.SetBorderSize(0)
-    legend.SetTextSize(0.15)
-    legend.SetFillColor(0)
-    legend.SetFillStyle(0)
-    legend.SetLineColor(0)
-    legend.Clear()
-    for h in range(2,4):
-        if Hists[h]!=0:
-            legend.AddEntry(Hists[h],legends[h]+"(%0.2f,pm%0.2f)"%(mean[h],rms[h]),"pl")
-    legend.Draw("SAME")
-    c_both.SaveAs('output_plots/Sig_%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,Region))
 
 def IntegralAndError(Hist,bin1,bin2):
     
@@ -746,7 +775,7 @@ def S2B_ratio(Hist_SR, Hist_Bkg,range_lower,range_upper,syst):
         #sbratio_err = predict_bkg/data_SR*pow(pow(err_SR/data_SR,2)+pow(err_bkg/predict_bkg,2),0.5)
     return sbratio, sbratio_err
 
-def Variation_ratio(Hist_SR, Hist_Bkg,range_lower,range_upper,syst,e2p_ratio):
+def Variation_ratio(Hist_SR, Hist_Bkg,range_lower,range_upper,syst,e2p_ratio,e2p_error):
 
     norm_bin_low_target = Hist_SR.FindBin(range_lower)
     norm_bin_up_target = Hist_Bkg.FindBin(range_upper)-1
@@ -757,6 +786,8 @@ def Variation_ratio(Hist_SR, Hist_Bkg,range_lower,range_upper,syst,e2p_ratio):
     predict_bkg = 0
     predict_bkg, err_bkg = IntegralAndSystError(Hist_Bkg,norm_bin_low_target,norm_bin_up_target,syst)
     predict_bkg = predict_bkg*(1.+e2p_ratio)
+    err_scale = predict_bkg*e2p_error
+    err_bkg = pow(err_bkg*err_bkg+err_scale*err_scale,0.5)
     sbratio = 0
     sbratio_err = 0
     if not predict_bkg==0 and not data_SR==0:
@@ -905,8 +936,11 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     lumilab3.SetNDC()
     lumilab3.SetTextSize(0.15)
     lumilab3.Draw()
-    sbratio = (data_SR-predict_bkg)/(predict_bkg)
-    if not data_SR-predict_bkg==0:
+    sbratio = 0
+    sbratio_err = 0
+    if not predict_bkg==0: 
+        sbratio = (data_SR-predict_bkg)/(predict_bkg)
+    if not data_SR-predict_bkg==0 and not predict_bkg==0:
         sbratio_err = sbratio*pow(pow(pow(err_SR*err_SR+err_bkg*err_bkg,0.5)/(data_SR-predict_bkg),2)+pow(err_bkg/predict_bkg,2),0.5)
     else: sbratio_err = 0
     lumilab4 = ROOT.TLatex(0.15,0.20,'S/B = %0.3f#pm%0.3f'%(sbratio,sbratio_err) )
@@ -1155,6 +1189,7 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,xtitle,ytitle,name):
     legend_list += ['Data']
     color_list += [4]
     MakeGaussComparisonPlot(Hist_list,legend_list,color_list,'significance','SigDist_%s'%(name))
+    return Hist_Sig
 
 def Make2DProjectionPlot(Hist_Data,xtitle,ytitle,name,doProj):
 
@@ -1256,7 +1291,7 @@ def Make2DTrajectoryPlot(Hist_1,Hist_2,xtitle,ytitle,name):
     #Hist_2.RebinY(2)
     #canvas2.SaveAs('output_plots/%s_%s_Lego.pdf'%(name,source))
 
-FilePath = '%s/%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s_%s%s.root'%(e2p_folder,blindness,e2p_source,50,90,0,360,2,100,mscw_cut,mscw_blind,converge)
+FilePath = '%s/%s_%s%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s_%s%s.root'%(e2p_folder,blindness,e2p_source,NTel,73,75,0,360,2,100,mscw_cut,mscw_blind,converge)
 TargetFile=ROOT.TFile(FilePath)
 InfoTree = TargetFile.Get("InfoTree")
 InfoTree.GetEntry(0)
@@ -1292,7 +1327,7 @@ for s in range(0,len(source_list)):
 
         ErecS_lower_cut = 0
         ErecS_upper_cut = 1e10
-        FilePath = '%s/%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s_%s%s.root'%(folder,blindness,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,mscw_cut,mscw_blind,converge)
+        FilePath = '%s/%s_%s%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s_%s%s.root'%(folder,blindness,source,NTel,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,mscw_cut,mscw_blind,converge)
         TargetFile=ROOT.TFile(FilePath)
         InfoTree = TargetFile.Get("InfoTree")
         InfoTree.GetEntry(0)
@@ -1407,6 +1442,8 @@ for s in range(0,len(source_list)):
                     legends += ['L-%s'%(count-1)]
                     colors += [count]
                 MakeComparisonPlot(Hists,legends,colors,title,plotname,0,False,True)
+                MakeReyleighPlot(Hists,legends,colors,title,plotname,False,False)
+                MakeBlindReyleighPlot(Hists,legends,colors,title,plotname,False,False)
                 Hists = []
                 legends = []
                 colors = []
@@ -1492,9 +1529,12 @@ for s in range(0,len(source_list)):
                     e2p_ratio = 0
                     e2p_error = 0
                     e2p_ratio, e2p_error = S2B_ratio(Hist_e2p_SR_MSCW,Hist_e2p_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
-                    if 1.0*e2p_error>=e2p_ratio:
+                    if e2p_ratio<0.:
                         e2p_ratio = 0
                         e2p_error = 0
+                    #if 1.0*e2p_error>=e2p_ratio:
+                    #    e2p_ratio = 0
+                    #    e2p_error = 0
 
                     ideal_nbins = float(Hist_Target_SRall_MSCW.Integral())/avg_events_per_bin
                     n_merge = 1
@@ -1580,11 +1620,14 @@ for s in range(0,len(source_list)):
             e2p_ratio = 0
             e2p_error = 0
             e2p_ratio, e2p_error = S2B_ratio(Hist_e2p_SR_MSCW,Hist_e2p_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
-            if 1.0*e2p_error>=e2p_ratio:
+            if e2p_ratio<0.:
                 e2p_ratio = 0
                 e2p_error = 0
-            r2b, r2b_err = Variation_ratio(Hist_Target_SR_MSCW, Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1,e2p_ratio)
-            d2b, d2b_err = Variation_ratio(Hist_Target_SR_MSCW, Hist_Dark_SR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1,0)
+            #if 1.0*e2p_error>=e2p_ratio:
+            #    e2p_ratio = 0
+            #    e2p_error = 0
+            r2b, r2b_err = Variation_ratio(Hist_Target_SR_MSCW, Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,0,e2p_ratio,e2p_error)
+            d2b, d2b_err = Variation_ratio(Hist_Target_SR_MSCW, Hist_Dark_SR_MSCW,MSCW_lower_cut,MSCW_upper_cut,0,0,0)
             print 'E %s-%s, S/B = %0.3f +/- %0.3f'%(ErecS_lower_cut,ErecS_upper_cut,s2b,s2b_err)
             Hist_e2p[len(Hist_e2p)-1].SetBinContent(e+1,s2b)
             Hist_e2p[len(Hist_e2p)-1].SetBinError(e+1,s2b_err)
@@ -1620,7 +1663,7 @@ for e in range(0,len(energy_list)-1):
                 color_mscw += [s+elev+1]
             else:
                 color_mscw += [s+elev+2]
-            FilePath = '%s/%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s_%s%s.root'%(folder,blindness,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,mscw_cut,mscw_blind,converge)
+            FilePath = '%s/%s_%s%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s_%s%s.root'%(folder,blindness,source,NTel,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,mscw_cut,mscw_blind,converge)
             TargetFile=ROOT.TFile(FilePath)
             InfoTree = TargetFile.Get("InfoTree")
             InfoTree.GetEntry(0)
@@ -1643,15 +1686,17 @@ for e in range(0,len(energy_list)-1):
     MakeComparisonPlot(Hist_mscw,legend_mscw,color_mscw,'MSCW',plotname,0,False,True)
 
 if doRaDec:
-    source = source_list[0]
     ErecS_lower_cut = energy_list[0]
     ErecS_upper_cut = energy_list[1]
     Hist_Target_SRall_RaDec = SelectDiagnosticaHistograms(folder,source,'Target_SR1_RaDec',False)
     Hist_Target_BkgSRall_RaDec = SelectDiagnosticaHistograms(folder,source,'Target_CR1_RaDec',False)
-    Hist_Target_SRall_RaDec.Reset()
-    Hist_Target_BkgSRall_RaDec.Reset()
+    Hist_Sig_all = ROOT.TH1D("Hist_Sig_all","",65,-5,8)
+    Hist_Sig = ROOT.TH1D("Hist_Sig","",65,-5,8)
     for s in range(0,len(source_list)):
+        source = source_list[s]
         for elev in range(0,len(Elev_lower_list)):
+            Hist_Target_SRall_RaDec.Reset()
+            Hist_Target_BkgSRall_RaDec.Reset()
             Elev_lower_cut = Elev_lower_list[elev]
             Elev_upper_cut = Elev_upper_list[elev]
             Azim_lower_cut = Azim_lower_list[elev]
@@ -1663,7 +1708,7 @@ if doRaDec:
             if Azim_upper_cut<=180: tele_pointing = '(east)'
             smooth_size = 0.1
             ideal_nbins = 32.*(2./smooth_size)
-            plotname = 'Target_SR_RaDec_E%s'%(ErecS_lower_cut)
+            plotname = 'Target_SR_RaDec'
             while Hist_Target_SRall_RaDec.GetNbinsX()>ideal_nbins:
                 Hist_Target_SRall_RaDec.Rebin2D(2,2)
                 Hist_Target_BkgSRall_RaDec.Rebin2D(2,2)
@@ -1684,13 +1729,32 @@ if doRaDec:
                     e2p_ratio = 0
                     e2p_error = 0
                     e2p_ratio, e2p_error = S2B_ratio(Hist_e2p_SR_MSCW,Hist_e2p_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
-                    if 1.0*e2p_error>=e2p_ratio:
+                    if e2p_ratio<0.:
                         e2p_ratio = 0
                         e2p_error = 0
+                    #if 1.0*e2p_error>=e2p_ratio:
+                    #    e2p_ratio = 0
+                    #    e2p_error = 0
                     RaDecHistScale(Hist_Target_Bkg_RaDec,scalesky,scalesky_err)
                     RaDecHistScale(Hist_Target_Bkg_RaDec,e2p_ratio+1.,e2p_error)
                     Hist_Target_SRall_RaDec.Add(Hist_Target_SR_RaDec)
                     Hist_Target_BkgSRall_RaDec.Add(Hist_Target_Bkg_RaDec)
-    Hist_Target_SRall_RaDec_smooth = Smooth2DMap(Hist_Target_SRall_RaDec,smooth_size,False)
-    Hist_Target_BkgSRall_RaDec_smooth = Smooth2DMap(Hist_Target_BkgSRall_RaDec,smooth_size,False)
-    Make2DSignificancePlot(Hist_Target_SRall_RaDec_smooth,Hist_Target_BkgSRall_RaDec_smooth,'RA','Dec',plotname)
+            Hist_Target_SRall_RaDec_smooth = Smooth2DMap(Hist_Target_SRall_RaDec,smooth_size,False)
+            Hist_Target_BkgSRall_RaDec_smooth = Smooth2DMap(Hist_Target_BkgSRall_RaDec,smooth_size,False)
+            Hist_Sig = Make2DSignificancePlot(Hist_Target_SRall_RaDec_smooth,Hist_Target_BkgSRall_RaDec_smooth,'RA','Dec',plotname)
+            Hist_Sig_all.Add(Hist_Sig)
+    func = ROOT.TF1("func","gaus", -5, 8)
+    func.SetParameters(10.,0.,1.0)
+    Hist_Model = ROOT.TH1D("Hist_Model","",65,-5,8)
+    Hist_Model.FillRandom("func",int(Hist_Sig_all.GetEntries()))
+    Hist_list = []
+    legend_list = []
+    color_list = []
+    Hist_list += [Hist_Model]
+    legend_list += ['Normal']
+    color_list += [2]
+    Hist_list += [Hist_Sig_all]
+    legend_list += ['Data']
+    color_list += [4]
+    plotname = 'Mmultisource_SR_RaDec'
+    MakeGaussComparisonPlot(Hist_list,legend_list,color_list,'significance','SigDist_%s'%(plotname))
