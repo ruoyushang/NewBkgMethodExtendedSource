@@ -132,6 +132,8 @@ double dec_sky = 0;
 vector<int> used_runs;
 vector<double> energy_vec;
 double exposure_hours = 0.;
+vector<double> initial_kernel_rms;
+vector<double> final_kernel_rms;
 vector<double> initial_shift;
 vector<double> blinded_shift;
 vector<double> unblinded_shift;
@@ -1702,12 +1704,14 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                     int SR1_Niter = N_iter.at(e);
                     SR1_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgPrevious_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),shift_lowlimit,N_rms.at(e),mean_begin,N_iter.at(e),false);
                     std::cout << "Target, e " << energy_bins[e] << ", SR2_Niter = " << SR1_Niter << std::endl;
+                    initial_kernel_rms.push_back(N_rms.at(e));
                     double SR1_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgPrevious_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),shift_lowlimit,N_rms.at(e),mean_begin,SR1_Niter,false);
                     std::cout << "Target, e " << energy_bins[e] << ", SR_RMS = " << SR1_RMS << std::endl;
                     N_rms.at(e) = SR1_RMS;
                     SR1_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgPrevious_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),shift_lowlimit,N_rms.at(e),mean_begin,SR1_Niter,false);
                     std::cout << "Target, e " << energy_bins[e] << ", SR_RMS = " << SR1_RMS << std::endl;
                     N_rms.at(e) = SR1_RMS;
+                    final_kernel_rms.push_back(N_rms.at(e));
 
                     myfunc->SetParameter(0,SR1_RMS);
                     Hist_Target_Deconv_MSCW.at(e).Reset();
@@ -1747,12 +1751,14 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                         int SR_Niter = N_iter.at(e);
                         SR_Niter = FindNIteration(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgPrevious_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),shift_lowlimit,N_rms.at(e),mean_begin,N_iter.at(e),false);
                         std::cout << "Target, e " << energy_bins[e] << ", SR2_Niter = " << SR_Niter << std::endl;
+                        initial_kernel_rms.push_back(N_rms.at(e));
                         double SR_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgPrevious_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),shift_lowlimit,N_rms.at(e),mean_begin,SR_Niter,false);
                         std::cout << "Target, e " << energy_bins[e] << ", SR_RMS = " << SR_RMS << std::endl;
                         N_rms.at(e) = SR_RMS;
                         SR_RMS = FindRMS(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgPrevious_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),shift_lowlimit,N_rms.at(e),mean_begin,SR_Niter,false);
                         std::cout << "Target, e " << energy_bins[e] << ", SR_RMS = " << SR_RMS << std::endl;
                         N_rms.at(e) = SR_RMS;
+                        final_kernel_rms.push_back(N_rms.at(e));
 
                         myfunc->SetParameter(0,SR_RMS);
                         Hist_Target_Deconv_MSCW.at(e).Reset();
@@ -1855,6 +1861,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         InfoTree.Branch("unblinded_shift","std::vector<double>",&unblinded_shift);
         InfoTree.Branch("blinded_shift","std::vector<double>",&blinded_shift);
         InfoTree.Branch("initial_shift","std::vector<double>",&initial_shift);
+        InfoTree.Branch("initial_kernel_rms","std::vector<double>",&initial_kernel_rms);
+        InfoTree.Branch("final_kernel_rms","std::vector<double>",&final_kernel_rms);
         InfoTree.Fill();
         InfoTree.Write();
         Hist_Target_TelElevAzim.Write();
