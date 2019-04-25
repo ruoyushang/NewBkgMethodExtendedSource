@@ -242,7 +242,15 @@ double GetChi2WithRange(TH1* Hist_SR, TH1* Hist_Bkg, double lower_end, double up
     chi2_temp = 1./(chi2_temp);
     return chi2_temp;
 }
-double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR) {
+double GetChi2(TH1* Hist_CR, TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR) {
+    double inflation = 1.;
+    if (!includeSR)
+    {
+        if (Hist_CR->GetRMS()<Hist_Bkg->GetRMS()) inflation = inflation*100.;
+        if (Hist_CR->GetMean()<Hist_Bkg->GetMean()) inflation = inflation*100.;
+        //if (Hist_CR->GetRMS()<Hist_Bkg->GetRMS()) return 0.;
+        //if (Hist_CR->GetMean()<Hist_Bkg->GetMean()) return 0.;
+    }
     double chi2_temp = 0.;
     double sign_chi2_temp = 0.;
     double mean = Hist_SR->GetMean();
@@ -258,7 +266,7 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR) {
             continue;
         }
         if ((data_err*data_err+bkg_err*bkg_err)==0) continue;
-        chi2_temp += pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
+        chi2_temp += inflation*pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
         nbins += 1.;
         if (Hist_Bkg->GetBinCenter(i+1)>(MSCW_cut_blind+rms)) continue;
         sign_chi2_temp += (bkg-data)/pow(data_err*data_err+bkg_err*bkg_err,0.5);
@@ -569,7 +577,7 @@ void Converge(TH1* Hist_Bkg, double threshold, double amplitude)
         Hist_Bkg->SetBinContent(i+1,new_content);
     }
 }
-double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double shift_begin, double shift_lowlimit, bool doShift, bool includeSR) {
+double ShiftAndNormalize(TH1* Hist_CR, TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double shift_begin, double shift_lowlimit, bool doShift, bool includeSR) {
     double shift_fit = 0;
     double scale_fit = 0;
     double chi2 = 0.;
@@ -581,9 +589,9 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
     Hist_Bkg->Reset();
     if (doShift) {
         for (int fit=0;fit<1000;fit++) {
-                //double shift = min(shift_begin,shift_lowlimit)+2.0*rms*double(fit)*0.001; 
                 double shift = shift_begin+2.0*rms*double(fit)*0.001; 
                 if (includeSR) shift = shift_begin-1.0*rms+2.0*rms*double(fit)*0.001;
+                //double shift = shift_begin-1.0*rms+3.0*rms*double(fit)*0.001;
                 for (int i=0;i<Hist_SR->GetNbinsX();i++) {
                         int b = Hist_SR->FindBin(Hist_SR->GetBinCenter(i+1)-shift);
                         Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
@@ -603,7 +611,7 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, double 
                 double scale = scale_begin;
                 Hist_Bkg->Scale(norm/Hist_Bkg->Integral());
                 Hist_Bkg->Scale(scale);
-                double chi2_temp = GetChi2(Hist_SR, Hist_Bkg,includeSR);
+                double chi2_temp = GetChi2(Hist_CR, Hist_SR, Hist_Bkg,includeSR);
                 if (chi2<chi2_temp && Hist_Bkg->Integral()!=0) {
                     chi2 = chi2_temp;
                     shift_fit = shift;
@@ -690,8 +698,8 @@ double FindNIteration(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTe
           Hist_Deconv->FillRandom("func",1000000);
           Deconvolution(Hist_CR,Hist_Deconv,Hist_BkgTemp,n_iter);
           offset_begin = Hist_SR->GetMean()-Hist_BkgTemp->GetMean();
-          offset_begin = ShiftAndNormalize(Hist_SR,Hist_BkgTemp,Hist_Bkg,offset_begin,shift_lowlimit,true,includeSR);
-          chi2 = GetChi2(Hist_SR,Hist_Bkg,includeSR);
+          offset_begin = ShiftAndNormalize(Hist_CR,Hist_SR,Hist_BkgTemp,Hist_Bkg,offset_begin,shift_lowlimit,true,includeSR);
+          chi2 = GetChi2(Hist_CR,Hist_SR,Hist_Bkg,includeSR);
           if (chi2_best<chi2) {
               chi2_best = chi2;
               n_iter_final = n_iter;
@@ -716,8 +724,8 @@ double FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTemp, TH1
         Hist_Deconv->FillRandom("func",1000000);
         Deconvolution(Hist_CR,Hist_Deconv,Hist_BkgTemp,n_iter);
         offset_begin = Hist_SR->GetMean()-Hist_BkgTemp->GetMean();
-        offset_begin = ShiftAndNormalize(Hist_SR,Hist_BkgTemp,Hist_Bkg,offset_begin,shift_lowlimit,true,includeSR);
-        chi2 = GetChi2(Hist_SR, Hist_Bkg,includeSR);
+        offset_begin = ShiftAndNormalize(Hist_CR,Hist_SR,Hist_BkgTemp,Hist_Bkg,offset_begin,shift_lowlimit,true,includeSR);
+        chi2 = GetChi2(Hist_CR, Hist_SR, Hist_Bkg,includeSR);
         if (chi2_best<chi2) {
             chi2_best = chi2;
             rms_final = rms;
@@ -971,17 +979,21 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist)
         if (TString(source)=="CrabB") sprintf(observation, "%s", "Crab");
         if (TString(source)=="Segue1AV6") sprintf(observation, "%s", "Segue1V6");
         if (TString(source)=="Segue1BV6") sprintf(observation, "%s", "Segue1V6");
-        for (int elev=0;elev<18;elev++)
+        double delta_elev = 5.;
+        double delta_azim = 20.;
+        //double delta_elev = 10.;
+        //double delta_azim = 20.;
+        for (int elev=0;elev<(90./delta_elev);elev++)
         {
-            double elev_low = 5.*((double)elev);
-            double elev_up = 5.*((double)elev+1);
+            double elev_low = delta_elev*((double)elev);
+            double elev_up = delta_elev*((double)elev+1);
             if (elev_up<=Target_Elev_cut_lower) continue;
             if (elev_low>=Target_Elev_cut_upper) continue;
 
-            for (int azim=0;azim<18;azim++)
+            for (int azim=0;azim<(360./delta_azim);azim++)
             {
-                double azim_low = 20.*((double)azim);
-                double azim_up = 20.*((double)azim+1);
+                double azim_low = delta_azim*((double)azim);
+                double azim_up = delta_azim*((double)azim+1);
                 if (azim_up<=Target_Azim_cut_lower) continue;
                 if (azim_low>=Target_Azim_cut_upper) continue;
                 std::cout << "run elev. " << elev_low << "-" << elev_up << ", azim. " << azim_low << "-" << azim_up << std::endl;
@@ -1659,7 +1671,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                     Deconvolution(&Hist_Target_CR_MSCW.at(e).at(c1),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),N_iter.at(e));
                     double offset_begin = 0;
                     offset_begin = Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
-                    offset_begin = ShiftAndNormalize(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),offset_begin,0.,true,true);
+                    offset_begin = ShiftAndNormalize(&Hist_Target_CR_MSCW.at(e).at(c1),&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),offset_begin,0.,true,true);
                     double shift_lowlimit = offset_begin;
                     std::cout << "CR offset = " << offset_begin << " ( full RMS = " << Hist_Target_BkgTemp_MSCW.at(e).GetRMS() << ")" << std::endl;
                     std::pair <double,double> converge = FindConverge(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e));
@@ -1693,7 +1705,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                     //Deconvolution(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),SR1_Niter);
                     std::cout << "Target, e " << energy_bins[e] << ", final rms = " << Hist_Target_Deconv_MSCW.at(e).GetRMS() << std::endl;
                     offset_begin = Hist_Target_SR_MSCW.at(e).at(0).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
-                    offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),offset_begin,shift_lowlimit,true,false);
+                    offset_begin = ShiftAndNormalize(&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),offset_begin,shift_lowlimit,true,false);
                     std::cout << "SR0 offset = " << offset_begin << " ( full RMS = " << Hist_Target_BkgTemp_MSCW.at(e).GetRMS() << ")" << std::endl;
                     if (DoConverge) Converge(&Hist_Target_BkgSR_MSCW.at(e).at(0),converge.first,converge.second);
                     //AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(0));
@@ -1735,7 +1747,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                         //Deconvolution(&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_Deconv_MSCW.at(e),&Hist_Target_BkgTemp_MSCW.at(e),SR_Niter);
                         std::cout << "Target, e " << energy_bins[e] << ", final rms = " << Hist_Target_Deconv_MSCW.at(e).GetRMS() << std::endl;
                         offset_begin = Hist_Target_SR_MSCW.at(e).at(s).GetMean()-Hist_Target_BkgTemp_MSCW.at(e).GetMean();
-                        offset_begin = ShiftAndNormalize(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(s),offset_begin,shift_lowlimit,true,false);
+                        offset_begin = ShiftAndNormalize(&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(s),offset_begin,shift_lowlimit,true,false);
                         std::cout << "SR" << s<< " offset = " << offset_begin << " ( full RMS = " << Hist_Target_BkgTemp_MSCW.at(e).GetRMS() << ")" << std::endl;
                         if (DoConverge) Converge(&Hist_Target_BkgSR_MSCW.at(e).at(s),converge.first,converge.second);
                         //AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(s));
