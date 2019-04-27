@@ -632,7 +632,7 @@ std::pair <double,double> ShiftAndNormalize(TH1* Hist_CR, TH1* Hist_SR, TH1* His
                 //{
                 //    inflation = 1.;
                 //}
-                if ((shift-shift_begin)/Hist_BkgTemp->GetRMS()-0.<0.)
+                if ((shift-shift_begin)/Hist_BkgTemp->GetRMS()-0.>0.)
                 {
                     inflation = exp(-0.5*pow(((shift-shift_begin)/Hist_BkgTemp->GetRMS()-0.)/0.26,2));
                 }
