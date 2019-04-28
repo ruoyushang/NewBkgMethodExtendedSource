@@ -29,8 +29,17 @@
 #include "TSpectrum.h"
 #include "TVirtualFFT.h"
 #include "TRandom.h"
+#include "TSpline.h"
 
 #include "GetRunList.h"
+
+ClassImp(TSplinePoly);
+ClassImp(TSplinePoly3);
+ClassImp(TSplinePoly5);
+ClassImp(TSpline3);
+ClassImp(TSpline5);
+ClassImp(TSpline);
+
 
 // VEGAS
 //#define VEGAS
@@ -145,14 +154,14 @@ vector<double> unblinded_shift;
 //const int N_energy_bins = 16;
 //double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
 //int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,2   ,2   ,4   ,4   ,8   ,8};
-//const int N_energy_bins = 11;
-//double energy_bins[N_energy_bins+1] =     {200,282,398,562,794,1122,1585,2239,3162,4467,6310,8913};
-//int number_runs_included[N_energy_bins] = {99 ,99 ,99 ,99 ,99 ,99  ,99  ,99  ,99  ,99  ,99};
-const int N_energy_bins = 6;
-double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
-int number_runs_included[N_energy_bins] = {99  ,99  ,99  ,99  ,99  ,99};
+const int N_energy_bins = 11;
+double energy_bins[N_energy_bins+1] =     {200,282,398,562,794,1122,1585,2239,3162,4467,6310,8913};
+int number_runs_included[N_energy_bins] = {99 ,99 ,99 ,99 ,99 ,99  ,99  ,99  ,99  ,99  ,99};
+//const int N_energy_bins = 6;
+//double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
+//int number_runs_included[N_energy_bins] = {99  ,99  ,99  ,99  ,99  ,99};
 //const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] =     {1585,2239};
+//double energy_bins[N_energy_bins+1] =     {1122,1585};
 //int number_runs_included[N_energy_bins] = {99};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] =     {6310,8913};
@@ -401,6 +410,20 @@ void AddSystematics(TH1* Hist_SR,TH1* Hist_Bkg)
         }
     }
 }
+void MakeSmoothSplineFunction(TH1* Hist_SR)
+{
+    int knot_size = 4;
+    if (Hist_SR->GetMean()<MSCW_cut_blind) knot_size = 8;
+    TH1D Hist_SR_rebin = TH1D("Hist_SR_rebin","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
+    Hist_SR_rebin.Reset();
+    Hist_SR_rebin.Add(Hist_SR);
+    Hist_SR_rebin.Rebin(knot_size);
+    TSpline3 spline = TSpline3(&Hist_SR_rebin);
+    for (int i=0;i<Hist_SR->GetNbinsX();i++) {
+        double x = Hist_SR->GetBinCenter(i+1);
+        Hist_SR->SetBinContent(i+1,spline.Eval(x)/double(knot_size));
+    }
+}
 void MakeBkgPrevious(TH1* Hist_SR,TH1* Hist_Bkg,TH1* Hist_Previous)
 {
     for (int i=0;i<Hist_SR->GetNbinsX();i++)
@@ -418,6 +441,7 @@ void MakeBkgPrevious(TH1* Hist_SR,TH1* Hist_Bkg,TH1* Hist_Previous)
         //Hist_Previous->SetBinContent(i+1,Hist_Bkg->GetBinContent(i+1));
         //Hist_Previous->SetBinError(i+1,Hist_Bkg->GetBinError(i+1));
     }
+    MakeSmoothSplineFunction(Hist_Previous);
 }
 double ConvergeFunction(double x, double threshold, double amplitude)
 {
@@ -492,6 +516,22 @@ double FindConvergeThreshold(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bkg_Temp, do
         } 
     }
     return threshold;
+}
+double FitFunction(Double_t *x, Double_t *par) {
+    double xx =x[0];
+    if (xx-par[1]<0.) return 0.;
+    return par[0]*pow((xx-par[1])/(par[2]),2)*exp(-0.5*pow((xx-par[3])/(par[4]),2));
+}
+double FindEndPoint(TH1* Hist_CR)
+{
+    TF1 *func = new TF1("func",FitFunction,-5.,50.,5);
+    func->SetParameter(0,100.);
+    func->SetParameter(1,0);
+    func->SetParameter(2,Hist_CR->GetRMS());
+    func->SetParameter(3,0);
+    func->SetParameter(4,Hist_CR->GetRMS());
+    Hist_CR->Fit("func","","",-5.,20.0);
+    return func->GetParameter(1);
 }
 double FindConvergeAmplitude(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bkg_Temp, double threshold, double init_amplitude)
 {
@@ -574,15 +614,7 @@ std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bk
         //init_amplitude = 2.0;
         init_amplitude = 0.5;
     }
-    // try a few iterations if possible
-    //threshold = FindConvergeThreshold(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,init_amplitude);
-    //amplitude = FindConvergeAmplitude(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,threshold,init_amplitude);
-    //threshold = FindConvergeThreshold(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,amplitude);
-    //amplitude = FindConvergeAmplitude(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,threshold,amplitude);
-    //threshold = FindConvergeThreshold(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,amplitude);
-    //amplitude = FindConvergeAmplitude(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,threshold,amplitude);
-    //threshold = mean-1.7*rms;
-    threshold = MSCW_cut_lower;
+    threshold = FindEndPoint(Hist_SR);
     amplitude = FindConvergeAmplitude(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,threshold,init_amplitude);
     std::cout << "found threshold = " << threshold << ", amplitude = " << amplitude << std::endl;
     return std::make_pair(threshold,amplitude);
@@ -802,15 +834,15 @@ std::pair <double,double> FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1
         double chi2 = 0;
         double unblinded_chi2 = 0;
         double rms = rms_begin;
-        rms = rms_begin-0.5*rms_begin+double(n_rms)*2.5*rms_begin/50.;
-        if (rms>Hist_CR->GetRMS()) continue;  // this is an unphysical solution.
+        rms = rms_begin-1.0*rms_begin+double(n_rms+1)*2.0*rms_begin/50.;
+        //if (rms>Hist_CR->GetRMS()) continue;  // this is an unphysical solution.
         double inflation1 = 1.;
-        if (!includeSR && estimated_kernel_rms!=0.)
-        {
-            double rms_diff = (rms-estimated_kernel_rms)/estimated_kernel_rms;
-            if (rms_diff<0.) inflation1 = exp(-0.5*pow((rms_diff-0.)/0.2,2));
-            else inflation1 = 1.;
-        }
+        //if (!includeSR && estimated_kernel_rms!=0.)
+        //{
+        //    double rms_diff = (rms-estimated_kernel_rms)/estimated_kernel_rms;
+        //    if (rms_diff<0.) inflation1 = exp(-0.5*pow((rms_diff-0.)/0.2,2));
+        //    else inflation1 = 1.;
+        //}
         double inflation2 = 1.;
         if ((rms-rms_begin)/rms_begin-0.>0.)
         {
@@ -1757,8 +1789,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                     std::cout << "Target, e " << energy_bins[e] << ", N_iter.at(e) = " << N_iter.at(e) << std::endl;
                     kernel_rms = FindRMS(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_CR_MSCW.at(e).at(c1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),0.,rms_begin,mean_begin,N_iter.at(e),true);
 
-                    N_iter.at(e) = FindNIteration(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_CR_MSCW.at(e).at(c1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),0.,kernel_rms.first,mean_begin,N_iter.at(e),true);
-                    std::cout << "Target, e " << energy_bins[e] << ", N_iter.at(e) = " << N_iter.at(e) << std::endl;
+                    //N_iter.at(e) = FindNIteration(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_CR_MSCW.at(e).at(c1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),0.,kernel_rms.first,mean_begin,N_iter.at(e),true);
+                    //std::cout << "Target, e " << energy_bins[e] << ", N_iter.at(e) = " << N_iter.at(e) << std::endl;
                     kernel_rms = FindRMS(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_CR_MSCW.at(e).at(c1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_Deconv_MSCW.at(e),0.,kernel_rms.first,mean_begin,N_iter.at(e),true);
                     std::cout << "Target, e " << energy_bins[e] << ", CR_blinded_RMS = " << GetBlindedRMS(&Hist_Target_CR_MSCW.at(e).at(c1)) << std::endl;
                     std::cout << "Target, e " << energy_bins[e] << ", SR_blinded_RMS = " << GetBlindedRMS(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1)) << std::endl;
