@@ -166,7 +166,7 @@ vector<double> unblinded_shift;
 //double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
 //int number_runs_included[N_energy_bins] = {99  ,99  ,99  ,99  ,99  ,99};
 const int N_energy_bins = 1;
-double energy_bins[N_energy_bins+1] =     {562,794};
+double energy_bins[N_energy_bins+1] =     {200,282};
 int number_runs_included[N_energy_bins] = {99};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] =     {6310,8913};
@@ -245,6 +245,22 @@ double GetLinearUncWithRange(TH1* Hist_Bkg, double lower_end, double upper_end) 
     }
     return total_err;
 }
+std::pair<double,double> GetRangeMeanRMS(TH1* Hist_SR,double low,double up)
+{
+    TH1D Hist_SR_blinded = TH1D("Hist_SR_blinded","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
+    for (int i=0;i<Hist_SR->GetNbinsX();i++) {
+        if (Hist_SR->GetBinCenter(i+1)<low || Hist_SR->GetBinCenter(i+1)>up) {
+                Hist_SR_blinded.SetBinContent(i+1,0.);
+                Hist_SR_blinded.SetBinError(i+1,0.);
+        }
+        else
+        {
+                Hist_SR_blinded.SetBinContent(i+1,Hist_SR->GetBinContent(i+1));
+                Hist_SR_blinded.SetBinError(i+1,Hist_SR->GetBinError(i+1));
+        }
+    }
+    return std::make_pair(Hist_SR_blinded.GetMean(),Hist_SR_blinded.GetRMS());
+}
 double GetBlindedRMS(TH1* Hist_SR)
 {
     TH1D Hist_SR_blinded = TH1D("Hist_SR_blinded","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
@@ -283,13 +299,14 @@ double GetChi2WithRange(TH1* Hist_SR, TH1* Hist_Bkg, double lower_end, double up
 }
 double GetChi2(TH1* Hist_CR, TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR) {
     double inflation = 1.;
-    //if (!includeSR)
-    //{
-    //    if (Hist_CR->GetRMS()<Hist_Bkg->GetRMS()) inflation = inflation*10000.;
-    //    if (Hist_CR->GetMean()<Hist_Bkg->GetMean()) inflation = inflation*10000.;
-    //    if (Hist_SR->GetRMS()>Hist_Bkg->GetRMS()) inflation = inflation*10000.;
-    //    if (Hist_SR->GetMean()>Hist_Bkg->GetMean()) inflation = inflation*10000.;
-    //}
+    if (!includeSR)
+    {
+        std::pair<double,double> bkg_shape = GetRangeMeanRMS(Hist_Bkg,-2.,0.);
+        std::pair<double,double> cr_shape = GetRangeMeanRMS(Hist_CR,-2.,0.);
+        double inflation1 = exp(-0.5*pow(((bkg_shape.first-cr_shape.first)/Hist_CR->GetRMS()),2));
+        double inflation2 = exp(-0.5*pow(((bkg_shape.second-cr_shape.second)/Hist_CR->GetRMS()),2));
+        inflation = inflation1*inflation2;
+    }
     double chi2_temp = 0.;
     double sign_chi2_temp = 0.;
     double mean = Hist_SR->GetMean();
@@ -470,7 +487,7 @@ void MakeBkgPrevious(TH1* Hist_SR,TH1* Hist_Bkg,TH1* Hist_Previous)
         //Hist_Previous->SetBinContent(i+1,Hist_Bkg->GetBinContent(i+1));
         //Hist_Previous->SetBinError(i+1,Hist_Bkg->GetBinError(i+1));
     }
-    MakeSmoothSplineFunction(Hist_Previous);
+    //MakeSmoothSplineFunction(Hist_Previous);
 }
 double ConvergeFunction(double x, double threshold, double amplitude)
 {
@@ -638,7 +655,8 @@ std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bk
         //init_amplitude = 2.0;
         init_amplitude = 0.5;
     }
-    threshold = FindEndPoint(Hist_SR);
+    //threshold = FindEndPoint(Hist_SR);
+    threshold = MSCW_cut_lower;
     amplitude = FindConvergeAmplitude(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,threshold,init_amplitude);
     std::cout << "found threshold = " << threshold << ", amplitude = " << amplitude << std::endl;
     return std::make_pair(threshold,amplitude);
@@ -685,32 +703,11 @@ std::pair <bool,std::pair <double,double>> ShiftAndNormalize(TH1* Hist_CR, TH1* 
                     continue;
                 }
                 double shift = shift_begin-1.0*Hist_BkgTemp->GetRMS()+2.0*Hist_BkgTemp->GetRMS()*double(fit)*0.001;
-                double inflation1 = 1.;
-                //inflation1 = exp(-0.5*pow(((shift-shift_begin)/Hist_BkgTemp->GetRMS())/0.2,2));
+                double inflation = 1.;
                 double width = 1.+(Hist_SR->GetMean()-MSCW_cut_blind)/Hist_BkgTemp->GetRMS();
-                width = min(width,0.01);
-                inflation1 = exp(-0.5*pow((shift/Hist_BkgTemp->GetRMS()-0.11)/width,2));
-                //inflation1 = exp(-0.5*pow((shift/Hist_BkgTemp->GetRMS()-0.16)/0.29,2));
-                //if ((shift-shift_begin)/Hist_BkgTemp->GetRMS()>0.)
-                //{
-                //    //inflation1 = exp(-0.5*pow(((shift-shift_begin)/Hist_BkgTemp->GetRMS())/0.13,2));
-                //    inflation1 = 0.;
-                //}
-                //else
-                //{
-                //    inflation1 = 1.;
-                //}
-                //if (includeSR) inflation1 = 1.;
-                double inflation2 = 1.;
-                //if ((shift-(Hist_SR->GetMean()-Hist_BkgTemp->GetMean()))<0.)
-                //{
-                //    inflation2 = 0.;
-                //}
-                //else
-                //{
-                //    inflation2 = 1.;
-                //}
-                //if (includeSR) inflation2 = 1.;
+                width = max(width,0.01);
+                inflation = exp(-0.5*pow(((shift-shift_begin)/Hist_BkgTemp->GetRMS())/width,2));
+                if (includeSR) inflation = 1.;
                 for (int i=0;i<Hist_SR->GetNbinsX();i++) {
                         int b = Hist_SR->FindBin(Hist_SR->GetBinCenter(i+1)-shift);
                         Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
@@ -730,7 +727,7 @@ std::pair <bool,std::pair <double,double>> ShiftAndNormalize(TH1* Hist_CR, TH1* 
                 double scale = scale_begin;
                 Hist_Bkg->Scale(norm/Hist_Bkg->Integral());
                 Hist_Bkg->Scale(scale);
-                double chi2_temp = inflation1*inflation2*GetChi2(Hist_CR, Hist_SR, Hist_Bkg,includeSR);
+                double chi2_temp = inflation*GetChi2(Hist_CR, Hist_SR, Hist_Bkg,includeSR);
                 double unblinded_chi2_temp = GetChi2(Hist_CR, Hist_SR, Hist_Bkg,true);
                 if (chi2<chi2_temp && Hist_Bkg->Integral()!=0) {
                     chi2 = chi2_temp;
@@ -817,7 +814,7 @@ void Deconvolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Deconv, int n
 }
 
 double FindNIteration(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTemp, TH1* Hist_Deconv, double scaled_shift, double rms, double mean, int n_iter_begin, bool includeSR) {
-    //if (!includeSR) return n_iter_begin;
+    if (!includeSR) return n_iter_begin;
     if (n_iter_begin==1) return 1;
     double n_iter_final = n_iter_begin;
     double chi2_best = 0.;
@@ -861,30 +858,16 @@ std::pair <double,double> FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1
     }
     TF1 *func = new TF1("func",Kernel,-50.,50.,1);
     func->SetParameter(0,0.5);
-    for (int n_rms = 0; n_rms<=100;n_rms++) {
+    for (int n_rms = 0; n_rms<=20;n_rms++) {
         double chi2 = 0;
         double unblinded_chi2 = 0;
         double rms = rms_begin;
-        rms = rms_begin-1.0*rms_begin+double(n_rms+1)*2.0*rms_begin/100.;
+        rms = rms_begin-1.0*rms_begin+double(n_rms+1)*2.0*rms_begin/20.;
         //if (rms>Hist_CR->GetRMS()) continue;  // this is an unphysical solution.
-        double inflation1 = 1.;
-        //inflation1 = exp(-0.5*pow((rms-rms_begin)/(0.5*rms_begin),2));
-        double inflation2 = 1.;
-        if ((rms-rms_begin)/rms_begin>0.)
-        {
-            inflation2 = exp(-0.5*pow(((rms-rms_begin)/rms_begin)/0.2,2));
-            //inflation2 = 0.;
-        }
-        else
-        {
-            inflation2 = 1.;
-        }
-        double inflation = inflation1*inflation2;
+        double inflation = exp(-0.5*pow(((rms-rms_begin)/rms_begin)/0.5,2));
         if (includeSR) inflation = 1.;
         func->SetParameter(0,rms);
         Hist_Deconv->Reset();
-        //Hist_Deconv->FillRandom("func",Hist_SR->Integral()*100);
-        //Hist_Deconv->FillRandom("func",Hist_SR->Integral()*10);
         Hist_Deconv->FillRandom("func",1000000);
         Deconvolution(Hist_CR,Hist_Deconv,Hist_BkgTemp,n_iter);
         std::pair <bool,std::pair <double,double>> offset = ShiftAndNormalize(Hist_CR,Hist_SR,Hist_BkgTemp,Hist_Bkg,scaled_shift,DoShift,includeSR);
