@@ -166,7 +166,7 @@ vector<double> unblinded_shift;
 //double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
 //int number_runs_included[N_energy_bins] = {99  ,99  ,99  ,99  ,99  ,99};
 const int N_energy_bins = 1;
-double energy_bins[N_energy_bins+1] =     {200,282};
+double energy_bins[N_energy_bins+1] =     {562,794};
 int number_runs_included[N_energy_bins] = {99};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] =     {6310,8913};
@@ -864,7 +864,15 @@ std::pair <double,double> FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1
         double rms = rms_begin;
         rms = rms_begin-1.0*rms_begin+double(n_rms+1)*2.0*rms_begin/20.;
         //if (rms>Hist_CR->GetRMS()) continue;  // this is an unphysical solution.
-        double inflation = exp(-0.5*pow(((rms-rms_begin)/rms_begin)/0.5,2));
+        double inflation = 1.;
+        if (rms-rms_begin<0.)
+        {
+            inflation = exp(-0.5*pow((rms-rms_begin)/(0.25*rms_begin),2));
+        }
+        else
+        {
+            inflation = 1.;
+        }
         if (includeSR) inflation = 1.;
         func->SetParameter(0,rms);
         Hist_Deconv->Reset();
@@ -1991,7 +1999,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         int Number_of_SR_new = Number_of_SR;
         TString ConvergeOrNot = "";
         if (!DoConverge) ConvergeOrNot = "_NoConverge";
-        TFile OutputFile("output_Apr29/Deconvolution_"+TString(target)+"_Ntel"+std::to_string(NTelMin)+"to"+std::to_string(NTelMax)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate");
+        TFile OutputFile("output_Apr30/Deconvolution_"+TString(target)+"_Ntel"+std::to_string(NTelMin)+"to"+std::to_string(NTelMax)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate");
         TTree InfoTree("InfoTree","info tree");
         InfoTree.Branch("Number_of_CR",&Number_of_CR_new,"Number_of_CR/I");
         InfoTree.Branch("Number_of_SR",&Number_of_SR_new,"Number_of_SR/I");
