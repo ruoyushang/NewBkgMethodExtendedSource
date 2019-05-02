@@ -10,7 +10,7 @@ ROOT.TH1.SetDefaultSumw2()
 ROOT.TH1.AddDirectory(False) # without this, the histograms returned from a function will be non-type
 ROOT.gStyle.SetPaintTextFormat("0.3f")
 
-folder = 'output_Apr31'
+folder = 'output_May02'
 blindness = 'Deconvolution'
 #blindness = 'FitMethod'
 #blindness = 'SplineMethod'
@@ -19,7 +19,7 @@ converge = ''
 NTel = "_Ntel3to4"
 
 e2p_source = 'Segue1V6'
-e2p_folder = 'output_Apr31'
+e2p_folder = 'output_May02'
 doTheta2 = False
 doRaDec = False
 doMSCW = True
@@ -55,8 +55,8 @@ Azim_lower_list = []
 Azim_upper_list = []
 Elev_lower_list += [70]
 Elev_upper_list += [85]
-Azim_lower_list += [200]
-Azim_upper_list += [220]
+Azim_lower_list += [0]
+Azim_upper_list += [360]
 #Elev_lower_list += [50]
 #Elev_upper_list += [90]
 #Azim_lower_list += [0]
@@ -95,8 +95,8 @@ Theta2_lower_cut = 2
 Theta2_upper_cut = 100
 #mscw_cut = 'MSCWCut5'
 #mscw_blind = 'MSCWBlind5'
-mscw_cut = 'MSCWCut10'
-mscw_blind = 'MSCWBlind10'
+mscw_cut = 'MSCWCut20'
+mscw_blind = 'MSCWBlind20'
 #mscw_cut = 'MSCWCut10'
 #mscw_blind = 'MSCWBlind15'
 #mscw_cut = 'MSCWCut-9'
@@ -113,12 +113,12 @@ exposure_hours = 0.
 
 energy_list = []
 #energy_list += [200]
-#energy_list += [282]
-#energy_list += [398]
+energy_list += [282]
+energy_list += [398]
 #energy_list += [562]
 #energy_list += [794]
-energy_list += [1122]
-energy_list += [1585]
+#energy_list += [1122]
+#energy_list += [1585]
 #energy_list += [2239]
 #energy_list += [3162]
 #energy_list += [4467]
@@ -344,6 +344,57 @@ def MakeComparisonPlotNoRatio(Hists,legends,colors,title,name,minheight,maxheigh
     lumilab1.SetNDC()
     lumilab1.SetTextSize(0.10)
     lumilab1.Draw()
+
+    c_both.SaveAs('output_plots/%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,mscw_blind))
+
+def MakeRMSComparisonPlot(Hists,legends,colors,title,name,maxhight,logx,logy):
+    
+    c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
+    pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
+    pad3.SetBottomMargin(0.0)
+    pad3.SetTopMargin(0.03)
+    pad3.SetBorderMode(1)
+    pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.8)
+    pad1.SetBottomMargin(0.2)
+    pad1.SetTopMargin(0.0)
+    pad1.SetBorderMode(0)
+    if logy: pad1.SetGrid()
+    pad1.Draw()
+    pad3.Draw()
+
+    pad1.cd()
+    if logy: pad1.SetLogy()
+
+    nbins = len(Hists[0])
+    Hist_rms = []
+    for h in range(0,len(Hists)):
+        hist_this = ROOT.TH1D("Hist_rms_%s"%(h),"",nbins,0,nbins)
+        Hist_rms += [hist_this]
+        rms_initial = Hists[h][0].GetRMS()
+        for sr in range(0,nbins):
+            rms = Hists[h][sr].GetRMS()
+            if rms_initial*rms_initial-rms*rms<0.: continue
+            Hist_rms[h].SetBinContent(sr+1,pow(rms_initial*rms_initial-rms*rms,0.5)/rms_initial)
+    Hist_rms[0].GetXaxis().SetTitle("Slice in MSCL")
+    Hist_rms[0].GetYaxis().SetTitle("diff. in MSCW RMS")
+    for h in range(0,len(Hists)):
+        Hist_rms[h].SetLineColor(colors[h])
+        Hist_rms[h].Draw("same")
+
+
+    pad3.cd()
+    legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.15)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+    legend.Clear()
+    for h in range(0,len(Hist_rms)):
+        if Hist_rms[h]!=0:
+            legend.AddEntry(Hist_rms[h],'%s'%(legends[h]),"pl")
+    legend.Draw("SAME")
 
     c_both.SaveAs('output_plots/%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,mscw_blind))
 
@@ -1553,6 +1604,28 @@ for s in range(0,len(source_list)):
                     colors += [count]
                 MakeComparisonPlot(Hists,legends,colors,title,plotname,0,False,False)
 
+                Hist_mean = []
+                legend_mscw = []
+                color_mscw = []
+                Hists = []
+                for sr in SRs_included:
+                    Hist_data_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_SR%s_MSCW_SumRuns'%(sr),False)
+                    Hists += [Hist_data_MSCW]
+                Hist_mean += [Hists]
+                legend_mscw += ["data"]
+                color_mscw += [1]
+                Hists = []
+                for sr in SRs_included:
+                    Hist_bkg_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_BkgSR%s_MSCW_SumRuns'%(sr),False)
+                    Hists += [Hist_bkg_MSCW]
+                Hist_mean += [Hists]
+                legend_mscw += ["Bkg"]
+                color_mscw += [2]
+                plotname = 'Target_DataVsBkg_Mean_E%s'%(ErecS_lower_cut)
+                MakeMeanComparisonPlot(Hist_mean,legend_mscw,color_mscw,'mean MSCW',plotname,0,False,False)
+                plotname = 'Target_DataVsBkg_RMS_E%s'%(ErecS_lower_cut)
+                MakeRMSComparisonPlot(Hist_mean,legend_mscw,color_mscw,'mean MSCW',plotname,0,False,False)
+
             if doSpline:
                 Hists = []
                 legends = []
@@ -1866,6 +1939,8 @@ for e in range(0,len(energy_list)-1):
     MakeComparisonPlot(Hist_mscw,legend_mscw,color_mscw,'MSCW',plotname,0,False,False)
     plotname = 'Target_MultiSource_Mean_E%s'%(ErecS_lower_cut)
     MakeMeanComparisonPlot(Hist_mean,legend_mscw,color_mscw,'mean MSCW',plotname,0,False,False)
+    plotname = 'Target_MultiSource_RMS_E%s'%(ErecS_lower_cut)
+    MakeRMSComparisonPlot(Hist_mean,legend_mscw,color_mscw,'mean MSCW',plotname,0,False,False)
 
 if doRaDec:
     ErecS_lower_cut = energy_list[0]
