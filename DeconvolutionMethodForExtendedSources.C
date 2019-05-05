@@ -2034,7 +2034,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                     //dark_converge.at(e) = FindConverge(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e));
                     //if (DoConverge) Converge(&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),dark_converge.at(e).first,dark_converge.at(e).second);
 
-                    Hist_Target_CR_MSCW_SumRuns.at(e).at(c1).Add(&Hist_Target_CR_MSCW.at(e).at(c1));
+                    Hist_Target_BkgCR_MSCW_SumRuns.at(e).at(c1).Add(&Hist_Target_CR_MSCW.at(e).at(c1));
                     Hist_Target_BkgCR_MSCW_SumRuns.at(e).at(Number_of_CR-1).Add(&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1));
 
                     dark_initial_mean_delta = Hist_Dark_CR_MSCW_SumRuns.at(e).at(Number_of_CR-1).GetMean()-Hist_Dark_CR_MSCW_SumRuns.at(e).at(0).GetMean();
@@ -2212,7 +2212,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                 std::cout << "target_kernel_rms = " << target_kernel_rms.at(e).at(s) << std::endl;
                 std::cout << "dark_kernel_shift = " << dark_kernel_shift.at(e).at(s) << std::endl;
                 std::cout << "target_kernel_shift = " << target_kernel_shift.at(e).at(s) << std::endl;
-                dark_converge.at(e) = FindConverge(&Hist_Target_CR_MSCW_SumRuns.at(e).at(0),&Hist_Target_BkgCR_MSCW_SumRuns.at(e).at(0),&Hist_Dark_BkgTemp_MSCW.at(e));
+                dark_converge.at(e) = FindConverge(&Hist_Target_CR_MSCW_SumRuns.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW_SumRuns.at(e).at(Number_of_CR-1),&Hist_Dark_BkgTemp_MSCW.at(e));
                 if (DoConverge) Converge(&Hist_Target_BkgSR_MSCW_SumRuns.at(e).at(s),dark_converge.at(e).first,dark_converge.at(e).second);
                 Hist_Target_BkgSR_MSCW_SumRuns_SumSRs.at(e).Add(&Hist_Target_BkgSR_MSCW_SumRuns.at(e).at(s));
             }
