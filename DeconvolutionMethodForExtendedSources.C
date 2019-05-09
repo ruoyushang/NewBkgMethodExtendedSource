@@ -683,8 +683,8 @@ std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bk
     //amplitude = FindConvergeAmplitude(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,threshold,init_amplitude,1);
     //threshold = threshold-amplitude;
     amplitude = FindConvergeAmplitude(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,threshold,amplitude,0);
-    threshold = threshold+0.5*amplitude;
-    amplitude = FindConvergeAmplitude(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,threshold,amplitude,2);
+    //threshold = threshold+0.5*amplitude;
+    //amplitude = FindConvergeAmplitude(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,threshold,amplitude,2);
     std::cout << "found threshold = " << threshold << ", amplitude = " << amplitude << std::endl;
     return std::make_pair(threshold,amplitude);
 }
@@ -697,9 +697,9 @@ void Converge(TH1* Hist_Bkg, double threshold, double amplitude)
     for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
     {
         double old_content = Hist_Bkg->GetBinContent(i+1);
-        double new_content = old_content*ConvergeFunction(Hist_Bkg->GetBinCenter(i+1),threshold,amplitude,2);
+        double new_content = old_content*ConvergeFunction(Hist_Bkg->GetBinCenter(i+1),threshold,amplitude,0);
         double old_error = Hist_Bkg->GetBinError(i+1);
-        double new_error = old_error*ConvergeFunction(Hist_Bkg->GetBinCenter(i+1),threshold,amplitude,2);
+        double new_error = old_error*ConvergeFunction(Hist_Bkg->GetBinCenter(i+1),threshold,amplitude,0);
         Hist_Bkg->SetBinContent(i+1,new_content);
     }
 }
@@ -2085,8 +2085,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                     std::cout << "CR Mean = " << Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1).GetMean() << std::endl;
                     std::cout << "CR RMS = " << Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1).GetRMS() << std::endl;
 
-                    //dark_converge.at(e) = FindConverge(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e));
-                    dark_converge.at(e) = FindConverge(&Hist_Dark_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Dark_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Dark_BkgTemp_MSCW.at(e));
+                    dark_converge.at(e) = FindConverge(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgTemp_MSCW.at(e));
+                    //dark_converge.at(e) = FindConverge(&Hist_Dark_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Dark_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Dark_BkgTemp_MSCW.at(e));
                     if (DoConverge) Converge(&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),dark_converge.at(e).first,dark_converge.at(e).second);
 
                     Hist_Target_BkgCR_MSCW_SumRuns.at(e).at(c1).Add(&Hist_Target_CR_MSCW.at(e).at(c1));
@@ -2142,7 +2142,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                     std::cout << "Target, e " << energy_bins[e] << ", final rms = " << Hist_Target_Deconv_MSCW.at(e).GetRMS() << std::endl;
                     offset = ShiftAndNormalize(&Hist_Dark_SR_MSCW.at(e).at(0),&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(0),initial_shift,true,false,2);
 
-                    dark_converge.at(e) = FindConverge(&Hist_Dark_SR_MSCW.at(e).at(0),&Hist_Dark_BkgSR_MSCW.at(e).at(0),&Hist_Dark_BkgTemp_MSCW.at(e));
+                    //dark_converge.at(e) = FindConverge(&Hist_Dark_SR_MSCW.at(e).at(0),&Hist_Dark_BkgSR_MSCW.at(e).at(0),&Hist_Dark_BkgTemp_MSCW.at(e));
                     if (DoConverge) Converge(&Hist_Target_BkgSR_MSCW.at(e).at(0),dark_converge.at(e).first,dark_converge.at(e).second);
 
                     std::cout << "SR0 blinded offset = " << offset.second.first << std::endl;
@@ -2210,7 +2210,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                         std::cout << "Target, e " << energy_bins[e] << ", final rms = " << Hist_Target_Deconv_MSCW.at(e).GetRMS() << std::endl;
                         offset = ShiftAndNormalize(&Hist_Dark_SR_MSCW.at(e).at(s),&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgTemp_MSCW.at(e),&Hist_Target_BkgSR_MSCW.at(e).at(s),initial_shift,true,false,2);
 
-                        dark_converge.at(e) = FindConverge(&Hist_Dark_SR_MSCW.at(e).at(s),&Hist_Dark_BkgSR_MSCW.at(e).at(s),&Hist_Dark_BkgTemp_MSCW.at(e));
+                        //dark_converge.at(e) = FindConverge(&Hist_Dark_SR_MSCW.at(e).at(s),&Hist_Dark_BkgSR_MSCW.at(e).at(s),&Hist_Dark_BkgTemp_MSCW.at(e));
                         if (DoConverge) Converge(&Hist_Target_BkgSR_MSCW.at(e).at(s),dark_converge.at(e).first,dark_converge.at(e).second);
 
                         std::cout << "SR" << s << " blinded offset = " << offset.second.first << std::endl;
