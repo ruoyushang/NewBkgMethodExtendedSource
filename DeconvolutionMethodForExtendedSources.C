@@ -80,9 +80,9 @@ double MSCW_cut_upper = 1.5;
 const int Number_of_SR = 6;
 double MSCL_signal_cut_lower[Number_of_SR] = {0.75,0.50,0.25,0.00,-0.25,-0.50};
 double MSCL_signal_cut_upper[Number_of_SR] = {1.00,0.75,0.50,0.25, 0.00,-0.25};
-const int Number_of_CR = 2;
-double MSCL_control_cut_lower[Number_of_CR] = {1.25,1.00};
-double MSCL_control_cut_upper[Number_of_CR] = {1.50,1.25};
+const int Number_of_CR = 6;
+double MSCL_control_cut_lower[Number_of_CR] = {2.25,2.00,1.75,1.50,1.25,1.00};
+double MSCL_control_cut_upper[Number_of_CR] = {2.50,2.25,2.00,1.75,1.50,1.25};
 //double MSCW_cut_lower = -0.8;  // set this to -1.5 for V5
 //double MSCW_cut_blind = 1.5;
 //double MSCW_cut_upper = 1.5;
@@ -1722,7 +1722,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
             std::cout << "Dark, e " << energy_bins[e] << std::endl;
             std::pair <bool,std::pair <double,double>> offset;
             std::pair <double,double> kernel_rms;
-            for (int c1=0;c1<Number_of_CR-1;c1++)
+            for (int c1=Number_of_CR-2;c1<Number_of_CR-1;c1++)
             {
                 //MakeSmoothSplineFunction(&Hist_Dark_CR_MSCW.at(e).at(c1));
                 //MakeSmoothSplineFunction(&Hist_Dark_CR_MSCW.at(e).at(Number_of_CR-1));
@@ -2036,7 +2036,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
 
                 std::pair <bool,std::pair <double,double>> offset;
                 std::pair <double,double> kernel_rms;
-                for (int c1=0;c1<Number_of_CR-1;c1++)
+                for (int c1=Number_of_CR-2;c1<Number_of_CR-1;c1++)
                 {
                     //MakeSmoothSplineFunction(&Hist_Target_CR_MSCW.at(e).at(c1));
                     //MakeSmoothSplineFunction(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1));
@@ -2090,18 +2090,18 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                     Hist_Target_BkgCR_MSCW_SumRuns.at(e).at(c1).Add(&Hist_Target_CR_MSCW.at(e).at(c1));
                     Hist_Target_BkgCR_MSCW_SumRuns.at(e).at(Number_of_CR-1).Add(&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1));
 
-                    dark_initial_mean_delta = Hist_Dark_CR_MSCW_SumRuns.at(e).at(Number_of_CR-1).GetMean()-Hist_Dark_CR_MSCW_SumRuns.at(e).at(0).GetMean();
+                    dark_initial_mean_delta = Hist_Dark_CR_MSCW_SumRuns.at(e).at(Number_of_CR-1).GetMean()-Hist_Dark_CR_MSCW_SumRuns.at(e).at(Number_of_CR-2).GetMean();
                     dark_initial_mean = Hist_Dark_CR_MSCW_SumRuns.at(e).at(Number_of_CR-1).GetMean();
-                    dark_initial_amp_delta = Hist_Dark_CR_MSCW_SumRuns.at(e).at(Number_of_CR-1).Integral()-Hist_Dark_CR_MSCW_SumRuns.at(e).at(0).Integral();
+                    dark_initial_amp_delta = Hist_Dark_CR_MSCW_SumRuns.at(e).at(Number_of_CR-1).Integral()-Hist_Dark_CR_MSCW_SumRuns.at(e).at(Number_of_CR-2).Integral();
                     dark_initial_amp = Hist_Dark_CR_MSCW_SumRuns.at(e).at(Number_of_CR-1).Integral();
-                    dark_initial_rms_delta = Hist_Dark_CR_MSCW_SumRuns.at(e).at(Number_of_CR-1).GetRMS()-Hist_Dark_CR_MSCW_SumRuns.at(e).at(0).GetRMS();
+                    dark_initial_rms_delta = Hist_Dark_CR_MSCW_SumRuns.at(e).at(Number_of_CR-1).GetRMS()-Hist_Dark_CR_MSCW_SumRuns.at(e).at(Number_of_CR-2).GetRMS();
                     dark_initial_rms = Hist_Dark_CR_MSCW_SumRuns.at(e).at(Number_of_CR-1).GetRMS();
-                    target_initial_mean_delta = Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1).GetMean()-Hist_Target_CR_MSCW.at(e).at(0).GetMean();
+                    target_initial_mean_delta = Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1).GetMean()-Hist_Target_CR_MSCW.at(e).at(Number_of_CR-2).GetMean();
                     target_initial_stat = Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1).Integral();
                     target_initial_mean = Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1).GetMean();
-                    target_initial_amp_delta = Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1).Integral()-Hist_Target_CR_MSCW.at(e).at(0).Integral();
+                    target_initial_amp_delta = Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1).Integral()-Hist_Target_CR_MSCW.at(e).at(Number_of_CR-2).Integral();
                     target_initial_amp = Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1).Integral();
-                    target_initial_rms_delta = Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1).GetRMS()-Hist_Target_CR_MSCW.at(e).at(0).GetRMS();
+                    target_initial_rms_delta = Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1).GetRMS()-Hist_Target_CR_MSCW.at(e).at(Number_of_CR-2).GetRMS();
                     target_initial_rms = Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1).GetRMS();
                     std::cout << "dark_initial_mean_delta = " << dark_initial_mean_delta << std::endl;
                     std::cout << "target_initial_mean_delta = " << target_initial_mean_delta << std::endl;
