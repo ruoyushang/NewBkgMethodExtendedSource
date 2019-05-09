@@ -325,7 +325,7 @@ double GetChi2(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int 
     double inflation_mean = 1.;
     double inflation_rms = 1.;
     //if (!includeSR) inflation_mean = exp(-0.5*pow((Hist_Bkg->GetMean()-estimated_mean)/(estimated_mean_err),2));
-    if (!includeSR) inflation_rms = exp(-0.5*pow((Hist_Bkg->GetRMS()-estimated_rms)/(estimated_rms_err/4.),2));
+    if (!includeSR) inflation_rms = exp(-0.5*pow((Hist_Bkg->GetRMS()-estimated_rms)/(estimated_rms_err/8.),2));
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
         double bkg = Hist_Bkg->GetBinContent(i+1);
         double data = Hist_SR->GetBinContent(i+1);
