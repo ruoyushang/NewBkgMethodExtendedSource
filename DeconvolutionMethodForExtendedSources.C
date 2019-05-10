@@ -324,8 +324,15 @@ double GetChi2(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int 
     double sign_nbins = 0.;
     double inflation_mean = 1.;
     double inflation_rms = 1.;
-    //if (!includeSR) inflation_mean = exp(-0.5*pow((Hist_Bkg->GetMean()-estimated_mean)/(estimated_mean_err),2));
-    if (!includeSR) inflation_rms = exp(-0.5*pow((Hist_Bkg->GetRMS()-estimated_rms)/(estimated_rms_err/8.),2));
+    if (!includeSR) 
+    {
+        //if (MSCW_cut_blind>(estimated_mean-estimated_rms)) 
+        if (MSCW_cut_blind>(estimated_mean)) 
+        {
+            inflation_mean = exp(-0.5*pow((Hist_Bkg->GetMean()-estimated_mean)/(estimated_mean_err/2.),2));
+        }
+        inflation_rms = exp(-0.5*pow((Hist_Bkg->GetRMS()-estimated_rms)/(estimated_rms_err/4.),2));
+    }
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
         double bkg = Hist_Bkg->GetBinContent(i+1);
         double data = Hist_SR->GetBinContent(i+1);
@@ -507,13 +514,13 @@ double ConvergeFunction(double x, double threshold, double amplitude, int type)
     {
         if (x-(threshold+amplitude)>=0.) return 1.;
         if (x-(threshold)<0.) return 0.;
-        return pow((x-threshold)/amplitude,1);
+        return pow((x-threshold)/amplitude,2);
     }
     else if (type==1) // this is used to find endpoint
     {
         if (x-(threshold)>=0.) return 1.;
         if (x-(threshold-amplitude)<0.) return 0.;
-        return pow((x-threshold+amplitude)/amplitude,1);
+        return pow((x-threshold+amplitude)/amplitude,2);
     }
     else if (type==2) // this is used to find endpoint
     {
