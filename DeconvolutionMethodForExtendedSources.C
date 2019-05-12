@@ -174,18 +174,16 @@ vector<vector<double>> dark_kernel_shift;
 vector<vector<double>> target_kernel_rms;
 vector<vector<double>> target_kernel_shift;
 
-//const int N_energy_bins = 16;
-//double energy_bins[N_energy_bins+1] =     {200,237,282,335,398,473,562,663,794,937,1122,1585,2239,3162,4467,6310,8913};
-//int number_runs_included[N_energy_bins] = {1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,1  ,2   ,2   ,4   ,4   ,8   ,8};
-//const int N_energy_bins = 11;
-//double energy_bins[N_energy_bins+1] =     {200,282,398,562,794,1122,1585,2239,3162,4467,6310,8913};
-//int number_runs_included[N_energy_bins] = {99 ,99 ,99 ,99 ,99 ,99  ,99  ,99  ,99  ,99  ,99};
+const int N_energy_bins = 11;
+double energy_bins[N_energy_bins+1] =     {200  ,282  ,398  ,562  ,794  ,1122 ,1585 ,2239 ,3162 ,4467 ,6310,8913};
+int number_runs_included[N_energy_bins] = {99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99};
+bool use_this_energy_bin[N_energy_bins] = {false,true ,false,false,false,true,false,false,false,false,true};
 //const int N_energy_bins = 6;
 //double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
 //int number_runs_included[N_energy_bins] = {99  ,99  ,99  ,99  ,99  ,99};
-const int N_energy_bins = 1;
-double energy_bins[N_energy_bins+1] =     {1122,1585};
-int number_runs_included[N_energy_bins] = {99};
+//const int N_energy_bins = 1;
+//double energy_bins[N_energy_bins+1] =     {1122,1585};
+//int number_runs_included[N_energy_bins] = {99};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] =     {282,398};
 //int number_runs_included[N_energy_bins] = {99};
@@ -326,11 +324,10 @@ double GetChi2(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int 
     double inflation_rms = 1.;
     if (!includeSR) 
     {
-        //if (MSCW_cut_blind>(estimated_mean-estimated_rms)) 
-        if (MSCW_cut_blind>(estimated_mean)) 
-        {
-            inflation_mean = exp(-0.5*pow((Hist_Bkg->GetMean()-estimated_mean)/(estimated_mean_err/2.),2));
-        }
+        //if (MSCW_cut_blind>(estimated_mean)) 
+        //{
+        //    inflation_mean = exp(-0.5*pow((Hist_Bkg->GetMean()-estimated_mean)/(estimated_mean_err/2.),2));
+        //}
         inflation_rms = exp(-0.5*pow((Hist_Bkg->GetRMS()-estimated_rms)/(estimated_rms_err/4.),2));
     }
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
@@ -1150,10 +1147,13 @@ vector<int> SortRunListByElevation(string source,vector<int> Target_runlist)
         return new_list;
 
 }
-vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist)
+vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, double energy)
 {
         std::cout << "Getting sublist runs from " << source << std::endl;
         vector<vector<int>> list;
+        vector<int> totallist_runnumber;
+        vector<double> totallist_elevation;
+        vector<double> totallist_azimuth;
         double elev_primary = 0;
         double azim_primary = 0;
         double elev_this = 0;
@@ -1168,10 +1168,60 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist)
         if (TString(source)=="CrabB") sprintf(observation, "%s", "Crab");
         if (TString(source)=="Segue1AV6") sprintf(observation, "%s", "Segue1V6");
         if (TString(source)=="Segue1BV6") sprintf(observation, "%s", "Segue1V6");
-        //double delta_elev = 5.;
-        //double delta_azim = 10.;
-        double delta_elev = 10.;
-        double delta_azim = 20.;
+        double delta_elev = 1.;
+        double delta_azim = 2.;
+        if (energy>1000.)
+        {
+            delta_elev = 10.;
+            delta_azim = 20.;
+        }
+        if (energy>6000.)
+        {
+            delta_elev = 20.;
+            delta_azim = 40.;
+        }
+        for (int run=0;run<Target_runlist.size();run++) {
+            char run_number[50];
+            sprintf(run_number, "%i", int(Target_runlist[run]));
+            filename = TString("$VERITAS_USER_DATA_DIR/"+TString(observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
+            if (TString(observation)=="Coma" || TString(observation)=="BrandonValidation") {
+              filename = TString("/veritas/userspace/brandon/VERITAS/Background/anasum/"+TString(run_number)+".anasum.root");
+            }
+            if (TString(observation)=="VA_Segue1" || TString(observation)=="VA_Geminga")
+            {
+              filename = TString("/veritas/upload/Geminga_Iowa/"+TString(run_number)+".stage4.root");
+            }
+            TFile*  input_file = TFile::Open(filename.c_str());
+            TTree* pointing_tree = nullptr;
+            if (!UseVegas) 
+            {
+                pointing_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/pointingDataReduced");
+                pointing_tree->SetBranchAddress("TelElevation",&TelElevation);
+                pointing_tree->SetBranchAddress("TelAzimuth",&TelAzimuth);
+                pointing_tree->SetBranchAddress("TelRAJ2000",&TelRAJ2000);
+                pointing_tree->SetBranchAddress("TelDecJ2000",&TelDecJ2000);
+                double total_entries = (double)pointing_tree->GetEntries();
+                pointing_tree->GetEntry(int(total_entries/2.));
+            }
+            else
+            {
+                pointing_tree = (TTree*) input_file->Get("ShowerEvents/ShowerEventsTree");
+                        // VEGAS
+#ifdef VEGAS
+	        VAShowerData* sh = nullptr;
+	        pointing_tree->SetBranchAddress("S", &sh);
+                double total_entries = (double)pointing_tree->GetEntries();
+                pointing_tree->GetEntry(int(total_entries/2.));
+                TelElevation = sh->fArrayTrackingElevation_Deg;
+                TelAzimuth = sh->fArrayTrackingAzimuth_Deg;
+#endif
+            }
+            totallist_runnumber.push_back(Target_runlist[run]);
+            totallist_elevation.push_back(TelElevation);
+            totallist_azimuth.push_back(TelAzimuth);
+            input_file->Close();
+            continue;
+        }
         for (int elev=0;elev<(90./delta_elev);elev++)
         {
             double elev_low = delta_elev*((double)elev);
@@ -1187,84 +1237,26 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist)
                 if (azim_low>=Target_Azim_cut_upper) continue;
                 std::cout << "run elev. " << elev_low << "-" << elev_up << ", azim. " << azim_low << "-" << azim_up << std::endl;
                 vector<int> sublist;
-                for (int run=0;run<Target_runlist.size();run++) {
-                    char run_number[50];
-                    sprintf(run_number, "%i", int(Target_runlist[run]));
-                    filename = TString("$VERITAS_USER_DATA_DIR/"+TString(observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
-                    if (TString(observation)=="Coma" || TString(observation)=="BrandonValidation") {
-                      filename = TString("/veritas/userspace/brandon/VERITAS/Background/anasum/"+TString(run_number)+".anasum.root");
-                    }
-                    if (TString(observation)=="VA_Segue1" || TString(observation)=="VA_Geminga")
+                for (int run=0;run<totallist_runnumber.size();run++) {
+                    TelElevation = totallist_elevation.at(run);
+                    TelAzimuth = totallist_azimuth.at(run);
+                    if (TelElevation<elev_low) 
                     {
-                      filename = TString("/veritas/upload/Geminga_Iowa/"+TString(run_number)+".stage4.root");
+                        continue;
                     }
-                    TFile*  input_file = TFile::Open(filename.c_str());
-                    TTree* pointing_tree = nullptr;
-                    if (!UseVegas) 
+                    if (TelElevation>elev_up)
                     {
-                        pointing_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/pointingDataReduced");
-                        pointing_tree->SetBranchAddress("TelElevation",&TelElevation);
-                        pointing_tree->SetBranchAddress("TelAzimuth",&TelAzimuth);
-                        pointing_tree->SetBranchAddress("TelRAJ2000",&TelRAJ2000);
-                        pointing_tree->SetBranchAddress("TelDecJ2000",&TelDecJ2000);
-                        double total_entries = (double)pointing_tree->GetEntries();
-                        pointing_tree->GetEntry(int(total_entries/2.));
-                        if (TelElevation<elev_low) 
-                        {
-                            input_file->Close();
-                            continue;
-                        }
-                        if (TelElevation>elev_up)
-                        {
-                            input_file->Close();
-                            continue;
-                        }
-                        if (TelAzimuth<azim_low)
-                        {
-                            input_file->Close();
-                            continue;
-                        }
-                        if (TelAzimuth>azim_up)
-                        {
-                            input_file->Close();
-                            continue;
-                        }
+                        continue;
                     }
-                    else
+                    if (TelAzimuth<azim_low)
                     {
-                        pointing_tree = (TTree*) input_file->Get("ShowerEvents/ShowerEventsTree");
-                        // VEGAS
-#ifdef VEGAS
-	                VAShowerData* sh = nullptr;
-	                pointing_tree->SetBranchAddress("S", &sh);
-                        double total_entries = (double)pointing_tree->GetEntries();
-                        pointing_tree->GetEntry(int(total_entries/2.));
-                        TelElevation = sh->fArrayTrackingElevation_Deg;
-                        TelAzimuth = sh->fArrayTrackingAzimuth_Deg;
-#endif
-                        if (TelElevation<elev_low) 
-                        {
-                            input_file->Close();
-                            continue;
-                        }
-                        if (TelElevation>elev_up)
-                        {
-                            input_file->Close();
-                            continue;
-                        }
-                        if (TelAzimuth<azim_low)
-                        {
-                            input_file->Close();
-                            continue;
-                        }
-                        if (TelAzimuth>azim_up)
-                        {
-                            input_file->Close();
-                            continue;
-                        }
+                        continue;
                     }
-                    sublist.push_back(Target_runlist[run]);
-                    input_file->Close();
+                    if (TelAzimuth>azim_up)
+                    {
+                        continue;
+                    }
+                    sublist.push_back(totallist_runnumber.at(run));
                     continue;
                 }
                 if (!(sublist.size()==0)) list.push_back(sublist);
@@ -1716,6 +1708,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         MSCW_cut_blind = MSCW_cut_lower_input;
         for (int e=0;e<N_energy_bins;e++)
         {
+            if (!use_this_energy_bin[e]) continue;
             std::cout << "=================================================================" << std::endl;
             std::cout << "Dark, e " << energy_bins[e] << std::endl;
             std::pair <bool,std::pair <double,double>> offset;
@@ -1859,9 +1852,10 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         MSCW_cut_blind = MSCW_cut_blind_input;
         vector<vector<int>> Sublist;
         Target_runlist = SortRunListByElevation(target,Target_runlist);
-        Sublist = FindRunSublist(target,Target_runlist);
         for (int e=0;e<N_energy_bins;e++)
         {
+            if (!use_this_energy_bin[e]) continue;
+            Sublist = FindRunSublist(target,Target_runlist,energy_bins[e]);
             std::cout << "=================================================================" << std::endl;
             std::cout << "Target, e " << energy_bins[e] << std::endl;
             std::cout << "Sublist.size() = " << Sublist.size() << std::endl;
@@ -1925,8 +1919,13 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                     Target_tree->GetEntry(Target_tree->GetEntries()-1);
                     R2off = Xoff*Xoff+Yoff*Yoff;
                     double time_1 = Time;
-                    if (e==0) exposure_hours += (time_1-time_0)/3600.;
-                    if (e==0) used_runs.push_back(int(Sublist.at(subrun)[run]));
+                    bool run_already_used = false;
+                    for (int this_run=0;this_run<used_runs.size();this_run++)
+                    {
+                        if (used_runs.at(this_run)==Sublist.at(subrun)[run]) run_already_used = true;
+                    }
+                    if (!run_already_used) exposure_hours += (time_1-time_0)/3600.;
+                    if (!run_already_used) used_runs.push_back(int(Sublist.at(subrun)[run]));
                     for (int entry=0;entry<Target_tree->GetEntries();entry++) {
                         theta2 = 0;
                         ra_sky = 0;
@@ -2290,7 +2289,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         int Number_of_SR_new = Number_of_SR;
         TString ConvergeOrNot = "";
         if (!DoConverge) ConvergeOrNot = "_NoConverge";
-        TFile OutputFile("output_May06/Deconvolution_"+TString(target)+"_Ntel"+std::to_string(NTelMin)+"to"+std::to_string(NTelMax)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate");
+        TFile OutputFile("output_May11/Deconvolution_"+TString(target)+"_Ntel"+std::to_string(NTelMin)+"to"+std::to_string(NTelMax)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate");
         TTree InfoTree("InfoTree","info tree");
         InfoTree.Branch("Number_of_CR",&Number_of_CR_new,"Number_of_CR/I");
         InfoTree.Branch("Number_of_SR",&Number_of_SR_new,"Number_of_SR/I");
