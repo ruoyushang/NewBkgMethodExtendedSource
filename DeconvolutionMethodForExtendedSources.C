@@ -177,7 +177,7 @@ vector<vector<double>> target_kernel_shift;
 const int N_energy_bins = 11;
 double energy_bins[N_energy_bins+1] =     {200  ,282  ,398  ,562  ,794  ,1122 ,1585 ,2239 ,3162 ,4467 ,6310,8913};
 int number_runs_included[N_energy_bins] = {99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99};
-bool use_this_energy_bin[N_energy_bins] = {false,true ,false,false,false,true,false,false,false,false,true};
+bool use_this_energy_bin[N_energy_bins] = {false,true ,false,false,false,true ,false,false,false,false,true};
 //const int N_energy_bins = 6;
 //double energy_bins[N_energy_bins+1] =     {1122,1585,2239,3162,4467,6310,8913};
 //int number_runs_included[N_energy_bins] = {99  ,99  ,99  ,99  ,99  ,99};
@@ -322,13 +322,19 @@ double GetChi2(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int 
     double sign_nbins = 0.;
     double inflation_mean = 1.;
     double inflation_rms = 1.;
+    int norm_bin_low = Hist_SR->FindBin(MSCW_cut_lower);
+    int norm_bin_blind = Hist_SR->FindBin(MSCW_cut_blind);
+    int norm_bin_up = Hist_SR->FindBin(30.);
+    double weight_blinded = double(Hist_SR->Integral(norm_bin_low,norm_bin_blind));
+    double weight_unblinded = double(Hist_SR->Integral(norm_bin_blind,norm_bin_up));
+    double weight_ratio = weight_unblinded/(weight_blinded+weight_unblinded);
     if (!includeSR) 
     {
         //if (MSCW_cut_blind>(estimated_mean)) 
         //{
         //    inflation_mean = exp(-0.5*pow((Hist_Bkg->GetMean()-estimated_mean)/(estimated_mean_err/2.),2));
         //}
-        inflation_rms = exp(-0.5*pow((Hist_Bkg->GetRMS()-estimated_rms)/(estimated_rms_err/4.),2));
+        inflation_rms = exp(-0.5*pow((Hist_Bkg->GetRMS()-estimated_rms)/(estimated_rms_err*weight_ratio),2));
     }
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
         double bkg = Hist_Bkg->GetBinContent(i+1);
@@ -1168,17 +1174,22 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, do
         if (TString(source)=="CrabB") sprintf(observation, "%s", "Crab");
         if (TString(source)=="Segue1AV6") sprintf(observation, "%s", "Segue1V6");
         if (TString(source)=="Segue1BV6") sprintf(observation, "%s", "Segue1V6");
-        double delta_elev = 1.;
-        double delta_azim = 2.;
+        double delta_elev = 0.5;
+        double delta_azim = 5.0;
+        if (energy>500.)
+        {
+            delta_elev = 1.;
+            delta_azim = 10.;
+        }
         if (energy>1000.)
         {
-            delta_elev = 10.;
+            delta_elev = 2.;
             delta_azim = 20.;
         }
         if (energy>6000.)
         {
             delta_elev = 20.;
-            delta_azim = 40.;
+            delta_azim = 360.;
         }
         for (int run=0;run<Target_runlist.size();run++) {
             char run_number[50];
