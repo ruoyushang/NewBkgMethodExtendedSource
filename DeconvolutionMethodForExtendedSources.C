@@ -178,8 +178,8 @@ vector<vector<double>> target_kernel_shift;
 const int N_energy_bins = 11;
 double energy_bins[N_energy_bins+1] =     {200  ,282  ,398  ,562  ,794  ,1122 ,1585 ,2239 ,3162 ,4467 ,6310,8913};
 int number_runs_included[N_energy_bins] = {99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99};
-//bool use_this_energy_bin[N_energy_bins] = {true ,true ,true ,true ,true ,true ,true ,true ,true ,true ,true};
-bool use_this_energy_bin[N_energy_bins] = {false,false,true ,false,false,true ,false,false,false,false,false};
+bool use_this_energy_bin[N_energy_bins] = {true ,true ,true ,true ,true ,true ,true ,true ,true ,true ,true};
+//bool use_this_energy_bin[N_energy_bins] = {false,false,true ,false,false,true ,false,false,false,false,false};
 double electron_flux[N_energy_bins] =     {314  ,314  ,210  ,44.8 ,6.37 ,2.7  ,0    ,0    ,0    ,0    ,0};
 double electron_count[N_energy_bins] = {0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0};
 
@@ -890,7 +890,19 @@ std::pair <bool,std::pair <double,double>> ShiftAndNormalize(TH1* Hist_Dark, TH1
     Hist_Bkg->Scale(scale_fit);
     return std::make_pair(doShift,std::make_pair(shift_fit,unblinded_shift_fit));
 }
-
+bool IsReasonableResult(TH1* Hist_Bkg)
+{
+    double total_bkg = 0.;
+    double total_err = 0.;
+    for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
+    {
+        total_bkg += Hist_Bkg->GetBinContent(i);
+        total_err += Hist_Bkg->GetBinError(i);
+    }
+    if (total_bkg<=0.) return false;
+    if (total_err/total_bkg>10.) return false;
+    return true;
+}
 void Deconvolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Deconv, int n_iteration) {
         Hist_Deconv->Reset();
         const int N_bins = Hist_source->GetNbinsX();
@@ -941,6 +953,7 @@ double FindNIteration(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg,
               Hist_Deconv->SetBinContent(b+1,content);
           }
           Deconvolution(Hist_CR,Hist_Deconv,Hist_BkgTemp,n_iter);
+          if (!IsReasonableResult(Hist_BkgTemp)) continue;
           std::pair <bool,std::pair <double,double>> offset = ShiftAndNormalize(Hist_Dark,Hist_SR,Hist_BkgTemp,Hist_Bkg,scaled_shift,true,includeSR,chi2_type);
           chi2 = GetChi2(Hist_Dark, Hist_SR,Hist_Bkg,includeSR,chi2_type);
           if (chi2_best<chi2) {
@@ -982,7 +995,7 @@ std::pair <double,double> FindRMS(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_CR, TH
             Hist_Deconv->SetBinContent(b+1,content);
         }
         Deconvolution(Hist_CR,Hist_Deconv,Hist_BkgTemp,n_iter);
-        if (Hist_BkgTemp->Integral()==0) continue;
+        if (!IsReasonableResult(Hist_BkgTemp)) continue;
         std::pair <bool,std::pair <double,double>> offset = ShiftAndNormalize(Hist_Dark,Hist_SR,Hist_BkgTemp,Hist_Bkg,scaled_shift,DoShift,includeSR,chi2_type);
         chi2 = GetChi2(Hist_Dark, Hist_SR, Hist_Bkg,includeSR,chi2_type);
         unblinded_chi2 = GetChi2(Hist_Dark, Hist_SR, Hist_Bkg,true,2);
