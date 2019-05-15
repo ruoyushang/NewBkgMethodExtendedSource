@@ -17,6 +17,7 @@
 #include "TF1.h"
 #include "TH1.h"
 #include "TH2.h"
+#include "TProfile.h"
 #include "TGraph.h"
 #include "TTree.h"
 #include "TString.h"
@@ -165,7 +166,7 @@ double target_current_amp = 0.;
 
 std::pair <double,double> converge;
 vector<int> used_runs;
-vector<double> energy_vec;
+vector<double> cosmic_electron;
 double exposure_hours = 0.;
 double delta_mscw_mean = 0.;
 vector<std::pair<double,double>> dark_converge;
@@ -179,6 +180,8 @@ double energy_bins[N_energy_bins+1] =     {200  ,282  ,398  ,562  ,794  ,1122 ,1
 int number_runs_included[N_energy_bins] = {99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99};
 //bool use_this_energy_bin[N_energy_bins] = {true ,true ,true ,true ,true ,true ,true ,true ,true ,true ,true};
 bool use_this_energy_bin[N_energy_bins] = {false,false,true ,false,false,true ,false,false,false,false,false};
+double electron_flux[N_energy_bins] =     {314  ,314  ,210  ,44.8 ,6.37 ,2.7  ,0    ,0    ,0    ,0    ,0};
+double electron_count[N_energy_bins] = {0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0};
 
 int N_bins_for_deconv = 480;
 double MSCW_plot_lower = -30.;
@@ -230,6 +233,65 @@ bool ControlSelectionTheta2(int whichSR)
     if (MSCW<MSCW_cut_blind*1.0) return false;
     if (MSCW>MSCW_cut_blind*3.0) return false;
     return true;
+}
+TObject* getEffAreaHistogram( TFile* fAnasumDataFile, int runnumber)
+{
+        double iSlizeY = -9999;
+        string dirname = "energyHistograms";
+        string hisname = "herecEffectiveArea_on";
+	if( !fAnasumDataFile )
+	{
+		return 0;
+	}
+	
+	char dx[600];
+	if( runnumber > 1 )
+	{
+		sprintf( dx, "run_%d/stereo/%s", runnumber, dirname.c_str() );
+	}
+	else
+	{
+		if( runnumber == 0 )
+		{
+			sprintf( dx, "total/stereo/%s", dirname.c_str() );
+		}
+		else if( runnumber == 1 )
+		{
+			sprintf( dx, "total_%d/stereo/%s", runnumber, dirname.c_str() );
+		}
+		else
+		{
+			sprintf( dx, "total_%d/stereo/%s", -1 * runnumber, dirname.c_str() );
+		}
+	}
+	
+	fAnasumDataFile->cd( dx );
+	TDirectory* iDir = gDirectory;
+	if( !iDir )
+	{
+		return 0;
+	}
+	
+	TObject* h = ( TObject* )iDir->Get( hisname.c_str() );
+	
+	if( h && iSlizeY < -9998. )
+	{
+		return h->Clone();
+	}
+	else if( h )
+	{
+		string iClassName = h->ClassName();
+		if( iClassName.find( "TH2" ) != string::npos )
+		{
+			TH2* i_h2 = ( TH2* )h;
+			string iN = hisname + "px";
+			TH1* i_h = ( TH1* )i_h2->ProjectionX( iN.c_str(), i_h2->GetYaxis()->FindBin( iSlizeY ), i_h2->GetYaxis()->FindBin( iSlizeY ) );
+			return i_h->Clone();
+		}
+	}
+	
+	
+	return 0;
 }
 double background(Double_t *x, Double_t *par) {
     return (1./par[0])*(x[0]+par[1])*exp(-pow((x[0]+par[1])/par[0],2));
@@ -1324,6 +1386,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         TH2D Hist_Target_TelRaDec_AfterCut("Hist_Target_TelRaDec_AfterCut","",100,0,5,100,-1,1);
         TH1D Hist_Target_ON_MSCW_Alpha("Hist_Target_ON_MSCW_Alpha","",100,0,10);
         TH1D Hist_Target_OFF_MSCW_Alpha("Hist_Target_OFF_MSCW_Alpha","",100,0,10);
+        TProfile Hist_Measured_Electron_Flux("Hist_Measured_Electron_Flux","",N_energy_bins,energy_bins,0,10000.);
+        TH1D Hist_EffAreaTime("Hist_EffAreaTime","",N_energy_bins,energy_bins);
+        TH1D Hist_Target_Excess_EachRun("Hist_Target_Excess_EachRun","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
         vector<int> Run_sublist;
         vector<TH1D> Hist_Target_SR_ErecS;
         vector<vector<TH1D>> Hist_Target_SR_theta2;
@@ -1373,9 +1438,6 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         vector<TH1D> Hist_Dark_BkgSR_MSCW_SumRuns_SumSRs;
         vector<TH1D> Hist_Dark_Deconv_MSCW;
         vector<TH2D> Hist_Target_MSCLW;
-        for (int e=0;e<=N_energy_bins;e++) {
-            energy_vec.push_back(energy_bins[e]);
-        }
         for (int e=0;e<N_energy_bins;e++) {
             char e_low[50];
             sprintf(e_low, "%i", int(energy_bins[e]));
@@ -1906,6 +1968,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                     Hist_Target_BkgCR_MSCW.at(e).at(s).Reset();
                 }
                 if (Sublist.at(subrun).size()==0) continue;
+                Hist_EffAreaTime.Reset();
                 for (int run=0;run<Sublist.at(subrun).size();run++)
                 {
                     char run_number[50];
@@ -1923,6 +1986,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                     if (!PointingSelection(filename,int(Sublist.at(subrun)[run]),true,Target_Elev_cut_lower,Target_Elev_cut_upper,Target_Azim_cut_lower,Target_Azim_cut_upper)) continue;
 
                     TFile*  input_file = TFile::Open(filename.c_str());
+		    TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Sublist.at(subrun)[run]);
+                    double eff_area = i_hEffAreaP->GetBinContent( i_hEffAreaP->FindBin( log10( energy_bins[e]/1000.)));
+                    std::cout << "eff_area = " << eff_area << std::endl; 
                     TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
                     if (UseVegas) root_file = "ShowerEvents/ShowerEventsTree";
                     TTree* Target_tree = (TTree*) input_file->Get(root_file);
@@ -1951,6 +2017,9 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                     Target_tree->GetEntry(Target_tree->GetEntries()-1);
                     R2off = Xoff*Xoff+Yoff*Yoff;
                     double time_1 = Time;
+                    double expected_electrons = 1e-12*10000.*electron_flux[e]*eff_area*(time_1-time_0)*(energy_bins[e+1]-energy_bins[e])/1000.;
+                    electron_count[e] += expected_electrons;
+                    Hist_EffAreaTime.Fill(energy_bins[e],eff_area*(time_1-time_0));
                     bool run_already_used = false;
                     for (int this_run=0;this_run<used_runs.size();this_run++)
                     {
@@ -2273,6 +2342,19 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                         Hist_Target_BkgSR_MSCW_AllCR.at(e).at(s).Add(&Hist_Target_BkgSR_MSCW.at(e).at(s));
 
                     }
+                    // here we calculate the measured e/gamma flux
+                    Hist_Target_Excess_EachRun.Reset();
+                    for (int s=0;s<Number_of_SR;s++)
+                    {
+                        Hist_Target_Excess_EachRun.Add(&Hist_Target_SR_MSCW.at(e).at(s));
+                        Hist_Target_Excess_EachRun.Add(&Hist_Target_BkgSR_MSCW.at(e).at(s),-1.);
+                    }
+                    double excess_this_run = Hist_Target_Excess_EachRun.Integral();
+                    double effarea_time = Hist_EffAreaTime.GetBinContent(Hist_EffAreaTime.FindBin(energy_bins[e]));
+                    double flux_this_run = excess_this_run*1000./(effarea_time*(energy_bins[e+1]-energy_bins[e])*1e-12*10000.);
+                    std::cout << "excess_this_run = " << excess_this_run << std::endl;
+                    std::cout << "flux_this_run = " << flux_this_run << std::endl;
+                    Hist_Measured_Electron_Flux.Fill(energy_bins[e],flux_this_run);
                 }
                 for (int s=0;s<Number_of_SR;s++)
                 {
@@ -2296,6 +2378,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                     std::cout << "Hist_Target_BkgSR_MSCW_SumRuns.at(e).at("<< s<< ").Integral() = " << Hist_Target_BkgSR_MSCW_SumRuns.at(e).at(s).Integral(norm_bin_low,norm_bin_up) << std::endl;
                     std::cout << "Hist_Target_SR_MSCW_SumRuns.at(e).at("<< s<< ").Integral() = " << Hist_Target_SR_MSCW_SumRuns.at(e).at(s).Integral(norm_bin_low,norm_bin_up) << std::endl;
                 }
+                std::cout << "electron_count[e] = " << electron_count[e] << std::endl;
             }
         }
 
@@ -2314,6 +2397,13 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                 //if (DoConverge) Converge(&Hist_Target_BkgSR_MSCW_SumRuns.at(e).at(s),dark_converge.at(e).first,dark_converge.at(e).second);
                 Hist_Target_BkgSR_MSCW_SumRuns_SumSRs.at(e).Add(&Hist_Target_BkgSR_MSCW_SumRuns.at(e).at(s));
             }
+        }
+
+        std::cout << "=================================================" << std::endl;
+        for (int e=0;e<=N_energy_bins;e++) {
+            cosmic_electron.push_back(electron_count[e]);
+            std::cout << "Energy "  << energy_bins[e] << std::endl;
+            std::cout << "Hist_Measured_Electron_Flux = " << Hist_Measured_Electron_Flux.GetBinContent(Hist_Measured_Electron_Flux.FindBin(energy_bins[e])) << std::endl;;
         }
 
         int norm_bin_low_ring = Hist_Target_ON_MSCW_Alpha.FindBin(Norm_Lower);
@@ -2343,13 +2433,14 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         InfoTree.Branch("Target_Azim_cut_lower",&Target_Azim_cut_lower,"Target_Azim_cut_lower/D");
         InfoTree.Branch("Target_Azim_cut_upper",&Target_Azim_cut_upper,"Target_Azim_cut_upper/D");
         InfoTree.Branch("used_runs","std::vector<int>",&used_runs);
-        InfoTree.Branch("energy_vec","std::vector<double>",&energy_vec);
+        InfoTree.Branch("cosmic_electron","std::vector<double>",&cosmic_electron);
         InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
         InfoTree.Fill();
         InfoTree.Write();
         Hist_Target_TelElevAzim.Write();
         Hist_Target_TelRaDec.Write();
         Hist_Target_TelRaDec_AfterCut.Write();
+        Hist_Measured_Electron_Flux.Write();
         for (int e=0;e<N_energy_bins;e++) {
                 Hist_Target_SR_MSCL.at(e).Write();
                 Hist_Target_Mean.at(e).Write();
