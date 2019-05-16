@@ -34,12 +34,12 @@ source_list = []
 #source_list  += ['3C58']
 #source_list  += ['BrandonValidation']
 #source_list  += ['DarkField']
-source_list  += ['Segue1V6']
+#source_list  += ['Segue1V6']
 source_list  += ['PKS1424']
-source_list  += ['Crab']
-source_list  += ['H1426']
-source_list  += ['3C264']
-source_list  += ['IC443HotSpot']
+#source_list  += ['Crab']
+#source_list  += ['H1426']
+#source_list  += ['3C264']
+#source_list  += ['IC443HotSpot']
 #source_list  += ['Ton599']
 #source_list  += ['MGRO_J1908_V5']
 #source_list  += ['Segue1V5']
@@ -59,18 +59,18 @@ Azim_upper_list = []
 #Elev_upper_list += [85]
 #Azim_lower_list += [0]
 #Azim_upper_list += [360]
-Elev_lower_list += [50]
-Elev_upper_list += [90]
-Azim_lower_list += [0]
-Azim_upper_list += [360]
+#Elev_lower_list += [50]
+#Elev_upper_list += [90]
+#Azim_lower_list += [0]
+#Azim_upper_list += [360]
 #Elev_lower_list += [50]
 #Elev_upper_list += [70]
 #Azim_lower_list += [0]
 #Azim_upper_list += [360]
-#Elev_lower_list += [70]
-#Elev_upper_list += [90]
-#Azim_lower_list += [0]
-#Azim_upper_list += [360]
+Elev_lower_list += [70]
+Elev_upper_list += [90]
+Azim_lower_list += [0]
+Azim_upper_list += [360]
 #Elev_lower_list += [50]
 #Elev_upper_list += [90]
 #Azim_lower_list += [0]
@@ -1066,13 +1066,13 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     #Hists[0].Draw("E")
 
     if doSum:
-        Hist_Sum = Hists[1].Clone()
-        #Hist_Sum.Add(Hists[2])
-        if not 'Energy' in name:
-            Hist_Sum.SetMinimum(0)
-        set_histStyle( Hist_Sum , 38)
         stack = ROOT.THStack("stack", "")
-        stack.Add( Hist_Sum )
+        Hist_Sum = Hists[1].Clone()
+        Hist_Sum.Reset()
+        for h in range(1,len(Hists)):
+            set_histStyle( Hists[h] , 37+h)
+            stack.Add( Hists[h] )
+            Hist_Sum.Add( Hists[h] )
         stack.Draw("hist same")
         Hist_Err = Hist_Sum.Clone()
         Hist_Err.SetFillColor(1)
@@ -1584,11 +1584,14 @@ for s in range(0,len(source_list)):
                 Nbins = Hist_Target_SR_MSCW.GetNbinsX()
                 lower_end = Hist_Target_SR_MSCW.GetBinLowEdge(1)
                 upper_end = Hist_Target_SR_MSCW.GetBinLowEdge(Nbins+1)
+                Hist_MC_SRall_MSCW = ROOT.TH1D("Hist_MC_SRall_MSCW","",Nbins,lower_end,upper_end)
                 Hist_Target_SRall_MSCW = ROOT.TH1D("Hist_Target_SRall_MSCW","",Nbins,lower_end,upper_end)
                 Hist_Target_BkgSRall_MSCW = ROOT.TH1D("Hist_Target_BkgSRall_MSCW","",Nbins,lower_end,upper_end)
                 for sr in SRs_included:
+                    Hist_MC_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'MC_SR%s_MSCW_SumRuns'%(sr),False)
                     Hist_Target_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_SR%s_MSCW_SumRuns'%(sr),False)
                     Hist_Target_BkgSR_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_BkgSR%s_MSCW_SumRuns'%(sr),False)
+                    Hist_MC_SRall_MSCW.Add(Hist_MC_SR_MSCW)
                     Hist_Target_SRall_MSCW.Add(Hist_Target_SR_MSCW)
                     Hist_Target_BkgSRall_MSCW.Add(Hist_Target_BkgSR_MSCW)
                     Hists = []
@@ -1600,6 +1603,9 @@ for s in range(0,len(source_list)):
                     Hists += [Hist_Target_BkgSR_MSCW]
                     legends += ['Bkg (RDBM)']
                     colors += [4]
+                    Hists += [Hist_MC_SR_MSCW]
+                    legends += ['electron (MC)']
+                    colors += [3]
                     plotname = 'Target_SR%s_MSCW_E%s'%(sr,ErecS_lower_cut)
                     title = 'MSCW'
                     MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,-1)
@@ -1612,6 +1618,9 @@ for s in range(0,len(source_list)):
                 Hists += [Hist_Target_BkgSRall_MSCW]
                 legends += ['Bkg (RDBM)']
                 colors += [4]
+                Hists += [Hist_MC_SRall_MSCW]
+                legends += ['electron (MC)']
+                colors += [3]
                 plotname = 'Target_SRall_MSCW_E%s'%(ErecS_lower_cut)
                 title = 'MSCW'
                 MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,-1)

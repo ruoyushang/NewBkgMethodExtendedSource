@@ -178,9 +178,9 @@ vector<vector<double>> target_kernel_shift;
 const int N_energy_bins = 11;
 double energy_bins[N_energy_bins+1] =     {200  ,282  ,398  ,562  ,794  ,1122 ,1585 ,2239 ,3162 ,4467 ,6310,8913};
 int number_runs_included[N_energy_bins] = {99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99};
-bool use_this_energy_bin[N_energy_bins] = {true ,true ,true ,true ,true ,true ,true ,true ,true ,true ,true};
-//bool use_this_energy_bin[N_energy_bins] = {false,false,true ,false,false,true ,false,false,false,false,false};
-double electron_flux[N_energy_bins] =     {314  ,314  ,210  ,44.8 ,6.37 ,2.7  ,0    ,0    ,0    ,0    ,0};
+//bool use_this_energy_bin[N_energy_bins] = {true ,true ,true ,true ,true ,true ,true ,true ,true ,true ,true};
+bool use_this_energy_bin[N_energy_bins] = {false,false,true ,false,false,false,false,false,false,false,false};
+double electron_flux[N_energy_bins] =     {10978.6,1829.52,527.506,164.924,43.5083,0,0,0    ,0    ,0    ,0};
 double electron_count[N_energy_bins] = {0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0};
 
 int N_bins_for_deconv = 480;
@@ -1399,7 +1399,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         TH2D Hist_Target_TelRaDec_AfterCut("Hist_Target_TelRaDec_AfterCut","",100,0,5,100,-1,1);
         TH1D Hist_Target_ON_MSCW_Alpha("Hist_Target_ON_MSCW_Alpha","",100,0,10);
         TH1D Hist_Target_OFF_MSCW_Alpha("Hist_Target_OFF_MSCW_Alpha","",100,0,10);
-        TProfile Hist_Measured_Electron_Flux("Hist_Measured_Electron_Flux","",N_energy_bins,energy_bins,0,10000.);
+        TProfile Hist_Measured_Electron_Flux("Hist_Measured_Electron_Flux","",N_energy_bins,energy_bins,0,1000000.);
         TH1D Hist_EffAreaTime("Hist_EffAreaTime","",N_energy_bins,energy_bins);
         TH1D Hist_Target_Excess_EachRun("Hist_Target_Excess_EachRun","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
         vector<int> Run_sublist;
@@ -1418,6 +1418,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         vector<vector<TH2D>> Hist_Target_CR_RaDec;
         vector<vector<TH1D>> Hist_Target_SR_MSCW;
         vector<vector<TH1D>> Hist_Target_SR_MSCW_SumRuns;
+        vector<vector<TH1D>> Hist_MC_SR_MSCW_SumRuns;
         vector<vector<TH1D>> Hist_Target_CR_MSCW;
         vector<vector<TH1D>> Hist_Target_CR_MSCW_SumRuns;
         vector<TH1D> Hist_Target_SR_MSCW_SumRuns_SumSRs;
@@ -1490,6 +1491,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
             }
             vector<TH1D> Hist_Target_ThisE_SR_MSCW;
             vector<TH1D> Hist_Target_ThisE_SR_MSCW_SumRuns;
+            vector<TH1D> Hist_MC_ThisE_SR_MSCW_SumRuns;
             vector<TH1D> Hist_Target_ThisE_BkgSR_MSCW;
             vector<TH1D> Hist_Target_ThisE_BkgSR_MSCW_AllCR;
             vector<TH1D> Hist_Target_ThisE_BkgSR_MSCW_SumRuns;
@@ -1524,6 +1526,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                 sprintf(nsr, "%i", int(s+1));
                 Hist_Target_ThisE_SR_MSCW.push_back(TH1D("Hist_Target_SR"+TString(nsr)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_SR_MSCW_SumRuns.push_back(TH1D("Hist_Target_SR"+TString(nsr)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_MC_ThisE_SR_MSCW_SumRuns.push_back(TH1D("Hist_MC_SR"+TString(nsr)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_BkgSR_MSCW.push_back(TH1D("Hist_Target_BkgSR"+TString(nsr)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_BkgSR_MSCW_AllCR.push_back(TH1D("Hist_Target_BkgSR"+TString(nsr)+"_MSCW_AllCR_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_BkgSR_MSCW_SumRuns.push_back(TH1D("Hist_Target_BkgSR"+TString(nsr)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
@@ -1547,6 +1550,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
             }
             Hist_Target_SR_MSCW.push_back(Hist_Target_ThisE_SR_MSCW);
             Hist_Target_SR_MSCW_SumRuns.push_back(Hist_Target_ThisE_SR_MSCW_SumRuns);
+            Hist_MC_SR_MSCW_SumRuns.push_back(Hist_MC_ThisE_SR_MSCW_SumRuns);
             Hist_Target_BkgSR_MSCW.push_back(Hist_Target_ThisE_BkgSR_MSCW);
             Hist_Target_BkgSR_MSCW_AllCR.push_back(Hist_Target_ThisE_BkgSR_MSCW_AllCR);
             Hist_Target_BkgSR_MSCW_SumRuns.push_back(Hist_Target_ThisE_BkgSR_MSCW_SumRuns);
@@ -2362,12 +2366,14 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                         Hist_Target_Excess_EachRun.Add(&Hist_Target_SR_MSCW.at(e).at(s));
                         Hist_Target_Excess_EachRun.Add(&Hist_Target_BkgSR_MSCW.at(e).at(s),-1.);
                     }
-                    double excess_this_run = Hist_Target_Excess_EachRun.Integral();
+                    int norm_bin_low = Hist_Target_Excess_EachRun.FindBin(MSCW_cut_lower);
+                    int norm_bin_up = Hist_Target_Excess_EachRun.FindBin(MSCW_cut_blind);
+                    double excess_this_run = Hist_Target_Excess_EachRun.Integral(norm_bin_low,norm_bin_up);
                     double effarea_time = Hist_EffAreaTime.GetBinContent(Hist_EffAreaTime.FindBin(energy_bins[e]));
                     double flux_this_run = excess_this_run*1000./(effarea_time*(energy_bins[e+1]-energy_bins[e])*1e-12*10000.);
                     std::cout << "excess_this_run = " << excess_this_run << std::endl;
                     std::cout << "flux_this_run = " << flux_this_run << std::endl;
-                    Hist_Measured_Electron_Flux.Fill(energy_bins[e],flux_this_run);
+                    Hist_Measured_Electron_Flux.Fill(energy_bins[e],flux_this_run,effarea_time);
                 }
                 for (int s=0;s<Number_of_SR;s++)
                 {
@@ -2419,6 +2425,48 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
             std::cout << "Hist_Measured_Electron_Flux = " << Hist_Measured_Electron_Flux.GetBinContent(Hist_Measured_Electron_Flux.FindBin(energy_bins[e])) << std::endl;;
         }
 
+        //// Get MC electron files
+        std::cout << "=================================================" << std::endl;
+        filename = TString("$VERITAS_USER_DATA_DIR/MC_V6_Moderate-TMVA-BDT.RB.20130.root");
+        TFile*  input_file = TFile::Open(filename.c_str());
+        TString root_file = "run_20130/stereo/data_on";
+        TTree* MC_tree = (TTree*) input_file->Get(root_file);
+        MC_tree->SetBranchAddress("ErecS",&ErecS);
+        MC_tree->SetBranchAddress("EChi2S",&EChi2S);
+        MC_tree->SetBranchAddress("MSCW",&MSCW);
+        MC_tree->SetBranchAddress("MSCL",&MSCL);
+        MC_tree->SetBranchAddress("NImages",&NImages);
+        for (int entry=0;entry<MC_tree->GetEntries();entry++) {
+            ErecS = 0;
+            EChi2S = 0;
+            NImages = 0;
+            MSCW = 0;
+            MSCL = 0;
+            MC_tree->GetEntry(entry);
+            int energy = Hist_Target_SR_ErecS.at(0).FindBin(ErecS*1000.)-1;
+            if (energy<0) continue;
+            if (energy>=N_energy_bins) continue;
+            int e = energy;
+            if (!SelectNImages(NTelMin,NTelMax)) continue;
+            for (int s=0;s<Number_of_SR;s++)
+            {
+                if (SignalSelectionMSCW(s)) Hist_MC_SR_MSCW_SumRuns.at(e).at(s).Fill(MSCW);
+            }
+        }
+        std::cout << "Normalizing MC histograms..." << std::endl;
+        for (int e=0;e<N_energy_bins;e++) {
+            double old_integral = 0.;
+            for (int s=0;s<Number_of_SR;s++)
+            {
+                old_integral += double(Hist_MC_SR_MSCW_SumRuns.at(e).at(s).Integral());
+            }
+            double scale = electron_count[e]/old_integral;
+            for (int s=0;s<Number_of_SR;s++)
+            {
+                Hist_MC_SR_MSCW_SumRuns.at(e).at(s).Scale(scale);
+            }
+        }
+        
         int norm_bin_low_ring = Hist_Target_ON_MSCW_Alpha.FindBin(Norm_Lower);
         int norm_bin_up_ring = Hist_Target_ON_MSCW_Alpha.FindBin(Norm_Upper);
         double scale_ring = Hist_Target_ON_MSCW_Alpha.Integral(norm_bin_low_ring,norm_bin_up_ring)/Hist_Target_OFF_MSCW_Alpha.Integral(norm_bin_low_ring,norm_bin_up_ring);
@@ -2464,6 +2512,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
                 Hist_Target_BkgSR_MSCW_SumRuns_SumSRs.at(e).Write();
                 for (int s=0;s<Number_of_SR;s++)
                 {
+                    Hist_MC_SR_MSCW_SumRuns.at(e).at(s).Write();
                     Hist_Target_SR_MSCW_SumRuns.at(e).at(s).Write();
                     Hist_Target_BkgSR_MSCW_SumRuns.at(e).at(s).Write();
                     Hist_Target_SR_theta2.at(e).at(s).Write();
