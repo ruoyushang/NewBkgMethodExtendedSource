@@ -10,7 +10,7 @@ ROOT.TH1.SetDefaultSumw2()
 ROOT.TH1.AddDirectory(False) # without this, the histograms returned from a function will be non-type
 ROOT.gStyle.SetPaintTextFormat("0.3f")
 
-folder = 'output_May12'
+folder = 'output_May16'
 blindness = 'Deconvolution'
 #blindness = 'FitMethod'
 #blindness = 'SplineMethod'
@@ -19,7 +19,7 @@ converge = ''
 NTel = "_Ntel3to4"
 
 e2p_source = ''
-e2p_folder = 'output_May12'
+e2p_folder = 'output_May16'
 doTheta2 = False
 doRaDec = False
 doMSCW = True
@@ -34,12 +34,12 @@ source_list = []
 #source_list  += ['3C58']
 #source_list  += ['BrandonValidation']
 #source_list  += ['DarkField']
-#source_list  += ['Segue1V6']
+source_list  += ['Segue1V6']
 source_list  += ['PKS1424']
-#source_list  += ['Crab']
-#source_list  += ['H1426']
-#source_list  += ['3C264']
-#source_list  += ['IC443HotSpot']
+source_list  += ['Crab']
+source_list  += ['H1426']
+source_list  += ['3C264']
+source_list  += ['IC443HotSpot']
 #source_list  += ['Ton599']
 #source_list  += ['MGRO_J1908_V5']
 #source_list  += ['Segue1V5']
@@ -59,18 +59,18 @@ Azim_upper_list = []
 #Elev_upper_list += [85]
 #Azim_lower_list += [0]
 #Azim_upper_list += [360]
-#Elev_lower_list += [50]
-#Elev_upper_list += [90]
-#Azim_lower_list += [0]
-#Azim_upper_list += [360]
+Elev_lower_list += [50]
+Elev_upper_list += [90]
+Azim_lower_list += [0]
+Azim_upper_list += [360]
 #Elev_lower_list += [50]
 #Elev_upper_list += [70]
 #Azim_lower_list += [0]
 #Azim_upper_list += [360]
-Elev_lower_list += [70]
-Elev_upper_list += [90]
-Azim_lower_list += [0]
-Azim_upper_list += [360]
+#Elev_lower_list += [70]
+#Elev_upper_list += [90]
+#Azim_lower_list += [0]
+#Azim_upper_list += [360]
 #Elev_lower_list += [50]
 #Elev_upper_list += [90]
 #Azim_lower_list += [0]
@@ -115,18 +115,18 @@ MSCW_blind_cut = 1.0
 exposure_hours = 0.
 
 energy_list = []
-#energy_list += [200]
-#energy_list += [282]
+energy_list += [200]
+energy_list += [282]
 energy_list += [398]
 energy_list += [562]
-#energy_list += [794]
-#energy_list += [1122]
-#energy_list += [1585]
-#energy_list += [2239]
-#energy_list += [3162]
-#energy_list += [4467]
-#energy_list += [6310]
-#energy_list += [8913]
+energy_list += [794]
+energy_list += [1122]
+energy_list += [1585]
+energy_list += [2239]
+energy_list += [3162]
+energy_list += [4467]
+energy_list += [6310]
+energy_list += [8913]
 
 Variable = ''
 xtitle = ''
@@ -1065,12 +1065,13 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     #Hists[0].SetMinimum(0)
     #Hists[0].Draw("E")
 
+    fill_color = [38,30]
     if doSum:
         stack = ROOT.THStack("stack", "")
         Hist_Sum = Hists[1].Clone()
         Hist_Sum.Reset()
         for h in range(1,len(Hists)):
-            set_histStyle( Hists[h] , 37+h)
+            set_histStyle( Hists[h] , fill_color[h-1])
             stack.Add( Hists[h] )
             Hist_Sum.Add( Hists[h] )
         stack.Draw("hist same")
@@ -1094,10 +1095,10 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     line1.Draw()
 
 
-    for h in range(0,len(Hists)):
-        if Hists[h]!=0:
-            if 'NoElec' in name and legends[h]=='electron': continue
-            Hists[h].Draw("E same")
+    Hists[0].Draw("E same")
+    #for h in range(0,len(Hists)):
+    #    if Hists[h]!=0:
+    #        Hists[h].Draw("E same")
     Hists[0].SetLineWidth(3)
     Hists[0].Draw("E same")
     pad3.cd()
@@ -1110,13 +1111,11 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     legend.SetFillStyle(0)
     legend.SetLineColor(0)
     legend.Clear()
-    for h in range(0,len(Hists)):
+    legend.AddEntry(Hists[0],legends[0],"pl")
+    for h in range(1,len(Hists)):
         if Hists[h]!=0:
             if 'NoElec' in name and legends[h]=='electron': continue
-            #legend.AddEntry(Hists[h],legends[h]+"(%0.2f#pm%0.2f)"%(mean[h],rms[h]),"pl")
-            legend.AddEntry(Hists[h],legends[h],"pl")
-    #if doSum:
-    #    legend.AddEntry(Hist_Sum,'total bkg',"f")
+            legend.AddEntry(Hists[h],legends[h],"f")
     legend.Draw("SAME")
     lumilab1 = ROOT.TLatex(0.15,0.80,'E >%0.1f GeV (%.1f hrs)'%(ErecS_lower_cut,exposure_hours) )
     lumilab1.SetNDC()
@@ -1127,8 +1126,8 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     data_SR, err_SR = IntegralAndError(Hists[0],norm_bin_low_target,norm_bin_up_target)
     err_bkg = 0
     predict_bkg = 0
-    predict_bkg, err_bkg = IntegralAndError(Hists[1],norm_bin_low_target,norm_bin_up_target)
-    #predict_bkg, err_bkg = IntegralAndSystError(Hists[1],norm_bin_low_target,norm_bin_up_target,syst)
+    predict_bkg, err_bkg = IntegralAndError(Hist_Sum,norm_bin_low_target,norm_bin_up_target)
+    #predict_bkg, err_bkg = IntegralAndSystError(Hist_Sum,norm_bin_low_target,norm_bin_up_target,syst)
     lumilab2 = ROOT.TLatex(0.15,0.60,'Excess (RDBM) = %0.1f#pm%0.1f'%(data_SR-predict_bkg,pow(err_SR*err_SR+err_bkg*err_bkg,0.5)) )
     lumilab2.SetNDC()
     lumilab2.SetTextSize(0.15)
