@@ -180,7 +180,7 @@ const int N_energy_bins = 11;
 double energy_bins[N_energy_bins+1] =     {200  ,282  ,398  ,562  ,794  ,1122 ,1585 ,2239 ,3162 ,4467 ,6310,8913};
 int number_runs_included[N_energy_bins] = {99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99};
 bool use_this_energy_bin[N_energy_bins] = {true ,true ,true ,true ,true ,true ,true ,true ,true ,true ,true};
-//bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true ,false,false,false,false,false,false};
+//bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,false,false,false,true ,true ,false,false};
 double electron_flux[N_energy_bins] =     {0,0,0,0,0,0,0,0,0,0,0};
 double electron_count[N_energy_bins] = {0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0};
 
@@ -1280,30 +1280,35 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, do
         if (TString(source)=="Segue1AV6") sprintf(observation, "%s", "Segue1V6");
         if (TString(source)=="Segue1BV6") sprintf(observation, "%s", "Segue1V6");
         double delta_elev = 0.5;
-        double delta_azim = 5.0;
+        double delta_azim = 1.0;
         if (energy>500.)
         {
-            delta_elev = 1.;
-            delta_azim = 10.;
+            delta_elev = 1.0;
+            delta_azim = 2.0;
         }
         if (energy>1000.)
         {
             delta_elev = 2.;
-            delta_azim = 20.;
+            delta_azim = 4.;
         }
         if (energy>2000.)
         {
-            delta_elev = 4.;
-            delta_azim = 40.;
+            delta_elev = 5.;
+            delta_azim = 10.;
         }
         if (energy>3000.)
         {
-            delta_elev = 8.;
-            delta_azim = 80.;
+            delta_elev = 10.;
+            delta_azim = 20.;
+        }
+        if (energy>4000.)
+        {
+            delta_elev = 20.;
+            delta_azim = 40.;
         }
         if (energy>6000.)
         {
-            delta_elev = 20.;
+            delta_elev = 40.;
             delta_azim = 360.;
         }
         for (int run=0;run<Target_runlist.size();run++) {
@@ -2510,7 +2515,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         int Number_of_SR_new = Number_of_SR;
         TString ConvergeOrNot = "";
         if (!DoConverge) ConvergeOrNot = "_NoConverge";
-        TFile OutputFile("output_May16/Deconvolution_"+TString(target)+"_Ntel"+std::to_string(NTelMin)+"to"+std::to_string(NTelMax)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate");
+        TFile OutputFile("output_May18/Deconvolution_"+TString(target)+"_Ntel"+std::to_string(NTelMin)+"to"+std::to_string(NTelMax)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate");
         TTree InfoTree("InfoTree","info tree");
         InfoTree.Branch("Number_of_CR",&Number_of_CR_new,"Number_of_CR/I");
         InfoTree.Branch("Number_of_SR",&Number_of_SR_new,"Number_of_SR/I");
