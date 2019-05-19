@@ -180,8 +180,8 @@ const int N_energy_bins = 11;
 double energy_bins[N_energy_bins+1] =     {200  ,282  ,398  ,562  ,794  ,1122 ,1585 ,2239 ,3162 ,4467 ,6310,8913};
 int number_runs_included[N_energy_bins] = {99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99};
 bool use_this_energy_bin[N_energy_bins] = {true ,true ,true ,true ,true ,true ,true ,true ,true ,true ,true};
-//bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,false,false,false,true ,true ,false,false};
-double electron_flux[N_energy_bins] =     {0,0,0,0,0,0,0,0,0,0,0};
+//bool use_this_energy_bin[N_energy_bins] = {true ,false,false,false,false,false,false,false,false,false,false};
+double electron_flux[N_energy_bins] =     {9399.31,1640.76,421.279,160.097,27.7845,2.07716,0.0595458,0,0,0,0};
 double electron_count[N_energy_bins] = {0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0};
 
 int N_bins_for_deconv = 480;
@@ -368,6 +368,8 @@ double GetChi2WithRange(TH1* Hist_SR, TH1* Hist_Bkg, double lower_end, double up
 double GetChi2(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int chi2_type) {
     if (Hist_Bkg->Integral()==0) return 0.;
     double chi2_temp = 0.;
+    double chi2_mean = 0.;
+    double chi2_rms = 0.;
     double sign_chi2_temp = 0.;
     double mean = Hist_SR->GetMean();
     double rms = Hist_SR->GetRMS();
@@ -383,12 +385,9 @@ double GetChi2(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int 
     double weight_ratio = weight_unblinded/(weight_blinded+weight_unblinded);
     if (!includeSR) 
     {
-        //if (MSCW_cut_blind>(estimated_mean)) 
-        //{
-        //    inflation_mean = exp(-0.5*pow((Hist_Bkg->GetMean()-estimated_mean)/(estimated_mean_err/2.),2));
-        //}
-        //inflation_mean = exp(-0.5*pow((Hist_Bkg->GetMean()-estimated_mean)/(estimated_mean_err*weight_ratio),2));
         inflation_rms = exp(-0.5*pow((Hist_Bkg->GetRMS()-estimated_rms)/(0.25*estimated_rms_err*weight_ratio),2));
+        chi2_mean = pow(Hist_Bkg->GetMean()-estimated_mean,2)/(estimated_mean_err*estimated_mean_err);
+        chi2_rms = pow(Hist_Bkg->GetRMS()-estimated_rms,2)/(estimated_rms_err*estimated_rms_err);
     }
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
         double bkg = Hist_Bkg->GetBinContent(i+1);
@@ -406,15 +405,17 @@ double GetChi2(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int 
     }
     chi2_temp = chi2_temp/nbins;
     double chi2_total = 1.;
-    if (includeSR) 
+    if (includeSR || chi2_type==1) 
     {
         chi2_total = chi2_temp;
     }
     else
     {
+        //chi2_total = chi2_rms;
         chi2_total = chi2_temp;
     }
-    chi2_total = inflation_mean*inflation_rms*1./chi2_total;
+    //chi2_total = 1./chi2_total;
+    chi2_total = inflation_rms*1./chi2_total;
     return chi2_total;
 }
 void AddBkgStatistics(TH1* Hist_Bkg)
@@ -816,13 +817,9 @@ std::pair <bool,std::pair <double,double>> ShiftAndNormalize(TH1* Hist_Dark, TH1
     double weight_ratio = weight_unblinded/(weight_blinded+weight_unblinded);
     //if (!includeSR) doShift = false;
     if (doShift) {
-        for (int fit=0;fit<1000;fit++) {
-                double shift = shift_begin-5.0*estimated_mean_err+10.0*estimated_mean_err*double(fit)*0.001;
-                //if (!includeSR) shift = shift_begin+2.0*estimated_mean_err*double(fit)*0.001; // bad, only H1426 is good.
-                //if (!includeSR) shift = shift_begin-2.0*estimated_mean_err*double(fit)*0.001; // not good for H1426, 3C264, PKS1424
-                //if (!includeSR) shift = shift_begin-1.0*estimated_mean_err+2.0*estimated_mean_err*double(fit)*0.001;
-                if (!includeSR) shift = shift_begin-1.0*estimated_mean_err*weight_ratio+2.0*estimated_mean_err*weight_ratio*double(fit)*0.001;
-                //double shift = 0.2*double(fit)*0.001;
+        for (int fit=0;fit<100;fit++) {
+                double shift = shift_begin-5.0*estimated_mean_err+10.0*estimated_mean_err*double(fit)*0.01;
+                if (!includeSR) shift = shift_begin-1.0*estimated_mean_err*weight_ratio+2.0*estimated_mean_err*weight_ratio*double(fit)*0.01;
                 for (int i=0;i<Hist_SR->GetNbinsX();i++) {
                         int b = Hist_SR->FindBin(Hist_SR->GetBinCenter(i+1)-shift);
                         Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
@@ -842,8 +839,8 @@ std::pair <bool,std::pair <double,double>> ShiftAndNormalize(TH1* Hist_Dark, TH1
                 double scale = scale_begin;
                 Hist_Bkg->Scale(norm/Hist_Bkg->Integral());
                 Hist_Bkg->Scale(scale);
-                double chi2_temp = GetChi2(Hist_Dark, Hist_SR, Hist_Bkg,includeSR,chi2_type);
-                double unblinded_chi2_temp = GetChi2(Hist_Dark, Hist_SR, Hist_Bkg,true,2);
+                double chi2_temp = GetChi2(Hist_Dark, Hist_SR, Hist_Bkg,includeSR,1);
+                double unblinded_chi2_temp = GetChi2(Hist_Dark, Hist_SR, Hist_Bkg,true,1);
                 if (chi2<chi2_temp && Hist_Bkg->Integral()!=0) {
                     chi2 = chi2_temp;
                     shift_fit = shift;
@@ -877,7 +874,7 @@ std::pair <bool,std::pair <double,double>> ShiftAndNormalize(TH1* Hist_Dark, TH1
             double scale = scale_begin-(double(fit))/1000.*0.1*scale_begin;
             Hist_Bkg->Scale(norm/Hist_Bkg->Integral());
             Hist_Bkg->Scale(scale);
-            double chi2_temp = GetChi2(Hist_Dark, Hist_SR, Hist_Bkg,includeSR,chi2_type);
+            double chi2_temp = GetChi2(Hist_Dark, Hist_SR, Hist_Bkg,includeSR,1);
             if (chi2<chi2_temp && Hist_Bkg->Integral()!=0) {
                 chi2 = chi2_temp;
                 scale_fit = scale;
@@ -975,7 +972,7 @@ double FindNIteration(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg,
           Deconvolution(Hist_CR,Hist_Deconv,Hist_BkgTemp,n_iter);
           if (!IsReasonableResult(Hist_BkgTemp)) continue;
           std::pair <bool,std::pair <double,double>> offset = ShiftAndNormalize(Hist_Dark,Hist_SR,Hist_BkgTemp,Hist_Bkg,scaled_shift,true,includeSR,chi2_type);
-          chi2 = GetChi2(Hist_Dark, Hist_SR,Hist_Bkg,includeSR,chi2_type);
+          chi2 = GetChi2(Hist_Dark, Hist_SR,Hist_Bkg,includeSR,1);
           if (chi2_best<chi2) {
               chi2_best = chi2;
               n_iter_final = n_iter;
@@ -998,13 +995,13 @@ std::pair <double,double> FindRMS(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_CR, TH
     }
     TF1 *func = new TF1("func",Kernel,-50.,50.,1);
     func->SetParameter(0,0.5);
-    for (int n_rms = 0; n_rms<=100;n_rms++) {
+    for (int n_rms = 0; n_rms<=20;n_rms++) {
         double chi2 = 0;
         double unblinded_chi2 = 0;
         double rms = rms_begin;
-        rms = rms_begin-1.0*rms_begin+double(n_rms+1)*2.0*rms_begin/100.;
+        rms = rms_begin-1.0*rms_begin+double(n_rms+1)*2.0*rms_begin/20.;
         //if (!includeSR) rms = rms_begin-0.2*rms_begin+double(n_rms+1)*0.4*rms_begin/100.;
-        if (!includeSR) rms = rms_begin+double(n_rms)*2.0*rms_begin/100.;  // good
+        if (!includeSR) rms = rms_begin+double(n_rms)*2.0*rms_begin/20.;  // good
         //if (!includeSR) rms = rms_begin-double(n_rms)*1.0*rms_begin/100.; // very bad
         func->SetParameter(0,rms);
         Hist_Deconv->Reset();
@@ -1017,7 +1014,7 @@ std::pair <double,double> FindRMS(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_CR, TH
         Deconvolution(Hist_CR,Hist_Deconv,Hist_BkgTemp,n_iter);
         if (!IsReasonableResult(Hist_BkgTemp)) continue;
         std::pair <bool,std::pair <double,double>> offset = ShiftAndNormalize(Hist_Dark,Hist_SR,Hist_BkgTemp,Hist_Bkg,scaled_shift,DoShift,includeSR,chi2_type);
-        chi2 = GetChi2(Hist_Dark, Hist_SR, Hist_Bkg,includeSR,chi2_type);
+        chi2 = GetChi2(Hist_Dark, Hist_SR, Hist_Bkg,includeSR,2);
         unblinded_chi2 = GetChi2(Hist_Dark, Hist_SR, Hist_Bkg,true,2);
         if (chi2_best<chi2) {
             chi2_best = chi2;
@@ -1279,12 +1276,17 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, do
         if (TString(source)=="CrabB") sprintf(observation, "%s", "Crab");
         if (TString(source)=="Segue1AV6") sprintf(observation, "%s", "Segue1V6");
         if (TString(source)=="Segue1BV6") sprintf(observation, "%s", "Segue1V6");
-        double delta_elev = 0.5;
-        double delta_azim = 1.0;
+        double delta_elev = 0.1;
+        double delta_azim = 0.2;
         if (energy>500.)
         {
-            delta_elev = 1.0;
-            delta_azim = 2.0;
+            delta_elev = 0.2;
+            delta_azim = 0.4;
+        }
+        if (energy>700.)
+        {
+            delta_elev = 0.5;
+            delta_azim = 1.0;
         }
         if (energy>1000.)
         {
@@ -1293,13 +1295,13 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, do
         }
         if (energy>2000.)
         {
-            delta_elev = 5.;
-            delta_azim = 10.;
+            delta_elev = 2.;
+            delta_azim = 4.;
         }
         if (energy>3000.)
         {
-            delta_elev = 10.;
-            delta_azim = 20.;
+            delta_elev = 4.;
+            delta_azim = 8.;
         }
         if (energy>4000.)
         {
@@ -1424,9 +1426,8 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         TH2D Hist_Target_TelRaDec_AfterCut("Hist_Target_TelRaDec_AfterCut","",100,0,5,100,-1,1);
         TH1D Hist_Target_ON_MSCW_Alpha("Hist_Target_ON_MSCW_Alpha","",100,0,10);
         TH1D Hist_Target_OFF_MSCW_Alpha("Hist_Target_OFF_MSCW_Alpha","",100,0,10);
-        TProfile Hist_Measured_Electron_Flux("Hist_Measured_Electron_Flux","",N_energy_bins,energy_bins,0,1000000.);
+        TProfile Hist_Measured_Electron_Flux("Hist_Measured_Electron_Flux","",N_energy_bins,energy_bins,-10000.,1000000.);
         TH1D Hist_EffAreaTime("Hist_EffAreaTime","",N_energy_bins,energy_bins);
-        TH1D Hist_Target_Excess_EachRun("Hist_Target_Excess_EachRun","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
         vector<int> Run_sublist;
         vector<TH1D> Hist_Target_SR_ErecS;
         vector<vector<TH1D>> Hist_Target_SR_theta2;
@@ -1446,6 +1447,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         vector<vector<TH1D>> Hist_MC_SR_MSCW_SumRuns;
         vector<vector<TH1D>> Hist_Target_CR_MSCW;
         vector<vector<TH1D>> Hist_Target_CR_MSCW_SumRuns;
+        vector<TH1D> Hist_Target_Excess_EachRun;
         vector<TH1D> Hist_Target_SR_MSCW_SumRuns_SumSRs;
         vector<TH1D> Hist_MC_SR_MSCW_SumRuns_SumSRs;
         vector<TH1D> Hist_Target_SR_MSCL;
@@ -1484,10 +1486,10 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
             sprintf(e_low, "%i", int(energy_bins[e]));
             char e_up[50];
             sprintf(e_up, "%i", int(energy_bins[e+1]));
-            if (energy_bins[e]>=200.) N_bins_for_deconv = 480;
-            if (energy_bins[e]>=800.) N_bins_for_deconv = 480;
+            if (energy_bins[e]>=200.) N_bins_for_deconv = 960;
+            if (energy_bins[e]>=500.) N_bins_for_deconv = 480;
             if (energy_bins[e]>=3200.) N_bins_for_deconv = 240;
-            if (energy_bins[e]>=6000.) N_bins_for_deconv = 120;
+            //if (energy_bins[e]>=6000.) N_bins_for_deconv = 120;
             //if (energy_bins[e]>=200.) N_bins_for_deconv = 480;
             //if (energy_bins[e]>=800.) N_bins_for_deconv = 240;
             //if (energy_bins[e]>=3200.) N_bins_for_deconv = 120;
@@ -1599,6 +1601,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
             Hist_TargetSZA_CR_theta2.push_back(Hist_TargetSZA_ThisE_CR_theta2);
             Hist_Target_SR_RaDec.push_back(Hist_Target_ThisE_SR_RaDec);
             Hist_Target_CR_RaDec.push_back(Hist_Target_ThisE_CR_RaDec);
+            Hist_Target_Excess_EachRun.push_back(TH1D("Hist_Target_Excess_EachRun_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_SR_MSCW_SumRuns_SumSRs.push_back(TH1D("Hist_Target_SR_MSCW_SumRuns_SumSRs_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_MC_SR_MSCW_SumRuns_SumSRs.push_back(TH1D("Hist_MC_SR_MSCW_SumRuns_SumSRs_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_BkgSR_MSCW_SumRuns_SumSRs.push_back(TH1D("Hist_Target_BkgSR_MSCW_SumRuns_SumSRs_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
@@ -2399,15 +2402,15 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
 
                     }
                     // here we calculate the measured e/gamma flux
-                    Hist_Target_Excess_EachRun.Reset();
+                    Hist_Target_Excess_EachRun.at(e).Reset();
                     for (int s=0;s<Number_of_SR;s++)
                     {
-                        Hist_Target_Excess_EachRun.Add(&Hist_Target_SR_MSCW.at(e).at(s));
-                        Hist_Target_Excess_EachRun.Add(&Hist_Target_BkgSR_MSCW.at(e).at(s),-1.);
+                        Hist_Target_Excess_EachRun.at(e).Add(&Hist_Target_SR_MSCW.at(e).at(s));
+                        Hist_Target_Excess_EachRun.at(e).Add(&Hist_Target_BkgSR_MSCW.at(e).at(s),-1.);
                     }
-                    int norm_bin_low = Hist_Target_Excess_EachRun.FindBin(MSCW_cut_lower);
-                    int norm_bin_up = Hist_Target_Excess_EachRun.FindBin(MSCW_cut_blind);
-                    double excess_this_run = Hist_Target_Excess_EachRun.Integral(norm_bin_low,norm_bin_up);
+                    int norm_bin_low = Hist_Target_Excess_EachRun.at(e).FindBin(MSCW_cut_lower);
+                    int norm_bin_up = Hist_Target_Excess_EachRun.at(e).FindBin(MSCW_cut_blind);
+                    double excess_this_run = Hist_Target_Excess_EachRun.at(e).Integral(norm_bin_low,norm_bin_up);
                     double effarea_time = Hist_EffAreaTime.GetBinContent(Hist_EffAreaTime.FindBin(energy_bins[e]));
                     double flux_this_run = excess_this_run*1000./(effarea_time*(energy_bins[e+1]-energy_bins[e])*1e-12*10000.);
                     std::cout << "excess_this_run = " << excess_this_run << std::endl;
@@ -2494,6 +2497,11 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         }
         std::cout << "Normalizing MC histograms..." << std::endl;
         for (int e=0;e<N_energy_bins;e++) {
+            int norm_bin_low = Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).FindBin(MSCW_cut_lower);
+            int norm_bin_up = Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).FindBin(MSCW_cut_blind);
+            std::cout << "Energy "  << energy_bins[e] << std::endl;
+            std::cout << "predicted electrons = " << electron_count[e] << std::endl;
+            std::cout << "true excess = " << Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).Integral(norm_bin_low,norm_bin_up)-Hist_Target_BkgSR_MSCW_SumRuns_SumSRs.at(e).Integral(norm_bin_low,norm_bin_up) << std::endl;
             double old_integral = 0.;
             for (int s=0;s<Number_of_SR;s++)
             {
