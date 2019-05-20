@@ -176,13 +176,12 @@ vector<vector<double>> dark_kernel_shift;
 vector<vector<double>> target_kernel_rms;
 vector<vector<double>> target_kernel_shift;
 
-const int N_energy_bins = 11;
-double energy_bins[N_energy_bins+1] =     {200  ,282  ,398  ,562  ,794  ,1122 ,1585 ,2239 ,3162 ,4467 ,6310,8913};
-int number_runs_included[N_energy_bins] = {99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99   ,99};
-bool use_this_energy_bin[N_energy_bins] = {true ,true ,true ,true ,true ,true ,true ,true ,true ,true ,true};
+const int N_energy_bins = 13;
+double energy_bins[N_energy_bins+1] =     {200  ,237  ,282  ,335  ,398  ,562  ,794  ,1122 ,1585 ,2239 ,3162 ,4467 ,6310,8913};
+bool use_this_energy_bin[N_energy_bins] = {true ,true ,true ,true ,true ,true ,true ,true ,true ,true ,true ,true ,true};
 //bool use_this_energy_bin[N_energy_bins] = {true ,false,false,false,false,false,false,false,false,false,false};
-double electron_flux[N_energy_bins] =     {9399.31,1640.76,421.279,160.097,27.7845,2.07716,0.0595458,0,0,0,0};
-double electron_count[N_energy_bins] = {0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0};
+double electron_flux[N_energy_bins] =     {12519.5,5601.69,2424.74,1093.07,380.906,154.409,22.8101,0.796429,0,0,0,0,0};
+double electron_count[N_energy_bins] = {0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0};
 
 int N_bins_for_deconv = 480;
 double MSCW_plot_lower = -30.;
@@ -584,13 +583,13 @@ double ConvergeFunction(double x, double threshold, double amplitude, int type)
     {
         if (x-(threshold+amplitude)>=0.) return 1.;
         if (x-(threshold)<0.) return 0.;
-        return pow((x-threshold)/amplitude,2);
+        return pow((x-threshold)/amplitude,4);
     }
     else if (type==1) // this is used to find endpoint
     {
         if (x-(threshold)>=0.) return 1.;
         if (x-(threshold-amplitude)<0.) return 0.;
-        return pow((x-threshold+amplitude)/amplitude,2);
+        return pow((x-threshold+amplitude)/amplitude,4);
     }
     else if (type==2)
     {
@@ -675,16 +674,10 @@ void FindSRMean(TH1* Hist_CR)
 }
 double FindEndPoint(TH1* Hist_CR)
 {
-    //TF1 *func = new TF1("func",FitFunction,-1.,1.,3);
-    //func->SetParameter(0,100.);
-    //func->SetParameter(1,0);
-    //func->SetParameter(2,Hist_CR->GetRMS());
-    //Hist_CR->Fit("func","","",-5.,20.0);
-    //return func->GetParameter(1);
     TF1 *func = new TF1("func",FitFunction,-5.,50.,5);
     func->SetParameter(0,100.);
     func->SetParameter(1,0);
-    func->SetParLimits(1,-2,0);
+    func->SetParLimits(1,-2,1);
     func->SetParameter(2,Hist_CR->GetRMS());
     func->SetParameter(3,0);
     func->SetParameter(4,Hist_CR->GetRMS());
@@ -2523,7 +2516,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         int Number_of_SR_new = Number_of_SR;
         TString ConvergeOrNot = "";
         if (!DoConverge) ConvergeOrNot = "_NoConverge";
-        TFile OutputFile("output_May18/Deconvolution_"+TString(target)+"_Ntel"+std::to_string(NTelMin)+"to"+std::to_string(NTelMax)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate");
+        TFile OutputFile("output_May19/Deconvolution_"+TString(target)+"_Ntel"+std::to_string(NTelMin)+"to"+std::to_string(NTelMax)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate");
         TTree InfoTree("InfoTree","info tree");
         InfoTree.Branch("Number_of_CR",&Number_of_CR_new,"Number_of_CR/I");
         InfoTree.Branch("Number_of_SR",&Number_of_SR_new,"Number_of_SR/I");
