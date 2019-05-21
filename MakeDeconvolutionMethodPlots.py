@@ -10,7 +10,7 @@ ROOT.TH1.SetDefaultSumw2()
 ROOT.TH1.AddDirectory(False) # without this, the histograms returned from a function will be non-type
 ROOT.gStyle.SetPaintTextFormat("0.3f")
 
-folder = 'output_May16'
+folder = 'output_May19'
 blindness = 'Deconvolution'
 #blindness = 'FitMethod'
 #blindness = 'SplineMethod'
@@ -19,8 +19,9 @@ converge = ''
 NTel = "_Ntel3to4"
 
 e2p_source = ''
-e2p_folder = 'output_May16'
-doTheta2 = False
+e2p_folder = 'output_May19'
+
+doTheta2 = True
 doRaDec = False
 doMSCW = True
 doONOFF = False
@@ -35,11 +36,11 @@ source_list = []
 #source_list  += ['BrandonValidation']
 #source_list  += ['DarkField']
 source_list  += ['Segue1V6']
-source_list  += ['PKS1424']
-source_list  += ['Crab']
-source_list  += ['H1426']
-source_list  += ['3C264']
-source_list  += ['IC443HotSpot']
+#source_list  += ['PKS1424']
+#source_list  += ['Crab']
+#source_list  += ['H1426']
+#source_list  += ['3C264']
+#source_list  += ['IC443HotSpot']
 #source_list  += ['Ton599']
 #source_list  += ['MGRO_J1908_V5']
 #source_list  += ['Segue1V5']
@@ -59,18 +60,18 @@ Azim_upper_list = []
 #Elev_upper_list += [85]
 #Azim_lower_list += [0]
 #Azim_upper_list += [360]
-Elev_lower_list += [50]
-Elev_upper_list += [90]
-Azim_lower_list += [0]
-Azim_upper_list += [360]
+#Elev_lower_list += [50]
+#Elev_upper_list += [90]
+#Azim_lower_list += [0]
+#Azim_upper_list += [360]
 #Elev_lower_list += [50]
 #Elev_upper_list += [70]
 #Azim_lower_list += [0]
 #Azim_upper_list += [360]
-#Elev_lower_list += [70]
-#Elev_upper_list += [90]
-#Azim_lower_list += [0]
-#Azim_upper_list += [360]
+Elev_lower_list += [70]
+Elev_upper_list += [90]
+Azim_lower_list += [0]
+Azim_upper_list += [360]
 #Elev_lower_list += [50]
 #Elev_upper_list += [90]
 #Azim_lower_list += [0]
@@ -80,8 +81,6 @@ Azim_upper_list += [360]
 #Azim_lower_list += [180]
 #Azim_upper_list += [360]
 
-#SRs_included = [1]
-#SRs_included = [1,2,3,4,5]
 CRs_included = [1,2,3,4,5,6]
 SRs_included = [1,2,3,4,5,6]
 
@@ -115,18 +114,25 @@ MSCW_blind_cut = 1.0
 exposure_hours = 0.
 
 energy_list = []
-energy_list += [200]
-energy_list += [282]
-energy_list += [398]
+#energy_list += [200]
+#energy_list += [237]
+#energy_list += [282]
+#energy_list += [335]
+#energy_list += [398]
+energy_list += [473]
 energy_list += [562]
-energy_list += [794]
-energy_list += [1122]
-energy_list += [1585]
-energy_list += [2239]
-energy_list += [3162]
-energy_list += [4467]
-energy_list += [6310]
-energy_list += [8913]
+#energy_list += [667]
+#energy_list += [794]
+#energy_list += [943]
+#energy_list += [1122]
+#energy_list += [1332]
+#energy_list += [1585]
+#energy_list += [1882]
+#energy_list += [2239]
+#energy_list += [3162]
+#energy_list += [4467]
+#energy_list += [6310]
+#energy_list += [8913]
 
 Variable = ''
 xtitle = ''
@@ -1546,7 +1552,8 @@ for s in range(0,len(source_list)):
         used_runs = InfoTree.used_runs
         exposure_hours = InfoTree.exposure_hours
 
-        Hist_e2p += [ROOT.TH1D("Hist_e2p_%s"%(source),"",len(energy_list)-1,array('d',energy_list))]
+        Hist_Measured_Electron_Flux = SelectDiagnosticaHistograms(folder,source,'Measured_Electron_Flux',True)
+        Hist_e2p += [Hist_Measured_Electron_Flux]
         legend_e2p += ['%s %s (%0.1f hrs)'%(source,tele_pointing,exposure_hours)]
         Hist_ruo_predict += [ROOT.TH1D("Hist_ruo_predict_%s"%(source),"",len(energy_list)-1,array('d',energy_list))]
         legend_ruo_predict += ['%s %s (%0.1f hrs)'%(source,tele_pointing,exposure_hours)]
@@ -1623,7 +1630,7 @@ for s in range(0,len(source_list)):
                 plotname = 'Target_SRall_MSCW_E%s'%(ErecS_lower_cut)
                 title = 'MSCW'
                 MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,-1)
-                for sr in range(len(CRs_included),len(CRs_included)+1):
+                for sr in range(2,len(CRs_included)+1):
                     Hist_Target_CR_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_CR%s_MSCW_SumRuns'%(sr),False)
                     Hist_Target_BkgCR_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_BkgCR%s_MSCW_SumRuns'%(sr),False)
                     Hists = []
@@ -1824,12 +1831,14 @@ for s in range(0,len(source_list)):
                 Hist_Target_BkgSRall_theta2 = ROOT.TH1D("Hist_Target_BkgSRall_theta2","",Nbins,lower_end,upper_end)
                 Hist_Target_LZABkgSRall_theta2 = ROOT.TH1D("Hist_Target_LZABkgSRall_theta2","",Nbins,lower_end,upper_end)
                 Hist_Target_SZABkgSRall_theta2 = ROOT.TH1D("Hist_Target_SZABkgSRall_theta2","",Nbins,lower_end,upper_end)
+                Hist_MC_BkgSRall_theta2 = ROOT.TH1D("Hist_MC_BkgSRall_theta2","",Nbins,lower_end,upper_end)
                 ideal_nbins = float(Hist_Target_SRall_MSCW.Integral())/avg_events_per_bin
                 n_merge = 1
                 while (Hist_Target_SRall_theta2.GetNbinsX()>ideal_nbins and n_merge<64) or (n_merge<8):
                     Hist_Target_BkgSRall_theta2.Rebin(2)
                     Hist_Target_LZABkgSRall_theta2.Rebin(2)
                     Hist_Target_SZABkgSRall_theta2.Rebin(2)
+                    Hist_MC_BkgSRall_theta2.Rebin(2)
                     Hist_Target_SRall_theta2.Rebin(2)
                     n_merge = n_merge*2
                 for sr in SRs_included:
@@ -1838,20 +1847,17 @@ for s in range(0,len(source_list)):
                     Hist_Target_LZABkg_theta2 = SelectDiagnosticaHistograms(folder,source,'TargetLZA_CR%s_theta2'%(sr),False)
                     Hist_Target_SZABkg_theta2 = SelectDiagnosticaHistograms(folder,source,'TargetSZA_CR%s_theta2'%(sr),False)
                     Hist_Target_BkgSR_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_BkgSR%s_MSCW_SumRuns'%(sr),False)
+                    Hist_MC_SR_theta2 = SelectDiagnosticaHistograms(folder,source,'Target_SR%s_theta2'%(sr),False)
+                    Hist_MC_Bkg_theta2 = SelectDiagnosticaHistograms(folder,source,'Target_CR%s_theta2'%(sr),False)
+                    Hist_MC_LZABkg_theta2 = SelectDiagnosticaHistograms(folder,source,'TargetLZA_CR%s_theta2'%(sr),False)
+                    Hist_MC_SZABkg_theta2 = SelectDiagnosticaHistograms(folder,source,'TargetSZA_CR%s_theta2'%(sr),False)
+                    Hist_MC_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'MC_SR%s_MSCW_SumRuns'%(sr),False)
                     scalesky, scalesky_err = GetSkyScaleFactor(Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_Target_Bkg_theta2)
                     scalesky_LZA, scalesky_err_LZA = GetSkyScaleFactor(Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_Target_LZABkg_theta2)
                     scalesky_SZA, scalesky_err_SZA = GetSkyScaleFactor(Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_Target_SZABkg_theta2)
-                    Hist_e2p_SR_MSCW = SelectDiagnosticaHistograms(e2p_folder,e2p_source,'Target_SR%s_MSCW_SumRuns'%(sr),True)
-                    Hist_e2p_BkgSR_MSCW = SelectDiagnosticaHistograms(e2p_folder,e2p_source,'Target_BkgSR%s_MSCW_SumRuns'%(sr),True)
-                    e2p_ratio = 0
-                    e2p_error = 0
-                    e2p_ratio, e2p_error = S2B_ratio(Hist_e2p_SR_MSCW,Hist_e2p_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
-                    if e2p_ratio<0.:
-                        e2p_ratio = 0
-                        e2p_error = 0
-                    #if 1.0*e2p_error>=e2p_ratio:
-                    #    e2p_ratio = 0
-                    #    e2p_error = 0
+                    mc_scalesky, mc_scalesky_err = GetSkyScaleFactor(Hist_MC_SR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_MC_Bkg_theta2)
+                    mc_scalesky_LZA, mc_scalesky_err_LZA = GetSkyScaleFactor(Hist_MC_SR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_MC_LZABkg_theta2)
+                    mc_scalesky_SZA, mc_scalesky_err_SZA = GetSkyScaleFactor(Hist_MC_SR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_MC_SZABkg_theta2)
 
                     ideal_nbins = float(Hist_Target_SRall_MSCW.Integral())/avg_events_per_bin
                     n_merge = 1
@@ -1860,17 +1866,21 @@ for s in range(0,len(source_list)):
                         Hist_Target_LZABkg_theta2.Rebin(2)
                         Hist_Target_SZABkg_theta2.Rebin(2)
                         Hist_Target_SR_theta2.Rebin(2)
+                        Hist_MC_LZABkg_theta2.Rebin(2)
+                        Hist_MC_SZABkg_theta2.Rebin(2)
+                        Hist_MC_SR_theta2.Rebin(2)
                         n_merge = n_merge*2
                     Theta2HistScale(Hist_Target_Bkg_theta2,scalesky,scalesky_err)
-                    Theta2HistScale(Hist_Target_Bkg_theta2,e2p_ratio+1.,e2p_error)
+                    Theta2HistScale(Hist_MC_Bkg_theta2,mc_scalesky,mc_scalesky_err)
                     Theta2HistScale(Hist_Target_LZABkg_theta2,scalesky_LZA,scalesky_err_LZA)
-                    Theta2HistScale(Hist_Target_LZABkg_theta2,e2p_ratio+1.,e2p_error)
+                    Theta2HistScale(Hist_MC_LZABkg_theta2,mc_scalesky_LZA,mc_scalesky_err_LZA)
                     Theta2HistScale(Hist_Target_SZABkg_theta2,scalesky_SZA,scalesky_err_SZA)
-                    Theta2HistScale(Hist_Target_SZABkg_theta2,e2p_ratio+1.,e2p_error)
+                    Theta2HistScale(Hist_MC_SZABkg_theta2,mc_scalesky_SZA,mc_scalesky_err_SZA)
                     Hist_Target_SRall_theta2.Add(Hist_Target_SR_theta2)
                     Hist_Target_BkgSRall_theta2.Add(Hist_Target_Bkg_theta2)
                     Hist_Target_LZABkgSRall_theta2.Add(Hist_Target_LZABkg_theta2)
                     Hist_Target_SZABkgSRall_theta2.Add(Hist_Target_SZABkg_theta2)
+                    Hist_MC_BkgSRall_theta2.Add(Hist_MC_Bkg_theta2)
                     Hists = []
                     legends = []
                     colors = []
@@ -1880,9 +1890,12 @@ for s in range(0,len(source_list)):
                     Hists += [Hist_Target_Bkg_theta2]
                     legends += ['Bkg']
                     colors += [4]
+                    Hists += [Hist_MC_Bkg_theta2]
+                    legends += ['electron (MC)']
+                    colors += [3]
                     plotname = 'Target_SR%s_theta2_E%s'%(sr,ErecS_lower_cut)
                     title = 'theta2'
-                    syst = (scalesky*e2p_error+(e2p_ratio+1.)*scalesky_err)/(scalesky*(e2p_ratio+1.))
+                    syst = 0
                     MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,0,Theta2_upper_limit,syst)
                 Hists = []
                 legends = []
@@ -1893,6 +1906,9 @@ for s in range(0,len(source_list)):
                 Hists += [Hist_Target_BkgSRall_theta2]
                 legends += ['Bkg']
                 colors += [4]
+                Hists += [Hist_MC_BkgSRall_theta2]
+                legends += ['electron (MC)']
+                colors += [3]
                 plotname = 'Target_SRall_theta2_E%s'%(ErecS_lower_cut)
                 title = 'theta2'
                 syst = 0
@@ -1900,15 +1916,12 @@ for s in range(0,len(source_list)):
                 Hists = []
                 legends = []
                 colors = []
-                Hists += [Hist_Target_SRall_theta2]
-                legends += ['data']
-                colors += [1]
                 Hists += [Hist_Target_BkgSRall_theta2]
                 legends += ['elev. 50-90']
-                colors += [2]
+                colors += [1]
                 Hists += [Hist_Target_LZABkgSRall_theta2]
                 legends += ['elev. 50-70']
-                colors += [3]
+                colors += [2]
                 Hists += [Hist_Target_SZABkgSRall_theta2]
                 legends += ['elev. 70-90']
                 colors += [4]
@@ -1932,29 +1945,19 @@ for s in range(0,len(source_list)):
             s2b = 0.
             s2b_err = 0.
             s2b, s2b_err = S2B_ratio(Hist_Target_SR_MSCW, Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
-            Hist_e2p_SR_MSCW = SelectDiagnosticaHistograms(e2p_folder,e2p_source,'Target_SR_MSCW_SumRuns_SumSRs',True)
-            Hist_e2p_BkgSR_MSCW = SelectDiagnosticaHistograms(e2p_folder,e2p_source,'Target_BkgSR_MSCW_SumRuns_SumSRs',True)
+            Hist_MC_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'MC_SR_MSCW_SumRuns_SumSRs',True)
             e2p_ratio = 0
             e2p_error = 0
-            e2p_ratio, e2p_error = S2B_ratio(Hist_e2p_SR_MSCW,Hist_e2p_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
-            if e2p_ratio<0.:
-                e2p_ratio = 0
-                e2p_error = 0
-            #if 1.0*e2p_error>=e2p_ratio:
-            #    e2p_ratio = 0
-            #    e2p_error = 0
-            r2b, r2b_err = Variation_ratio(Hist_Target_SR_MSCW, Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,0,e2p_ratio,e2p_error)
-            #r2b, r2b_err = Variation_ratio(Hist_Target_SR_MSCW, Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,0,0,0)
+            e2p_ratio, e2p_error = S2B_ratio(Hist_MC_SR_MSCW,Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
+            r2b, r2b_err = Variation_ratio(Hist_Target_SR_MSCW, Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,0,0,0)
             d2b, d2b_err = Variation_ratio(Hist_Target_SR_MSCW, Hist_Dark_SR_MSCW,MSCW_lower_cut,MSCW_upper_cut,0,0,0)
             print 'E %s-%s, S/B = %0.3f +/- %0.3f'%(ErecS_lower_cut,ErecS_upper_cut,s2b,s2b_err)
-            Hist_e2p[len(Hist_e2p)-1].SetBinContent(e+1,s2b)
-            Hist_e2p[len(Hist_e2p)-1].SetBinError(e+1,s2b_err)
             Hist_ruo_predict[len(Hist_ruo_predict)-1].SetBinContent(e+1,r2b)
             Hist_ruo_predict[len(Hist_ruo_predict)-1].SetBinError(e+1,r2b_err)
             Hist_dark_predict[len(Hist_dark_predict)-1].SetBinContent(e+1,d2b)
             Hist_dark_predict[len(Hist_dark_predict)-1].SetBinError(e+1,d2b_err)
 
-MakeComparisonPlot(Hist_e2p,legend_e2p,color_e2p,'E [GeV]','Target_e2p_ratio',0.5,True,False)
+MakeComparisonPlot(Hist_e2p,legend_e2p,color_e2p,'E [GeV]','Target_e2p_ratio',0,True,True)
 MakeComparisonPlotNoRatio(Hist_ruo_predict,legend_ruo_predict,color_ruo_predict,'E [GeV]','Ruo_predict_ratio',0.6,1.4,True,False)
 MakeComparisonPlotNoRatio(Hist_dark_predict,legend_dark_predict,color_dark_predict,'E [GeV]','Dark_predict_ratio',0.6,1.4,True,False)
 
@@ -2060,17 +2063,11 @@ if doRaDec:
                     while Hist_Target_SR_RaDec.GetNbinsX()>ideal_nbins:
                         Hist_Target_SR_RaDec.Rebin2D(2,2)
                         Hist_Target_Bkg_RaDec.Rebin2D(2,2)
-                    Hist_e2p_SR_MSCW = SelectDiagnosticaHistograms(e2p_folder,e2p_source,'Target_SR%s_MSCW_SumRuns'%(sr),True)
-                    Hist_e2p_BkgSR_MSCW = SelectDiagnosticaHistograms(e2p_folder,e2p_source,'Target_BkgSR%s_MSCW_SumRuns'%(sr),True)
+
+                    Hist_MC_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'MC_SR%s_MSCW_SumRuns'%(sr),True)
                     e2p_ratio = 0
                     e2p_error = 0
-                    e2p_ratio, e2p_error = S2B_ratio(Hist_e2p_SR_MSCW,Hist_e2p_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
-                    if e2p_ratio<0.:
-                        e2p_ratio = 0
-                        e2p_error = 0
-                    #if 1.0*e2p_error>=e2p_ratio:
-                    #    e2p_ratio = 0
-                    #    e2p_error = 0
+                    e2p_ratio, e2p_error = S2B_ratio(Hist_MC_SR_MSCW,Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
                     RaDecHistScale(Hist_Target_Bkg_RaDec,scalesky,scalesky_err)
                     RaDecHistScale(Hist_Target_Bkg_RaDec,e2p_ratio+1.,e2p_error)
                     Hist_Target_SRall_RaDec.Add(Hist_Target_SR_RaDec)
