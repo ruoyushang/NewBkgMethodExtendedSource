@@ -1438,26 +1438,36 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         MSCW_cut_upper = MSCW_cut_upper_input;
         MSCW_cut_blind = MSCW_cut_blind_input;
 
+// Energy 200
 electron_flux[0] = 13428.9;
 electron_flux_err[0] = 503.54;
-electron_flux[1] = 5705.57;
-electron_flux_err[1] = 216.502;
+// Energy 237
+electron_flux[1] = 4790.24;
+electron_flux_err[1] = 181.397;
+// Energy 282
 electron_flux[2] = 2135.84;
 electron_flux_err[2] = 95.6675;
-electron_flux[3] = 1135.76;
-electron_flux_err[3] = 67.8775;
-electron_flux[4] = 416.956;
-electron_flux_err[4] = 50.1277;
-electron_flux[5] = 243.053;
-electron_flux_err[5] = 30.6817;
-electron_flux[6] = 143.059;
-electron_flux_err[6] = 18.196;
-electron_flux[7] = 96.3665;
-electron_flux_err[7] = 12.3135;
-electron_flux[8] = 67.4319;
-electron_flux_err[8] = 14.4743;
-electron_flux[9] = 24.4714;
-electron_flux_err[9] = 10.0103;
+// Energy 335
+electron_flux[3] = 1070.13;
+electron_flux_err[3] = 63.7173;
+// Energy 398
+electron_flux[4] = 402.778;
+electron_flux_err[4] = 48.4943;
+// Energy 473
+electron_flux[5] = 222.561;
+electron_flux_err[5] = 28.1505;
+// Energy 562
+electron_flux[6] = 132.25;
+electron_flux_err[6] = 16.7993;
+// Energy 667
+electron_flux[7] = 91.5831;
+electron_flux_err[7] = 11.658;
+// Energy 794
+electron_flux[8] = 65.6249;
+electron_flux_err[8] = 14.1325;
+// Energy 943
+electron_flux[9] = 23.7373;
+electron_flux_err[9] = 9.68792;
 
 #ifndef VEGAS
         Theta2_upper_limit = 10.;
@@ -2081,7 +2091,7 @@ electron_flux_err[9] = 10.0103;
 
                     TFile*  input_file = TFile::Open(filename.c_str());
 		    TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Sublist.at(subrun)[run]);
-                    double eff_area = i_hEffAreaP->GetBinContent( i_hEffAreaP->FindBin( log10( energy_bins[e]/1000.)));
+                    double eff_area = i_hEffAreaP->GetBinContent( i_hEffAreaP->FindBin( log10(0.5*(energy_bins[e]+energy_bins[e+1])/1000.)));
                     std::cout << "eff_area = " << eff_area << std::endl; 
                     TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
                     if (UseVegas) root_file = "ShowerEvents/ShowerEventsTree";
