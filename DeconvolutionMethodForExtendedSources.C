@@ -393,12 +393,12 @@ double GetChi2(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int 
     double weight_blinded = double(Hist_SR->Integral(norm_bin_low,norm_bin_blind));
     double weight_unblinded = double(Hist_SR->Integral(norm_bin_blind,norm_bin_up));
     double weight_ratio = weight_unblinded/(weight_blinded+weight_unblinded);
-    if (!includeSR) 
-    {
-        inflation_rms = exp(-0.5*pow((Hist_Bkg->GetRMS()-estimated_rms)/(0.25*estimated_rms_err*weight_ratio),2));
-        chi2_mean = pow(Hist_Bkg->GetMean()-estimated_mean,2)/(estimated_mean_err*estimated_mean_err);
-        chi2_rms = pow(Hist_Bkg->GetRMS()-estimated_rms,2)/(estimated_rms_err*estimated_rms_err);
-    }
+    //if (!includeSR) 
+    //{
+    //    inflation_rms = exp(-0.5*pow((Hist_Bkg->GetRMS()-estimated_rms)/(0.25*estimated_rms_err*weight_ratio),2));
+    //    chi2_mean = pow(Hist_Bkg->GetMean()-estimated_mean,2)/(estimated_mean_err*estimated_mean_err);
+    //    chi2_rms = pow(Hist_Bkg->GetRMS()-estimated_rms,2)/(estimated_rms_err*estimated_rms_err);
+    //}
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
         double bkg = Hist_Bkg->GetBinContent(i+1);
         double data = Hist_SR->GetBinContent(i+1);
@@ -737,7 +737,7 @@ std::pair <double,double> FindConverge(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bk
         init_amplitude = 0.5;
     }
     //threshold = FindEndPoint(Hist_SR);
-    threshold = -0.5;
+    threshold = -1.5;
     amplitude = FindConvergeAmplitude(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,threshold,amplitude,0);
     double endpoint_up = threshold+amplitude;
     threshold = FindConvergeThreshold(Hist_SR,Hist_Bkg,Hist_Bkg_Temp,endpoint_up);
@@ -783,7 +783,7 @@ std::pair <bool,std::pair <double,double>> ShiftAndNormalize(TH1* Hist_Dark, TH1
     if (doShift) {
         for (int fit=0;fit<100;fit++) {
                 double shift = shift_begin-5.0*estimated_mean_err+10.0*estimated_mean_err*double(fit)*0.01;
-                if (!includeSR) shift = shift_begin-1.0*estimated_mean_err*weight_ratio+2.0*estimated_mean_err*weight_ratio*double(fit)*0.01;
+                //if (!includeSR) shift = shift_begin-1.0*estimated_mean_err*weight_ratio+2.0*estimated_mean_err*weight_ratio*double(fit)*0.01;
                 for (int i=0;i<Hist_SR->GetNbinsX();i++) {
                         int b = Hist_SR->FindBin(Hist_SR->GetBinCenter(i+1)-shift);
                         Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
@@ -1010,6 +1010,7 @@ void Convolution(TH1D* Hist_source, TH1D* Hist_response, TH1D* Hist_Conv) {
 
 double PointingDistribution(string file_name,int run, bool isDark, bool fillHist)
 {
+    if (run>100000) return 0.;
     char run_number[50];
     sprintf(run_number, "%i", int(run));
     TFile*  input_file = TFile::Open(file_name.c_str());
@@ -1040,6 +1041,7 @@ double PointingDistribution(string file_name,int run, bool isDark, bool fillHist
 }
 bool PointingSelection(string file_name,int run, bool fillHist, double Elev_cut_lower, double Elev_cut_upper, double Azim_cut_lower, double Azim_cut_upper)
 {
+    if (run>100000) return true;
     char run_number[50];
     sprintf(run_number, "%i", int(run));
     TFile*  input_file = TFile::Open(file_name.c_str());
@@ -1240,18 +1242,20 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, do
         if (TString(source)=="CrabB") sprintf(observation, "%s", "Crab");
         if (TString(source)=="Segue1AV6") sprintf(observation, "%s", "Segue1V6");
         if (TString(source)=="Segue1BV6") sprintf(observation, "%s", "Segue1V6");
-        double delta_elev = 0.1;
-        double delta_azim = 0.2;
-        if (energy>300.)
-        {
-            delta_elev = 0.5;
-            delta_azim = 1.0;
-        }
-        if (energy>500.)
-        {
-            delta_elev = 1.0;
-            delta_azim = 2.0;
-        }
+        double delta_elev = 1.0;
+        double delta_azim = 2.0;
+        //double delta_elev = 0.1;
+        //double delta_azim = 0.2;
+        //if (energy>300.)
+        //{
+        //    delta_elev = 0.5;
+        //    delta_azim = 1.0;
+        //}
+        //if (energy>500.)
+        //{
+        //    delta_elev = 1.0;
+        //    delta_azim = 2.0;
+        //}
         if (energy>700.)
         {
             delta_elev = 5.;
@@ -1386,35 +1390,41 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         MSCW_cut_blind = MSCW_cut_blind_input;
 
 // Energy 200
-electron_flux[0] = 11204.2;
-electron_flux_err[0] = 464.429;
+electron_flux[0] = 15172.7;
+electron_flux_err[0] = 629.917;
 // Energy 237
-electron_flux[1] = 3849.71;
-electron_flux_err[1] = 156.584;
+electron_flux[1] = 5356.45;
+electron_flux_err[1] = 193.75;
 // Energy 282
-electron_flux[2] = 1752.74;
-electron_flux_err[2] = 92.1461;
+electron_flux[2] = 2567.9;
+electron_flux_err[2] = 94.3346;
 // Energy 335
-electron_flux[3] = 846.347;
-electron_flux_err[3] = 65.4865;
+electron_flux[3] = 1261.26;
+electron_flux_err[3] = 63.1631;
 // Energy 398
-electron_flux[4] = 341.842;
-electron_flux_err[4] = 45.8565;
+electron_flux[4] = 572.153;
+electron_flux_err[4] = 35.709;
 // Energy 473
-electron_flux[5] = 211.237;
-electron_flux_err[5] = 30.7532;
+electron_flux[5] = 311.362;
+electron_flux_err[5] = 22.8171;
 // Energy 562
-electron_flux[6] = 96.2176;
-electron_flux_err[6] = 19.5157;
+electron_flux[6] = 161.611;
+electron_flux_err[6] = 15.3206;
 // Energy 667
-electron_flux[7] = 66.2488;
-electron_flux_err[7] = 12.3781;
+electron_flux[7] = 101.044;
+electron_flux_err[7] = 10.3315;
 // Energy 794
-electron_flux[8] = 46.8019;
-electron_flux_err[8] = 17.2775;
+electron_flux[8] = 63.1532;
+electron_flux_err[8] = 9.84692;
 // Energy 943
-electron_flux[9] = 15.9427;
-electron_flux_err[9] = 10.2882;
+electron_flux[9] = 25.2147;
+electron_flux_err[9] = 6.70694;
+// Energy 1122
+electron_flux[10] = 6.34517;
+electron_flux_err[10] = 3.67346;
+// Energy 1332
+electron_flux[11] = 2.68106;
+electron_flux_err[11] = 2.27025;
 
 #ifndef VEGAS
         Theta2_upper_limit = 10.;
@@ -2000,11 +2010,19 @@ electron_flux_err[9] = 10.2882;
 
         MSCW_cut_blind = MSCW_cut_blind_input;
         vector<vector<int>> Sublist;
-        Target_runlist = SortRunListByElevation(target,Target_runlist);
+        //Target_runlist = SortRunListByElevation(target,Target_runlist);
         for (int e=0;e<N_energy_bins;e++)
         {
             if (!use_this_energy_bin[e]) continue;
-            Sublist = FindRunSublist(target,Target_runlist,energy_bins[e]);
+            if (TString(target)=="Proton")
+            {
+                Sublist.clear();
+                Sublist.push_back(Target_runlist);
+            }
+            else
+            {
+                Sublist = FindRunSublist(target,Target_runlist,energy_bins[e]);
+            }
             std::cout << "=================================================================" << std::endl;
             std::cout << "Target, e " << energy_bins[e] << std::endl;
             std::cout << "Sublist.size() = " << Sublist.size() << std::endl;
@@ -2569,7 +2587,7 @@ electron_flux_err[9] = 10.2882;
         int Number_of_SR_new = Number_of_SR;
         TString ConvergeOrNot = "";
         if (!DoConverge) ConvergeOrNot = "_NoConverge";
-        TFile OutputFile("output_May19/Deconvolution_"+TString(target)+"_Ntel"+std::to_string(NTelMin)+"to"+std::to_string(NTelMax)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate");
+        TFile OutputFile("output_May25/Deconvolution_"+TString(target)+"_Ntel"+std::to_string(NTelMin)+"to"+std::to_string(NTelMax)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate");
         TTree InfoTree("InfoTree","info tree");
         InfoTree.Branch("Number_of_CR",&Number_of_CR_new,"Number_of_CR/I");
         InfoTree.Branch("Number_of_SR",&Number_of_SR_new,"Number_of_SR/I");
