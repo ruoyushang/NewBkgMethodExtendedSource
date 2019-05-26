@@ -423,9 +423,9 @@ double GetChi2(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int 
     }
     else
     {
-        chi2_total = chi2_rms;
-        chi2_total += chi2_temp;
-        //chi2_total = chi2_temp;
+        //chi2_total = chi2_rms;
+        //chi2_total += chi2_temp;
+        chi2_total = chi2_temp;
     }
     chi2_total = 1./chi2_total;
     //chi2_total = inflation_rms*1./chi2_total;
@@ -594,7 +594,7 @@ double ConvergeFunction(double x, double threshold, double amplitude, int type)
 {
     if (x-(threshold+amplitude)>=0.) return 1.;
     if (x-(threshold)<0.) return 0.;
-    return pow((x-threshold)/amplitude,2);
+    return pow((x-threshold)/amplitude,1);
     //if (type==0)
     //{
     //    //return 1./(1.+exp(-(x-threshold)/amplitude));
@@ -670,6 +670,7 @@ void FindSRMean(TH1* Hist_CR, double energy)
         if (energy>700.) width = 0.5;
         if (energy>1000.) width = 0.2;
         if (energy>1500.) width = 0.1;
+        //if (energy>1800.) width = 5.;
         Hist_CR->SetBinError(bin,width*(MSCW_cut_blind-MSCW_cut_lower));
     }
 }
@@ -1403,42 +1404,47 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         MSCW_cut_upper = MSCW_cut_upper_input;
         MSCW_cut_blind = MSCW_cut_blind_input;
 
+        //for (int e=0;e<N_energy_bins;e++)
+        //{
+        //    if (energy_bins[e]<1500) use_this_energy_bin[e] = false;
+        //}
+
 // Energy 200
-electron_flux[0] = 9069.03;
-electron_flux_err[0] = 841.923;
+electron_flux[0] = 9980.44;
+electron_flux_err[0] = 851.527;
 // Energy 237
-electron_flux[1] = 3236.47;
-electron_flux_err[1] = 232.167;
+electron_flux[1] = 3944.63;
+electron_flux_err[1] = 303.937;
 // Energy 282
-electron_flux[2] = 1200.51;
-electron_flux_err[2] = 134.232;
+electron_flux[2] = 1645.86;
+electron_flux_err[2] = 155.08;
 // Energy 335
-electron_flux[3] = 682.444;
-electron_flux_err[3] = 72.4189;
+electron_flux[3] = 898.512;
+electron_flux_err[3] = 80.9287;
 // Energy 398
-electron_flux[4] = 311.201;
-electron_flux_err[4] = 42.7358;
+electron_flux[4] = 464.687;
+electron_flux_err[4] = 50.5525;
 // Energy 473
-electron_flux[5] = 170.673;
-electron_flux_err[5] = 28.5392;
+electron_flux[5] = 255.793;
+electron_flux_err[5] = 27.4861;
 // Energy 562
-electron_flux[6] = 116.507;
-electron_flux_err[6] = 16.2286;
+electron_flux[6] = 173.415;
+electron_flux_err[6] = 16.2824;
 // Energy 667
-electron_flux[7] = 66.1669;
-electron_flux_err[7] = 12.1737;
+electron_flux[7] = 101.278;
+electron_flux_err[7] = 12.3179;
 // Energy 794
-electron_flux[8] = 47.0297;
-electron_flux_err[8] = 13.2875;
+electron_flux[8] = 57.3383;
+electron_flux_err[8] = 12.5102;
 // Energy 943
-electron_flux[9] = 19.0037;
-electron_flux_err[9] = 7.0599;
+electron_flux[9] = 28.1866;
+electron_flux_err[9] = 6.20711;
 // Energy 1122
-electron_flux[10] = 3.5237;
-electron_flux_err[10] = 4.45641;
+electron_flux[10] = 10.5181;
+electron_flux_err[10] = 4.56529;
 // Energy 1332
-electron_flux[11] = 1.35379;
-electron_flux_err[11] = 1.92026;
+electron_flux[11] = 5.23111;
+electron_flux_err[11] = 1.84452;
 
 #ifndef VEGAS
         Theta2_upper_limit = 10.;
