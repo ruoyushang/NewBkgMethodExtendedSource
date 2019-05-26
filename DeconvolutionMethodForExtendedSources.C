@@ -180,7 +180,7 @@ vector<vector<double>> target_kernel_shift;
 const int N_energy_bins = 18;
 double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,667,794,943,1122,1332,1585,1882,2239,3162,4467,6310,8913};
 bool use_this_energy_bin[N_energy_bins] = {true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true};
-//bool use_this_energy_bin[N_energy_bins] = {true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false};
+//bool use_this_energy_bin[N_energy_bins] = {true,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false};
 //bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false};
 double electron_flux[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_flux_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -393,12 +393,14 @@ double GetChi2(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int 
     double weight_blinded = double(Hist_SR->Integral(norm_bin_low,norm_bin_blind));
     double weight_unblinded = double(Hist_SR->Integral(norm_bin_blind,norm_bin_up));
     double weight_ratio = weight_unblinded/(weight_blinded+weight_unblinded);
-    //if (!includeSR) 
-    //{
-    //    inflation_rms = exp(-0.5*pow((Hist_Bkg->GetRMS()-estimated_rms)/(0.25*estimated_rms_err*weight_ratio),2));
-    //    chi2_mean = pow(Hist_Bkg->GetMean()-estimated_mean,2)/(estimated_mean_err*estimated_mean_err);
-    //    chi2_rms = pow(Hist_Bkg->GetRMS()-estimated_rms,2)/(estimated_rms_err*estimated_rms_err);
-    //}
+    if (!includeSR) 
+    {
+        //inflation_rms = exp(-0.5*pow((Hist_Bkg->GetRMS()-estimated_rms)/(0.25*estimated_rms_err*weight_ratio),2));
+        inflation_rms = exp(-0.5*pow((Hist_Bkg->GetRMS()-estimated_rms)/(0.5*(MSCW_cut_blind-MSCW_cut_lower)),2));
+        //inflation_mean = exp(-0.5*pow((Hist_Bkg->GetMean()-estimated_mean)/(0.25*estimated_mean_err),2));
+        chi2_mean = pow(Hist_Bkg->GetMean()-estimated_mean,2)/(estimated_mean_err*estimated_mean_err);
+        chi2_rms = pow(Hist_Bkg->GetRMS()-estimated_rms,2)/(estimated_rms_err*estimated_rms_err);
+    }
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
         double bkg = Hist_Bkg->GetBinContent(i+1);
         double data = Hist_SR->GetBinContent(i+1);
@@ -426,6 +428,7 @@ double GetChi2(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int 
     }
     //chi2_total = 1./chi2_total;
     chi2_total = inflation_rms*1./chi2_total;
+    //chi2_total = inflation_mean*1./chi2_total;
     return chi2_total;
 }
 void AddBkgStatistics(TH1* Hist_Bkg)
@@ -1266,6 +1269,11 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, do
             delta_elev = 5.;
             delta_azim = 10.;
         }
+        if (energy>1500.)
+        {
+            delta_elev = 10.;
+            delta_azim = 20.;
+        }
         if (energy>2000.)
         {
             delta_elev = 20.;
@@ -1390,41 +1398,41 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         MSCW_cut_blind = MSCW_cut_blind_input;
 
 // Energy 200
-electron_flux[0] = 15172.7;
-electron_flux_err[0] = 629.917;
+electron_flux[0] = 9069.03;
+electron_flux_err[0] = 841.923;
 // Energy 237
-electron_flux[1] = 5356.45;
-electron_flux_err[1] = 193.75;
+electron_flux[1] = 3236.47;
+electron_flux_err[1] = 232.167;
 // Energy 282
-electron_flux[2] = 2567.9;
-electron_flux_err[2] = 94.3346;
+electron_flux[2] = 1200.51;
+electron_flux_err[2] = 134.232;
 // Energy 335
-electron_flux[3] = 1261.26;
-electron_flux_err[3] = 63.1631;
+electron_flux[3] = 682.444;
+electron_flux_err[3] = 72.4189;
 // Energy 398
-electron_flux[4] = 572.153;
-electron_flux_err[4] = 35.709;
+electron_flux[4] = 311.201;
+electron_flux_err[4] = 42.7358;
 // Energy 473
-electron_flux[5] = 311.362;
-electron_flux_err[5] = 22.8171;
+electron_flux[5] = 170.673;
+electron_flux_err[5] = 28.5392;
 // Energy 562
-electron_flux[6] = 161.611;
-electron_flux_err[6] = 15.3206;
+electron_flux[6] = 116.507;
+electron_flux_err[6] = 16.2286;
 // Energy 667
-electron_flux[7] = 101.044;
-electron_flux_err[7] = 10.3315;
+electron_flux[7] = 66.1669;
+electron_flux_err[7] = 12.1737;
 // Energy 794
-electron_flux[8] = 63.1532;
-electron_flux_err[8] = 9.84692;
+electron_flux[8] = 47.0297;
+electron_flux_err[8] = 13.2875;
 // Energy 943
-electron_flux[9] = 25.2147;
-electron_flux_err[9] = 6.70694;
+electron_flux[9] = 19.0037;
+electron_flux_err[9] = 7.0599;
 // Energy 1122
-electron_flux[10] = 6.34517;
-electron_flux_err[10] = 3.67346;
+electron_flux[10] = 3.5237;
+electron_flux_err[10] = 4.45641;
 // Energy 1332
-electron_flux[11] = 2.68106;
-electron_flux_err[11] = 2.27025;
+electron_flux[11] = 1.35379;
+electron_flux_err[11] = 1.92026;
 
 #ifndef VEGAS
         Theta2_upper_limit = 10.;
