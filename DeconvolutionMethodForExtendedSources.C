@@ -180,7 +180,7 @@ vector<vector<double>> target_kernel_shift;
 const int N_energy_bins = 18;
 double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,667,794,943,1122,1332,1585,1882,2239,3162,4467,6310,8913};
 bool use_this_energy_bin[N_energy_bins] = {true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true};
-//bool use_this_energy_bin[N_energy_bins] = {true,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false};
+//bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,false,false,false,false,false,false,false,true,false,false,false,false};
 //bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false};
 double electron_flux[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_flux_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -392,14 +392,14 @@ double GetChi2(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int 
     int norm_bin_up = Hist_SR->FindBin(30.);
     double weight_blinded = double(Hist_SR->Integral(norm_bin_low,norm_bin_blind));
     double weight_unblinded = double(Hist_SR->Integral(norm_bin_blind,norm_bin_up));
-    double weight_ratio = weight_unblinded/(weight_blinded+weight_unblinded);
+    double weight_ratio = weight_blinded/(weight_blinded+weight_unblinded);
     if (!includeSR) 
     {
         //inflation_rms = exp(-0.5*pow((Hist_Bkg->GetRMS()-estimated_rms)/(0.25*estimated_rms_err*weight_ratio),2));
         inflation_rms = exp(-0.5*pow((Hist_Bkg->GetRMS()-estimated_rms)/(0.5*(MSCW_cut_blind-MSCW_cut_lower)),2));
         //inflation_mean = exp(-0.5*pow((Hist_Bkg->GetMean()-estimated_mean)/(0.25*estimated_mean_err),2));
         chi2_mean = pow(Hist_Bkg->GetMean()-estimated_mean,2)/(estimated_mean_err*estimated_mean_err);
-        chi2_rms = pow(Hist_Bkg->GetRMS()-estimated_rms,2)/(estimated_rms_err*estimated_rms_err);
+        chi2_rms = pow((Hist_Bkg->GetRMS()-estimated_rms)/(estimated_rms_err),2);
     }
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
         double bkg = Hist_Bkg->GetBinContent(i+1);
@@ -423,12 +423,12 @@ double GetChi2(TH1* Hist_Dark, TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int 
     }
     else
     {
-        //chi2_total = chi2_rms;
-        chi2_total = chi2_temp;
+        chi2_total = chi2_rms;
+        chi2_total += chi2_temp;
+        //chi2_total = chi2_temp;
     }
-    //chi2_total = 1./chi2_total;
-    chi2_total = inflation_rms*1./chi2_total;
-    //chi2_total = inflation_mean*1./chi2_total;
+    chi2_total = 1./chi2_total;
+    //chi2_total = inflation_rms*1./chi2_total;
     return chi2_total;
 }
 void AddBkgStatistics(TH1* Hist_Bkg)
@@ -655,7 +655,7 @@ void FindAverage(TH1* Hist_CR)
         Hist_CR->SetBinContent(bin,func->Eval(0.5*(MSCL_signal_cut_lower[s]+MSCL_signal_cut_upper[s])));
     }
 }
-void FindSRMean(TH1* Hist_CR)
+void FindSRMean(TH1* Hist_CR, double energy)
 {
     TF1 *func = new TF1("func",FitLinearFunction,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],2);
     func->SetParameter(0,2.);
@@ -665,6 +665,12 @@ void FindSRMean(TH1* Hist_CR)
     {
         int bin = Hist_CR->FindBin(0.5*(MSCL_signal_cut_lower[s]+MSCL_signal_cut_upper[s]));
         Hist_CR->SetBinContent(bin,func->Eval(0.5*(MSCL_signal_cut_lower[s]+MSCL_signal_cut_upper[s])));
+        double width = 5.;
+        if (energy>500.) width = 1.0;
+        if (energy>700.) width = 0.5;
+        if (energy>1000.) width = 0.2;
+        if (energy>1500.) width = 0.1;
+        Hist_CR->SetBinError(bin,width*(MSCW_cut_blind-MSCW_cut_lower));
     }
 }
 double FindEndPoint(TH1* Hist_CR)
@@ -2226,12 +2232,14 @@ electron_flux_err[11] = 1.92026;
                     int bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[c]+MSCL_control_cut_upper[c]));
                     Hist_Target_Mean.at(e).SetBinContent(bin,Hist_Target_CR_MSCW.at(e).at(c).GetMean());
                     Hist_Target_RMS.at(e).SetBinContent(bin,Hist_Target_CR_MSCW.at(e).at(c).GetRMS());
+                    Hist_Target_Mean.at(e).SetBinError(bin,MSCW_cut_blind-MSCW_cut_lower);
+                    Hist_Target_RMS.at(e).SetBinError(bin,MSCW_cut_blind-MSCW_cut_lower);
                     double endpoint = FindEndPoint(&Hist_Target_CR_MSCW.at(e).at(c));
                     Hist_Target_EndPoint.at(e).SetBinContent(bin,endpoint);
                 }
                 FindAverage(&Hist_Target_EndPoint.at(e));
-                FindSRMean(&Hist_Target_Mean.at(e));
-                FindSRMean(&Hist_Target_RMS.at(e));
+                FindSRMean(&Hist_Target_Mean.at(e),energy_bins[e]);
+                FindSRMean(&Hist_Target_RMS.at(e),energy_bins[e]);
                 //for (int bin=1;bin<=Hist_Target_EndPoint.at(e).GetNbinsX();bin++)
                 //{ 
                 //    Hist_Target_EndPoint.at(e).SetBinContent(bin,0);
@@ -2328,12 +2336,12 @@ electron_flux_err[11] = 1.92026;
 
                 int bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[Number_of_CR-1]+MSCL_control_cut_upper[Number_of_CR-1]));
                 estimated_mean_err = Hist_Target_RMS.at(e).GetBinContent(bin)/2.;
-                estimated_rms_err = Hist_Target_RMS.at(e).GetBinContent(bin)/2.;
                 bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[0]+MSCL_signal_cut_upper[0]));
                 estimated_endpoint = Hist_Target_EndPoint.at(e).GetBinContent(bin);
                 estimated_amplitude = Hist_Target_Amplitude.at(e).GetBinContent(bin);
                 estimated_mean = Hist_Target_Mean.at(e).GetBinContent(bin);
                 estimated_rms = Hist_Target_RMS.at(e).GetBinContent(bin);
+                estimated_rms_err = Hist_Target_RMS.at(e).GetBinError(bin);
                 dark_current_mean = Hist_Dark_SR_MSCW_SumRuns.at(e).at(0).GetMean();
                 dark_current_amp = Hist_Dark_SR_MSCW_SumRuns.at(e).at(0).Integral();
                 dark_current_rms = Hist_Dark_SR_MSCW_SumRuns.at(e).at(0).GetRMS();
@@ -2404,6 +2412,7 @@ electron_flux_err[11] = 1.92026;
                     estimated_amplitude = Hist_Target_Amplitude.at(e).GetBinContent(bin);
                     estimated_mean = Hist_Target_Mean.at(e).GetBinContent(bin);
                     estimated_rms = Hist_Target_RMS.at(e).GetBinContent(bin);
+                    estimated_rms_err = Hist_Target_RMS.at(e).GetBinError(bin);
                     dark_current_mean = Hist_Dark_SR_MSCW_SumRuns.at(e).at(s).GetMean();
                     dark_current_amp = Hist_Dark_SR_MSCW_SumRuns.at(e).at(s).Integral();
                     dark_current_rms = Hist_Dark_SR_MSCW_SumRuns.at(e).at(s).GetRMS();
