@@ -84,18 +84,15 @@ double MSCL_signal_cut_upper[Number_of_SR] = {1.00,0.75,0.50,0.25, 0.00,-0.25};
 const int Number_of_CR = 8;
 double MSCL_control_cut_lower[Number_of_CR] = {2.75,2.50,2.25,2.00,1.75,1.50,1.25,1.00};
 double MSCL_control_cut_upper[Number_of_CR] = {3.00,2.75,2.50,2.25,2.00,1.75,1.50,1.25};
-//const int Number_of_CR = 5;
-//double MSCL_control_cut_lower[Number_of_CR] = {2.00,1.75,1.50,1.25,1.00};
-//double MSCL_control_cut_upper[Number_of_CR] = {2.25,2.00,1.75,1.50,1.25};
 //double MSCW_cut_lower = -1.0;  // set this to -1.5 for V5
 //double MSCW_cut_blind = 1.5;
 //double MSCW_cut_upper = 1.5;
-//const int Number_of_SR = 3;
-//double MSCL_signal_cut_lower[Number_of_SR] = {0.50,0.00,-0.5};
-//double MSCL_signal_cut_upper[Number_of_SR] = {1.00,0.50,0.00};
-//const int Number_of_CR = 3;
-//double MSCL_control_cut_lower[Number_of_CR] = {2.00,1.50,1.00};
-//double MSCL_control_cut_upper[Number_of_CR] = {2.50,2.00,1.50};
+//const int Number_of_SR = 8;
+//double MSCL_signal_cut_lower[Number_of_SR] = {0.8,0.6,0.4,0.2,0.0,-0.2,-0.4,-0.6};
+//double MSCL_signal_cut_upper[Number_of_SR] = {1.0,0.8,0.6,0.4,0.2, 0.0,-0.2,-0.4};
+//const int Number_of_CR = 10;
+//double MSCL_control_cut_lower[Number_of_CR] = {2.8,2.6,2.4,2.2,2.0,1.8,1.6,1.4,1.2,1.0};
+//double MSCL_control_cut_upper[Number_of_CR] = {3.0,2.8,2.6,2.4,2.2,2.0,1.8,1.6,1.4,1.2};
 #else
 // VEGAS
 //double MSCW_cut_lower = 0.7;
@@ -415,8 +412,6 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int chi2_type) {
         if (!includeSR && Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind) {
             continue;
         }
-        //if ((data_err*data_err+bkg_err*bkg_err)==0) continue;
-        //chi2_temp += pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
         if ((data_err*data_err)==0) data_err = 1.;
         chi2_temp += pow(bkg-data,2)/(data_err*data_err);
         nbins += 1.;
@@ -578,8 +573,8 @@ void MakeBkgPrevious(TH1* Hist_SR,TH1* Hist_Bkg,TH1* Hist_Previous, bool include
 {
     for (int i=0;i<Hist_SR->GetNbinsX();i++)
     {
-        //if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind && !includeSR)
-        if (!includeSR)
+        if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind && !includeSR)
+        //if (!includeSR)
         {
             Hist_Previous->SetBinContent(i+1,Hist_Bkg->GetBinContent(i+1));
             Hist_Previous->SetBinError(i+1,Hist_Bkg->GetBinError(i+1));
@@ -668,10 +663,10 @@ std::pair <double,double> FindConvergeEndpointUp(TH1* Hist_SR, TH1* Hist_Bkg, TH
 }
 std::pair <double,double> FindConvergeEndpoints(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bkg_Temp)
 {
-    //return std::make_pair(1.8,1.4); // 0.28 TeV
-    //return std::make_pair(1.9,1.3); // 0.5 TeV
-    return std::make_pair(2.1,1.2); // 1 TeV
-    //return std::make_pair(2.4,1.4); // 2 TeV
+    return std::make_pair(1.9,1.0); // 0.28 TeV
+    //return std::make_pair(2.0,1.1); // 0.5 TeV
+    //return std::make_pair(2.1,1.2); // 1 TeV
+    //return std::make_pair(2.3,1.3); // 2 TeV
     //return std::make_pair(2.5,1.6); // 4 TeV
     //
     double endpoint_0 = 0.;
@@ -1038,9 +1033,9 @@ double FindNIteration(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTe
     int nbins = Hist_SR->GetNbinsX();
     for (int delta_n_iter = 0;delta_n_iter<10;delta_n_iter++) {
           int n_iter = n_iter_begin;
-          if (includeSR) n_iter = n_iter_begin+5-delta_n_iter;
-          else n_iter = n_iter_begin-delta_n_iter;
-          //n_iter = n_iter_begin-delta_n_iter;
+          //if (includeSR) n_iter = n_iter_begin+5-delta_n_iter;
+          //else n_iter = n_iter_begin-delta_n_iter;
+          n_iter = n_iter_begin+5-delta_n_iter;
           if (n_iter<1) {
               continue;
           }
@@ -1073,20 +1068,29 @@ std::pair <double,double> FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1
     double unblinded_rms_final = rms_begin;
     double this_blinded_sr_rms = GetBlindedRMS(Hist_SR);
     double this_blinded_cr_rms = GetBlindedRMS(Hist_CR);
-    double estimated_kernel_rms = pow(estimated_rms_previous*estimated_rms_previous-estimated_rms*estimated_rms,0.5);
+    double estimated_kernel_rms = 0.;
+    if (estimated_rms_previous>estimated_rms) 
+    {
+        estimated_kernel_rms = pow(estimated_rms_previous*estimated_rms_previous-estimated_rms*estimated_rms,0.5);
+    }
+    if (!includeSR && estimated_kernel_rms>0.)
+    {
+        return std::make_pair(estimated_kernel_rms,estimated_kernel_rms);
+    }
+    int final_n_rms = 0;
     TF1 *func = new TF1("func",Kernel,-50.,50.,1);
     func->SetParameter(0,0.5);
-    for (int n_rms = 0; n_rms<=20;n_rms++) {
+    for (int n_rms = 0; n_rms<=40;n_rms++) {
         double chi2 = 0;
         double unblinded_chi2 = 0;
         double rms = rms_begin;
-        rms = 0.1+double(n_rms+1)*1.0/20.;
-        //rms = 0.1+double(n_rms+1)*3.0/20.;
-        //if (!includeSR) rms = rms_begin+double(n_rms)*2.0*rms_begin/20.;  // good
-        if (!includeSR) rms = estimated_kernel_rms-0.1*estimated_kernel_rms+double(n_rms+1)*0.5*estimated_kernel_rms/20.;
+        rms = 0.1+double(n_rms+1)*1.0/40.;
+        //if (!includeSR && estimated_kernel_rms>0.) 
+        //{
+        //    rms = estimated_kernel_rms-double(n_rms)*0.5*estimated_kernel_rms/20.;
+        //}
         func->SetParameter(0,rms);
         Hist_Deconv->Reset();
-        //Hist_Deconv->FillRandom("func",1000000);
         for (int b=0;b<Hist_Deconv->GetNbinsX();b++)
         {
             double content = func->Eval(Hist_Deconv->GetBinCenter(b+1));
@@ -1101,12 +1105,17 @@ std::pair <double,double> FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1
         if (chi2_best<chi2) {
             chi2_best = chi2;
             rms_final = rms;
+            final_n_rms = n_rms;
         } 
         if (unblinded_chi2_best<unblinded_chi2) {
             unblinded_chi2_best = unblinded_chi2;
             unblinded_rms_final = rms;
         } 
     }
+    std::cout << "estimated_kernel_rms = " << estimated_kernel_rms << std::endl;
+    std::cout << "final_kernel_rms = " << rms_final << std::endl;
+    if (final_n_rms==0) std::cout << "kernel RMS solution attemps to move outside lower bound!!" << std::endl;
+    if (final_n_rms==40) std::cout << "kernel RMS solution attemps to move outside upper bound!!" << std::endl;
     return std::make_pair(rms_final,unblinded_rms_final);
 }
 std::pair <double,double> FindConvergeEndpointsFuture(TH1* Hist_SR_Future, TH1* Hist_Bkg, TH1* Hist_Bkg_Temp1, TH1* Hist_Bkg_Temp2, TH1* Hist_Deconv, double kernel_rms_init, int niter, double shift, double endpoint_0_init, double endpoint_1_init)
@@ -1560,10 +1569,14 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
 
         for (int e=0;e<N_energy_bins;e++)
         {
-            //if (energy_bins[e]<280) use_this_energy_bin[e] = false;
-            //if (energy_bins[e]>300) use_this_energy_bin[e] = false;
-            if (energy_bins[e]<1000) use_this_energy_bin[e] = false;
-            if (energy_bins[e]>1200) use_this_energy_bin[e] = false;
+            if (energy_bins[e]<280) use_this_energy_bin[e] = false;
+            if (energy_bins[e]>300) use_this_energy_bin[e] = false;
+            //if (energy_bins[e]<500) use_this_energy_bin[e] = false;
+            //if (energy_bins[e]>600) use_this_energy_bin[e] = false;
+            //if (energy_bins[e]<1000) use_this_energy_bin[e] = false;
+            //if (energy_bins[e]>1200) use_this_energy_bin[e] = false;
+            //if (energy_bins[e]<2000) use_this_energy_bin[e] = false;
+            //if (energy_bins[e]>3000) use_this_energy_bin[e] = false;
         }
 
 // Energy 200
