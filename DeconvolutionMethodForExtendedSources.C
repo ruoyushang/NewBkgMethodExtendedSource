@@ -661,50 +661,33 @@ std::pair <double,double> FindConvergeEndpointUp(TH1* Hist_SR, TH1* Hist_Bkg, TH
     }
     return std::make_pair(endpoint_0,endpoint_1);
 }
-std::pair <double,double> FindConvergeEndpoints(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bkg_Temp)
+std::pair <double,double> FindConvergeEndpoints(double energy)
 {
     //return std::make_pair(1.9,1.0); // 0.28 TeV
     //return std::make_pair(2.0,1.1); // 0.5 TeV
-    return std::make_pair(2.1,1.2); // 1 TeV
+    //if (energy>1100. && energy<1200.) return std::make_pair(2.1,1.2); // 1 TeV
     //return std::make_pair(2.3,1.3); // 2 TeV
     //return std::make_pair(2.5,1.6); // 4 TeV
     //
-    double endpoint_0 = 0.;
-    double endpoint_1 = 0.;
-    double mean = Hist_SR->GetMean();
-    double rms = Hist_SR->GetRMS();
-    double chi2_best = 0.;
-    //bkg_mean = Hist_Bkg->GetMean();
-    //bkg_rms = Hist_Bkg->GetRMS();
+if (energy>=200&&energy<237) return std::make_pair(1.5,1.4);
+if (energy>=237&&energy<282) return std::make_pair(1.4,1.35);
+if (energy>=282&&energy<335) return std::make_pair(1.7,1.6);
+if (energy>=335&&energy<398) return std::make_pair(1.9,1.3);
+if (energy>=398&&energy<473) return std::make_pair(1.9,1.35);
+if (energy>=473&&energy<562) return std::make_pair(2.1,1.05);
+if (energy>=562&&energy<667) return std::make_pair(1.8,1.55);
+if (energy>=667&&energy<794) return std::make_pair(1.9,1.4);
+if (energy>=794&&energy<943) return std::make_pair(2.1,1.25);
+if (energy>=943&&energy<1122) return std::make_pair(2.1,1.55);
+if (energy>=1122&&energy<1332) return std::make_pair(1.9,1.35);
+if (energy>=1332&&energy<1585) return std::make_pair(2,1.45);
+if (energy>=1585&&energy<1882) return std::make_pair(2.3,1.25);
+if (energy>=1882&&energy<2239) return std::make_pair(2.1,1.35);
+if (energy>=2239&&energy<3162) return std::make_pair(2.3,1.25);
+if (energy>=3162&&energy<4467) return std::make_pair(2.2,1.25);
+if (energy>=4467&&energy<6310) return std::make_pair(2.3,1.5);
+if (energy>=6310&&energy<8913) return std::make_pair(2.7,1.15);
 
-    for (int ep0=0;ep0<100;ep0++)
-    {
-        double try_endpoint_0 = 1.5+2.5*double(ep0)/100.;
-        for (int ep1=0;ep1<100;ep1++)
-        {
-            double try_endpoint_1 = try_endpoint_0-2.5*double(ep1)/100.;
-            if (try_endpoint_0<try_endpoint_1) continue;
-            //if (try_endpoint_0>try_endpoint_1) continue;
-            for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
-            {
-                double old_content = Hist_Bkg->GetBinContent(i+1);
-                double new_content = old_content*ConvergeFunction(Hist_Bkg->GetBinCenter(i+1),try_endpoint_0,try_endpoint_1,0);
-                double old_error = Hist_Bkg->GetBinError(i+1);
-                //double new_error = old_error*ConvergeFunction(Hist_Bkg->GetBinCenter(i+1),try_endpoint_0,try_endpoint_1,0);
-                double new_error = old_error;
-                Hist_Bkg_Temp->SetBinContent(i+1,new_content);
-                Hist_Bkg_Temp->SetBinError(i+1,new_error);
-            }
-            //double chi2 = GetChi2WithRange(Hist_SR, Hist_Bkg_Temp,MSCW_cut_lower,mean);
-            double chi2 = GetChi2(Hist_SR, Hist_Bkg_Temp,true,1);
-            if (chi2_best<chi2) {
-                chi2_best = chi2;
-                endpoint_0 = try_endpoint_0;
-                endpoint_1 = try_endpoint_1;
-            } 
-        }
-    }
-    return std::make_pair(endpoint_0,endpoint_1);
 }
 double FindConvergeThreshold(TH1* Hist_SR, TH1* Hist_Bkg, TH1* Hist_Bkg_Temp, double endpoint_up)
 {
@@ -855,11 +838,6 @@ void Converge(TH1* Hist_Bkg, double endpoint_0_width, double endpoint_1_width, d
 {
     double endpoint_0 = estimated_mean-endpoint_0_width*estimated_rms;
     double endpoint_1 = estimated_mean-endpoint_1_width*estimated_rms;
-    //bkg_mean = Hist_Bkg->GetMean();
-    //bkg_rms = Hist_Bkg->GetRMS();
-    std::cout << "estimated_mean = " << estimated_mean << ", estimated_rms = " << estimated_rms << std::endl;
-    std::cout << "using endpoint_0_width = " << endpoint_0_width << ", endpoint_1_width = " << endpoint_1_width << std::endl;
-    std::cout << "using endpoint_0 = " << endpoint_0 << ", endpoint_1 = " << endpoint_1 << std::endl;
     for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
     {
         double old_content = Hist_Bkg->GetBinContent(i+1);
@@ -1136,7 +1114,7 @@ void Convolution(TH1D* Hist_source, TH1D* Hist_response, TH1D* Hist_Conv) {
         }
 }
 
-void PredictNextLayer(TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, bool includeSR, double energy)
+void PredictNextLayer(TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, bool includeSR, double energy, double endpoint_0, double endpoint_1, bool isUnblinded)
 {
     TH1D Hist_Bkg_Privous_Adapt = TH1D("Hist_Bkg_Privous_Adapt","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
     MakeBkgPrevious(Hist_SR_Previous,Hist_Bkg_Previous,&Hist_Bkg_Privous_Adapt,includeSR);
@@ -1150,8 +1128,8 @@ void PredictNextLayer(TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous
         estimated_kernel_rms = pow(estimated_rms_previous*estimated_rms_previous-estimated_rms*estimated_rms,0.5);
     }
     SR_Niter = FindNIteration(Hist_SR,&Hist_Bkg_Privous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,estimated_kernel_rms,0,SR_Niter,false,1);
-    std::cout << "e " << energy << ", SR_Niter = " << SR_Niter << std::endl;
     std::pair <double,double> kernel_rms = FindRMS(Hist_SR,&Hist_Bkg_Privous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,estimated_kernel_rms,0,SR_Niter,false,1);
+    std::cout << "e " << energy << ", SR_Niter = " << SR_Niter << std::endl;
     std::cout << "e " << energy << ", SR_Kernel_RMS = " << kernel_rms.first << std::endl;
     std::cout << "e " << energy << ", unblinded SR_Kernel_RMS = " << kernel_rms.second << std::endl;
     TF1 *myfunc = new TF1("myfunc",Kernel,-50.,50.,1);
@@ -1166,7 +1144,14 @@ void PredictNextLayer(TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous
                     
     Deconvolution(&Hist_Bkg_Privous_Adapt,&Hist_Kernel,&Hist_Bkg_Temp,SR_Niter);
     std::pair <bool,std::pair <double,double>> offset = ShiftAndNormalize(Hist_SR,&Hist_Bkg_Temp,Hist_Bkg,true,false,2);
-    std::pair <double,double> converge = FindConvergeEndpoints(Hist_SR,Hist_Bkg,&Hist_Bkg_Temp);
+    std::pair <double,double> converge = FindConvergeEndpoints(energy);
+    if (isUnblinded)
+    {
+        converge.first = endpoint_0;
+        converge.second = endpoint_1;
+    }
+    std::cout << "e " << energy << ", Use endpoint_0 = " << converge.first << std::endl;
+    std::cout << "e " << energy << ", Use endpoint_1 = " << converge.second << std::endl;
     Converge(Hist_Bkg,converge.first,converge.second,energy);
     std::cout << "e " << energy << ", True Mean = " << Hist_SR->GetMean() << std::endl;
     std::cout << "e " << energy << ", True RMS = " << Hist_SR->GetRMS() << std::endl;
@@ -1568,7 +1553,7 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
             //if (energy_bins[e]<500) use_this_energy_bin[e] = false;
             //if (energy_bins[e]>600) use_this_energy_bin[e] = false;
             if (energy_bins[e]<1000) use_this_energy_bin[e] = false;
-            if (energy_bins[e]>1200) use_this_energy_bin[e] = false;
+            //if (energy_bins[e]>1200) use_this_energy_bin[e] = false;
             //if (energy_bins[e]<2000) use_this_energy_bin[e] = false;
             //if (energy_bins[e]>3000) use_this_energy_bin[e] = false;
         }
@@ -1621,6 +1606,8 @@ electron_flux_err[11] = 1.84452;
         TH1D Hist_Target_ON_MSCW_Alpha("Hist_Target_ON_MSCW_Alpha","",100,0,10);
         TH1D Hist_Target_OFF_MSCW_Alpha("Hist_Target_OFF_MSCW_Alpha","",100,0,10);
         TProfile Hist_Measured_Electron_Flux("Hist_Measured_Electron_Flux","",N_energy_bins,energy_bins,-10000.,1000000.);
+        TProfile Hist_Target_EndPoint_0("Hist_Target_EndPoint_0","",N_energy_bins,energy_bins,0.,10.);
+        TProfile Hist_Target_EndPoint_1("Hist_Target_EndPoint_1","",N_energy_bins,energy_bins,0.,10.);
         TH1D Hist_EffAreaTime("Hist_EffAreaTime","",N_energy_bins,energy_bins);
         vector<int> Run_sublist;
         vector<TH1D> Hist_Target_SR_ErecS;
@@ -1647,8 +1634,6 @@ electron_flux_err[11] = 1.84452;
         vector<TH1D> Hist_Target_BkgCR_MSCW_SumSRs;
         vector<TH1D> Hist_MC_SR_MSCW_SumRuns_SumSRs;
         vector<TH1D> Hist_Target_SR_MSCL;
-        vector<TH1D> Hist_Target_EndPoint_0;
-        vector<TH1D> Hist_Target_EndPoint_1;
         vector<TH1D> Hist_Target_Amplitude;
         vector<TH1D> Hist_Target_Mean;
         vector<TH1D> Hist_Target_RMS;
@@ -1697,8 +1682,6 @@ electron_flux_err[11] = 1.84452;
             }
             Hist_Target_SR_ErecS.push_back(TH1D("Hist_Target_SR_ErecS_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_bins,energy_bins));
             Hist_Target_SR_MSCL.push_back(TH1D("Hist_Target_SR_MSCL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-            Hist_Target_EndPoint_0.push_back(TH1D("Hist_Target_EndPoint_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0]));
-            Hist_Target_EndPoint_1.push_back(TH1D("Hist_Target_EndPoint_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0]));
             Hist_Target_Amplitude.push_back(TH1D("Hist_Target_Amplitude_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0]));
             Hist_Target_Mean.push_back(TH1D("Hist_Target_Mean_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0]));
             Hist_Target_RMS.push_back(TH1D("Hist_Target_RMS_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0]));
@@ -2286,6 +2269,88 @@ electron_flux_err[11] = 1.84452;
                     Hist_Target_CR_MSCW_SumSRs.at(e).Add(&Hist_Target_CR_MSCW.at(e).at(c));
                 }
 
+
+                double endpoint_0_best = 0.;
+                double endpoint_1_best = 0.;
+                if (UnblindThisAnalysis) // find end points
+                {
+                    double chi2_best = 0.;
+                    for (int ep0=0;ep0<20;ep0++) 
+                    {
+                        double tmp_endpoint_0 = 2.1-1.0+2.0*double(ep0)/20.;
+                        for (int ep1=0;ep1<20;ep1++) 
+                        {
+                            TH1D Hist_Bkg_SumSRs = TH1D("Hist_Bkg_SumSRs","",Hist_Target_BkgSR_MSCW.at(e).at(0).GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
+                            Hist_Bkg_SumSRs.Reset();
+                            TH1D Hist_SR_SumSRs = TH1D("Hist_SR_SumSRs","",Hist_Target_BkgSR_MSCW.at(e).at(0).GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
+                            Hist_SR_SumSRs.Reset();
+                            double tmp_endpoint_1 = 1.2-0.5+1.0*double(ep1)/20.;
+                            Hist_Target_BkgSR_MSCW.at(e).at(0).Reset();
+
+                            int bin0 = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[Number_of_CR-1]+MSCL_control_cut_upper[Number_of_CR-1]));
+                            estimated_mean_err = Hist_Target_RMS.at(e).GetBinContent(bin0)/2.;
+                            bin0 = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[0]+MSCL_signal_cut_upper[0]));
+                            estimated_amplitude = Hist_Target_Amplitude.at(e).GetBinContent(bin0);
+                            estimated_mean = Hist_Target_Mean.at(e).GetBinContent(bin0);
+                            estimated_rms = Hist_Target_RMS.at(e).GetBinContent(bin0);
+                            estimated_rms_err = Hist_Target_RMS.at(e).GetBinError(bin0);
+                            bin0 = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[Number_of_CR-1]+MSCL_control_cut_upper[Number_of_CR-1]));
+                            estimated_rms_previous = Hist_Target_RMS.at(e).GetBinContent(bin0);
+                            bin0 = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[0]+MSCL_signal_cut_upper[0]));
+                            if (TString(target)=="Proton")
+                            {
+                                estimated_mean = Hist_Target_SR_MSCW.at(e).at(0).GetMean();
+                                estimated_rms = Hist_Target_SR_MSCW.at(e).at(0).GetRMS();
+                            }
+
+                            PredictNextLayer(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0),true,energy_bins[e],tmp_endpoint_0,tmp_endpoint_1,true);
+                            Hist_SR_SumSRs.Add(&Hist_Target_SR_MSCW.at(e).at(0));
+                            Hist_Bkg_SumSRs.Add(&Hist_Target_BkgSR_MSCW.at(e).at(0));
+
+
+                            // estimate SR bkg
+                            for (int s=1;s<Number_of_SR;s++)
+                            {
+
+                                Hist_Target_BkgSR_MSCW.at(e).at(s).Reset();
+
+                                bin0 = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[s]+MSCL_signal_cut_upper[s]));
+                                estimated_amplitude = Hist_Target_Amplitude.at(e).GetBinContent(bin0);
+                                estimated_mean = Hist_Target_Mean.at(e).GetBinContent(bin0);
+                                estimated_rms = Hist_Target_RMS.at(e).GetBinContent(bin0);
+                                estimated_rms_err = Hist_Target_RMS.at(e).GetBinError(bin0);
+                                bin0 = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[s-1]+MSCL_signal_cut_upper[s-1]));
+                                estimated_rms_previous = Hist_Target_RMS.at(e).GetBinContent(bin0);
+                                bin0 = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[s]+MSCL_signal_cut_upper[s]));
+                                if (TString(target)=="Proton")
+                                {
+                                    estimated_mean = Hist_Target_SR_MSCW.at(e).at(s).GetMean();
+                                    estimated_rms = Hist_Target_SR_MSCW.at(e).at(s).GetRMS();
+                                    estimated_rms_previous = Hist_Target_SR_MSCW.at(e).at(s-1).GetRMS();
+                                }
+
+                                PredictNextLayer(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_SR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),false,energy_bins[e],tmp_endpoint_0,tmp_endpoint_1,true);
+
+                                Hist_SR_SumSRs.Add(&Hist_Target_SR_MSCW.at(e).at(s));
+                                Hist_Bkg_SumSRs.Add(&Hist_Target_BkgSR_MSCW.at(e).at(s));
+
+                            }
+
+                            double chi2 = GetChi2(&Hist_SR_SumSRs,&Hist_Bkg_SumSRs,true,1);
+                            if (chi2_best<chi2) {
+                                chi2_best = chi2;
+                                endpoint_0_best = tmp_endpoint_0;
+                                endpoint_1_best = tmp_endpoint_1;
+                            } 
+                        }
+                    }
+                }
+                std::cout << "endpoint_0_best = " << endpoint_0_best << std::endl;
+                std::cout << "endpoint_1_best = " << endpoint_1_best << std::endl;
+                Hist_Target_EndPoint_0.Fill(energy_bins[e],endpoint_0_best);
+                Hist_Target_EndPoint_1.Fill(energy_bins[e],endpoint_1_best);
+
+
                 // estimate unblinded CR bkg
                 for (int c=0;c<Number_of_CR-1;c++)
                 {
@@ -2300,7 +2365,7 @@ electron_flux_err[11] = 1.84452;
                     bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[c+1]+MSCL_control_cut_upper[c+1]));
 
                     std::cout << "Target, e " << energy_bins[e] << ", running CR " << c << " to CR " << c+1 << std::endl;
-                    PredictNextLayer(&Hist_Target_CR_MSCW.at(e).at(c+1),&Hist_Target_CR_MSCW.at(e).at(c),&Hist_Target_BkgCR_MSCW.at(e).at(c),&Hist_Target_BkgCR_MSCW.at(e).at(c+1),true,energy_bins[e]);
+                    PredictNextLayer(&Hist_Target_CR_MSCW.at(e).at(c+1),&Hist_Target_CR_MSCW.at(e).at(c),&Hist_Target_BkgCR_MSCW.at(e).at(c),&Hist_Target_BkgCR_MSCW.at(e).at(c+1),true,energy_bins[e],endpoint_0_best,endpoint_1_best,UnblindThisAnalysis);
 
                     Hist_Target_BkgCR_MSCW_SumRuns.at(e).at(c+1).Add(&Hist_Target_BkgCR_MSCW.at(e).at(c+1));
 
@@ -2308,6 +2373,7 @@ electron_flux_err[11] = 1.84452;
 
 
                 std::cout << "Target, e " << energy_bins[e] << ", running CR " << Number_of_CR-1 << " to SR " << 0 << std::endl;
+                Hist_Target_BkgSR_MSCW.at(e).at(0).Reset();
 
                 int bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[Number_of_CR-1]+MSCL_control_cut_upper[Number_of_CR-1]));
                 estimated_mean_err = Hist_Target_RMS.at(e).GetBinContent(bin)/2.;
@@ -2316,11 +2382,6 @@ electron_flux_err[11] = 1.84452;
                 estimated_mean = Hist_Target_Mean.at(e).GetBinContent(bin);
                 estimated_rms = Hist_Target_RMS.at(e).GetBinContent(bin);
                 estimated_rms_err = Hist_Target_RMS.at(e).GetBinError(bin);
-                if (TString(target)=="Proton")
-                {
-                    estimated_mean = Hist_Target_SR_MSCW.at(e).at(0).GetMean();
-                    estimated_rms = Hist_Target_SR_MSCW.at(e).at(0).GetRMS();
-                }
                 std::cout << "true mean = " << Hist_Target_SR_MSCW.at(e).at(0).GetMean() << std::endl;
                 std::cout << "estimated_mean = " << estimated_mean << std::endl;
                 std::cout << "estimated_mean_err = " << estimated_mean_err << std::endl;
@@ -2330,8 +2391,13 @@ electron_flux_err[11] = 1.84452;
                 bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[Number_of_CR-1]+MSCL_control_cut_upper[Number_of_CR-1]));
                 estimated_rms_previous = Hist_Target_RMS.at(e).GetBinContent(bin);
                 bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[0]+MSCL_signal_cut_upper[0]));
+                if (TString(target)=="Proton")
+                {
+                    estimated_mean = Hist_Target_SR_MSCW.at(e).at(0).GetMean();
+                    estimated_rms = Hist_Target_SR_MSCW.at(e).at(0).GetRMS();
+                }
 
-                PredictNextLayer(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0),true,energy_bins[e]);
+                PredictNextLayer(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0),true,energy_bins[e],endpoint_0_best,endpoint_1_best,UnblindThisAnalysis);
 
                 target_current_mean = Hist_Target_BkgSR_MSCW.at(e).at(0).GetMean();
                 target_current_mean = Hist_Target_SR_MSCW.at(e).at(0).GetMean();
@@ -2344,24 +2410,20 @@ electron_flux_err[11] = 1.84452;
                 //AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0));
                 //AddSystematics3(&Hist_Target_BkgSR_MSCW.at(e).at(0));
 
-                Hist_Target_BkgSR_MSCW_AllCR.at(e).at(0).Add(&Hist_Target_BkgSR_MSCW.at(e).at(0));
+                //Hist_Target_BkgSR_MSCW_AllCR.at(e).at(0).Add(&Hist_Target_BkgSR_MSCW.at(e).at(0));
 
                 // estimate SR bkg
                 for (int s=1;s<Number_of_SR;s++)
                 {
 
                     std::cout << "Target, e " << energy_bins[e] << ", running CR " << Number_of_CR-1 << " to SR " << s << std::endl;
+                    Hist_Target_BkgSR_MSCW.at(e).at(s).Reset();
 
                     bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[s]+MSCL_signal_cut_upper[s]));
                     estimated_amplitude = Hist_Target_Amplitude.at(e).GetBinContent(bin);
                     estimated_mean = Hist_Target_Mean.at(e).GetBinContent(bin);
                     estimated_rms = Hist_Target_RMS.at(e).GetBinContent(bin);
                     estimated_rms_err = Hist_Target_RMS.at(e).GetBinError(bin);
-                    if (TString(target)=="Proton")
-                    {
-                        estimated_mean = Hist_Target_SR_MSCW.at(e).at(s).GetMean();
-                        estimated_rms = Hist_Target_SR_MSCW.at(e).at(s).GetRMS();
-                    }
                     std::cout << "true mean = " << Hist_Target_SR_MSCW.at(e).at(s).GetMean() << std::endl;
                     std::cout << "estimated_mean = " << estimated_mean << std::endl;
                     std::cout << "estimated_mean_err = " << estimated_mean_err << std::endl;
@@ -2371,8 +2433,14 @@ electron_flux_err[11] = 1.84452;
                     bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[s-1]+MSCL_signal_cut_upper[s-1]));
                     estimated_rms_previous = Hist_Target_RMS.at(e).GetBinContent(bin);
                     bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[s]+MSCL_signal_cut_upper[s]));
+                    if (TString(target)=="Proton")
+                    {
+                        estimated_mean = Hist_Target_SR_MSCW.at(e).at(s).GetMean();
+                        estimated_rms = Hist_Target_SR_MSCW.at(e).at(s).GetRMS();
+                        estimated_rms_previous = Hist_Target_SR_MSCW.at(e).at(s-1).GetRMS();
+                    }
 
-                    PredictNextLayer(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_SR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),false,energy_bins[e]);
+                    PredictNextLayer(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_SR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),false,energy_bins[e],endpoint_0_best,endpoint_1_best,UnblindThisAnalysis);
 
                     target_current_mean = Hist_Target_BkgSR_MSCW.at(e).at(s).GetMean();
                     target_current_mean = Hist_Target_SR_MSCW.at(e).at(s).GetMean();
@@ -2385,7 +2453,7 @@ electron_flux_err[11] = 1.84452;
                     //AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(s));
                     //AddSystematics3(&Hist_Target_BkgSR_MSCW.at(e).at(s));
 
-                    Hist_Target_BkgSR_MSCW_AllCR.at(e).at(s).Add(&Hist_Target_BkgSR_MSCW.at(e).at(s));
+                    //Hist_Target_BkgSR_MSCW_AllCR.at(e).at(s).Add(&Hist_Target_BkgSR_MSCW.at(e).at(s));
 
                 }
 
@@ -2407,7 +2475,7 @@ electron_flux_err[11] = 1.84452;
                 
                 for (int s=0;s<Number_of_SR;s++)
                 {
-                    Hist_Target_BkgSR_MSCW_SumRuns.at(e).at(s).Add(&Hist_Target_BkgSR_MSCW_AllCR.at(e).at(s)); // this is summing over sublist, errors are not correlated.
+                    Hist_Target_BkgSR_MSCW_SumRuns.at(e).at(s).Add(&Hist_Target_BkgSR_MSCW.at(e).at(s)); // this is summing over sublist, errors are not correlated.
                 }
                 for (int run=0;run<Sublist.at(subrun).size();run++)
                 {
@@ -2452,6 +2520,10 @@ electron_flux_err[11] = 1.84452;
             std::cout << "// Energy "  << energy_bins[e] << std::endl;
             std::cout << "electron_flux[" << e << "] = " << Hist_Measured_Electron_Flux.GetBinContent(Hist_Measured_Electron_Flux.FindBin(energy_bins[e]))  << ";" << std::endl;;
             std::cout << "electron_flux_err[" << e << "] = " << Hist_Measured_Electron_Flux.GetBinError(Hist_Measured_Electron_Flux.FindBin(energy_bins[e]))  << ";" << std::endl;;
+        }
+        for (int e=0;e<=N_energy_bins;e++) {
+            std::cout << "if (energy>=" << energy_bins[e] << "&&energy<" << energy_bins[e+1] << ")";
+            std::cout << " return std::make_pair(" << Hist_Target_EndPoint_0.GetBinContent(e+1) << "," << Hist_Target_EndPoint_1.GetBinContent(e+1) << ");" << std::endl;
         }
 
         //// Get MC electron files
@@ -2549,10 +2621,10 @@ electron_flux_err[11] = 1.84452;
         Hist_Target_TelRaDec.Write();
         Hist_Target_TelRaDec_AfterCut.Write();
         Hist_Measured_Electron_Flux.Write();
+        Hist_Target_EndPoint_0.Write();
+        Hist_Target_EndPoint_1.Write();
         for (int e=0;e<N_energy_bins;e++) {
                 Hist_Target_SR_MSCL.at(e).Write();
-                Hist_Target_EndPoint_0.at(e).Write();
-                Hist_Target_EndPoint_1.at(e).Write();
                 Hist_Target_Amplitude.at(e).Write();
                 Hist_Target_Mean.at(e).Write();
                 Hist_Target_RMS.at(e).Write();
