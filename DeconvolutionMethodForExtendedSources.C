@@ -1418,13 +1418,13 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, do
         }
         if (energy>1000.)
         {
-            delta_elev = 10.;
-            delta_azim = 20.;
+            delta_elev = 20.;
+            delta_azim = 360.;
         }
         if (energy>1500.)
         {
-            delta_elev = 10.;
-            delta_azim = 20.;
+            delta_elev = 20.;
+            delta_azim = 360.;
         }
         if (energy>2000.)
         {
@@ -1556,10 +1556,10 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
             //if (energy_bins[e]>300) use_this_energy_bin[e] = false;
             //if (energy_bins[e]<500) use_this_energy_bin[e] = false;
             //if (energy_bins[e]>600) use_this_energy_bin[e] = false;
-            if (energy_bins[e]<1000) use_this_energy_bin[e] = false;
-            if (energy_bins[e]>1200) use_this_energy_bin[e] = false;
-            //if (energy_bins[e]<2000) use_this_energy_bin[e] = false;
-            //if (energy_bins[e]>3000) use_this_energy_bin[e] = false;
+            //if (energy_bins[e]<1000) use_this_energy_bin[e] = false;
+            //if (energy_bins[e]>1200) use_this_energy_bin[e] = false;
+            if (energy_bins[e]<2000) use_this_energy_bin[e] = false;
+            if (energy_bins[e]>3000) use_this_energy_bin[e] = false;
         }
 
 // Energy 200
@@ -1645,7 +1645,6 @@ electron_flux_err[11] = 1.84452;
         vector<TH1D> Hist_Target_BkgTemp2_MSCW;
         vector<TH1D> Hist_Target_BkgTemp3_MSCW;
         vector<vector<TH1D>> Hist_Target_BkgSR_MSCW;
-        vector<vector<TH1D>> Hist_Target_BkgSR_MSCW_AllCR;
         vector<double> Weight_Target_BkgSR_MSCW_AllCR;
         vector<vector<TH1D>> Hist_Target_BkgCR_MSCW;
         vector<vector<TH1D>> Hist_Target_BkgSR_MSCW_SumRuns;
@@ -1768,7 +1767,6 @@ electron_flux_err[11] = 1.84452;
             Hist_Target_SR_MSCW_SumRuns.push_back(Hist_Target_ThisE_SR_MSCW_SumRuns);
             Hist_MC_SR_MSCW_SumRuns.push_back(Hist_MC_ThisE_SR_MSCW_SumRuns);
             Hist_Target_BkgSR_MSCW.push_back(Hist_Target_ThisE_BkgSR_MSCW);
-            Hist_Target_BkgSR_MSCW_AllCR.push_back(Hist_Target_ThisE_BkgSR_MSCW_AllCR);
             Hist_Target_BkgSR_MSCW_SumRuns.push_back(Hist_Target_ThisE_BkgSR_MSCW_SumRuns);
             Hist_Dark_SR_MSCW.push_back(Hist_Dark_ThisE_SR_MSCW);
             Hist_Dark_SR_MSCW_SumRuns.push_back(Hist_Dark_ThisE_SR_MSCW_SumRuns);
@@ -2063,6 +2061,18 @@ electron_flux_err[11] = 1.84452;
             std::cout << "=================================================================" << std::endl;
             std::cout << "Target, e " << energy_bins[e] << std::endl;
             std::cout << "Sublist.size() = " << Sublist.size() << std::endl;
+            Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).Reset();
+            Hist_Target_BkgSR_MSCW_SumRuns_SumSRs.at(e).Reset();
+            for (int s=0;s<Number_of_SR;s++)
+            {
+                Hist_Target_SR_MSCW_SumRuns.at(e).at(s).Reset();
+                Hist_Target_BkgSR_MSCW_SumRuns.at(e).at(s).Reset();
+            }
+            for (int s=0;s<Number_of_CR;s++)
+            {
+                Hist_Target_CR_MSCW_SumRuns.at(e).at(s).Reset();
+                Hist_Target_BkgCR_MSCW_SumRuns.at(e).at(s).Reset();
+            }
             for (int subrun=0;subrun<Sublist.size();subrun++)
             {
                 std::cout << subrun << "/" << Sublist.size() << " completed." << std::endl;
@@ -2070,7 +2080,6 @@ electron_flux_err[11] = 1.84452;
                 {
                     Hist_Target_SR_MSCW.at(e).at(s).Reset();
                     Hist_Target_BkgSR_MSCW.at(e).at(s).Reset();
-                    Hist_Target_BkgSR_MSCW_AllCR.at(e).at(s).Reset();
                 }
                 for (int s=0;s<Number_of_CR;s++)
                 {
@@ -2295,7 +2304,7 @@ electron_flux_err[11] = 1.84452;
 
                             int bin0 = 0;
 
-                            // estimate SR bkg
+                            // estimate CR bkg
                             for (int s=1;s<Number_of_CR;s++)
                             {
 
@@ -2397,7 +2406,6 @@ electron_flux_err[11] = 1.84452;
                 //AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0));
                 //AddSystematics3(&Hist_Target_BkgSR_MSCW.at(e).at(0));
 
-                //Hist_Target_BkgSR_MSCW_AllCR.at(e).at(0).Add(&Hist_Target_BkgSR_MSCW.at(e).at(0));
 
                 // estimate SR bkg
                 for (int s=1;s<Number_of_SR;s++)
@@ -2440,7 +2448,6 @@ electron_flux_err[11] = 1.84452;
                     //AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(s));
                     //AddSystematics3(&Hist_Target_BkgSR_MSCW.at(e).at(s));
 
-                    //Hist_Target_BkgSR_MSCW_AllCR.at(e).at(s).Add(&Hist_Target_BkgSR_MSCW.at(e).at(s));
 
                 }
 
