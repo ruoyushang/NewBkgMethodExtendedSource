@@ -177,7 +177,7 @@ vector<vector<double>> target_kernel_shift;
 
 const int N_energy_bins = 18;
 double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,667,794,943,1122,1332,1585,1882,2239,3162,4467,6310,8913};
-bool use_this_energy_bin[N_energy_bins] = {true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true};
+bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false};
 double electron_flux[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_flux_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_count[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -185,7 +185,7 @@ double electron_count_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
 
 //const int N_energy_bins = 11;
 //double energy_bins[N_energy_bins+1] = {200,282,398,562,794,1122,1585,2239,3162,4467,6310,8913};
-//bool use_this_energy_bin[N_energy_bins] = {true,true,true,true,true,true,true,true,true,true,true};
+//bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,false,false,false,false,false,false,false};
 //double electron_flux[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0};
 //double electron_flux_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0};
 //double electron_count[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0};
@@ -1586,7 +1586,7 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, do
         }
         return list;
 }
-void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int NTelMax, double elev_lower, double elev_upper, double azim_lower, double azim_upper, double theta2_cut_lower_input, double theta2_cut_upper_input, double MSCW_cut_blind_input, double MSCW_cut_upper_input, double MSCW_cut_lower_input,bool DoConverge) 
+void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int NTelMax, double elev_lower, double elev_upper, double azim_lower, double azim_upper, double theta2_cut_lower_input, double theta2_cut_upper_input, double MSCW_cut_blind_input, double MSCW_cut_upper_input, double MSCW_cut_lower_input,bool DoConverge, int run_energy_bin) 
 {
 
         bool UnblindThisAnalysis = false;
@@ -1606,19 +1606,22 @@ void DeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int 
         MSCW_cut_upper = MSCW_cut_upper_input;
         MSCW_cut_blind = MSCW_cut_blind_input;
 
-        for (int e=0;e<N_energy_bins;e++)
-        {
-            //if (energy_bins[e]<280) use_this_energy_bin[e] = false;
-            //if (energy_bins[e]>300) use_this_energy_bin[e] = false;
-            //if (energy_bins[e]<500) use_this_energy_bin[e] = false;
-            //if (energy_bins[e]>600) use_this_energy_bin[e] = false;
-            //if (energy_bins[e]<1000) use_this_energy_bin[e] = false;
-            //if (energy_bins[e]>1200) use_this_energy_bin[e] = false;
-            if (energy_bins[e]<1500) use_this_energy_bin[e] = false;
-            if (energy_bins[e]>1800) use_this_energy_bin[e] = false;
-            //if (energy_bins[e]<2000) use_this_energy_bin[e] = false;
-            //if (energy_bins[e]>3000) use_this_energy_bin[e] = false;
-        }
+        use_this_energy_bin[run_energy_bin] = true;
+        //for (int e=0;e<N_energy_bins;e++)
+        //{
+        //    //if (energy_bins[e]<280) use_this_energy_bin[e] = false;
+        //    //if (energy_bins[e]>300) use_this_energy_bin[e] = false;
+        //    //if (energy_bins[e]<500) use_this_energy_bin[e] = false;
+        //    //if (energy_bins[e]>600) use_this_energy_bin[e] = false;
+        //    //if (energy_bins[e]<1000) use_this_energy_bin[e] = false;
+        //    //if (energy_bins[e]>1200) use_this_energy_bin[e] = false;
+        //    //if (energy_bins[e]<1500) use_this_energy_bin[e] = false;
+        //    //if (energy_bins[e]>1800) use_this_energy_bin[e] = false;
+        //    if (energy_bins[e]<1800) use_this_energy_bin[e] = false;
+        //    if (energy_bins[e]>2000) use_this_energy_bin[e] = false;
+        //    //if (energy_bins[e]<2000) use_this_energy_bin[e] = false;
+        //    //if (energy_bins[e]>3000) use_this_energy_bin[e] = false;
+        //}
 
 // Energy 200
 electron_flux[0] = 9980.44;
@@ -2825,36 +2828,40 @@ electron_flux_err[11] = 1.84452;
         int Number_of_SR_new = Number_of_SR;
         TString ConvergeOrNot = "";
         if (!DoConverge) ConvergeOrNot = "_NoConverge";
-        TFile OutputFile("output_May25/Deconvolution_"+TString(target)+"_Ntel"+std::to_string(NTelMin)+"to"+std::to_string(NTelMax)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","recreate");
-        TTree InfoTree("InfoTree","info tree");
-        InfoTree.Branch("Number_of_CR",&Number_of_CR_new,"Number_of_CR/I");
-        InfoTree.Branch("Number_of_SR",&Number_of_SR_new,"Number_of_SR/I");
-        InfoTree.Branch("MSCW_cut_lower",&MSCW_cut_lower,"MSCW_cut_lower/D");
-        InfoTree.Branch("MSCW_cut_upper",&MSCW_cut_upper,"MSCW_cut_upper/D");
-        InfoTree.Branch("MSCW_cut_blind",&MSCW_cut_blind,"MSCW_cut_blind/D");
-        InfoTree.Branch("MSCL_cut_lower",&MSCL_signal_cut_lower[Number_of_SR-1],"MSCL_cut_lower/D");
-        InfoTree.Branch("MSCL_cut_upper",&MSCL_signal_cut_upper[0],"MSCL_cut_upper/D");
-        InfoTree.Branch("Theta2_upper_limit",&Theta2_upper_limit,"Theta2_upper_limit/D");
-        InfoTree.Branch("Elev_cut_lower",&Elev_cut_lower,"Elev_cut_lower/D");
-        InfoTree.Branch("Elev_cut_upper",&Elev_cut_upper,"Elev_cut_upper/D");
-        InfoTree.Branch("Target_Elev_cut_lower",&Target_Elev_cut_lower,"Target_Elev_cut_lower/D");
-        InfoTree.Branch("Target_Elev_cut_upper",&Target_Elev_cut_upper,"Target_Elev_cut_upper/D");
-        InfoTree.Branch("Azim_cut_lower",&Azim_cut_lower,"Azim_cut_lower/D");
-        InfoTree.Branch("Azim_cut_upper",&Azim_cut_upper,"Azim_cut_upper/D");
-        InfoTree.Branch("Target_Azim_cut_lower",&Target_Azim_cut_lower,"Target_Azim_cut_lower/D");
-        InfoTree.Branch("Target_Azim_cut_upper",&Target_Azim_cut_upper,"Target_Azim_cut_upper/D");
-        InfoTree.Branch("used_runs","std::vector<int>",&used_runs);
-        InfoTree.Branch("cosmic_electron","std::vector<double>",&cosmic_electron);
-        InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
-        InfoTree.Fill();
-        InfoTree.Write();
-        Hist_Target_TelElevAzim.Write();
-        Hist_Target_TelRaDec.Write();
-        Hist_Target_TelRaDec_AfterCut.Write();
-        Hist_Measured_Electron_Flux.Write();
-        Hist_Target_EndPoint_0.Write();
-        Hist_Target_EndPoint_1.Write();
+        TFile OutputFile("output_May25/Deconvolution_"+TString(target)+"_Ntel"+std::to_string(NTelMin)+"to"+std::to_string(NTelMax)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root","update");
+        if (run_energy_bin==0)
+        {
+            TTree InfoTree("InfoTree","info tree");
+            InfoTree.Branch("Number_of_CR",&Number_of_CR_new,"Number_of_CR/I");
+            InfoTree.Branch("Number_of_SR",&Number_of_SR_new,"Number_of_SR/I");
+            InfoTree.Branch("MSCW_cut_lower",&MSCW_cut_lower,"MSCW_cut_lower/D");
+            InfoTree.Branch("MSCW_cut_upper",&MSCW_cut_upper,"MSCW_cut_upper/D");
+            InfoTree.Branch("MSCW_cut_blind",&MSCW_cut_blind,"MSCW_cut_blind/D");
+            InfoTree.Branch("MSCL_cut_lower",&MSCL_signal_cut_lower[Number_of_SR-1],"MSCL_cut_lower/D");
+            InfoTree.Branch("MSCL_cut_upper",&MSCL_signal_cut_upper[0],"MSCL_cut_upper/D");
+            InfoTree.Branch("Theta2_upper_limit",&Theta2_upper_limit,"Theta2_upper_limit/D");
+            InfoTree.Branch("Elev_cut_lower",&Elev_cut_lower,"Elev_cut_lower/D");
+            InfoTree.Branch("Elev_cut_upper",&Elev_cut_upper,"Elev_cut_upper/D");
+            InfoTree.Branch("Target_Elev_cut_lower",&Target_Elev_cut_lower,"Target_Elev_cut_lower/D");
+            InfoTree.Branch("Target_Elev_cut_upper",&Target_Elev_cut_upper,"Target_Elev_cut_upper/D");
+            InfoTree.Branch("Azim_cut_lower",&Azim_cut_lower,"Azim_cut_lower/D");
+            InfoTree.Branch("Azim_cut_upper",&Azim_cut_upper,"Azim_cut_upper/D");
+            InfoTree.Branch("Target_Azim_cut_lower",&Target_Azim_cut_lower,"Target_Azim_cut_lower/D");
+            InfoTree.Branch("Target_Azim_cut_upper",&Target_Azim_cut_upper,"Target_Azim_cut_upper/D");
+            InfoTree.Branch("used_runs","std::vector<int>",&used_runs);
+            InfoTree.Branch("cosmic_electron","std::vector<double>",&cosmic_electron);
+            InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
+            InfoTree.Fill();
+            InfoTree.Write();
+            Hist_Target_TelElevAzim.Write();
+            Hist_Target_TelRaDec.Write();
+            Hist_Target_TelRaDec_AfterCut.Write();
+            Hist_Measured_Electron_Flux.Write();
+            Hist_Target_EndPoint_0.Write();
+            Hist_Target_EndPoint_1.Write();
+        }
         for (int e=0;e<N_energy_bins;e++) {
+                if (e!=run_energy_bin) continue;
                 Hist_Target_SR_MSCL.at(e).Write();
                 Hist_Target_Amplitude.at(e).Write();
                 Hist_Target_Mean.at(e).Write();
