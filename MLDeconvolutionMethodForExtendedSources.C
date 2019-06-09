@@ -535,6 +535,10 @@ double FitLinearFunction(Double_t *x, Double_t *par) {
     double xx =x[0];
     return par[0]*xx+par[1];
 }
+double FitPowerLawFunction(Double_t *x, Double_t *par) {
+    double xx =x[0];
+    return par[0]*pow(xx,par[1]);
+}
 double FitFunction(Double_t *x, Double_t *par) {
     double xx =x[0];
     //if (xx-par[1]<0.) return 0.;
@@ -1231,11 +1235,11 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, do
         double delta_azim = 2.0;
         //double delta_elev = 0.1;
         //double delta_azim = 0.2;
-        //if (energy>300.)
-        //{
-        //    delta_elev = 0.5;
-        //    delta_azim = 1.0;
-        //}
+        if (energy>300.)
+        {
+            delta_elev = 5.0;
+            delta_azim = 360.;
+        }
         if (energy>500.)
         {
             delta_elev = 10.;
@@ -1360,12 +1364,13 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, do
         }
         return list;
 }
-void GetMcGillElectronFlux()
+std::pair <double,double> GetMcGillElectronFlux(double energy)
 {
     double McGill_energy[11] = {335,376,422,473,531,596,668,749,840,995,1253};
     double McGill_energy_error[11] = {0,0,0,0,0,0,0,0,0,0,0};
     double McGill_electron_flux[11] = {314,210,149,97.6,71.7,44.8,35.2,23.3,13.8,6.4,2.69};
     double McGill_electron_error[11] = {9.7,8.5,5.7,4.7,3.1,2.5,1.4,1.2,0.72,0.47,0.27};
+    TH1D Hist_Flux = TH1D("Hist_Flux","",N_energy_bins,energy_bins);
     for (int e=0;e<N_energy_bins;e++)
     {
         for (int e2=0;e2<10;e2++)
@@ -1378,11 +1383,16 @@ void GetMcGillElectronFlux()
                 double new_delta_x = energy_bins[e]-McGill_energy[e2];
                 double new_delta_y = delta_y/delta_x*new_delta_x;
                 double new_delta_yerr = delta_yerr/delta_x*new_delta_x;
-                electron_flux[e] = McGill_electron_flux[e2]+new_delta_y;
-                electron_flux_err[e] = McGill_electron_error[e2]+new_delta_yerr;
+                Hist_Flux.SetBinContent(e+1,McGill_electron_flux[e2]+new_delta_y);
+                Hist_Flux.SetBinError(e+1,McGill_electron_error[e2]+new_delta_yerr);
             }
         }
     }
+    TF1 *func = new TF1("func",FitPowerLawFunction,energy_bins[0],energy_bins[N_energy_bins-1],2);
+    func->SetParameter(0,314);
+    func->SetParameter(1,-2.);
+    Hist_Flux.Fit("func","","",energy_bins[0],energy_bins[N_energy_bins-1]);
+    return std::make_pair(func->Eval(energy),0.);
 }
 void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, int NTelMax, double elev_lower, double elev_upper, double azim_lower, double azim_upper, double theta2_cut_lower_input, double theta2_cut_upper_input, double MSCW_cut_blind_input, double MSCW_cut_upper_input, double MSCW_cut_lower_input,bool DoConverge, int run_energy_bin, TString WriteType) 
 {
@@ -2021,7 +2031,9 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     Target_tree->GetEntry(Target_tree->GetEntries()-1);
                     R2off = Xoff*Xoff+Yoff*Yoff;
                     double time_1 = Time;
-                    GetMcGillElectronFlux();
+                    std::pair <double,double> mcgillflux = GetMcGillElectronFlux((energy_bins[e+1]+energy_bins[e])/2.);
+                    electron_flux[e] = mcgillflux.first;
+                    electron_flux_err[e] = mcgillflux.second;
                     std::cout << "electron_flux[e] = " << electron_flux[e] << std::endl;
                     double expected_electrons = 1e-12*10000.*electron_flux[e]*eff_area*(time_1-time_0)*(energy_bins[e+1]-energy_bins[e])/1000.;
                     double expected_electrons_err = 1e-12*10000.*electron_flux_err[e]*eff_area*(time_1-time_0)*(energy_bins[e+1]-energy_bins[e])/1000.;
