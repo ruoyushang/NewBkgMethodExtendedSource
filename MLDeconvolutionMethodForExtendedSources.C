@@ -705,7 +705,7 @@ std::pair <bool,std::pair <double,double>> ShiftAndNormalize(TH1* Hist_SR, TH1* 
     if (doShift) {
         for (int fit=0;fit<100;fit++) {
                 double shift = shift_begin-5.0*estimated_mean_err+10.0*estimated_mean_err*double(fit)*0.01;
-                if (!includeSR) shift = shift_begin-0.5*estimated_mean_err*weight_ratio*double(fit)*0.01;
+                if (!includeSR) shift = shift_begin-1.0*estimated_mean_err*weight_ratio*double(fit)*0.01;
                 for (int i=0;i<Hist_SR->GetNbinsX();i++) {
                         int b = Hist_SR->FindBin(Hist_SR->GetBinCenter(i+1)-shift);
                         Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
@@ -888,7 +888,7 @@ std::pair <double,double> FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1
         double chi2 = 0;
         double unblinded_chi2 = 0;
         double rms = rms_begin;
-        //rms = 0.1+double(n_rms+1)*4.0/40.;
+        //rms = 0.1+double(n_rms+1)*2.0/40.;
         rms = 0.1+double(n_rms+1)*1.0/40.;
         if (!includeSR && estimated_kernel_rms>0.) 
         {
@@ -946,6 +946,7 @@ void Convolution(TH1D* Hist_source, TH1D* Hist_response, TH1D* Hist_Conv) {
 
 double PredictNextLayer(TH1* Hist_MC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, double energy, double endpoint_0, double endpoint_1, bool useOldSR, bool isUnblinded, bool doConverge)
 {
+    isUnblinded = true;
     TH1D Hist_Bkg_Privous_Adapt = TH1D("Hist_Bkg_Privous_Adapt","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
     MakeBkgPrevious(Hist_SR_Previous,Hist_Bkg_Previous,&Hist_Bkg_Privous_Adapt,useOldSR);
 
