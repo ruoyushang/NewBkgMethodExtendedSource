@@ -1971,6 +1971,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 }
                 if (Sublist.at(subrun).size()==0) continue;
                 Hist_EffAreaTime.Reset();
+                electron_count[e] = 0.;
+                electron_count_err[e] = 0.;
                 for (int run=0;run<Sublist.at(subrun).size();run++)
                 {
                     char run_number[50];
@@ -2023,7 +2025,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     std::cout << "electron_flux[e] = " << electron_flux[e] << std::endl;
                     double expected_electrons = 1e-12*10000.*electron_flux[e]*eff_area*(time_1-time_0)*(energy_bins[e+1]-energy_bins[e])/1000.;
                     double expected_electrons_err = 1e-12*10000.*electron_flux_err[e]*eff_area*(time_1-time_0)*(energy_bins[e+1]-energy_bins[e])/1000.;
-                    electron_count[e] = expected_electrons;
+                    electron_count[e] += expected_electrons;
                     electron_count_err[e] += expected_electrons_err; // correlated error, add in linear
                     Hist_EffAreaTime.Fill(energy_bins[e],eff_area*(time_1-time_0));
                     bool run_already_used = false;
