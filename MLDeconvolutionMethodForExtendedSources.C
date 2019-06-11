@@ -676,11 +676,7 @@ void FindSRMean(TH1* Hist_CR, double energy)
     }
 }
 std::pair <bool,std::pair <double,double>> ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, bool doShift, bool includeSR, int chi2_type) {
-    //if (Hist_SR->GetMean()<MSCW_cut_blind && !includeSR)
-    //{
-    //    //std::cout << "Only see a small tail. Disallow the kernel to shift freely" << std::endl;
-    //    doShift = false;
-    //}
+    includeSR = false;
     double shift_fit = 0;
     double unblinded_shift_fit = 0;
     double scale_fit = 0;
@@ -701,7 +697,6 @@ std::pair <bool,std::pair <double,double>> ShiftAndNormalize(TH1* Hist_SR, TH1* 
     double weight_blinded = double(Hist_SR->Integral(norm_bin_low,norm_bin_blind));
     double weight_unblinded = double(Hist_SR->Integral(norm_bin_blind,norm_bin_up));
     double weight_ratio = weight_unblinded/(weight_blinded+weight_unblinded);
-    //if (!includeSR) doShift = false;
     if (doShift) {
         for (int fit=0;fit<100;fit++) {
                 double shift = shift_begin-5.0*estimated_mean_err+10.0*estimated_mean_err*double(fit)*0.01;
@@ -934,19 +929,25 @@ void Convolution(TH1D* Hist_source, TH1D* Hist_response, TH1D* Hist_Conv) {
         }
 }
 
-std::pair <double,double> PredictNextLayer(TH1* Hist_MC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, double energy, double endpoint_0, double endpoint_1, bool useOldSR, bool isUnblinded, bool doConverge)
+std::pair <double,double> PredictNextLayerHadron(TH1* Hist_GammaMC, TH1* Hist_ElectronMC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, double energy, double endpoint_0, double endpoint_1, bool useOldSR, bool isUnblinded, bool doConverge)
 {
-    isUnblinded = true;
+    //isUnblinded = true;
     TH1D Hist_Bkg_Privous_Adapt = TH1D("Hist_Bkg_Privous_Adapt","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
     MakeBkgPrevious(Hist_SR_Previous,Hist_Bkg_Previous,&Hist_Bkg_Privous_Adapt,useOldSR);
 
-    std::cout << "Hist_SR->Integral() = " << Hist_SR->Integral() << std::endl;
-    std::cout << "Hist_MC->Integral() = " << Hist_MC->Integral() << std::endl;
     TH1D Hist_SR_Temp = TH1D("Hist_SR_Temp","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
     Hist_SR_Temp.Reset();
     for (int b=0;b<Hist_SR_Temp.GetNbinsX();b++)
     {
-        double content = Hist_SR->GetBinContent(b+1)-Hist_MC->GetBinContent(b+1);
+        double content = 0;
+        if (isUnblinded) 
+        {
+            content = Hist_SR->GetBinContent(b+1)-Hist_ElectronMC->GetBinContent(b+1)-Hist_GammaMC->GetBinContent(b+1);
+        }
+        else
+        {
+            content = Hist_SR->GetBinContent(b+1)-Hist_ElectronMC->GetBinContent(b+1);
+        }
         //double content = Hist_SR->GetBinContent(b+1);
         double error = Hist_SR->GetBinError(b+1);
         Hist_SR_Temp.SetBinContent(b+1,content);
@@ -965,7 +966,7 @@ std::pair <double,double> PredictNextLayer(TH1* Hist_MC, TH1* Hist_SR, TH1* Hist
         }
     }
     SR_Niter = FindNIteration(&Hist_SR_Temp,&Hist_Bkg_Privous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,estimated_kernel_rms,0,SR_Niter,isUnblinded,1);
-    std::pair <double,double> kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_Bkg_Privous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,estimated_kernel_rms,0,SR_Niter,isUnblinded,1,endpoint_0,endpoint_1);
+    std::pair <double,double> kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_Bkg_Privous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,estimated_kernel_rms,0,SR_Niter,true,1,endpoint_0,endpoint_1);
     TF1 *myfunc = new TF1("myfunc",Kernel,-50.,50.,1);
     myfunc->SetParameter(0,kernel_rms.first);
     Hist_Kernel.Reset();
@@ -983,11 +984,57 @@ std::pair <double,double> PredictNextLayer(TH1* Hist_MC, TH1* Hist_SR, TH1* Hist
     std::pair <double,double> converge;
     converge.first = endpoint_0;
     converge.first = endpoint_1;
-    if (doConverge){ 
+    if (isUnblinded)
+    {
         converge = FindConvergeEndpoints(&Hist_SR_Temp,Hist_Bkg,endpoint_0,endpoint_1);
-        Converge(Hist_Bkg,converge.first,converge.second);
-        //Converge(Hist_Bkg,endpoint_0,endpoint_1);
     }
+    if (doConverge){ 
+        Converge(Hist_Bkg,converge.first,converge.second);
+    }
+    return converge;
+}
+std::pair <double,double> PredictNextLayer(TH1* Hist_GammaMC, TH1* Hist_ElectronMC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, double energy, double endpoint_0, double endpoint_1, bool useOldSR, bool isUnblinded, bool doConverge)
+{
+
+    std::pair <double,double> converge;
+
+    double chi2_best = 0.;
+    double scale_best = 0.;
+    converge = PredictNextLayerHadron(Hist_GammaMC,Hist_ElectronMC,Hist_SR,Hist_SR_Previous,Hist_Bkg_Previous,Hist_Bkg,energy,endpoint_0,endpoint_1,useOldSR,false,doConverge);
+
+    int norm_bin_low = Hist_SR->FindBin(MSCW_cut_lower);
+    int norm_bin_up = Hist_SR->FindBin(MSCW_cut_blind);
+    double SR_Integral = Hist_SR->Integral(norm_bin_low,norm_bin_up);
+    double MC_Integral = Hist_GammaMC->Integral(norm_bin_low,norm_bin_up);
+    double estimated_gamma_integral = Hist_SR->Integral(norm_bin_low,norm_bin_up)-Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
+    TH1D Hist_GammaMC_Temp2 = TH1D("Hist_GammaMC_Temp2","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
+    for (int mc_scale=0;mc_scale<=10;mc_scale++)
+    {
+        if (MC_Integral==0.) continue;
+        if (estimated_gamma_integral<0.) continue;
+        double scale = (1.*double(mc_scale)/10.+0.5)*estimated_gamma_integral/MC_Integral;
+        Hist_GammaMC_Temp2.Reset();
+        Hist_Bkg->Reset();
+        for (int b=0;b<Hist_SR->GetNbinsX();b++)
+        {
+            Hist_GammaMC_Temp2.SetBinContent(b+1,Hist_GammaMC->GetBinContent(b+1));
+            Hist_GammaMC_Temp2.SetBinError(b+1,pow(Hist_GammaMC->GetBinContent(b+1),0.5));
+        }
+        Hist_GammaMC_Temp2.Scale(scale);
+
+        converge = PredictNextLayerHadron(&Hist_GammaMC_Temp2,Hist_ElectronMC,Hist_SR,Hist_SR_Previous,Hist_Bkg_Previous,Hist_Bkg,energy,endpoint_0,endpoint_1,useOldSR,isUnblinded,doConverge);
+
+        Hist_Bkg->Add(&Hist_GammaMC_Temp2);
+        double chi2 = GetChi2(Hist_SR,Hist_Bkg,true,1);
+        if (chi2_best<chi2) {
+            chi2_best = chi2;
+            scale_best = scale;
+        } 
+    }
+    Hist_Bkg->Reset();
+    Hist_GammaMC->Scale(scale_best);
+    converge = PredictNextLayerHadron(Hist_GammaMC,Hist_ElectronMC,Hist_SR,Hist_SR_Previous,Hist_Bkg_Previous,Hist_Bkg,energy,endpoint_0,endpoint_1,useOldSR,isUnblinded,doConverge);
+
     return converge;
 }
 
@@ -1455,19 +1502,26 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
         vector<vector<TH2D>> Hist_Target_CR_RaDec;
         vector<vector<TH1D>> Hist_Target_SR_MSCW;
         vector<vector<TH1D>> Hist_Target_SR_MSCW_SumRuns;
-        vector<vector<TH1D>> Hist_MC_SR_MSCW_SumRuns;
-        vector<vector<TH1D>> Hist_MC_CR_MSCW_SumRuns;
-        vector<vector<TH1D>> Hist_Scaled_MC_SR_MSCW_SumRuns;
-        vector<vector<TH1D>> Hist_Scaled_MC_SR_MSCW;
-        vector<vector<TH1D>> Hist_Scaled_MC_CR_MSCW_SumRuns;
-        vector<vector<TH1D>> Hist_Scaled_MC_CR_MSCW;
+        vector<vector<TH1D>> Hist_ElectronMC_SR_MSCW_SumRuns;
+        vector<vector<TH1D>> Hist_ElectronMC_CR_MSCW_SumRuns;
+        vector<vector<TH1D>> Hist_Scaled_ElectronMC_SR_MSCW_SumRuns;
+        vector<vector<TH1D>> Hist_Scaled_ElectronMC_SR_MSCW;
+        vector<vector<TH1D>> Hist_Scaled_ElectronMC_CR_MSCW_SumRuns;
+        vector<vector<TH1D>> Hist_Scaled_ElectronMC_CR_MSCW;
+        vector<vector<TH1D>> Hist_GammaMC_SR_MSCW_SumRuns;
+        vector<vector<TH1D>> Hist_GammaMC_CR_MSCW_SumRuns;
+        vector<vector<TH1D>> Hist_Scaled_GammaMC_SR_MSCW_SumRuns;
+        vector<vector<TH1D>> Hist_Scaled_GammaMC_SR_MSCW;
+        vector<vector<TH1D>> Hist_Scaled_GammaMC_CR_MSCW_SumRuns;
+        vector<vector<TH1D>> Hist_Scaled_GammaMC_CR_MSCW;
         vector<vector<TH1D>> Hist_Target_CR_MSCW;
         vector<vector<TH1D>> Hist_Target_CR_MSCW_SumRuns;
         vector<TH1D> Hist_Target_Excess_EachRun;
         vector<TH1D> Hist_Target_SR_MSCW_SumRuns_SumSRs;
         vector<TH1D> Hist_Target_CR_MSCW_SumSRs;
         vector<TH1D> Hist_Target_BkgCR_MSCW_SumSRs;
-        vector<TH1D> Hist_MC_SR_MSCW_SumRuns_SumSRs;
+        vector<TH1D> Hist_ElectronMC_SR_MSCW_SumRuns_SumSRs;
+        vector<TH1D> Hist_GammaMC_SR_MSCW_SumRuns_SumSRs;
         vector<TH1D> Hist_Target_SR_MSCL;
         vector<TH1D> Hist_Target_Amplitude;
         vector<TH1D> Hist_Target_Mean;
@@ -1537,12 +1591,18 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
             }
             vector<TH1D> Hist_Target_ThisE_SR_MSCW;
             vector<TH1D> Hist_Target_ThisE_SR_MSCW_SumRuns;
-            vector<TH1D> Hist_MC_ThisE_SR_MSCW_SumRuns;
-            vector<TH1D> Hist_MC_ThisE_CR_MSCW_SumRuns;
-            vector<TH1D> Hist_Scaled_MC_ThisE_SR_MSCW_SumRuns;
-            vector<TH1D> Hist_Scaled_MC_ThisE_CR_MSCW_SumRuns;
-            vector<TH1D> Hist_Scaled_MC_ThisE_SR_MSCW;
-            vector<TH1D> Hist_Scaled_MC_ThisE_CR_MSCW;
+            vector<TH1D> Hist_ElectronMC_ThisE_SR_MSCW_SumRuns;
+            vector<TH1D> Hist_ElectronMC_ThisE_CR_MSCW_SumRuns;
+            vector<TH1D> Hist_Scaled_ElectronMC_ThisE_SR_MSCW_SumRuns;
+            vector<TH1D> Hist_Scaled_ElectronMC_ThisE_CR_MSCW_SumRuns;
+            vector<TH1D> Hist_Scaled_ElectronMC_ThisE_SR_MSCW;
+            vector<TH1D> Hist_Scaled_ElectronMC_ThisE_CR_MSCW;
+            vector<TH1D> Hist_GammaMC_ThisE_SR_MSCW_SumRuns;
+            vector<TH1D> Hist_GammaMC_ThisE_CR_MSCW_SumRuns;
+            vector<TH1D> Hist_Scaled_GammaMC_ThisE_SR_MSCW_SumRuns;
+            vector<TH1D> Hist_Scaled_GammaMC_ThisE_CR_MSCW_SumRuns;
+            vector<TH1D> Hist_Scaled_GammaMC_ThisE_SR_MSCW;
+            vector<TH1D> Hist_Scaled_GammaMC_ThisE_CR_MSCW;
             vector<TH1D> Hist_Target_ThisE_BkgSR_MSCW;
             vector<TH1D> Hist_Target_ThisE_BkgSR_MSCW_AllCR;
             vector<TH1D> Hist_Target_ThisE_BkgSR_MSCW_SumRuns;
@@ -1577,9 +1637,12 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 sprintf(nsr, "%i", int(s+1));
                 Hist_Target_ThisE_SR_MSCW.push_back(TH1D("Hist_Target_SR"+TString(nsr)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_SR_MSCW_SumRuns.push_back(TH1D("Hist_Target_SR"+TString(nsr)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-                Hist_MC_ThisE_SR_MSCW_SumRuns.push_back(TH1D("Hist_MC_SR"+TString(nsr)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-                Hist_Scaled_MC_ThisE_SR_MSCW_SumRuns.push_back(TH1D("Hist_Scaled_MC_SR"+TString(nsr)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-                Hist_Scaled_MC_ThisE_SR_MSCW.push_back(TH1D("Hist_Scaled_MC_SR"+TString(nsr)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_ElectronMC_ThisE_SR_MSCW_SumRuns.push_back(TH1D("Hist_ElectronMC_SR"+TString(nsr)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_Scaled_ElectronMC_ThisE_SR_MSCW_SumRuns.push_back(TH1D("Hist_Scaled_ElectronMC_SR"+TString(nsr)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_Scaled_ElectronMC_ThisE_SR_MSCW.push_back(TH1D("Hist_Scaled_ElectronMC_SR"+TString(nsr)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_GammaMC_ThisE_SR_MSCW_SumRuns.push_back(TH1D("Hist_GammaMC_SR"+TString(nsr)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_Scaled_GammaMC_ThisE_SR_MSCW_SumRuns.push_back(TH1D("Hist_Scaled_GammaMC_SR"+TString(nsr)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_Scaled_GammaMC_ThisE_SR_MSCW.push_back(TH1D("Hist_Scaled_GammaMC_SR"+TString(nsr)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_BkgSR_MSCW.push_back(TH1D("Hist_Target_BkgSR"+TString(nsr)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_BkgSR_MSCW_AllCR.push_back(TH1D("Hist_Target_BkgSR"+TString(nsr)+"_MSCW_AllCR_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_BkgSR_MSCW_SumRuns.push_back(TH1D("Hist_Target_BkgSR"+TString(nsr)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
@@ -1603,9 +1666,12 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
             }
             Hist_Target_SR_MSCW.push_back(Hist_Target_ThisE_SR_MSCW);
             Hist_Target_SR_MSCW_SumRuns.push_back(Hist_Target_ThisE_SR_MSCW_SumRuns);
-            Hist_MC_SR_MSCW_SumRuns.push_back(Hist_MC_ThisE_SR_MSCW_SumRuns);
-            Hist_Scaled_MC_SR_MSCW_SumRuns.push_back(Hist_Scaled_MC_ThisE_SR_MSCW_SumRuns);
-            Hist_Scaled_MC_SR_MSCW.push_back(Hist_Scaled_MC_ThisE_SR_MSCW);
+            Hist_ElectronMC_SR_MSCW_SumRuns.push_back(Hist_ElectronMC_ThisE_SR_MSCW_SumRuns);
+            Hist_Scaled_ElectronMC_SR_MSCW_SumRuns.push_back(Hist_Scaled_ElectronMC_ThisE_SR_MSCW_SumRuns);
+            Hist_Scaled_ElectronMC_SR_MSCW.push_back(Hist_Scaled_ElectronMC_ThisE_SR_MSCW);
+            Hist_GammaMC_SR_MSCW_SumRuns.push_back(Hist_GammaMC_ThisE_SR_MSCW_SumRuns);
+            Hist_Scaled_GammaMC_SR_MSCW_SumRuns.push_back(Hist_Scaled_GammaMC_ThisE_SR_MSCW_SumRuns);
+            Hist_Scaled_GammaMC_SR_MSCW.push_back(Hist_Scaled_GammaMC_ThisE_SR_MSCW);
             Hist_Target_BkgSR_MSCW.push_back(Hist_Target_ThisE_BkgSR_MSCW);
             Hist_Target_BkgSR_MSCW_SumRuns.push_back(Hist_Target_ThisE_BkgSR_MSCW_SumRuns);
             Hist_Dark_SR_MSCW.push_back(Hist_Dark_ThisE_SR_MSCW);
@@ -1629,7 +1695,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
             Hist_Target_SR_MSCW_SumRuns_SumSRs.push_back(TH1D("Hist_Target_SR_MSCW_SumRuns_SumSRs_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_CR_MSCW_SumSRs.push_back(TH1D("Hist_Target_CR_MSCW_SumSRs_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_BkgCR_MSCW_SumSRs.push_back(TH1D("Hist_Target_BkgCR_MSCW_SumSRs_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-            Hist_MC_SR_MSCW_SumRuns_SumSRs.push_back(TH1D("Hist_MC_SR_MSCW_SumRuns_SumSRs_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+            Hist_ElectronMC_SR_MSCW_SumRuns_SumSRs.push_back(TH1D("Hist_ElectronMC_SR_MSCW_SumRuns_SumSRs_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+            Hist_GammaMC_SR_MSCW_SumRuns_SumSRs.push_back(TH1D("Hist_GammaMC_SR_MSCW_SumRuns_SumSRs_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_BkgSR_MSCW_SumRuns_SumSRs.push_back(TH1D("Hist_Target_BkgSR_MSCW_SumRuns_SumSRs_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Dark_SR_MSCW_SumRuns_SumSRs.push_back(TH1D("Hist_Dark_SR_MSCW_SumRuns_SumSRs_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Dark_BkgSR_MSCW_SumRuns_SumSRs.push_back(TH1D("Hist_Dark_BkgSR_MSCW_SumRuns_SumSRs_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
@@ -1637,9 +1704,12 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
             {
                 char nCR[50];
                 sprintf(nCR, "%i", int(s+1));
-                Hist_MC_ThisE_CR_MSCW_SumRuns.push_back(TH1D("Hist_MC_CR"+TString(nCR)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-                Hist_Scaled_MC_ThisE_CR_MSCW_SumRuns.push_back(TH1D("Hist_Scaled_MC_CR"+TString(nCR)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-                Hist_Scaled_MC_ThisE_CR_MSCW.push_back(TH1D("Hist_Scaled_MC_CR"+TString(nCR)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_ElectronMC_ThisE_CR_MSCW_SumRuns.push_back(TH1D("Hist_ElectronMC_CR"+TString(nCR)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_Scaled_ElectronMC_ThisE_CR_MSCW_SumRuns.push_back(TH1D("Hist_Scaled_ElectronMC_CR"+TString(nCR)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_Scaled_ElectronMC_ThisE_CR_MSCW.push_back(TH1D("Hist_Scaled_ElectronMC_CR"+TString(nCR)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_GammaMC_ThisE_CR_MSCW_SumRuns.push_back(TH1D("Hist_GammaMC_CR"+TString(nCR)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_Scaled_GammaMC_ThisE_CR_MSCW_SumRuns.push_back(TH1D("Hist_Scaled_GammaMC_CR"+TString(nCR)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_Scaled_GammaMC_ThisE_CR_MSCW.push_back(TH1D("Hist_Scaled_GammaMC_CR"+TString(nCR)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_CR_MSCW.push_back(TH1D("Hist_Target_CR"+TString(nCR)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_CR_MSCW_SumRuns.push_back(TH1D("Hist_Target_CR"+TString(nCR)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Target_ThisE_BkgCR_MSCW.push_back(TH1D("Hist_Target_BkgCR"+TString(nCR)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
@@ -1649,9 +1719,12 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 Hist_Dark_ThisE_BkgCR_MSCW.push_back(TH1D("Hist_Dark_BkgCR"+TString(nCR)+"_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
                 Hist_Dark_ThisE_BkgCR_MSCW_SumRuns.push_back(TH1D("Hist_Dark_BkgCR"+TString(nCR)+"_MSCW_SumRuns_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             }
-            Hist_MC_CR_MSCW_SumRuns.push_back(Hist_MC_ThisE_CR_MSCW_SumRuns);
-            Hist_Scaled_MC_CR_MSCW_SumRuns.push_back(Hist_Scaled_MC_ThisE_CR_MSCW_SumRuns);
-            Hist_Scaled_MC_CR_MSCW.push_back(Hist_Scaled_MC_ThisE_CR_MSCW);
+            Hist_ElectronMC_CR_MSCW_SumRuns.push_back(Hist_ElectronMC_ThisE_CR_MSCW_SumRuns);
+            Hist_Scaled_ElectronMC_CR_MSCW_SumRuns.push_back(Hist_Scaled_ElectronMC_ThisE_CR_MSCW_SumRuns);
+            Hist_Scaled_ElectronMC_CR_MSCW.push_back(Hist_Scaled_ElectronMC_ThisE_CR_MSCW);
+            Hist_GammaMC_CR_MSCW_SumRuns.push_back(Hist_GammaMC_ThisE_CR_MSCW_SumRuns);
+            Hist_Scaled_GammaMC_CR_MSCW_SumRuns.push_back(Hist_Scaled_GammaMC_ThisE_CR_MSCW_SumRuns);
+            Hist_Scaled_GammaMC_CR_MSCW.push_back(Hist_Scaled_GammaMC_ThisE_CR_MSCW);
             Hist_Target_CR_MSCW.push_back(Hist_Target_ThisE_CR_MSCW);
             Hist_Target_CR_MSCW_SumRuns.push_back(Hist_Target_ThisE_CR_MSCW_SumRuns);
             Hist_Target_BkgCR_MSCW.push_back(Hist_Target_ThisE_BkgCR_MSCW);
@@ -1910,11 +1983,19 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 if (!SelectNImages(NTelMin,NTelMax)) continue;
                 for (int s=0;s<Number_of_SR;s++)
                 {
-                    if (SignalSelectionMSCW(s)) Hist_MC_SR_MSCW_SumRuns.at(e).at(s).Fill(MSCW);
+                    if (SignalSelectionMSCW(s)) 
+                    {
+                        Hist_ElectronMC_SR_MSCW_SumRuns.at(e).at(s).Fill(MSCW+0.2);
+                        Hist_GammaMC_SR_MSCW_SumRuns.at(e).at(s).Fill(MSCW+0.2);
+                    }
                 }
                 for (int s=0;s<Number_of_CR;s++)
                 {
-                    if (ControlSelectionMSCW(s)) Hist_MC_CR_MSCW_SumRuns.at(e).at(s).Fill(MSCW);
+                    if (ControlSelectionMSCW(s)) 
+                    {
+                        Hist_ElectronMC_CR_MSCW_SumRuns.at(e).at(s).Fill(MSCW+0.2);
+                        Hist_GammaMC_CR_MSCW_SumRuns.at(e).at(s).Fill(MSCW+0.2);
+                    }
                 }
             }
             input_file->Close();
@@ -2128,8 +2209,32 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     }
                     input_file->Close();
                 }
+                double gamma_integral = 0.;
+                double hadron_integral = 0.;
                 for (int s=0;s<Number_of_SR;s++)
                 {
+                    gamma_integral += Hist_GammaMC_SR_MSCW_SumRuns.at(e).at(s).Integral();
+                    hadron_integral += Hist_Target_SR_MSCW.at(e).at(s).Integral();
+                }
+                double fake_signal_scale = 0.05*hadron_integral/gamma_integral;
+                for (int s=0;s<Number_of_SR;s++)
+                {
+                    for (int bin=0;bin<Hist_GammaMC_SR_MSCW_SumRuns.at(e).at(s).GetNbinsX();bin++)
+                    {
+                        double old_content = Hist_GammaMC_SR_MSCW_SumRuns.at(e).at(s).GetBinContent(bin+1);
+                        double old_error = Hist_GammaMC_SR_MSCW_SumRuns.at(e).at(s).GetBinError(bin+1);
+                        double new_content = old_content*fake_signal_scale;
+                        Hist_Scaled_GammaMC_SR_MSCW.at(e).at(s).SetBinContent(bin+1,new_content);
+                        Hist_Scaled_GammaMC_SR_MSCW.at(e).at(s).SetBinError(bin+1,pow(new_content,0.5));
+                    }
+                }
+                for (int s=0;s<Number_of_SR;s++)
+                {
+                    if (TString(target)=="Proton" && theta2_cut_lower_input==0)
+                    //if (theta2_cut_lower_input==0)
+                    {
+                        Hist_Target_SR_MSCW.at(e).at(s).Add(&Hist_Scaled_GammaMC_SR_MSCW.at(e).at(s));
+                    }
                     Hist_Target_SR_MSCW_SumRuns.at(e).at(s).Add(&Hist_Target_SR_MSCW.at(e).at(s));
                     Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).Add(&Hist_Target_SR_MSCW.at(e).at(s));
                 }
@@ -2139,7 +2244,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 }
 
                 std::cout << "Normalizing MC histograms..." << std::endl;
-                TH1D Hist_MC_Temp = TH1D("Hist_MC_Temp","",Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
+                TH1D Hist_ElectronMC_Temp = TH1D("Hist_ElectronMC_Temp","",Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
                 int norm_bin_low = Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).FindBin(MSCW_cut_lower);
                 int norm_bin_up = Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).FindBin(MSCW_cut_blind);
                 std::cout << "Energy "  << energy_bins[e] << std::endl;
@@ -2147,11 +2252,11 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 double old_integral = 0.;
                 for (int s=0;s<Number_of_SR;s++)
                 {
-                    old_integral += double(Hist_MC_SR_MSCW_SumRuns.at(e).at(s).Integral());
+                    old_integral += double(Hist_ElectronMC_SR_MSCW_SumRuns.at(e).at(s).Integral());
                 }
                 for (int s=0;s<Number_of_CR;s++)
                 {
-                    old_integral += double(Hist_MC_CR_MSCW_SumRuns.at(e).at(s).Integral());
+                    old_integral += double(Hist_ElectronMC_CR_MSCW_SumRuns.at(e).at(s).Integral());
                 }
                 double scale = electron_count[e]/old_integral;
                 double scale_err = electron_count_err[e]/old_integral;
@@ -2159,32 +2264,33 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 if (TString(target)=="Proton") scale_err = 0.;
                 for (int s=0;s<Number_of_SR;s++)
                 {
-                    for (int bin=0;bin<Hist_MC_SR_MSCW_SumRuns.at(e).at(s).GetNbinsX();bin++)
+                    for (int bin=0;bin<Hist_ElectronMC_SR_MSCW_SumRuns.at(e).at(s).GetNbinsX();bin++)
                     {
-                        double old_content = Hist_MC_SR_MSCW_SumRuns.at(e).at(s).GetBinContent(bin+1);
-                        double old_error = Hist_MC_SR_MSCW_SumRuns.at(e).at(s).GetBinError(bin+1);
+                        double old_content = Hist_ElectronMC_SR_MSCW_SumRuns.at(e).at(s).GetBinContent(bin+1);
+                        double old_error = Hist_ElectronMC_SR_MSCW_SumRuns.at(e).at(s).GetBinError(bin+1);
                         double new_content = old_content*scale;
                         double new_error = old_error*old_error*scale*scale+(old_content*scale_err)*(old_content*scale_err);
                         if (new_error>0) new_error = pow(new_error,0.5);
-                        Hist_Scaled_MC_SR_MSCW.at(e).at(s).SetBinContent(bin+1,new_content);
-                        Hist_Scaled_MC_SR_MSCW.at(e).at(s).SetBinError(bin+1,pow(new_content,0.5));
+                        Hist_Scaled_ElectronMC_SR_MSCW.at(e).at(s).SetBinContent(bin+1,new_content);
+                        //Hist_Scaled_ElectronMC_SR_MSCW.at(e).at(s).SetBinError(bin+1,pow(new_content,0.5));
+                        Hist_Scaled_ElectronMC_SR_MSCW.at(e).at(s).SetBinError(bin+1,0.3*new_content);
                     }
-                    Hist_Scaled_MC_SR_MSCW_SumRuns.at(e).at(s).Add(&Hist_Scaled_MC_SR_MSCW.at(e).at(s));
-                    Hist_MC_SR_MSCW_SumRuns_SumSRs.at(e).Add(&Hist_Scaled_MC_SR_MSCW.at(e).at(s));
+                    Hist_Scaled_ElectronMC_SR_MSCW_SumRuns.at(e).at(s).Add(&Hist_Scaled_ElectronMC_SR_MSCW.at(e).at(s));
+                    Hist_ElectronMC_SR_MSCW_SumRuns_SumSRs.at(e).Add(&Hist_Scaled_ElectronMC_SR_MSCW.at(e).at(s));
                 }
                 for (int s=0;s<Number_of_CR;s++)
                 {
-                    for (int bin=0;bin<Hist_MC_CR_MSCW_SumRuns.at(e).at(s).GetNbinsX();bin++)
+                    for (int bin=0;bin<Hist_ElectronMC_CR_MSCW_SumRuns.at(e).at(s).GetNbinsX();bin++)
                     {
-                        double old_content = Hist_MC_CR_MSCW_SumRuns.at(e).at(s).GetBinContent(bin+1);
-                        double old_error = Hist_MC_CR_MSCW_SumRuns.at(e).at(s).GetBinError(bin+1);
+                        double old_content = Hist_ElectronMC_CR_MSCW_SumRuns.at(e).at(s).GetBinContent(bin+1);
+                        double old_error = Hist_ElectronMC_CR_MSCW_SumRuns.at(e).at(s).GetBinError(bin+1);
                         double new_content = old_content*scale;
                         double new_error = old_error*old_error*scale*scale+(old_content*scale_err)*(old_content*scale_err);
                         if (new_error>0) new_error = pow(new_error,0.5);
-                        Hist_Scaled_MC_CR_MSCW.at(e).at(s).SetBinContent(bin+1,new_content);
-                        Hist_Scaled_MC_CR_MSCW.at(e).at(s).SetBinError(bin+1,pow(new_content,0.5));
+                        Hist_Scaled_ElectronMC_CR_MSCW.at(e).at(s).SetBinContent(bin+1,new_content);
+                        Hist_Scaled_ElectronMC_CR_MSCW.at(e).at(s).SetBinError(bin+1,pow(new_content,0.5));
                     }
-                    Hist_Scaled_MC_CR_MSCW_SumRuns.at(e).at(s).Add(&Hist_Scaled_MC_CR_MSCW.at(e).at(s));
+                    Hist_Scaled_ElectronMC_CR_MSCW_SumRuns.at(e).at(s).Add(&Hist_Scaled_ElectronMC_CR_MSCW.at(e).at(s));
                 }
 
 
@@ -2251,7 +2357,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     }
 
                     useOldSR = true; isUnblinded = true; doConverge = false;
-                    estimated_endpoints = PredictNextLayer(&Hist_Scaled_MC_CR_MSCW.at(e).at(s),&Hist_Target_CR_MSCW.at(e).at(s),&Hist_Target_CR_MSCW.at(e).at(s-1),&Hist_Target_BkgCR_MSCW.at(e).at(s-1),&Hist_Target_BkgCR_MSCW.at(e).at(s),energy_bins[e],-99.,-99.,useOldSR,isUnblinded,doConverge);
+                    Hist_Scaled_GammaMC_CR_MSCW.at(e).at(s).Reset();
+                    estimated_endpoints = PredictNextLayer(&Hist_Scaled_GammaMC_CR_MSCW.at(e).at(s),&Hist_Scaled_ElectronMC_CR_MSCW.at(e).at(s),&Hist_Target_CR_MSCW.at(e).at(s),&Hist_Target_CR_MSCW.at(e).at(s-1),&Hist_Target_BkgCR_MSCW.at(e).at(s-1),&Hist_Target_BkgCR_MSCW.at(e).at(s),energy_bins[e],-99.,-99.,useOldSR,isUnblinded,doConverge);
                 }
 
                 // 2D search for end points
@@ -2334,12 +2441,12 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     bool isAdaptive = false;
                     useOldSR = true; isUnblinded = true; doConverge = true;
                     if (c>1) useOldSR = false;
-                    estimated_endpoints = PredictNextLayer(&Hist_Scaled_MC_CR_MSCW.at(e).at(c),&Hist_Target_CR_MSCW.at(e).at(c),&Hist_Target_CR_MSCW.at(e).at(c-1),&Hist_Target_BkgCR_MSCW.at(e).at(c-1),&Hist_Target_BkgCR_MSCW.at(e).at(c),energy_bins[e],estimated_endpoints.first,estimated_endpoints.second,useOldSR,isUnblinded,doConverge);
+                    Hist_Scaled_GammaMC_CR_MSCW.at(e).at(c).Reset();
+                    estimated_endpoints = PredictNextLayer(&Hist_Scaled_GammaMC_CR_MSCW.at(e).at(c),&Hist_Scaled_ElectronMC_CR_MSCW.at(e).at(c),&Hist_Target_CR_MSCW.at(e).at(c),&Hist_Target_CR_MSCW.at(e).at(c-1),&Hist_Target_BkgCR_MSCW.at(e).at(c-1),&Hist_Target_BkgCR_MSCW.at(e).at(c),energy_bins[e],estimated_endpoints.first,estimated_endpoints.second,useOldSR,isUnblinded,doConverge);
 
                     Hist_Target_BkgCR_MSCW_SumRuns.at(e).at(c).Add(&Hist_Target_BkgCR_MSCW.at(e).at(c));
 
                 }
-
 
                 std::cout << "Target, e " << energy_bins[e] << ", running CR " << Number_of_CR-1 << " to SR " << 0 << std::endl;
                 Hist_Target_BkgSR_MSCW.at(e).at(0).Reset();
@@ -2366,8 +2473,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     estimated_rms = Hist_Target_SR_MSCW.at(e).at(0).GetRMS();
                 }
 
-                useOldSR = true; isUnblinded = false; doConverge = true;
-                estimated_endpoints = PredictNextLayer(&Hist_Scaled_MC_SR_MSCW.at(e).at(0),&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0),energy_bins[e],estimated_endpoints.first,estimated_endpoints.second,useOldSR,isUnblinded,doConverge);
+                useOldSR = true; isUnblinded = true; doConverge = true;
+                estimated_endpoints = PredictNextLayer(&Hist_Scaled_GammaMC_SR_MSCW.at(e).at(0),&Hist_Scaled_ElectronMC_SR_MSCW.at(e).at(0),&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0),energy_bins[e],estimated_endpoints.first,estimated_endpoints.second,useOldSR,isUnblinded,doConverge);
 
                 target_current_mean = Hist_Target_BkgSR_MSCW.at(e).at(0).GetMean();
                 target_current_mean = Hist_Target_SR_MSCW.at(e).at(0).GetMean();
@@ -2410,8 +2517,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                         estimated_rms_previous = Hist_Target_SR_MSCW.at(e).at(s-1).GetRMS();
                     }
 
-                    useOldSR = false; isUnblinded = false; doConverge = true;
-                    estimated_endpoints = PredictNextLayer(&Hist_Scaled_MC_SR_MSCW.at(e).at(s),&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_SR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),energy_bins[e],estimated_endpoints.first,estimated_endpoints.second,useOldSR,isUnblinded,doConverge);
+                    useOldSR = false; isUnblinded = true; doConverge = true;
+                    estimated_endpoints = PredictNextLayer(&Hist_Scaled_GammaMC_SR_MSCW.at(e).at(s),&Hist_Scaled_ElectronMC_SR_MSCW.at(e).at(s),&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_SR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),energy_bins[e],estimated_endpoints.first,estimated_endpoints.second,useOldSR,isUnblinded,doConverge);
 
                     target_current_mean = Hist_Target_BkgSR_MSCW.at(e).at(s).GetMean();
                     target_current_mean = Hist_Target_SR_MSCW.at(e).at(s).GetMean();
@@ -2426,6 +2533,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
 
 
                 }
+
 
                 // here we calculate the measured e/gamma flux
                 Hist_Target_Excess_EachRun.at(e).Reset();
@@ -2446,6 +2554,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 for (int s=0;s<Number_of_SR;s++)
                 {
                     Hist_Target_BkgSR_MSCW_SumRuns.at(e).at(s).Add(&Hist_Target_BkgSR_MSCW.at(e).at(s)); // this is summing over sublist, errors are not correlated.
+                    Hist_Scaled_GammaMC_SR_MSCW_SumRuns.at(e).at(s).Add(&Hist_Scaled_GammaMC_SR_MSCW.at(e).at(s));
                 }
                 for (int run=0;run<Sublist.at(subrun).size();run++)
                 {
@@ -2471,6 +2580,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
 
         for (int e=0;e<N_energy_bins;e++)
         {
+            Hist_Target_BkgSR_MSCW_SumRuns_SumSRs.at(e).Reset();
             for (int s=0;s<Number_of_SR;s++)
             {
                 std::cout << "=================================================" << std::endl;
@@ -2496,65 +2606,6 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
             std::cout << " return std::make_pair(" << Hist_Target_EndPoint_0.GetBinContent(e+1) << "," << Hist_Target_EndPoint_1.GetBinContent(e+1) << ");" << std::endl;
         }
 
-        //// Get MC electron files
-        //std::cout << "=================================================" << std::endl;
-        //filename = TString("$VERITAS_USER_DATA_DIR/MC_V6_Moderate-TMVA-BDT.RB.20130.root");
-        //TFile*  input_file = TFile::Open(filename.c_str());
-        //TString root_file = "run_20130/stereo/data_on";
-        //TTree* MC_tree = (TTree*) input_file->Get(root_file);
-        //MC_tree->SetBranchAddress("ErecS",&ErecS);
-        //MC_tree->SetBranchAddress("EChi2S",&EChi2S);
-        //MC_tree->SetBranchAddress("MSCW",&MSCW);
-        //MC_tree->SetBranchAddress("MSCL",&MSCL);
-        //MC_tree->SetBranchAddress("NImages",&NImages);
-        //for (int entry=0;entry<MC_tree->GetEntries();entry++) {
-        //    ErecS = 0;
-        //    EChi2S = 0;
-        //    NImages = 0;
-        //    MSCW = 0;
-        //    MSCL = 0;
-        //    MC_tree->GetEntry(entry);
-        //    int energy = Hist_Target_SR_ErecS.at(0).FindBin(ErecS*1000.)-1;
-        //    if (energy<0) continue;
-        //    if (energy>=N_energy_bins) continue;
-        //    int e = energy;
-        //    if (!SelectNImages(NTelMin,NTelMax)) continue;
-        //    for (int s=0;s<Number_of_SR;s++)
-        //    {
-        //        if (SignalSelectionMSCW(s)) Hist_MC_SR_MSCW_SumRuns.at(e).at(s).Fill(MSCW);
-        //    }
-        //}
-        //std::cout << "Normalizing MC histograms..." << std::endl;
-        //for (int e=0;e<N_energy_bins;e++) {
-        //    int norm_bin_low = Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).FindBin(MSCW_cut_lower);
-        //    int norm_bin_up = Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).FindBin(MSCW_cut_blind);
-        //    std::cout << "Energy "  << energy_bins[e] << std::endl;
-        //    std::cout << "predicted electrons = " << electron_count[e] << std::endl;
-        //    std::cout << "true excess = " << Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).Integral(norm_bin_low,norm_bin_up)-Hist_Target_BkgSR_MSCW_SumRuns_SumSRs.at(e).Integral(norm_bin_low,norm_bin_up) << std::endl;
-        //    double old_integral = 0.;
-        //    for (int s=0;s<Number_of_SR;s++)
-        //    {
-        //        old_integral += double(Hist_MC_SR_MSCW_SumRuns.at(e).at(s).Integral());
-        //    }
-        //    double scale = electron_count[e]/old_integral;
-        //    double scale_err = electron_count_err[e]/old_integral;
-        //    if (TString(target)=="Proton") scale = 0.;
-        //    if (TString(target)=="Proton") scale_err = 0.;
-        //    for (int s=0;s<Number_of_SR;s++)
-        //    {
-        //        for (int bin=0;bin<Hist_MC_SR_MSCW_SumRuns.at(e).at(s).GetNbinsX();bin++)
-        //        {
-        //            double old_content = Hist_MC_SR_MSCW_SumRuns.at(e).at(s).GetBinContent(bin+1);
-        //            double old_error = Hist_MC_SR_MSCW_SumRuns.at(e).at(s).GetBinError(bin+1);
-        //            double new_content = old_content*scale;
-        //            double new_error = old_error*old_error*scale*scale+(old_content*scale_err)*(old_content*scale_err);
-        //            if (new_error>0) new_error = pow(new_error,0.5);
-        //            Hist_MC_SR_MSCW_SumRuns.at(e).at(s).SetBinContent(bin+1,new_content);
-        //            Hist_MC_SR_MSCW_SumRuns.at(e).at(s).SetBinError(bin+1,pow(new_content,0.5));
-        //        }
-        //        Hist_MC_SR_MSCW_SumRuns_SumSRs.at(e).Add(&Hist_MC_SR_MSCW_SumRuns.at(e).at(s));
-        //    }
-        //}
         
         int norm_bin_low_ring = Hist_Target_ON_MSCW_Alpha.FindBin(Norm_Lower);
         int norm_bin_up_ring = Hist_Target_ON_MSCW_Alpha.FindBin(Norm_Upper);
@@ -2605,11 +2656,13 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 Hist_Target_Deconv_MSCW.at(e).Write();
                 Hist_Target_MSCLW.at(e).Write();
                 Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).Write();
-                Hist_MC_SR_MSCW_SumRuns_SumSRs.at(e).Write();
+                Hist_ElectronMC_SR_MSCW_SumRuns_SumSRs.at(e).Write();
+                Hist_GammaMC_SR_MSCW_SumRuns_SumSRs.at(e).Write();
                 Hist_Target_BkgSR_MSCW_SumRuns_SumSRs.at(e).Write();
                 for (int s=0;s<Number_of_SR;s++)
                 {
-                    Hist_Scaled_MC_SR_MSCW_SumRuns.at(e).at(s).Write();
+                    Hist_Scaled_ElectronMC_SR_MSCW_SumRuns.at(e).at(s).Write();
+                    Hist_Scaled_GammaMC_SR_MSCW_SumRuns.at(e).at(s).Write();
                     Hist_Target_SR_MSCW_SumRuns.at(e).at(s).Write();
                     Hist_Target_BkgSR_MSCW_SumRuns.at(e).at(s).Write();
                     Hist_Target_SR_theta2.at(e).at(s).Write();
@@ -2627,7 +2680,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 }
                 for (int s=0;s<Number_of_CR;s++)
                 {
-                    Hist_Scaled_MC_CR_MSCW_SumRuns.at(e).at(s).Write();
+                    Hist_Scaled_ElectronMC_CR_MSCW_SumRuns.at(e).at(s).Write();
+                    Hist_Scaled_GammaMC_CR_MSCW_SumRuns.at(e).at(s).Write();
                     Hist_Target_CR_MSCW_SumRuns.at(e).at(s).Write();
                     Hist_Target_BkgCR_MSCW_SumRuns.at(e).at(s).Write();
                 }
