@@ -134,7 +134,7 @@ double theta2 = 0;
 double ra_sky = 0;
 double dec_sky = 0;
 double current_sr = 0.;
-std::pair<double,double> estimated_endpoints;
+std::pair<double,std::pair<double,double>> estimated_parameters;
 double estimated_amplitude = 0.;
 double estimated_mean = 0.;
 double estimated_mean_err = 0.;
@@ -864,7 +864,7 @@ double FindNIteration(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTe
     }
     return n_iter_final;
 }
-std::pair <double,double> FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTemp, TH1* Hist_Deconv, double rms_begin, double mean, double n_iter, bool includeSR, int chi2_type, double endpoint_0, double endpoint_1) {
+double FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTemp, TH1* Hist_Deconv, double rms_begin, double mean, double n_iter, bool includeSR, int chi2_type, double endpoint_0, double endpoint_1) {
     bool DoShift = true;
     double chi2_best = 0.;
     double rms_final = rms_begin;
@@ -879,8 +879,8 @@ std::pair <double,double> FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1
         double chi2 = 0;
         double unblinded_chi2 = 0;
         double rms = rms_begin;
-        //rms = 0.1+double(n_rms+1)*2.0/40.;
-        rms = 0.1+double(n_rms+1)*1.0/40.;
+        rms = 0.1+double(n_rms+1)*2.0/40.;
+        if (!includeSR) rms = rms_begin*(0.5+double(n_rms)*1.0/40.);
         func->SetParameter(0,rms);
         Hist_Deconv->Reset();
         for (int b=0;b<Hist_Deconv->GetNbinsX();b++)
@@ -910,7 +910,7 @@ std::pair <double,double> FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1
     //std::cout << "final_kernel_rms = " << rms_final << std::endl;
     //if (final_n_rms==0) std::cout << "kernel RMS solution attemps to move outside lower bound!!" << std::endl;
     //if (final_n_rms==40) std::cout << "kernel RMS solution attemps to move outside upper bound!!" << std::endl;
-    return std::make_pair(rms_final,unblinded_rms_final);
+    return rms_final;
 }
 void Convolution(TH1D* Hist_source, TH1D* Hist_response, TH1D* Hist_Conv) {
         if (Hist_source->GetNbinsX()!=Hist_response->GetNbinsX()) 
@@ -929,26 +929,26 @@ void Convolution(TH1D* Hist_source, TH1D* Hist_response, TH1D* Hist_Conv) {
         }
 }
 
-std::pair <double,double> PredictNextLayerHadron(TH1* Hist_GammaMC, TH1* Hist_ElectronMC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, double energy, double endpoint_0, double endpoint_1, bool useOldSR, bool isUnblinded, bool doConverge)
+std::pair <double,std::pair <double,double>> PredictNextLayerHadron(TH1* Hist_ElectronMC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, double energy, std::pair <double,std::pair <double,double>> parameters, bool useOldSR, bool isDark, bool doConverge)
 {
-    //isUnblinded = true;
+    Hist_Bkg->Reset();
     TH1D Hist_Bkg_Privous_Adapt = TH1D("Hist_Bkg_Privous_Adapt","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
-    MakeBkgPrevious(Hist_SR_Previous,Hist_Bkg_Previous,&Hist_Bkg_Privous_Adapt,useOldSR);
+    if (!isDark)
+    {
+        MakeBkgPrevious(Hist_SR_Previous,Hist_Bkg_Previous,&Hist_Bkg_Privous_Adapt,useOldSR);
+    }
+    else
+    {
+        Hist_Bkg_Privous_Adapt.Reset();
+        Hist_Bkg_Privous_Adapt.Add(Hist_SR_Previous);
+    }
 
     TH1D Hist_SR_Temp = TH1D("Hist_SR_Temp","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
     Hist_SR_Temp.Reset();
     for (int b=0;b<Hist_SR_Temp.GetNbinsX();b++)
     {
         double content = 0;
-        if (isUnblinded) 
-        {
-            content = Hist_SR->GetBinContent(b+1)-Hist_ElectronMC->GetBinContent(b+1)-Hist_GammaMC->GetBinContent(b+1);
-        }
-        else
-        {
-            content = Hist_SR->GetBinContent(b+1)-Hist_ElectronMC->GetBinContent(b+1);
-        }
-        //double content = Hist_SR->GetBinContent(b+1);
+        content = Hist_SR->GetBinContent(b+1)-Hist_ElectronMC->GetBinContent(b+1);
         double error = Hist_SR->GetBinError(b+1);
         Hist_SR_Temp.SetBinContent(b+1,content);
         Hist_SR_Temp.SetBinError(b+1,error);
@@ -956,19 +956,14 @@ std::pair <double,double> PredictNextLayerHadron(TH1* Hist_GammaMC, TH1* Hist_El
     std::cout << "Hist_SR_Temp.Integral() = " << Hist_SR_Temp.Integral() << std::endl;
     TH1D Hist_Bkg_Temp = TH1D("Hist_Bkg_Temp","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
     TH1D Hist_Kernel = TH1D("Hist_Kernel","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
-    int SR_Niter=4;
-    if (isUnblinded)
-    {
-        estimated_kernel_rms = 0.5;
-        if (estimated_rms_previous>estimated_rms) 
-        {
-            estimated_kernel_rms = pow(estimated_rms_previous*estimated_rms_previous-estimated_rms*estimated_rms,0.5);
-        }
-    }
-    SR_Niter = FindNIteration(&Hist_SR_Temp,&Hist_Bkg_Privous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,estimated_kernel_rms,0,SR_Niter,isUnblinded,1);
-    std::pair <double,double> kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_Bkg_Privous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,estimated_kernel_rms,0,SR_Niter,true,1,endpoint_0,endpoint_1);
+    int SR_Niter=10;
+    double kernel_rms = parameters.first;
+    double endpoint_0 = parameters.second.first;
+    double endpoint_1 = parameters.second.second;
+    if (isDark) kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_Bkg_Privous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,kernel_rms,0,SR_Niter,true,1,endpoint_0,endpoint_1);
+    else kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_Bkg_Privous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,kernel_rms,0,SR_Niter,false,1,endpoint_0,endpoint_1);
     TF1 *myfunc = new TF1("myfunc",Kernel,-50.,50.,1);
-    myfunc->SetParameter(0,kernel_rms.first);
+    myfunc->SetParameter(0,kernel_rms);
     Hist_Kernel.Reset();
     for (int b=0;b<Hist_Kernel.GetNbinsX();b++)
     {
@@ -983,59 +978,44 @@ std::pair <double,double> PredictNextLayerHadron(TH1* Hist_GammaMC, TH1* Hist_El
 
     std::pair <double,double> converge;
     converge.first = endpoint_0;
-    converge.first = endpoint_1;
-    if (isUnblinded)
+    converge.second = endpoint_1;
+    if (isDark)
     {
         converge = FindConvergeEndpoints(&Hist_SR_Temp,Hist_Bkg,endpoint_0,endpoint_1);
     }
     if (doConverge){ 
+        std::cout << "Apply converge, endpoint 0 = " << converge.first << ", endpoint 1 = " << converge.second << std::endl;
         Converge(Hist_Bkg,converge.first,converge.second);
     }
-    return converge;
+    parameters.first = kernel_rms;
+    parameters.second.first = converge.first;
+    parameters.second.second = converge.second;
+    return parameters;
 }
-std::pair <double,double> PredictNextLayer(TH1* Hist_GammaMC, TH1* Hist_ElectronMC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, double energy, double endpoint_0, double endpoint_1, bool useOldSR, bool isUnblinded, bool doConverge)
+void PredictNextLayer(TH1* Hist_GammaMC, TH1* Hist_ElectronMC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, TH1* Hist_DarkSR, TH1* Hist_DarkSR_Previous, double energy, std::pair <double,std::pair <double,double>> parameters, bool useOldSR, bool doConverge)
 {
 
-    std::pair <double,double> converge;
-
-    double chi2_best = 0.;
-    double scale_best = 0.;
-    converge = PredictNextLayerHadron(Hist_GammaMC,Hist_ElectronMC,Hist_SR,Hist_SR_Previous,Hist_Bkg_Previous,Hist_Bkg,energy,endpoint_0,endpoint_1,useOldSR,false,doConverge);
-
+    parameters = PredictNextLayerHadron(Hist_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_Bkg_Previous,Hist_Bkg,energy,parameters,useOldSR,true,doConverge);
+    std::cout << "Dark field found kernel RMS = " << parameters.first << std::endl;
+    std::cout << "Dark field found endpoint 0 = " << parameters.second.first << std::endl;
+    std::cout << "Dark field found endpoint 1 = " << parameters.second.second << std::endl;
+    parameters = PredictNextLayerHadron(Hist_ElectronMC,Hist_SR,Hist_SR_Previous,Hist_Bkg_Previous,Hist_Bkg,energy,parameters,useOldSR,false,doConverge);
+    TH1D Hist_MC_Temp2 = TH1D("Hist_MC_Temp2","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
     int norm_bin_low = Hist_SR->FindBin(MSCW_cut_lower);
     int norm_bin_up = Hist_SR->FindBin(MSCW_cut_blind);
-    double SR_Integral = Hist_SR->Integral(norm_bin_low,norm_bin_up);
-    double MC_Integral = Hist_GammaMC->Integral(norm_bin_low,norm_bin_up);
-    double estimated_gamma_integral = Hist_SR->Integral(norm_bin_low,norm_bin_up)-Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
-    TH1D Hist_GammaMC_Temp2 = TH1D("Hist_GammaMC_Temp2","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
-    for (int mc_scale=0;mc_scale<=10;mc_scale++)
+    double old_integral = Hist_GammaMC->Integral(norm_bin_low,norm_bin_up);
+    double new_integral = Hist_SR->Integral(norm_bin_low,norm_bin_up)-Hist_Bkg->Integral(norm_bin_low,norm_bin_up)-Hist_ElectronMC->Integral(norm_bin_low,norm_bin_up);
+    if (new_integral<0)
     {
-        if (MC_Integral==0.) continue;
-        if (estimated_gamma_integral<0.) continue;
-        double scale = (1.*double(mc_scale)/10.+0.5)*estimated_gamma_integral/MC_Integral;
-        Hist_GammaMC_Temp2.Reset();
-        Hist_Bkg->Reset();
-        for (int b=0;b<Hist_SR->GetNbinsX();b++)
-        {
-            Hist_GammaMC_Temp2.SetBinContent(b+1,Hist_GammaMC->GetBinContent(b+1));
-            Hist_GammaMC_Temp2.SetBinError(b+1,pow(Hist_GammaMC->GetBinContent(b+1),0.5));
-        }
-        Hist_GammaMC_Temp2.Scale(scale);
-
-        converge = PredictNextLayerHadron(&Hist_GammaMC_Temp2,Hist_ElectronMC,Hist_SR,Hist_SR_Previous,Hist_Bkg_Previous,Hist_Bkg,energy,endpoint_0,endpoint_1,useOldSR,isUnblinded,doConverge);
-
-        Hist_Bkg->Add(&Hist_GammaMC_Temp2);
-        double chi2 = GetChi2(Hist_SR,Hist_Bkg,true,1);
-        if (chi2_best<chi2) {
-            chi2_best = chi2;
-            scale_best = scale;
-        } 
+        Hist_GammaMC->Scale(0);
     }
-    Hist_Bkg->Reset();
-    Hist_GammaMC->Scale(scale_best);
-    converge = PredictNextLayerHadron(Hist_GammaMC,Hist_ElectronMC,Hist_SR,Hist_SR_Previous,Hist_Bkg_Previous,Hist_Bkg,energy,endpoint_0,endpoint_1,useOldSR,isUnblinded,doConverge);
+    else
+    {
+        Hist_GammaMC->Scale(0);
+        //double scale = new_integral/old_integral;
+        //Hist_GammaMC->Scale(scale);
+    }
 
-    return converge;
 }
 
 double PointingDistribution(string file_name,int run, bool isDark, bool fillHist)
@@ -1738,8 +1718,10 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
 
         std::cout << "Getting dark pointing distributions... " << std::endl;
         vector<int> Dark_runlist = GetRunList("DarkField");
+        if (TString(target)=="Proton") Dark_runlist = GetRunList("Proton");
         char Dark_observation[50];
         sprintf(Dark_observation, "%s", "DarkField");
+        if (TString(target)=="Proton") sprintf(Dark_observation, "%s", "Proton");
         if (TString(target)=="Segue1V5" || TString(target)=="MGRO_J1908_V5")
         {
             Dark_runlist = GetRunList("Segue1V5");
@@ -2328,98 +2310,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     Hist_Target_CR_MSCW_SumSRs.at(e).Add(&Hist_Target_CR_MSCW.at(e).at(c));
                 }
 
-                bool useOldSR = false; bool isUnblinded = false; bool doConverge = true;
-
-                double CR_endpoint_0_best = 0.;
-                double CR_endpoint_1_best = 0.;
-                double endpoint_0_best = 0.;
-                double endpoint_1_best = 0.;
-                int bin0 = 0;
-                // estimate CR bkg
-                for (int s=1;s<Number_of_CR;s++)
-                {
-
-                    Hist_Target_BkgCR_MSCW.at(e).at(s).Reset();
-
-                    bin0 = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[s]+MSCL_control_cut_upper[s]));
-                    estimated_amplitude = Hist_Target_Amplitude.at(e).GetBinContent(bin0);
-                    estimated_mean = Hist_Target_Mean.at(e).GetBinContent(bin0);
-                    estimated_rms = Hist_Target_RMS.at(e).GetBinContent(bin0);
-                    estimated_rms_err = Hist_Target_RMS.at(e).GetBinError(bin0);
-                    bin0 = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[s-1]+MSCL_control_cut_upper[s-1]));
-                    estimated_rms_previous = Hist_Target_RMS.at(e).GetBinContent(bin0);
-                    bin0 = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[s]+MSCL_control_cut_upper[s]));
-                    if (TString(target)=="Proton")
-                    {
-                        estimated_mean = Hist_Target_CR_MSCW.at(e).at(s).GetMean();
-                        estimated_rms = Hist_Target_CR_MSCW.at(e).at(s).GetRMS();
-                        estimated_rms_previous = Hist_Target_CR_MSCW.at(e).at(s-1).GetRMS();
-                    }
-
-                    useOldSR = true; isUnblinded = true; doConverge = false;
-                    Hist_Scaled_GammaMC_CR_MSCW.at(e).at(s).Reset();
-                    estimated_endpoints = PredictNextLayer(&Hist_Scaled_GammaMC_CR_MSCW.at(e).at(s),&Hist_Scaled_ElectronMC_CR_MSCW.at(e).at(s),&Hist_Target_CR_MSCW.at(e).at(s),&Hist_Target_CR_MSCW.at(e).at(s-1),&Hist_Target_BkgCR_MSCW.at(e).at(s-1),&Hist_Target_BkgCR_MSCW.at(e).at(s),energy_bins[e],-99.,-99.,useOldSR,isUnblinded,doConverge);
-                }
-
-                // 2D search for end points
-                double chi2_best = 0.;
-                for (int ep0=0;ep0<50;ep0++) 
-                {
-                    //double tmp_endpoint_0 = 2.0-1.0+2.0*double(ep0)/50.;
-                    double tmp_endpoint_0 = -1.5-1.0+2.0*double(ep0)/50.;
-                    for (int ep1=0;ep1<50;ep1++) 
-                    {
-                        //double tmp_endpoint_1 = 1.0-0.5+2.0*double(ep1)/50.;
-                        double tmp_endpoint_1 = 1.0-1.0+2.0*double(ep1)/50.;
-                        TH1D Hist_Bkg_SumSRs = TH1D("Hist_Bkg_SumSRs","",Hist_Target_BkgCR_MSCW.at(e).at(0).GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
-                        Hist_Bkg_SumSRs.Reset();
-                        TH1D Hist_SR_SumSRs = TH1D("Hist_SR_SumSRs","",Hist_Target_BkgCR_MSCW.at(e).at(0).GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
-                        Hist_SR_SumSRs.Reset();
-
-
-                        // estimate CR bkg
-                        for (int s=1;s<Number_of_CR;s++)
-                        {
-
-                            bin0 = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[s]+MSCL_control_cut_upper[s]));
-                            estimated_amplitude = Hist_Target_Amplitude.at(e).GetBinContent(bin0);
-                            estimated_mean = Hist_Target_Mean.at(e).GetBinContent(bin0);
-                            estimated_rms = Hist_Target_RMS.at(e).GetBinContent(bin0);
-                            estimated_rms_err = Hist_Target_RMS.at(e).GetBinError(bin0);
-                            bin0 = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[s-1]+MSCL_control_cut_upper[s-1]));
-                            estimated_rms_previous = Hist_Target_RMS.at(e).GetBinContent(bin0);
-                            bin0 = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[s]+MSCL_control_cut_upper[s]));
-                            if (TString(target)=="Proton")
-                            {
-                                estimated_mean = Hist_Target_CR_MSCW.at(e).at(s).GetMean();
-                                estimated_rms = Hist_Target_CR_MSCW.at(e).at(s).GetRMS();
-                                estimated_rms_previous = Hist_Target_CR_MSCW.at(e).at(s-1).GetRMS();
-                            }
-
-                            TH1D Hist_Bkg_Tmp = TH1D("Hist_Bkg_Tmp","",Hist_Target_BkgCR_MSCW.at(e).at(0).GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
-                            Hist_Bkg_Tmp.Reset();
-                            Hist_Bkg_Tmp.Add(&Hist_Target_BkgCR_MSCW.at(e).at(s));
-                            Converge(&Hist_Bkg_Tmp,tmp_endpoint_0,tmp_endpoint_1);
-                            Hist_SR_SumSRs.Add(&Hist_Target_CR_MSCW.at(e).at(s));
-                            Hist_Bkg_SumSRs.Add(&Hist_Bkg_Tmp);
-
-                        }
-
-                        double chi2 = GetChi2(&Hist_SR_SumSRs,&Hist_Bkg_SumSRs,true,1);
-                        if (chi2_best<chi2) {
-                            chi2_best = chi2;
-                            CR_endpoint_0_best = tmp_endpoint_0;
-                            CR_endpoint_1_best = tmp_endpoint_1;
-                        } 
-                    }
-                }
-                std::cout << "CR: endpoint_0_best = " << CR_endpoint_0_best << std::endl;
-                std::cout << "CR: endpoint_1_best = " << CR_endpoint_1_best << std::endl;
-                endpoint_0_best = CR_endpoint_0_best;
-                endpoint_1_best = CR_endpoint_1_best;
-                estimated_endpoints.first = CR_endpoint_0_best;
-                estimated_endpoints.second = CR_endpoint_1_best;
-                
+                bool useOldSR = false; bool doConverge = true;
 
 
                 // estimate unblinded CR bkg
@@ -2430,6 +2321,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 for (int c=1;c<Number_of_CR;c++)
                 {
 
+                    std::cout << "Target, e " << energy_bins[e] << ", running CR " << c << " to CR " << c << std::endl;
+
                     int bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[c]+MSCL_control_cut_upper[c]));
                     estimated_mean = Hist_Target_Mean.at(e).GetBinContent(bin);
                     estimated_rms = Hist_Target_RMS.at(e).GetBinContent(bin);
@@ -2437,12 +2330,10 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     estimated_rms_previous = Hist_Target_RMS.at(e).GetBinContent(bin);
                     bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[c]+MSCL_control_cut_upper[c]));
 
-                    std::cout << "Target, e " << energy_bins[e] << ", running CR " << c << " to CR " << c << std::endl;
-                    bool isAdaptive = false;
-                    useOldSR = true; isUnblinded = true; doConverge = true;
+                    useOldSR = true; doConverge = true;
                     if (c>1) useOldSR = false;
                     Hist_Scaled_GammaMC_CR_MSCW.at(e).at(c).Reset();
-                    estimated_endpoints = PredictNextLayer(&Hist_Scaled_GammaMC_CR_MSCW.at(e).at(c),&Hist_Scaled_ElectronMC_CR_MSCW.at(e).at(c),&Hist_Target_CR_MSCW.at(e).at(c),&Hist_Target_CR_MSCW.at(e).at(c-1),&Hist_Target_BkgCR_MSCW.at(e).at(c-1),&Hist_Target_BkgCR_MSCW.at(e).at(c),energy_bins[e],estimated_endpoints.first,estimated_endpoints.second,useOldSR,isUnblinded,doConverge);
+                    PredictNextLayer(&Hist_Scaled_GammaMC_CR_MSCW.at(e).at(c),&Hist_Scaled_ElectronMC_CR_MSCW.at(e).at(c),&Hist_Target_CR_MSCW.at(e).at(c),&Hist_Target_CR_MSCW.at(e).at(c-1),&Hist_Target_BkgCR_MSCW.at(e).at(c-1),&Hist_Target_BkgCR_MSCW.at(e).at(c),&Hist_Dark_CR_MSCW.at(e).at(c),&Hist_Dark_CR_MSCW.at(e).at(c-1),energy_bins[e],estimated_parameters,useOldSR,doConverge);
 
                     Hist_Target_BkgCR_MSCW_SumRuns.at(e).at(c).Add(&Hist_Target_BkgCR_MSCW.at(e).at(c));
 
@@ -2458,12 +2349,6 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 estimated_mean = Hist_Target_Mean.at(e).GetBinContent(bin);
                 estimated_rms = Hist_Target_RMS.at(e).GetBinContent(bin);
                 estimated_rms_err = Hist_Target_RMS.at(e).GetBinError(bin);
-                std::cout << "true mean = " << Hist_Target_SR_MSCW.at(e).at(0).GetMean() << std::endl;
-                std::cout << "estimated_mean = " << estimated_mean << std::endl;
-                std::cout << "estimated_mean_err = " << estimated_mean_err << std::endl;
-                std::cout << "true rms = " << Hist_Target_SR_MSCW.at(e).at(0).GetRMS() << std::endl;
-                std::cout << "estimated_rms = " << estimated_rms << std::endl;
-                std::cout << "estimated_rms_err = " << estimated_rms_err << std::endl;
                 bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[Number_of_CR-1]+MSCL_control_cut_upper[Number_of_CR-1]));
                 estimated_rms_previous = Hist_Target_RMS.at(e).GetBinContent(bin);
                 bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[0]+MSCL_signal_cut_upper[0]));
@@ -2473,14 +2358,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     estimated_rms = Hist_Target_SR_MSCW.at(e).at(0).GetRMS();
                 }
 
-                useOldSR = true; isUnblinded = true; doConverge = true;
-                estimated_endpoints = PredictNextLayer(&Hist_Scaled_GammaMC_SR_MSCW.at(e).at(0),&Hist_Scaled_ElectronMC_SR_MSCW.at(e).at(0),&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0),energy_bins[e],estimated_endpoints.first,estimated_endpoints.second,useOldSR,isUnblinded,doConverge);
-
-                target_current_mean = Hist_Target_BkgSR_MSCW.at(e).at(0).GetMean();
-                target_current_mean = Hist_Target_SR_MSCW.at(e).at(0).GetMean();
-
-                target_kernel_rms.at(e).at(0) = kernel_rms.first;
-                target_kernel_shift.at(e).at(0) = offset.second.first;
+                useOldSR = true; doConverge = true;
+                PredictNextLayer(&Hist_Scaled_GammaMC_SR_MSCW.at(e).at(0),&Hist_Scaled_ElectronMC_SR_MSCW.at(e).at(0),&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Dark_SR_MSCW.at(e).at(0),&Hist_Dark_CR_MSCW.at(e).at(Number_of_CR-1),energy_bins[e],estimated_parameters,useOldSR,doConverge);
 
                 //AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(0));
                 //AddSystematics(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgSR_MSCW.at(e).at(0));
@@ -2501,12 +2380,6 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     estimated_mean = Hist_Target_Mean.at(e).GetBinContent(bin);
                     estimated_rms = Hist_Target_RMS.at(e).GetBinContent(bin);
                     estimated_rms_err = Hist_Target_RMS.at(e).GetBinError(bin);
-                    std::cout << "true mean = " << Hist_Target_SR_MSCW.at(e).at(s).GetMean() << std::endl;
-                    std::cout << "estimated_mean = " << estimated_mean << std::endl;
-                    std::cout << "estimated_mean_err = " << estimated_mean_err << std::endl;
-                    std::cout << "true rms = " << Hist_Target_SR_MSCW.at(e).at(s).GetRMS() << std::endl;
-                    std::cout << "estimated_rms = " << estimated_rms << std::endl;
-                    std::cout << "estimated_rms_err = " << estimated_rms_err << std::endl;
                     bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[s-1]+MSCL_signal_cut_upper[s-1]));
                     estimated_rms_previous = Hist_Target_RMS.at(e).GetBinContent(bin);
                     bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[s]+MSCL_signal_cut_upper[s]));
@@ -2517,14 +2390,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                         estimated_rms_previous = Hist_Target_SR_MSCW.at(e).at(s-1).GetRMS();
                     }
 
-                    useOldSR = false; isUnblinded = true; doConverge = true;
-                    estimated_endpoints = PredictNextLayer(&Hist_Scaled_GammaMC_SR_MSCW.at(e).at(s),&Hist_Scaled_ElectronMC_SR_MSCW.at(e).at(s),&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_SR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),energy_bins[e],estimated_endpoints.first,estimated_endpoints.second,useOldSR,isUnblinded,doConverge);
-
-                    target_current_mean = Hist_Target_BkgSR_MSCW.at(e).at(s).GetMean();
-                    target_current_mean = Hist_Target_SR_MSCW.at(e).at(s).GetMean();
-
-                    target_kernel_rms.at(e).at(s) = kernel_rms.first;
-                    target_kernel_shift.at(e).at(s) = offset.second.first;
+                    useOldSR = false; doConverge = true;
+                    PredictNextLayer(&Hist_Scaled_GammaMC_SR_MSCW.at(e).at(s),&Hist_Scaled_ElectronMC_SR_MSCW.at(e).at(s),&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_SR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Dark_SR_MSCW.at(e).at(s),&Hist_Dark_SR_MSCW.at(e).at(s-1),energy_bins[e],estimated_parameters,useOldSR,doConverge);
 
                     //AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(s));
                     //AddSystematics(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s));
