@@ -938,15 +938,16 @@ std::pair <double,std::pair <double,double>> PredictNextLayerHadron(TH1* Hist_El
 {
     Hist_Bkg->Reset();
     TH1D Hist_Bkg_Privous_Adapt = TH1D("Hist_Bkg_Privous_Adapt","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
-    if (!isDark)
-    {
-        MakeBkgPrevious(Hist_SR_Previous,Hist_Bkg_Previous,&Hist_Bkg_Privous_Adapt,useOldSR);
-    }
-    else
-    {
-        Hist_Bkg_Privous_Adapt.Reset();
-        Hist_Bkg_Privous_Adapt.Add(Hist_SR_Previous);
-    }
+    MakeBkgPrevious(Hist_SR_Previous,Hist_Bkg_Previous,&Hist_Bkg_Privous_Adapt,useOldSR);
+    //if (!isDark)
+    //{
+    //    MakeBkgPrevious(Hist_SR_Previous,Hist_Bkg_Previous,&Hist_Bkg_Privous_Adapt,useOldSR);
+    //}
+    //else
+    //{
+    //    Hist_Bkg_Privous_Adapt.Reset();
+    //    Hist_Bkg_Privous_Adapt.Add(Hist_SR_Previous);
+    //}
 
     TH1D Hist_SR_Temp = TH1D("Hist_SR_Temp","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
     Hist_SR_Temp.Reset();
@@ -1280,17 +1281,17 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, do
         double delta_azim = 2.0;
         if (energy>100.)
         {
-            delta_elev = 5;
+            delta_elev = 40.;
             delta_azim = 360.;
         }
         if (energy>500.)
         {
-            delta_elev = 5.;
+            delta_elev = 40.;
             delta_azim = 360.;
         }
         if (energy>700.)
         {
-            delta_elev = 10.;
+            delta_elev = 40.;
             delta_azim = 360.;
         }
         if (energy>1000.)
@@ -1300,12 +1301,12 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, do
         }
         if (energy>1500.)
         {
-            delta_elev = 20.;
+            delta_elev = 40.;
             delta_azim = 360.;
         }
         if (energy>2000.)
         {
-            delta_elev = 20.;
+            delta_elev = 40.;
             delta_azim = 360.;
         }
         if (energy>3000.)
