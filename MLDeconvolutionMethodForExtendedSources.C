@@ -134,7 +134,7 @@ double theta2 = 0;
 double ra_sky = 0;
 double dec_sky = 0;
 double current_sr = 0.;
-std::pair<double,std::pair<double,double>> estimated_parameters;
+std::pair<std::pair<double,double>,std::pair<double,double>> estimated_parameters;
 double estimated_amplitude = 0.;
 double estimated_mean = 0.;
 double estimated_mean_err = 0.;
@@ -574,8 +574,8 @@ void MakeBkgPrevious(TH1* Hist_SR,TH1* Hist_Bkg,TH1* Hist_Previous, bool include
 {
     for (int i=0;i<Hist_SR->GetNbinsX();i++)
     {
-        //if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind && !includeSR)
-        if (!includeSR)
+        if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind && !includeSR)
+        //if (!includeSR)
         {
             Hist_Previous->SetBinContent(i+1,Hist_Bkg->GetBinContent(i+1));
             Hist_Previous->SetBinError(i+1,Hist_Bkg->GetBinError(i+1));
@@ -679,8 +679,9 @@ void FindSRMean(TH1* Hist_CR, double energy)
         Hist_CR->SetBinError(bin,width*(MSCW_cut_blind-MSCW_cut_lower));
     }
 }
-std::pair <bool,std::pair <double,double>> ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, bool doShift, bool includeSR, int chi2_type) {
-    includeSR = false;
+double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, bool doShift, bool includeSR, int chi2_type, double shift_begin) {
+    //includeSR = false;
+    //shift_begin = 0.;
     double shift_fit = 0;
     double unblinded_shift_fit = 0;
     double scale_fit = 0;
@@ -689,23 +690,13 @@ std::pair <bool,std::pair <double,double>> ShiftAndNormalize(TH1* Hist_SR, TH1* 
     double mean = Hist_SR->GetMean();
     double rms = Hist_SR->GetRMS();
     double norm = Hist_BkgTemp->Integral();
-    double shift_begin = 0.;
-    if (!includeSR) 
-    {
-      shift_begin = -Hist_BkgTemp->GetMean()+estimated_mean; 
-    }
     Hist_Bkg->Reset();
     int norm_bin_low = Hist_SR->FindBin(MSCW_cut_lower);
     int norm_bin_blind = Hist_SR->FindBin(MSCW_cut_blind);
     int norm_bin_up = Hist_SR->FindBin(30.);
-    double weight_blinded = double(Hist_SR->Integral(norm_bin_low,norm_bin_blind));
-    double weight_unblinded = double(Hist_SR->Integral(norm_bin_blind,norm_bin_up));
-    double weight_ratio = weight_unblinded/(weight_blinded+weight_unblinded);
-    if (doShift) {
+    if (includeSR) {
         for (int fit=0;fit<100;fit++) {
                 double shift = shift_begin-5.0*estimated_mean_err+10.0*estimated_mean_err*double(fit)*0.01;
-                //if (!includeSR) shift = shift_begin-1.0*estimated_mean_err*double(fit)*0.01;
-                if (!includeSR) shift = shift_begin+0.5*estimated_mean_err-1.0*estimated_mean_err*double(fit)*0.01;
                 for (int i=0;i<Hist_SR->GetNbinsX();i++) {
                         int b = Hist_SR->FindBin(Hist_SR->GetBinCenter(i+1)-shift);
                         Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
@@ -745,29 +736,16 @@ std::pair <bool,std::pair <double,double>> ShiftAndNormalize(TH1* Hist_SR, TH1* 
                 Hist_Bkg->SetBinError(i+1,Hist_BkgTemp->GetBinError(b));
         }
         Hist_Bkg->Scale(norm/Hist_Bkg->Integral());
-        norm_bin_low = Hist_SR->FindBin(-2.);
+        norm_bin_low = Hist_SR->FindBin(mean-8.*rms);
         norm_bin_up = Hist_SR->FindBin(MSCW_cut_lower);
         double SR_area1 = Hist_SR->Integral(norm_bin_low,norm_bin_up);
         double Bkg_area1 = Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
         norm_bin_low = Hist_SR->FindBin(MSCW_cut_blind);
-        norm_bin_up = Hist_SR->FindBin(30.);
+        norm_bin_up = Hist_SR->FindBin(mean+8.*rms);
         double SR_area2 = Hist_SR->Integral(norm_bin_low,norm_bin_up);
         double Bkg_area2 = Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
-        double scale_begin = (SR_area1+SR_area2)/(Bkg_area1+Bkg_area2);
-        scale_fit = scale_begin;
-        for (int fit=0;fit<1000;fit++)
-        {
-            double scale = scale_begin-(double(fit))/1000.*0.1*scale_begin;
-            Hist_Bkg->Scale(norm/Hist_Bkg->Integral());
-            Hist_Bkg->Scale(scale);
-            double chi2_temp = GetChi2(Hist_SR, Hist_Bkg,includeSR,1);
-            if (chi2<chi2_temp && Hist_Bkg->Integral()!=0) {
-                chi2 = chi2_temp;
-                scale_fit = scale;
-            } 
-        }
+        scale_fit = (SR_area1+SR_area2)/(Bkg_area1+Bkg_area2);
         shift_fit = shift_begin;
-        unblinded_shift_fit = shift_begin;
     }
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
             int b = Hist_Bkg->FindBin(Hist_Bkg->GetBinCenter(i+1)-shift_fit);
@@ -791,7 +769,7 @@ std::pair <bool,std::pair <double,double>> ShiftAndNormalize(TH1* Hist_SR, TH1* 
         Hist_Bkg->Scale(norm/Hist_Bkg->Integral());
     }
     Hist_Bkg->Scale(scale_fit);
-    return std::make_pair(doShift,std::make_pair(shift_fit,unblinded_shift_fit));
+    return shift_fit;
 }
 bool IsReasonableResult(TH1* Hist_Bkg)
 {
@@ -860,7 +838,7 @@ double FindNIteration(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTe
           }
           Deconvolution(Hist_CR,Hist_Deconv,Hist_BkgTemp,n_iter);
           if (!IsReasonableResult(Hist_BkgTemp)) continue;
-          std::pair <bool,std::pair <double,double>> offset = ShiftAndNormalize(Hist_SR,Hist_BkgTemp,Hist_Bkg,true,includeSR,chi2_type);
+          double offset = ShiftAndNormalize(Hist_SR,Hist_BkgTemp,Hist_Bkg,true,includeSR,chi2_type,0.);
           chi2 = GetChi2(Hist_SR,Hist_Bkg,includeSR,1);
           if (chi2_best<chi2) {
               chi2_best = chi2;
@@ -884,8 +862,9 @@ double FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTemp, TH1
         double chi2 = 0;
         double unblinded_chi2 = 0;
         double rms = rms_begin;
-        rms = 0.1+double(n_rms+1)*2.0/40.;
-        if (!includeSR) rms = rms_begin*(0.5+double(n_rms)*1.5/40.);
+        //rms = 0.1+double(n_rms+1)*2.0/40.;
+        rms = Hist_CR->GetRMS()*double(n_rms+1)/40.;
+        //if (!includeSR) rms = rms_begin*(0.5+double(n_rms)*1.5/40.);
         func->SetParameter(0,rms);
         Hist_Deconv->Reset();
         for (int b=0;b<Hist_Deconv->GetNbinsX();b++)
@@ -896,7 +875,7 @@ double FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTemp, TH1
         }
         Deconvolution(Hist_CR,Hist_Deconv,Hist_BkgTemp,n_iter);
         if (!IsReasonableResult(Hist_BkgTemp)) continue;
-        std::pair <bool,std::pair <double,double>> offset = ShiftAndNormalize(Hist_SR,Hist_BkgTemp,Hist_Bkg,DoShift,false,chi2_type);
+        double offset = ShiftAndNormalize(Hist_SR,Hist_BkgTemp,Hist_Bkg,DoShift,includeSR,chi2_type,0.);
         Converge(Hist_Bkg,endpoint_0,endpoint_1);
         chi2 = GetChi2(Hist_SR, Hist_Bkg,includeSR,2);
         unblinded_chi2 = GetChi2(Hist_SR, Hist_Bkg,true,2);
@@ -934,7 +913,7 @@ void Convolution(TH1D* Hist_source, TH1D* Hist_response, TH1D* Hist_Conv) {
         }
 }
 
-std::pair <double,std::pair <double,double>> PredictNextLayerHadron(TH1* Hist_ElectronMC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, double energy, std::pair <double,std::pair <double,double>> parameters, bool useOldSR, bool isDark, bool doConverge)
+std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerHadron(TH1* Hist_ElectronMC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, double energy, std::pair <std::pair <double,double>,std::pair <double,double>> parameters, bool useOldSR, bool isDark, bool doConverge)
 {
     Hist_Bkg->Reset();
     TH1D Hist_Bkg_Privous_Adapt = TH1D("Hist_Bkg_Privous_Adapt","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
@@ -966,11 +945,12 @@ std::pair <double,std::pair <double,double>> PredictNextLayerHadron(TH1* Hist_El
     TH1D Hist_Bkg_Temp = TH1D("Hist_Bkg_Temp","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
     TH1D Hist_Kernel = TH1D("Hist_Kernel","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
     int SR_Niter=10;
-    double kernel_rms = parameters.first;
+    double kernel_rms = parameters.first.first;
+    double offset_begin = parameters.first.second;
     double endpoint_0 = parameters.second.first;
     double endpoint_1 = parameters.second.second;
     if (isDark) kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_Bkg_Privous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,kernel_rms,0,SR_Niter,true,1,endpoint_0,endpoint_1);
-    else kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_Bkg_Privous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,kernel_rms,0,SR_Niter,false,1,endpoint_0,endpoint_1);
+    //else kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_Bkg_Privous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,kernel_rms,0,SR_Niter,false,1,endpoint_0,endpoint_1);
     TF1 *myfunc = new TF1("myfunc",Kernel,-50.,50.,1);
     myfunc->SetParameter(0,kernel_rms);
     Hist_Kernel.Reset();
@@ -982,7 +962,7 @@ std::pair <double,std::pair <double,double>> PredictNextLayerHadron(TH1* Hist_El
     }
                     
     Deconvolution(&Hist_Bkg_Privous_Adapt,&Hist_Kernel,&Hist_Bkg_Temp,SR_Niter);
-    std::pair <bool,std::pair <double,double>> offset = ShiftAndNormalize(&Hist_SR_Temp,&Hist_Bkg_Temp,Hist_Bkg,true,false,2);
+    double offset = ShiftAndNormalize(&Hist_SR_Temp,&Hist_Bkg_Temp,Hist_Bkg,true,isDark,2,offset_begin);
     MakeSmoothSplineFunction(Hist_Bkg);
 
     Hist_SR_Temp.Reset();
@@ -1006,16 +986,18 @@ std::pair <double,std::pair <double,double>> PredictNextLayerHadron(TH1* Hist_El
         std::cout << "Apply converge, endpoint 0 = " << converge.first << ", endpoint 1 = " << converge.second << std::endl;
         Converge(Hist_Bkg,converge.first,converge.second);
     }
-    parameters.first = kernel_rms;
+    parameters.first.first = kernel_rms;
+    parameters.first.second = offset;
     parameters.second.first = converge.first;
     parameters.second.second = converge.second;
     return parameters;
 }
-void PredictNextLayer(TH1* Hist_GammaMC, TH1* Hist_ElectronMC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, TH1* Hist_DarkSR, TH1* Hist_DarkSR_Previous, TH1* Hist_DarkBkg_Previous, TH1* Hist_DarkBkg, double energy, std::pair <double,std::pair <double,double>> parameters, bool useOldSR, bool doConverge)
+void PredictNextLayer(TH1* Hist_GammaMC, TH1* Hist_ElectronMC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, TH1* Hist_DarkSR, TH1* Hist_DarkSR_Previous, TH1* Hist_DarkBkg_Previous, TH1* Hist_DarkBkg, double energy, std::pair <std::pair <double,double>,std::pair <double,double>> parameters, bool useOldSR, bool doConverge)
 {
 
     parameters = PredictNextLayerHadron(Hist_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg_Previous,Hist_DarkBkg,energy,parameters,useOldSR,true,doConverge);
-    std::cout << "Dark field found kernel RMS = " << parameters.first << std::endl;
+    std::cout << "Dark field found kernel RMS = " << parameters.first.first << std::endl;
+    std::cout << "Dark field found kernel offset = " << parameters.first.second << std::endl;
     std::cout << "Dark field found endpoint 0 = " << parameters.second.first << std::endl;
     std::cout << "Dark field found endpoint 1 = " << parameters.second.second << std::endl;
 
@@ -1985,8 +1967,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 MSCW = 0;
                 MSCL = 0;
                 MC_tree->GetEntry(entry);
-                //MSCW += 0.2;
-                //MSCL += 0.2;
+                MSCW += 0.3;
+                MSCL += 0.3;
                 int energy = Hist_Target_SR_ErecS.at(0).FindBin(ErecS*1000.)-1;
                 if (energy<0) continue;
                 if (energy>=N_energy_bins) continue;
