@@ -142,6 +142,8 @@ double estimated_rms_previous = 0.;
 double estimated_kernel_rms = 0.;
 double estimated_rms = 0.;
 double estimated_rms_err = 0.;
+double estimated_endpoint0_delta = 0.;
+double estimated_endpoint1_delta = 0.;
 double dark_initial_mean_delta = 0.;
 double dark_initial_mean = 0.;
 double dark_current_mean = 0.;
@@ -550,7 +552,7 @@ void MakeSmoothSplineFunction(TH1* Hist_SR)
 {
     double bin_width = Hist_SR->GetBinLowEdge(2)-Hist_SR->GetBinLowEdge(1);
     double nbins_in_RMS = Hist_SR->GetRMS()/bin_width;
-    int knot_size = int(nbins_in_RMS/1.);
+    int knot_size = int(nbins_in_RMS/1.5);
     if (knot_size<1) knot_size = 1;
     else if (knot_size<2) knot_size = 1;
     else if (knot_size<4) knot_size = 2;
@@ -572,8 +574,8 @@ void MakeBkgPrevious(TH1* Hist_SR,TH1* Hist_Bkg,TH1* Hist_Previous, bool include
 {
     for (int i=0;i<Hist_SR->GetNbinsX();i++)
     {
-        if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind && !includeSR)
-        //if (!includeSR)
+        //if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind && !includeSR)
+        if (!includeSR)
         {
             Hist_Previous->SetBinContent(i+1,Hist_Bkg->GetBinContent(i+1));
             Hist_Previous->SetBinError(i+1,Hist_Bkg->GetBinError(i+1));
@@ -702,7 +704,8 @@ std::pair <bool,std::pair <double,double>> ShiftAndNormalize(TH1* Hist_SR, TH1* 
     if (doShift) {
         for (int fit=0;fit<100;fit++) {
                 double shift = shift_begin-5.0*estimated_mean_err+10.0*estimated_mean_err*double(fit)*0.01;
-                if (!includeSR) shift = shift_begin-1.0*estimated_mean_err*weight_ratio*double(fit)*0.01;
+                //if (!includeSR) shift = shift_begin-1.0*estimated_mean_err*double(fit)*0.01;
+                if (!includeSR) shift = shift_begin+0.5*estimated_mean_err-1.0*estimated_mean_err*double(fit)*0.01;
                 for (int i=0;i<Hist_SR->GetNbinsX();i++) {
                         int b = Hist_SR->FindBin(Hist_SR->GetBinCenter(i+1)-shift);
                         Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
@@ -882,7 +885,7 @@ double FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTemp, TH1
         double unblinded_chi2 = 0;
         double rms = rms_begin;
         rms = 0.1+double(n_rms+1)*2.0/40.;
-        if (!includeSR) rms = rms_begin*(0.2+double(n_rms)*0.4/40.);
+        if (!includeSR) rms = rms_begin*(0.5+double(n_rms)*1.5/40.);
         func->SetParameter(0,rms);
         Hist_Deconv->Reset();
         for (int b=0;b<Hist_Deconv->GetNbinsX();b++)
@@ -966,7 +969,7 @@ std::pair <double,std::pair <double,double>> PredictNextLayerHadron(TH1* Hist_El
     double endpoint_0 = parameters.second.first;
     double endpoint_1 = parameters.second.second;
     if (isDark) kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_Bkg_Privous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,kernel_rms,0,SR_Niter,true,1,endpoint_0,endpoint_1);
-    //else kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_Bkg_Privous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,kernel_rms,0,SR_Niter,false,1,endpoint_0,endpoint_1);
+    else kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_Bkg_Privous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,kernel_rms,0,SR_Niter,false,1,endpoint_0,endpoint_1);
     TF1 *myfunc = new TF1("myfunc",Kernel,-50.,50.,1);
     myfunc->SetParameter(0,kernel_rms);
     Hist_Kernel.Reset();
@@ -1014,6 +1017,12 @@ void PredictNextLayer(TH1* Hist_GammaMC, TH1* Hist_ElectronMC, TH1* Hist_SR, TH1
     std::cout << "Dark field found kernel RMS = " << parameters.first << std::endl;
     std::cout << "Dark field found endpoint 0 = " << parameters.second.first << std::endl;
     std::cout << "Dark field found endpoint 1 = " << parameters.second.second << std::endl;
+
+    std::cout << "estimated_endpoint0_delta = " << estimated_endpoint0_delta << std::endl;
+    std::cout << "estimated_endpoint1_delta = " << estimated_endpoint1_delta << std::endl;
+    //parameters.second.first = estimated_endpoint0_delta+parameters.second.first;
+    //parameters.second.second = estimated_endpoint1_delta+parameters.second.second;
+
     parameters = PredictNextLayerHadron(Hist_ElectronMC,Hist_SR,Hist_SR_Previous,Hist_Bkg_Previous,Hist_Bkg,energy,parameters,useOldSR,false,doConverge);
     TH1D Hist_MC_Temp2 = TH1D("Hist_MC_Temp2","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
     int norm_bin_low = Hist_SR->FindBin(MSCW_cut_lower);
@@ -1519,6 +1528,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
         vector<TH1D> Hist_Target_Amplitude;
         vector<TH1D> Hist_Target_Mean;
         vector<TH1D> Hist_Target_RMS;
+        vector<TH1D> Hist_Target_EP0_Delta;
+        vector<TH1D> Hist_Target_EP1_Delta;
         vector<TH1D> Hist_Target_BkgTemp_MSCW;
         vector<TH1D> Hist_Target_BkgTemp2_MSCW;
         vector<TH1D> Hist_Target_BkgTemp3_MSCW;
@@ -1566,6 +1577,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
             Hist_Target_Amplitude.push_back(TH1D("Hist_Target_Amplitude_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0]));
             Hist_Target_Mean.push_back(TH1D("Hist_Target_Mean_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0]));
             Hist_Target_RMS.push_back(TH1D("Hist_Target_RMS_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0]));
+            Hist_Target_EP0_Delta.push_back(TH1D("Hist_Target_EP0_Delta_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0]));
+            Hist_Target_EP1_Delta.push_back(TH1D("Hist_Target_EP1_Delta_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0]));
             Hist_Target_BkgTemp_MSCW.push_back(TH1D("Hist_Target_BkgTemp_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_BkgTemp2_MSCW.push_back(TH1D("Hist_Target_BkgTemp2_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
             Hist_Target_BkgTemp3_MSCW.push_back(TH1D("Hist_Target_BkgTemp3_MSCW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
@@ -2302,6 +2315,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 std::pair <double,double> kernel_rms;
                 Hist_Target_Mean.at(e).Reset();
                 Hist_Target_RMS.at(e).Reset();
+                Hist_Target_EP0_Delta.at(e).Reset();
+                Hist_Target_EP1_Delta.at(e).Reset();
                 for (int c=0;c<Number_of_CR;c++)
                 {
                     int bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[c]+MSCL_control_cut_upper[c]));
@@ -2347,12 +2362,30 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
 
                     useOldSR = true; doConverge = true;
                     if (c>1) useOldSR = false;
+
+                    estimated_parameters = PredictNextLayerHadron(&Hist_Scaled_ElectronMC_CR_MSCW.at(e).at(c),&Hist_Dark_CR_MSCW.at(e).at(c),&Hist_Dark_CR_MSCW.at(e).at(c-1),&Hist_Dark_BkgCR_MSCW.at(e).at(c-1),&Hist_Dark_BkgCR_MSCW.at(e).at(c),energy_bins[e],estimated_parameters,useOldSR,true,doConverge);
+                    double dark_endpoint0 = estimated_parameters.second.first;
+                    double dark_endpoint1 = estimated_parameters.second.second;
+                    estimated_parameters = PredictNextLayerHadron(&Hist_Scaled_ElectronMC_CR_MSCW.at(e).at(c),&Hist_Target_CR_MSCW.at(e).at(c),&Hist_Target_CR_MSCW.at(e).at(c-1),&Hist_Target_BkgCR_MSCW.at(e).at(c-1),&Hist_Target_BkgCR_MSCW.at(e).at(c),energy_bins[e],estimated_parameters,useOldSR,true,doConverge);
+                    double target_endpoint0 = estimated_parameters.second.first;
+                    double target_endpoint1 = estimated_parameters.second.second;
+
+                    bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[c]+MSCL_control_cut_upper[c]));
+                    Hist_Target_EP0_Delta.at(e).SetBinContent(bin,target_endpoint0-dark_endpoint0);
+                    Hist_Target_EP0_Delta.at(e).SetBinError(bin,MSCW_cut_blind-MSCW_cut_lower);
+                    Hist_Target_EP1_Delta.at(e).SetBinContent(bin,target_endpoint1-dark_endpoint1);
+                    Hist_Target_EP1_Delta.at(e).SetBinError(bin,MSCW_cut_blind-MSCW_cut_lower);
+
+                    estimated_endpoint0_delta = target_endpoint0-dark_endpoint0;
+                    estimated_endpoint1_delta = target_endpoint1-dark_endpoint1;
                     Hist_Scaled_GammaMC_CR_MSCW.at(e).at(c).Reset();
                     PredictNextLayer(&Hist_Scaled_GammaMC_CR_MSCW.at(e).at(c),&Hist_Scaled_ElectronMC_CR_MSCW.at(e).at(c),&Hist_Target_CR_MSCW.at(e).at(c),&Hist_Target_CR_MSCW.at(e).at(c-1),&Hist_Target_BkgCR_MSCW.at(e).at(c-1),&Hist_Target_BkgCR_MSCW.at(e).at(c),&Hist_Dark_CR_MSCW.at(e).at(c),&Hist_Dark_CR_MSCW.at(e).at(c-1),&Hist_Dark_BkgCR_MSCW.at(e).at(c-1),&Hist_Dark_BkgCR_MSCW.at(e).at(c),energy_bins[e],estimated_parameters,useOldSR,doConverge);
 
                     Hist_Target_BkgCR_MSCW_SumRuns.at(e).at(c).Add(&Hist_Target_BkgCR_MSCW.at(e).at(c));
 
                 }
+                FindSRMean(&Hist_Target_EP0_Delta.at(e),energy_bins[e]);
+                FindSRMean(&Hist_Target_EP1_Delta.at(e),energy_bins[e]);
 
                 std::cout << "Target, e " << energy_bins[e] << ", running CR " << Number_of_CR-1 << " to SR " << 0 << std::endl;
                 Hist_Target_BkgSR_MSCW.at(e).at(0).Reset();
@@ -2364,6 +2397,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 estimated_mean = Hist_Target_Mean.at(e).GetBinContent(bin);
                 estimated_rms = Hist_Target_RMS.at(e).GetBinContent(bin);
                 estimated_rms_err = Hist_Target_RMS.at(e).GetBinError(bin);
+                estimated_endpoint0_delta = Hist_Target_EP0_Delta.at(e).GetBinContent(bin);
+                estimated_endpoint1_delta = Hist_Target_EP1_Delta.at(e).GetBinContent(bin);
                 bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[Number_of_CR-1]+MSCL_control_cut_upper[Number_of_CR-1]));
                 estimated_rms_previous = Hist_Target_RMS.at(e).GetBinContent(bin);
                 bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[0]+MSCL_signal_cut_upper[0]));
@@ -2395,6 +2430,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     estimated_mean = Hist_Target_Mean.at(e).GetBinContent(bin);
                     estimated_rms = Hist_Target_RMS.at(e).GetBinContent(bin);
                     estimated_rms_err = Hist_Target_RMS.at(e).GetBinError(bin);
+                    estimated_endpoint0_delta = Hist_Target_EP0_Delta.at(e).GetBinContent(bin);
+                    estimated_endpoint1_delta = Hist_Target_EP1_Delta.at(e).GetBinContent(bin);
                     bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[s-1]+MSCL_signal_cut_upper[s-1]));
                     estimated_rms_previous = Hist_Target_RMS.at(e).GetBinContent(bin);
                     bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[s]+MSCL_signal_cut_upper[s]));
