@@ -10,7 +10,7 @@ ROOT.TH1.SetDefaultSumw2()
 ROOT.TH1.AddDirectory(False) # without this, the histograms returned from a function will be non-type
 ROOT.gStyle.SetPaintTextFormat("0.3f")
 
-folder = 'output_May19'
+folder = 'output_May25'
 blindness = 'Deconvolution'
 #blindness = 'FitMethod'
 #blindness = 'SplineMethod'
@@ -19,7 +19,7 @@ converge = ''
 NTel = "_Ntel3to4"
 
 e2p_source = ''
-e2p_folder = 'output_May19'
+e2p_folder = 'output_May25'
 
 doTheta2 = True
 doRaDec = False
@@ -36,14 +36,21 @@ source_list = []
 #source_list  += ['BrandonValidation']
 #source_list  += ['DarkField']
 source_list  += ['Segue1V6']
-#source_list  += ['PKS1424']
-#source_list  += ['Crab']
-#source_list  += ['H1426']
-#source_list  += ['3C264']
-#source_list  += ['IC443HotSpot']
-#source_list  += ['Ton599']
+source_list  += ['1ES0229']
+source_list  += ['PKS1424']
+source_list  += ['Crab']
+source_list  += ['G079']
+source_list  += ['Mrk421']
+source_list  += ['RGBJ0710']
+source_list  += ['3C264']
+source_list  += ['IC443HotSpot']
+source_list  += ['Proton']
+#source_list  += ['M82']
+source_list  += ['CasA']
+source_list  += ['H1426']
 #source_list  += ['MGRO_J1908_V5']
 #source_list  += ['Segue1V5']
+##source_list  += ['Ton599']
 #source_list  += ['VA_Segue1']
 #source_list  += ['VA_Geminga']
 
@@ -60,18 +67,18 @@ Azim_upper_list = []
 #Elev_upper_list += [85]
 #Azim_lower_list += [0]
 #Azim_upper_list += [360]
-#Elev_lower_list += [50]
-#Elev_upper_list += [90]
-#Azim_lower_list += [0]
-#Azim_upper_list += [360]
+Elev_lower_list += [60]
+Elev_upper_list += [90]
+Azim_lower_list += [0]
+Azim_upper_list += [360]
 #Elev_lower_list += [50]
 #Elev_upper_list += [70]
 #Azim_lower_list += [0]
 #Azim_upper_list += [360]
-Elev_lower_list += [70]
-Elev_upper_list += [90]
-Azim_lower_list += [0]
-Azim_upper_list += [360]
+#Elev_lower_list += [70]
+#Elev_upper_list += [90]
+#Azim_lower_list += [0]
+#Azim_upper_list += [360]
 #Elev_lower_list += [50]
 #Elev_upper_list += [90]
 #Azim_lower_list += [0]
@@ -83,6 +90,8 @@ Azim_upper_list += [360]
 
 CRs_included = [1,2,3,4,5,6]
 SRs_included = [1,2,3,4,5,6]
+#CRs_included = [1,2,3,4,5]
+#SRs_included = [1,2,3,4]
 
 #Elev_lower_cut = 20
 #Elev_upper_cut = 50
@@ -95,14 +104,10 @@ Azim_upper_cut = 360
 
 Theta2_lower_cut = 2
 Theta2_upper_cut = 100
-#mscw_cut = 'MSCWCut5'
-#mscw_blind = 'MSCWBlind5'
+#Theta2_lower_cut = 0
+#Theta2_upper_cut = 100
 mscw_cut = 'MSCWCut10'
 mscw_blind = 'MSCWBlind10'
-#mscw_cut = 'MSCWCut10'
-#mscw_blind = 'MSCWBlind15'
-#mscw_cut = 'MSCWCut-9'
-#mscw_blind = 'MSCWBlind-9'
 
 ErecS_lower_cut = 100
 ErecS_upper_cut = 1e10 
@@ -119,9 +124,9 @@ energy_list = []
 #energy_list += [282]
 #energy_list += [335]
 #energy_list += [398]
-energy_list += [473]
+#energy_list += [473]
 energy_list += [562]
-#energy_list += [667]
+energy_list += [667]
 #energy_list += [794]
 #energy_list += [943]
 #energy_list += [1122]
@@ -133,6 +138,12 @@ energy_list += [562]
 #energy_list += [4467]
 #energy_list += [6310]
 #energy_list += [8913]
+
+
+McGill_energy = [335,376,422,473,531,596,668,749,840,995,1253]
+McGill_energy_error = [0,0,0,0,0,0,0,0,0,0,0]
+McGill_electron_flux = [314,210,149,97.6,71.7,44.8,35.2,23.3,13.8,6.4,2.69]
+McGill_electron_error = [9.7,8.5,5.7,4.7,3.1,2.5,1.4,1.2,0.72,0.47,0.27]
 
 Variable = ''
 xtitle = ''
@@ -521,16 +532,11 @@ def MakeComparisonPlot(Hists,legends,colors,title,name,maxhight,logx,logy):
     pad3.SetBottomMargin(0.0)
     pad3.SetTopMargin(0.03)
     pad3.SetBorderMode(1)
-    pad1 = ROOT.TPad("pad1","pad1",0,0.3,1,0.8)
-    pad1.SetBottomMargin(0.0)
+    pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.8)
+    pad1.SetBottomMargin(0.1)
     pad1.SetTopMargin(0.0)
     pad1.SetBorderMode(0)
-    pad2 = ROOT.TPad("pad2","pad2",0,0,1,0.3)
-    pad2.SetBottomMargin(0.39)
-    pad2.SetTopMargin(0.0)
-    pad2.SetBorderMode(0)
     if logy: pad1.SetGrid()
-    pad2.Draw()
     pad1.Draw()
     pad3.Draw()
 
@@ -564,14 +570,14 @@ def MakeComparisonPlot(Hists,legends,colors,title,name,maxhight,logx,logy):
             for h in range(0,len(Hists)):
                 Hists[h].GetXaxis().SetRangeUser(low_end,high_end)
 
-    if not doSpline:
-        if not logy: Hists[max_hist].SetMinimum(0)
-        else: Hists[max_hist].SetMinimum(0.1)
+    #if not doSpline:
+    #    if not logy: Hists[max_hist].SetMinimum(0)
+    #    else: Hists[max_hist].SetMinimum(0.1)
     if not maxhight==0: Hists[max_hist].SetMaximum(maxhight)
     Hists[max_hist].Draw("E")
 
-    Hists[0].SetLineWidth(3)
     for h in range(0,len(Hists)):
+        #if colors[h]==1 or colors[h]==2: Hists[0].SetLineWidth(3)
         if Hists[h]!=0:
             Hists[h].SetLineColor(colors[h])
             Hists[h].Draw("E same")
@@ -590,51 +596,9 @@ def MakeComparisonPlot(Hists,legends,colors,title,name,maxhight,logx,logy):
             legend.AddEntry(Hists[h],'%s (%0.2f,%0.2f)'%(legends[h],Hists[h].GetMean(),Hists[h].GetRMS()),"pl")
     legend.Draw("SAME")
 
-    pad2.cd()
-    Hist_Band = Hists[0].Clone()
-    for b in range(0,Hist_Band.GetNbinsX()):
-        Hist_Band.SetBinContent(b+1,1)
-        Hist_Band.SetBinError(b+1,0.0)
-        if doSpline:
-            Hist_Band.SetBinContent(b+1,0)
-            Hist_Band.SetBinError(b+1,0.0)
-    Hist_Band.SetMarkerSize(0)
-    Hist_Band.GetXaxis().SetTitle(title)
-    Hist_Band.GetXaxis().SetTitleOffset(1.1)
-    Hist_Band.GetXaxis().SetTitleSize(0.13)
-    Hist_Band.GetXaxis().SetLabelSize(0.1)
-    Hist_Band.GetYaxis().SetLabelSize(0.1)
-    Hist_Band.GetYaxis().SetTitleOffset(0.3)
-    Hist_Band.GetYaxis().SetTitle("ratio")
-    if doSpline:
-        Hist_Band.GetYaxis().SetTitle("diff.")
-    Hist_Band.GetYaxis().SetTitleSize(0.13)
-    Hist_Band.GetYaxis().SetNdivisions(505)
-    Hist_Band.SetMaximum(1.5)
-    Hist_Band.SetMinimum(0.5)
-    if doSpline:
-        Hist_Band.SetMaximum(0.5)
-        Hist_Band.SetMinimum(-2.5)
-    if logy:
-        Hist_Band.SetMaximum(2.0)
-        Hist_Band.SetMinimum(0.0)
-    Hist_Band.Draw("e2")
-    Hist_Ratio = []
-    for h in range(0,len(Hists)):
-        Hist_Ratio += [Hists[h].Clone()]
-    for h in range(1,len(Hists)):
-        if doSpline:
-            Hist_Ratio[h].Add(Hists[0],-1.)
-        else:
-            Hist_Ratio[h].Divide(Hists[0])
-        if logy: 
-            for b in range(0,Hist_Ratio[h].GetNbinsX()):
-                Hist_Ratio[h].SetBinError(b+1,0.)
-        Hist_Ratio[h].Draw("E same")
 
     if logx: 
         pad1.SetLogx()
-        pad2.SetLogx()
 
     c_both.SaveAs('output_plots/%s_%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s.pdf'%(name,source,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,mscw_blind))
 
@@ -1056,8 +1020,8 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     if 'MSCW' in name:
         low_end = Hists[0].GetMean()-3.*Hists[0].GetRMS()
         high_end = Hists[0].GetMean()+3.*Hists[0].GetRMS()
-        #low_end = -2.
-        #high_end = 10.
+        low_end = -2.
+        high_end = 12.
         Hists[max_hist].GetXaxis().SetRangeUser(low_end,high_end)
     elif 'MSCL' in name:
         low_end = Hists[0].GetMean()-3.*Hists[0].GetRMS()
@@ -1071,7 +1035,7 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     #Hists[0].SetMinimum(0)
     #Hists[0].Draw("E")
 
-    fill_color = [38,30]
+    fill_color = [38,30,46]
     if doSum:
         stack = ROOT.THStack("stack", "")
         Hist_Sum = Hists[1].Clone()
@@ -1132,8 +1096,8 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     data_SR, err_SR = IntegralAndError(Hists[0],norm_bin_low_target,norm_bin_up_target)
     err_bkg = 0
     predict_bkg = 0
-    predict_bkg, err_bkg = IntegralAndError(Hist_Sum,norm_bin_low_target,norm_bin_up_target)
-    #predict_bkg, err_bkg = IntegralAndSystError(Hist_Sum,norm_bin_low_target,norm_bin_up_target,syst)
+    predict_bkg, err_bkg = IntegralAndError(Hists[1],norm_bin_low_target,norm_bin_up_target)
+    #predict_bkg, err_bkg = IntegralAndSystError(Hists[1],norm_bin_low_target,norm_bin_up_target,syst)
     lumilab2 = ROOT.TLatex(0.15,0.60,'Excess (RDBM) = %0.1f#pm%0.1f'%(data_SR-predict_bkg,pow(err_SR*err_SR+err_bkg*err_bkg,0.5)) )
     lumilab2.SetNDC()
     lumilab2.SetTextSize(0.15)
@@ -1502,6 +1466,7 @@ Elev_upper_cut = Elev_upper_list[0]
 Azim_lower_cut = Azim_lower_list[0]
 Azim_upper_cut = Azim_upper_list[0]
 FilePath = '%s/%s_%s%s_Elev%sto%s_Azim%sto%s_Theta2%sto%s_%s_%s%s.root'%(e2p_folder,blindness,e2p_source,NTel,Elev_lower_cut,Elev_upper_cut,Azim_lower_cut,Azim_upper_cut,Theta2_lower_cut,Theta2_upper_cut,mscw_cut,mscw_blind,converge)
+print 'Get %s'%(FilePath)
 TargetFile=ROOT.TFile(FilePath)
 InfoTree = TargetFile.Get("InfoTree")
 InfoTree.GetEntry(0)
@@ -1518,6 +1483,16 @@ color_ruo_predict = []
 Hist_dark_predict = []
 legend_dark_predict = []
 color_dark_predict = []
+
+McGill_energy_array = array('d', McGill_energy)
+McGill_energy_error_array = array('d', McGill_energy_error)
+McGill_electron_flux_array = array('d', McGill_electron_flux)
+McGill_electron_error_array = array('d', McGill_electron_error)
+Graph_McGill_electron = ROOT.TGraphErrors(len(McGill_energy),McGill_energy_array,McGill_electron_flux_array,McGill_energy_error_array,McGill_electron_error_array)
+Hist_e2p += [Graph_McGill_electron]
+legend_e2p = ["VERITAS paper"]
+color_e2p = [1]
+
 
 for s in range(0,len(source_list)):
 
@@ -1553,14 +1528,22 @@ for s in range(0,len(source_list)):
         exposure_hours = InfoTree.exposure_hours
 
         Hist_Measured_Electron_Flux = SelectDiagnosticaHistograms(folder,source,'Measured_Electron_Flux',True)
+        #for binx in range(0,Hist_Measured_Electron_Flux.GetNbinsX()):
+        #    old_bin_content = Hist_Measured_Electron_Flux.GetBinContent(binx+1)
+        #    old_bin_error = Hist_Measured_Electron_Flux.GetBinError(binx+1)
+        #    bin_center = Hist_Measured_Electron_Flux.GetBinCenter(binx+1)
+        #    new_bin_content = old_bin_content*pow(bin_center,3)
+        #    new_bin_error = old_bin_error*pow(bin_center,3)
+        #    Hist_Measured_Electron_Flux.SetBinContent(binx+1,new_bin_content)
+        #    Hist_Measured_Electron_Flux.SetBinError(binx+1,new_bin_error)
         Hist_e2p += [Hist_Measured_Electron_Flux]
         legend_e2p += ['%s %s (%0.1f hrs)'%(source,tele_pointing,exposure_hours)]
         Hist_ruo_predict += [ROOT.TH1D("Hist_ruo_predict_%s"%(source),"",len(energy_list)-1,array('d',energy_list))]
         legend_ruo_predict += ['%s %s (%0.1f hrs)'%(source,tele_pointing,exposure_hours)]
         Hist_dark_predict += [ROOT.TH1D("Hist_dark_predict_%s"%(source),"",len(energy_list)-1,array('d',energy_list))]
         legend_dark_predict += ['%s %s (%0.1f hrs)'%(source,tele_pointing,exposure_hours)]
-        if s+elev<4:
-            color_e2p += [s+elev+1]
+        if s+elev<3:
+            color_e2p += [s+elev+2]
             color_ruo_predict += [s+elev+1]
             color_dark_predict += [s+elev+1]
         else:
@@ -1573,8 +1556,7 @@ for s in range(0,len(source_list)):
 
         for e in range(0,len(energy_list)-1):
             ErecS_lower_cut = energy_list[e]
-            ErecS_upper_cut = energy_list[e+1]
-
+            ErecS_upper_cut = energy_list[e+1] 
 
             which_method = 'MSCW'
 
@@ -1590,14 +1572,17 @@ for s in range(0,len(source_list)):
                 Nbins = Hist_Target_SR_MSCW.GetNbinsX()
                 lower_end = Hist_Target_SR_MSCW.GetBinLowEdge(1)
                 upper_end = Hist_Target_SR_MSCW.GetBinLowEdge(Nbins+1)
-                Hist_MC_SRall_MSCW = ROOT.TH1D("Hist_MC_SRall_MSCW","",Nbins,lower_end,upper_end)
+                Hist_ElectronMC_SRall_MSCW = ROOT.TH1D("Hist_ElectronMC_SRall_MSCW","",Nbins,lower_end,upper_end)
+                Hist_GammaMC_SRall_MSCW = ROOT.TH1D("Hist_GammaMC_SRall_MSCW","",Nbins,lower_end,upper_end)
                 Hist_Target_SRall_MSCW = ROOT.TH1D("Hist_Target_SRall_MSCW","",Nbins,lower_end,upper_end)
                 Hist_Target_BkgSRall_MSCW = ROOT.TH1D("Hist_Target_BkgSRall_MSCW","",Nbins,lower_end,upper_end)
                 for sr in SRs_included:
-                    Hist_MC_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'MC_SR%s_MSCW_SumRuns'%(sr),False)
+                    Hist_ElectronMC_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'Scaled_ElectronMC_SR%s_MSCW_SumRuns'%(sr),False)
+                    Hist_GammaMC_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'Scaled_GammaMC_SR%s_MSCW_SumRuns'%(sr),False)
                     Hist_Target_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_SR%s_MSCW_SumRuns'%(sr),False)
                     Hist_Target_BkgSR_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_BkgSR%s_MSCW_SumRuns'%(sr),False)
-                    Hist_MC_SRall_MSCW.Add(Hist_MC_SR_MSCW)
+                    Hist_ElectronMC_SRall_MSCW.Add(Hist_ElectronMC_SR_MSCW)
+                    Hist_GammaMC_SRall_MSCW.Add(Hist_GammaMC_SR_MSCW)
                     Hist_Target_SRall_MSCW.Add(Hist_Target_SR_MSCW)
                     Hist_Target_BkgSRall_MSCW.Add(Hist_Target_BkgSR_MSCW)
                     Hists = []
@@ -1607,11 +1592,14 @@ for s in range(0,len(source_list)):
                     legends += ['%s %s'%(source,tele_pointing)]
                     colors += [1]
                     Hists += [Hist_Target_BkgSR_MSCW]
-                    legends += ['Bkg (RDBM)']
+                    legends += ['hadron (RDBM)']
                     colors += [4]
-                    Hists += [Hist_MC_SR_MSCW]
+                    Hists += [Hist_ElectronMC_SR_MSCW]
                     legends += ['electron (MC)']
                     colors += [3]
+                    Hists += [Hist_GammaMC_SR_MSCW]
+                    legends += ['#gamma ray (MC)']
+                    colors += [2]
                     plotname = 'Target_SR%s_MSCW_E%s'%(sr,ErecS_lower_cut)
                     title = 'MSCW'
                     MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,-1)
@@ -1622,11 +1610,14 @@ for s in range(0,len(source_list)):
                 legends += ['%s %s'%(source,tele_pointing)]
                 colors += [1]
                 Hists += [Hist_Target_BkgSRall_MSCW]
-                legends += ['Bkg (RDBM)']
+                legends += ['hadron (RDBM)']
                 colors += [4]
-                Hists += [Hist_MC_SRall_MSCW]
+                Hists += [Hist_ElectronMC_SRall_MSCW]
                 legends += ['electron (MC)']
                 colors += [3]
+                Hists += [Hist_GammaMC_SRall_MSCW]
+                legends += ['#gamma ray (MC)']
+                colors += [2]
                 plotname = 'Target_SRall_MSCW_E%s'%(ErecS_lower_cut)
                 title = 'MSCW'
                 MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,-1)
@@ -1649,7 +1640,6 @@ for s in range(0,len(source_list)):
                 legends = []
                 colors = []
                 count = 0
-                plotname = 'Target_MultiSR_MSCW_E%s'%(ErecS_lower_cut)
                 title = 'MSCW'
                 for sr in SRs_included:
                     Hist_Target_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_SR%s_MSCW_SumRuns'%(sr),False)
@@ -1657,23 +1647,14 @@ for s in range(0,len(source_list)):
                     Hists += [Hist_Target_SR_MSCW]
                     count += 1
                     legends += ['L-%s'%(count-1)]
-                    colors += [count]
-                MakeComparisonPlot(Hists,legends,colors,title,plotname,0,False,False)
-                #MakeReyleighPlot(Hists,legends,colors,title,plotname,False,False)
-                #MakeBlindReyleighPlot(Hists,legends,colors,title,plotname,False,False)
-                Hists = []
-                legends = []
-                colors = []
-                count = 0
-                plotname = 'Target_MultiBkgSR_MSCW_E%s'%(ErecS_lower_cut)
-                title = 'MSCW'
-                for sr in SRs_included:
-                    Hist_Target_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_BkgSR%s_MSCW_SumRuns'%(sr),False)
-                    Hists += [Hist_Target_SR_MSCW]
-                    count += 1
-                    legends += ['L-%s'%(count-1)]
-                    colors += [count]
-                MakeComparisonPlot(Hists,legends,colors,title,plotname,0,False,False)
+                    colors += [16]
+                for sr in range(0,len(SRs_included)-1):
+                    colors[sr] = 4
+                    colors[sr+1] = 2
+                    plotname = 'Target_MultiSR%s_MSCW_E%s'%(sr+1,ErecS_lower_cut)
+                    MakeComparisonPlot(Hists,legends,colors,title,plotname,0,False,False)
+                    colors[sr] = 16
+                    colors[sr+1] = 16
 
                 Hist_mean = []
                 legend_mscw = []
@@ -1831,56 +1812,75 @@ for s in range(0,len(source_list)):
                 Hist_Target_BkgSRall_theta2 = ROOT.TH1D("Hist_Target_BkgSRall_theta2","",Nbins,lower_end,upper_end)
                 Hist_Target_LZABkgSRall_theta2 = ROOT.TH1D("Hist_Target_LZABkgSRall_theta2","",Nbins,lower_end,upper_end)
                 Hist_Target_SZABkgSRall_theta2 = ROOT.TH1D("Hist_Target_SZABkgSRall_theta2","",Nbins,lower_end,upper_end)
-                Hist_MC_BkgSRall_theta2 = ROOT.TH1D("Hist_MC_BkgSRall_theta2","",Nbins,lower_end,upper_end)
+                Hist_ElectronMC_BkgSRall_theta2 = ROOT.TH1D("Hist_ElectronMC_BkgSRall_theta2","",Nbins,lower_end,upper_end)
                 ideal_nbins = float(Hist_Target_SRall_MSCW.Integral())/avg_events_per_bin
                 n_merge = 1
-                while (Hist_Target_SRall_theta2.GetNbinsX()>ideal_nbins and n_merge<64) or (n_merge<8):
-                    Hist_Target_BkgSRall_theta2.Rebin(2)
-                    Hist_Target_LZABkgSRall_theta2.Rebin(2)
-                    Hist_Target_SZABkgSRall_theta2.Rebin(2)
-                    Hist_MC_BkgSRall_theta2.Rebin(2)
-                    Hist_Target_SRall_theta2.Rebin(2)
-                    n_merge = n_merge*2
+                Hist_Target_BkgSRall_theta2.Rebin(4)
+                Hist_Target_LZABkgSRall_theta2.Rebin(4)
+                Hist_Target_SZABkgSRall_theta2.Rebin(4)
+                Hist_ElectronMC_BkgSRall_theta2.Rebin(4)
+                Hist_Target_SRall_theta2.Rebin(4)
+                #while (Hist_Target_SRall_theta2.GetNbinsX()>ideal_nbins and n_merge<64) or (n_merge<8):
+                #    Hist_Target_BkgSRall_theta2.Rebin(2)
+                #    Hist_Target_LZABkgSRall_theta2.Rebin(2)
+                #    Hist_Target_SZABkgSRall_theta2.Rebin(2)
+                #    Hist_ElectronMC_BkgSRall_theta2.Rebin(2)
+                #    Hist_Target_SRall_theta2.Rebin(2)
+                #    n_merge = n_merge*2
                 for sr in SRs_included:
                     Hist_Target_SR_theta2 = SelectDiagnosticaHistograms(folder,source,'Target_SR%s_theta2'%(sr),False)
                     Hist_Target_Bkg_theta2 = SelectDiagnosticaHistograms(folder,source,'Target_CR%s_theta2'%(sr),False)
                     Hist_Target_LZABkg_theta2 = SelectDiagnosticaHistograms(folder,source,'TargetLZA_CR%s_theta2'%(sr),False)
                     Hist_Target_SZABkg_theta2 = SelectDiagnosticaHistograms(folder,source,'TargetSZA_CR%s_theta2'%(sr),False)
                     Hist_Target_BkgSR_MSCW = SelectDiagnosticaHistograms(folder,source,'Target_BkgSR%s_MSCW_SumRuns'%(sr),False)
-                    Hist_MC_SR_theta2 = SelectDiagnosticaHistograms(folder,source,'Target_SR%s_theta2'%(sr),False)
-                    Hist_MC_Bkg_theta2 = SelectDiagnosticaHistograms(folder,source,'Target_CR%s_theta2'%(sr),False)
-                    Hist_MC_LZABkg_theta2 = SelectDiagnosticaHistograms(folder,source,'TargetLZA_CR%s_theta2'%(sr),False)
-                    Hist_MC_SZABkg_theta2 = SelectDiagnosticaHistograms(folder,source,'TargetSZA_CR%s_theta2'%(sr),False)
-                    Hist_MC_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'MC_SR%s_MSCW_SumRuns'%(sr),False)
+                    Hist_ElectronMC_SR_theta2 = SelectDiagnosticaHistograms(folder,source,'Target_SR%s_theta2'%(sr),False)
+                    Hist_ElectronMC_Bkg_theta2 = SelectDiagnosticaHistograms(folder,source,'Target_CR%s_theta2'%(sr),False)
+                    Hist_ElectronMC_LZABkg_theta2 = SelectDiagnosticaHistograms(folder,source,'TargetLZA_CR%s_theta2'%(sr),False)
+                    Hist_ElectronMC_SZABkg_theta2 = SelectDiagnosticaHistograms(folder,source,'TargetSZA_CR%s_theta2'%(sr),False)
+                    Hist_ElectronMC_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'MC_SR%s_MSCW_SumRuns'%(sr),False)
                     scalesky, scalesky_err = GetSkyScaleFactor(Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_Target_Bkg_theta2)
-                    scalesky_LZA, scalesky_err_LZA = GetSkyScaleFactor(Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_Target_LZABkg_theta2)
-                    scalesky_SZA, scalesky_err_SZA = GetSkyScaleFactor(Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_Target_SZABkg_theta2)
-                    mc_scalesky, mc_scalesky_err = GetSkyScaleFactor(Hist_MC_SR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_MC_Bkg_theta2)
-                    mc_scalesky_LZA, mc_scalesky_err_LZA = GetSkyScaleFactor(Hist_MC_SR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_MC_LZABkg_theta2)
-                    mc_scalesky_SZA, mc_scalesky_err_SZA = GetSkyScaleFactor(Hist_MC_SR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_MC_SZABkg_theta2)
+                    if not source=='Proton':
+                        scalesky_LZA, scalesky_err_LZA = GetSkyScaleFactor(Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_Target_LZABkg_theta2)
+                        scalesky_SZA, scalesky_err_SZA = GetSkyScaleFactor(Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_Target_SZABkg_theta2)
+                    mc_scalesky, mc_scalesky_err = GetSkyScaleFactor(Hist_ElectronMC_SR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_ElectronMC_Bkg_theta2)
+                    if not source=='Proton':
+                        mc_scalesky_LZA, mc_scalesky_err_LZA = GetSkyScaleFactor(Hist_ElectronMC_SR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_ElectronMC_LZABkg_theta2)
+                        mc_scalesky_SZA, mc_scalesky_err_SZA = GetSkyScaleFactor(Hist_ElectronMC_SR_MSCW,MSCW_lower_cut,MSCW_upper_cut,Hist_ElectronMC_SZABkg_theta2)
 
                     ideal_nbins = float(Hist_Target_SRall_MSCW.Integral())/avg_events_per_bin
                     n_merge = 1
-                    while (Hist_Target_SR_theta2.GetNbinsX()>ideal_nbins and n_merge<64) or (n_merge<8):
-                        Hist_Target_Bkg_theta2.Rebin(2)
-                        Hist_Target_LZABkg_theta2.Rebin(2)
-                        Hist_Target_SZABkg_theta2.Rebin(2)
-                        Hist_Target_SR_theta2.Rebin(2)
-                        Hist_MC_LZABkg_theta2.Rebin(2)
-                        Hist_MC_SZABkg_theta2.Rebin(2)
-                        Hist_MC_SR_theta2.Rebin(2)
-                        n_merge = n_merge*2
+                    Hist_Target_Bkg_theta2.Rebin(4)
+                    Hist_Target_LZABkg_theta2.Rebin(4)
+                    Hist_Target_SZABkg_theta2.Rebin(4)
+                    Hist_Target_SR_theta2.Rebin(4)
+                    Hist_ElectronMC_LZABkg_theta2.Rebin(4)
+                    Hist_ElectronMC_SZABkg_theta2.Rebin(4)
+                    Hist_ElectronMC_SR_theta2.Rebin(4)
+                    #while (Hist_Target_SR_theta2.GetNbinsX()>ideal_nbins and n_merge<64) or (n_merge<8):
+                    #    Hist_Target_Bkg_theta2.Rebin(2)
+                    #    Hist_Target_LZABkg_theta2.Rebin(2)
+                    #    Hist_Target_SZABkg_theta2.Rebin(2)
+                    #    Hist_Target_SR_theta2.Rebin(2)
+                    #    Hist_ElectronMC_LZABkg_theta2.Rebin(2)
+                    #    Hist_ElectronMC_SZABkg_theta2.Rebin(2)
+                    #    Hist_ElectronMC_SR_theta2.Rebin(2)
+                    #    n_merge = n_merge*2
                     Theta2HistScale(Hist_Target_Bkg_theta2,scalesky,scalesky_err)
-                    Theta2HistScale(Hist_MC_Bkg_theta2,mc_scalesky,mc_scalesky_err)
-                    Theta2HistScale(Hist_Target_LZABkg_theta2,scalesky_LZA,scalesky_err_LZA)
-                    Theta2HistScale(Hist_MC_LZABkg_theta2,mc_scalesky_LZA,mc_scalesky_err_LZA)
-                    Theta2HistScale(Hist_Target_SZABkg_theta2,scalesky_SZA,scalesky_err_SZA)
-                    Theta2HistScale(Hist_MC_SZABkg_theta2,mc_scalesky_SZA,mc_scalesky_err_SZA)
+                    if not mc_scalesky==0:
+                        Theta2HistScale(Hist_ElectronMC_Bkg_theta2,mc_scalesky,mc_scalesky_err)
+                    else:
+                        Hist_ElectronMC_Bkg_theta2.Scale(0)
+                    if not source=='Proton':
+                        Theta2HistScale(Hist_Target_LZABkg_theta2,scalesky_LZA,scalesky_err_LZA)
+                        Theta2HistScale(Hist_ElectronMC_LZABkg_theta2,mc_scalesky_LZA,mc_scalesky_err_LZA)
+                        Theta2HistScale(Hist_Target_SZABkg_theta2,scalesky_SZA,scalesky_err_SZA)
+                        Theta2HistScale(Hist_ElectronMC_SZABkg_theta2,mc_scalesky_SZA,mc_scalesky_err_SZA)
                     Hist_Target_SRall_theta2.Add(Hist_Target_SR_theta2)
                     Hist_Target_BkgSRall_theta2.Add(Hist_Target_Bkg_theta2)
-                    Hist_Target_LZABkgSRall_theta2.Add(Hist_Target_LZABkg_theta2)
-                    Hist_Target_SZABkgSRall_theta2.Add(Hist_Target_SZABkg_theta2)
-                    Hist_MC_BkgSRall_theta2.Add(Hist_MC_Bkg_theta2)
+                    if not source=='Proton':
+                        Hist_Target_LZABkgSRall_theta2.Add(Hist_Target_LZABkg_theta2)
+                        Hist_Target_SZABkgSRall_theta2.Add(Hist_Target_SZABkg_theta2)
+                    Hist_ElectronMC_BkgSRall_theta2.Add(Hist_ElectronMC_Bkg_theta2)
                     Hists = []
                     legends = []
                     colors = []
@@ -1890,7 +1890,7 @@ for s in range(0,len(source_list)):
                     Hists += [Hist_Target_Bkg_theta2]
                     legends += ['Bkg']
                     colors += [4]
-                    Hists += [Hist_MC_Bkg_theta2]
+                    Hists += [Hist_ElectronMC_Bkg_theta2]
                     legends += ['electron (MC)']
                     colors += [3]
                     plotname = 'Target_SR%s_theta2_E%s'%(sr,ErecS_lower_cut)
@@ -1906,28 +1906,29 @@ for s in range(0,len(source_list)):
                 Hists += [Hist_Target_BkgSRall_theta2]
                 legends += ['Bkg']
                 colors += [4]
-                Hists += [Hist_MC_BkgSRall_theta2]
+                Hists += [Hist_ElectronMC_BkgSRall_theta2]
                 legends += ['electron (MC)']
                 colors += [3]
                 plotname = 'Target_SRall_theta2_E%s'%(ErecS_lower_cut)
                 title = 'theta2'
                 syst = 0
                 MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,0,Theta2_upper_limit,syst)
-                Hists = []
-                legends = []
-                colors = []
-                Hists += [Hist_Target_BkgSRall_theta2]
-                legends += ['elev. 50-90']
-                colors += [1]
-                Hists += [Hist_Target_LZABkgSRall_theta2]
-                legends += ['elev. 50-70']
-                colors += [2]
-                Hists += [Hist_Target_SZABkgSRall_theta2]
-                legends += ['elev. 70-90']
-                colors += [4]
-                plotname = 'Target_diff_theta2_E%s'%(ErecS_lower_cut)
-                title = 'theta2'
-                MakeComparisonPlot(Hists,legends,colors,title,plotname,0,False,False)
+                if not source=='Proton':
+                    Hists = []
+                    legends = []
+                    colors = []
+                    Hists += [Hist_Target_BkgSRall_theta2]
+                    legends += ['elev. 50-90']
+                    colors += [1]
+                    Hists += [Hist_Target_LZABkgSRall_theta2]
+                    legends += ['elev. 50-70']
+                    colors += [2]
+                    Hists += [Hist_Target_SZABkgSRall_theta2]
+                    legends += ['elev. 70-90']
+                    colors += [4]
+                    plotname = 'Target_diff_theta2_E%s'%(ErecS_lower_cut)
+                    title = 'theta2'
+                    MakeComparisonPlot(Hists,legends,colors,title,plotname,0,False,False)
 
 
         for run in range(0,len(used_runs)):
@@ -1945,10 +1946,10 @@ for s in range(0,len(source_list)):
             s2b = 0.
             s2b_err = 0.
             s2b, s2b_err = S2B_ratio(Hist_Target_SR_MSCW, Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
-            Hist_MC_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'MC_SR_MSCW_SumRuns_SumSRs',True)
+            Hist_ElectronMC_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'MC_SR_MSCW_SumRuns_SumSRs',True)
             e2p_ratio = 0
             e2p_error = 0
-            e2p_ratio, e2p_error = S2B_ratio(Hist_MC_SR_MSCW,Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
+            e2p_ratio, e2p_error = S2B_ratio(Hist_ElectronMC_SR_MSCW,Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
             r2b, r2b_err = Variation_ratio(Hist_Target_SR_MSCW, Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,0,0,0)
             d2b, d2b_err = Variation_ratio(Hist_Target_SR_MSCW, Hist_Dark_SR_MSCW,MSCW_lower_cut,MSCW_upper_cut,0,0,0)
             print 'E %s-%s, S/B = %0.3f +/- %0.3f'%(ErecS_lower_cut,ErecS_upper_cut,s2b,s2b_err)
@@ -1965,6 +1966,8 @@ MakeComparisonPlotNoRatio(Hist_dark_predict,legend_dark_predict,color_dark_predi
 for e in range(0,len(energy_list)-1):
     Hist_mean = []
     Hist_mscw = []
+    Hist_endpoint_0 = []
+    Hist_endpoint_1 = []
     legend_mscw = []
     color_mscw = []
     ErecS_lower_cut = energy_list[e]
@@ -2002,9 +2005,9 @@ for e in range(0,len(energy_list)-1):
             cosmic_electron = InfoTree.cosmic_electron
             exposure_hours = InfoTree.exposure_hours
 
-            Hist_Target_SR_MSCW_Combined = SelectDiagnosticaHistograms(folder,source,'Target_SR_MSCW_SumRuns_SumSRs',False)
-            Hist_Target_SR_MSCW_Combined.Scale(1./exposure_hours)
-            Hist_mscw += [Hist_Target_SR_MSCW_Combined]
+            #Hist_Target_SR_MSCW_Combined = SelectDiagnosticaHistograms(folder,source,'Target_SR_MSCW_SumRuns_SumSRs',False)
+            #Hist_Target_SR_MSCW_Combined.Scale(1./exposure_hours)
+            #Hist_mscw += [Hist_Target_SR_MSCW_Combined]
 
             Hists = []
             for sr in CRs_included:
@@ -2015,8 +2018,8 @@ for e in range(0,len(energy_list)-1):
                 Hists += [Hist_Target_SR_MSCW]
             Hist_mean += [Hists]
 
-    plotname = 'Target_MultiSource_MSCW_E%s'%(ErecS_lower_cut)
-    MakeComparisonPlot(Hist_mscw,legend_mscw,color_mscw,'MSCW',plotname,0,False,False)
+    #plotname = 'Target_MultiSource_MSCW_E%s'%(ErecS_lower_cut)
+    #MakeComparisonPlot(Hist_mscw,legend_mscw,color_mscw,'MSCW',plotname,0,False,False)
     plotname = 'Target_MultiSource_Mean_E%s'%(ErecS_lower_cut)
     MakeMeanComparisonPlot(Hist_mean,legend_mscw,color_mscw,'mean MSCW',plotname,0,False,False)
     plotname = 'Target_MultiSource_RMS_E%s'%(ErecS_lower_cut)
@@ -2064,10 +2067,10 @@ if doRaDec:
                         Hist_Target_SR_RaDec.Rebin2D(2,2)
                         Hist_Target_Bkg_RaDec.Rebin2D(2,2)
 
-                    Hist_MC_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'MC_SR%s_MSCW_SumRuns'%(sr),True)
+                    Hist_ElectronMC_SR_MSCW = SelectDiagnosticaHistograms(folder,source,'Scaled_ElectronMC_SR%s_MSCW_SumRuns'%(sr),True)
                     e2p_ratio = 0
                     e2p_error = 0
-                    e2p_ratio, e2p_error = S2B_ratio(Hist_MC_SR_MSCW,Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
+                    e2p_ratio, e2p_error = S2B_ratio(Hist_ElectronMC_SR_MSCW,Hist_Target_BkgSR_MSCW,MSCW_lower_cut,MSCW_upper_cut,-1)
                     RaDecHistScale(Hist_Target_Bkg_RaDec,scalesky,scalesky_err)
                     RaDecHistScale(Hist_Target_Bkg_RaDec,e2p_ratio+1.,e2p_error)
                     Hist_Target_SRall_RaDec.Add(Hist_Target_SR_RaDec)
