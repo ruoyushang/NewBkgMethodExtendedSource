@@ -529,18 +529,18 @@ void AddSystematics(TH1* Hist_SR,TH1* Hist_Bkg)
         Nbins += 1.;
         if (Hist_Bkg->GetBinContent(i+1)!=0)
         {
-            rel_syst += abs(Hist_SR->GetBinContent(i+1)-Hist_Bkg->GetBinContent(i+1))/Hist_Bkg->GetBinError(i+1);
-        }
-        else
-        {
-            rel_syst += 1.;
+            double this_syst = abs(Hist_SR->GetBinContent(i+1)-Hist_Bkg->GetBinContent(i+1));
+            double this_stat = pow(Hist_SR->GetBinError(i+1),2)+pow(Hist_Bkg->GetBinError(i+1),2);
+            this_stat = pow(this_stat,0.5);
+            if (this_stat>this_syst) continue;
+            rel_syst += abs(Hist_SR->GetBinContent(i+1)-Hist_Bkg->GetBinContent(i+1))/Hist_Bkg->GetBinContent(i+1);
         }
     }
     rel_syst = rel_syst/Nbins;
     for (int i=0;i<Hist_SR->GetNbinsX();i++)
     {
         double old_err = Hist_Bkg->GetBinError(i+1);
-        double new_err = Hist_Bkg->GetBinError(i+1)*rel_syst;
+        double new_err = Hist_Bkg->GetBinContent(i+1)*rel_syst;
         if (Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind)
         {
             Hist_Bkg->SetBinError(i+1,pow(old_err*old_err+new_err*new_err,0.5));
@@ -2477,7 +2477,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 PredictNextLayer(&Hist_Scaled_GammaMC_SR_MSCW.at(e).at(0),&Hist_Scaled_ElectronMC_SR_MSCW.at(e).at(0),&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Dark_SR_MSCW.at(e).at(0),&Hist_Dark_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Dark_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Dark_BkgSR_MSCW.at(e).at(0),energy_bins[e],estimated_parameters,useOldSR,doConverge);
 
                 //AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(0));
-                //AddSystematics(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgSR_MSCW.at(e).at(0));
+                AddSystematics(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgSR_MSCW.at(e).at(0));
                 //AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0));
                 //AddSystematics3(&Hist_Target_BkgSR_MSCW.at(e).at(0));
 
@@ -2511,7 +2511,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     PredictNextLayer(&Hist_Scaled_GammaMC_SR_MSCW.at(e).at(s),&Hist_Scaled_ElectronMC_SR_MSCW.at(e).at(s),&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_SR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Dark_SR_MSCW.at(e).at(s),&Hist_Dark_SR_MSCW.at(e).at(s-1),&Hist_Dark_BkgSR_MSCW.at(e).at(s-1),&Hist_Dark_BkgSR_MSCW.at(e).at(s),energy_bins[e],estimated_parameters,useOldSR,doConverge);
 
                     //AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(s));
-                    //AddSystematics(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s));
+                    AddSystematics(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s));
                     //AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(s));
                     //AddSystematics3(&Hist_Target_BkgSR_MSCW.at(e).at(s));
 
