@@ -525,7 +525,7 @@ void AddSystematics(TH1* Hist_SR,TH1* Hist_Bkg)
     double rel_syst = 0.;
     for (int i=0;i<Hist_SR->GetNbinsX();i++)
     {
-        if (Hist_SR->GetBinCenter(i+1)>mean+5.*rms) continue;
+        if (Hist_SR->GetBinCenter(i+1)>MSCW_cut_blind+(MSCW_cut_blind-MSCW_cut_lower)) continue;
         if (Hist_SR->GetBinCenter(i+1)<MSCW_cut_blind) {
             continue;
         }
@@ -533,9 +533,9 @@ void AddSystematics(TH1* Hist_SR,TH1* Hist_Bkg)
         if (Hist_Bkg->GetBinContent(i+1)!=0)
         {
             double this_syst = abs(Hist_SR->GetBinContent(i+1)-Hist_Bkg->GetBinContent(i+1));
-            double this_stat = pow(Hist_SR->GetBinError(i+1),2)+pow(Hist_Bkg->GetBinError(i+1),2);
-            this_stat = pow(this_stat,0.5);
-            if (this_stat>this_syst) continue;
+            //double this_stat = pow(Hist_SR->GetBinError(i+1),2)+pow(Hist_Bkg->GetBinError(i+1),2);
+            //this_stat = pow(this_stat,0.5);
+            //if (this_stat>this_syst) continue;
             rel_syst += abs(Hist_SR->GetBinContent(i+1)-Hist_Bkg->GetBinContent(i+1))/Hist_Bkg->GetBinContent(i+1);
         }
     }
@@ -571,26 +571,26 @@ double FitFunction(Double_t *x, Double_t *par) {
 }
 void MakeSmoothSplineFunction(TH1* Hist_SR)
 {
-    double bin_width = Hist_SR->GetBinLowEdge(2)-Hist_SR->GetBinLowEdge(1);
-    double nbins_in_RMS = Hist_SR->GetRMS()/bin_width;
-    int knot_size = int(nbins_in_RMS/1.5);
-    if (knot_size<1) knot_size = 1;
-    else if (knot_size<2) knot_size = 1;
-    else if (knot_size<4) knot_size = 2;
-    else if (knot_size<8) knot_size = 4;
-    else if (knot_size<16) knot_size = 8;
-    else if (knot_size<32) knot_size = 16;
-    else knot_size = 32;
-    //std::cout << "Smooth spline bin size = " << knot_size << std::endl;
-    TH1D Hist_SR_rebin = TH1D("Hist_SR_rebin","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
-    Hist_SR_rebin.Reset();
-    Hist_SR_rebin.Add(Hist_SR);
-    Hist_SR_rebin.Rebin(knot_size);
-    TSpline3 spline = TSpline3(&Hist_SR_rebin);
-    for (int i=0;i<Hist_SR->GetNbinsX();i++) {
-        double x = Hist_SR->GetBinCenter(i+1);
-        Hist_SR->SetBinContent(i+1,spline.Eval(x)/double(knot_size));
-    }
+    //double bin_width = Hist_SR->GetBinLowEdge(2)-Hist_SR->GetBinLowEdge(1);
+    //double nbins_in_RMS = Hist_SR->GetRMS()/bin_width;
+    //int knot_size = int(nbins_in_RMS/1.5);
+    //if (knot_size<1) knot_size = 1;
+    //else if (knot_size<2) knot_size = 1;
+    //else if (knot_size<4) knot_size = 2;
+    //else if (knot_size<8) knot_size = 4;
+    //else if (knot_size<16) knot_size = 8;
+    //else if (knot_size<32) knot_size = 16;
+    //else knot_size = 32;
+    ////std::cout << "Smooth spline bin size = " << knot_size << std::endl;
+    //TH1D Hist_SR_rebin = TH1D("Hist_SR_rebin","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
+    //Hist_SR_rebin.Reset();
+    //Hist_SR_rebin.Add(Hist_SR);
+    //Hist_SR_rebin.Rebin(knot_size);
+    //TSpline3 spline = TSpline3(&Hist_SR_rebin);
+    //for (int i=0;i<Hist_SR->GetNbinsX();i++) {
+    //    double x = Hist_SR->GetBinCenter(i+1);
+    //    Hist_SR->SetBinContent(i+1,spline.Eval(x)/double(knot_size));
+    //}
 }
 void MakeBkgPrevious(TH1* Hist_SR,TH1* Hist_Bkg,TH1* Hist_Previous, bool includeSR)
 {
@@ -935,7 +935,7 @@ void Convolution(TH1D* Hist_source, TH1D* Hist_response, TH1D* Hist_Conv) {
         }
 }
 
-std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerHadron(TH1* Hist_ElectronMC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, double energy, std::pair <std::pair <double,double>,std::pair <double,double>> parameters, bool useOldSR, bool isDark, bool doConverge)
+std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerHadron(int niter, TH1* Hist_ElectronMC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, double energy, std::pair <std::pair <double,double>,std::pair <double,double>> parameters, bool useOldSR, bool isDark, bool doConverge)
 {
     Hist_Bkg->Reset();
     TH1D Hist_Bkg_Privous_Adapt = TH1D("Hist_Bkg_Privous_Adapt","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
@@ -966,7 +966,7 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerH
     std::cout << "Hist_SR_Temp.Integral() = " << Hist_SR_Temp.Integral() << std::endl;
     TH1D Hist_Bkg_Temp = TH1D("Hist_Bkg_Temp","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
     TH1D Hist_Kernel = TH1D("Hist_Kernel","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
-    int SR_Niter=10;
+    int SR_Niter=niter;
     double kernel_rms = parameters.first.first;
     double offset_begin = parameters.first.second;
     double endpoint_0 = parameters.second.first;
@@ -1016,8 +1016,20 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerH
 }
 void PredictNextLayer(TH1* Hist_GammaMC, TH1* Hist_Dark_ElectronMC, TH1* Hist_ElectronMC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg_Previous, TH1* Hist_Bkg, TH1* Hist_DarkSR, TH1* Hist_DarkSR_Previous, TH1* Hist_DarkBkg_Previous, TH1* Hist_DarkBkg, double energy, std::pair <std::pair <double,double>,std::pair <double,double>> parameters, bool useOldSR, bool doConverge)
 {
+    double chi2_best = 0.;
+    int niter_best = 0;
+    for (int niter=1;niter<=10;niter++)
+    {
+        parameters = PredictNextLayerHadron(niter,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg_Previous,Hist_DarkBkg,energy,parameters,useOldSR,true,doConverge);
+        double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,1);
+        if (chi2_best<chi2) {
+            chi2_best = chi2;
+            niter_best = niter;
+        } 
+    }
 
-    parameters = PredictNextLayerHadron(Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg_Previous,Hist_DarkBkg,energy,parameters,useOldSR,true,doConverge);
+    parameters = PredictNextLayerHadron(niter_best,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg_Previous,Hist_DarkBkg,energy,parameters,useOldSR,true,doConverge);
+
     std::cout << "Dark field found kernel RMS = " << parameters.first.first << std::endl;
     std::cout << "Dark field found kernel offset = " << parameters.first.second << std::endl;
     std::cout << "Dark field found endpoint 0 = " << parameters.second.first << std::endl;
@@ -1025,10 +1037,8 @@ void PredictNextLayer(TH1* Hist_GammaMC, TH1* Hist_Dark_ElectronMC, TH1* Hist_El
 
     std::cout << "estimated_endpoint0_delta = " << estimated_endpoint0_delta << std::endl;
     std::cout << "estimated_endpoint1_delta = " << estimated_endpoint1_delta << std::endl;
-    //parameters.second.first = estimated_endpoint0_delta+parameters.second.first;
-    //parameters.second.second = estimated_endpoint1_delta+parameters.second.second;
 
-    parameters = PredictNextLayerHadron(Hist_ElectronMC,Hist_SR,Hist_SR_Previous,Hist_Bkg_Previous,Hist_Bkg,energy,parameters,useOldSR,false,doConverge);
+    parameters = PredictNextLayerHadron(niter_best,Hist_ElectronMC,Hist_SR,Hist_SR_Previous,Hist_Bkg_Previous,Hist_Bkg,energy,parameters,useOldSR,false,doConverge);
     TH1D Hist_MC_Temp2 = TH1D("Hist_MC_Temp2","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
     int norm_bin_low = Hist_SR->FindBin(MSCW_cut_lower);
     int norm_bin_up = Hist_SR->FindBin(MSCW_cut_blind);
@@ -2027,8 +2037,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 MSCW = 0;
                 MSCL = 0;
                 MC_tree->GetEntry(entry);
-                MSCW += 0.3;
-                MSCL += 0.3;
+                MSCW += 0.2;
+                MSCL += 0.2;
                 int energy = Hist_Target_SR_ErecS.at(0).FindBin(ErecS*1000.)-1;
                 if (energy<0) continue;
                 if (energy>=N_energy_bins) continue;
@@ -2470,10 +2480,10 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     useOldSR = true; doConverge = true;
                     if (c>1) useOldSR = false;
 
-                    estimated_parameters = PredictNextLayerHadron(&Hist_Scaled_ElectronMC_CR_MSCW.at(e).at(c),&Hist_Dark_CR_MSCW.at(e).at(c),&Hist_Dark_CR_MSCW.at(e).at(c-1),&Hist_Dark_BkgCR_MSCW.at(e).at(c-1),&Hist_Dark_BkgCR_MSCW.at(e).at(c),energy_bins[e],estimated_parameters,useOldSR,true,doConverge);
+                    estimated_parameters = PredictNextLayerHadron(10,&Hist_Scaled_ElectronMC_CR_MSCW.at(e).at(c),&Hist_Dark_CR_MSCW.at(e).at(c),&Hist_Dark_CR_MSCW.at(e).at(c-1),&Hist_Dark_BkgCR_MSCW.at(e).at(c-1),&Hist_Dark_BkgCR_MSCW.at(e).at(c),energy_bins[e],estimated_parameters,useOldSR,true,doConverge);
                     double dark_endpoint0 = estimated_parameters.second.first;
                     double dark_endpoint1 = estimated_parameters.second.second;
-                    estimated_parameters = PredictNextLayerHadron(&Hist_Scaled_ElectronMC_CR_MSCW.at(e).at(c),&Hist_Target_CR_MSCW.at(e).at(c),&Hist_Target_CR_MSCW.at(e).at(c-1),&Hist_Target_BkgCR_MSCW.at(e).at(c-1),&Hist_Target_BkgCR_MSCW.at(e).at(c),energy_bins[e],estimated_parameters,useOldSR,true,doConverge);
+                    estimated_parameters = PredictNextLayerHadron(10,&Hist_Scaled_ElectronMC_CR_MSCW.at(e).at(c),&Hist_Target_CR_MSCW.at(e).at(c),&Hist_Target_CR_MSCW.at(e).at(c-1),&Hist_Target_BkgCR_MSCW.at(e).at(c-1),&Hist_Target_BkgCR_MSCW.at(e).at(c),energy_bins[e],estimated_parameters,useOldSR,true,doConverge);
                     double target_endpoint0 = estimated_parameters.second.first;
                     double target_endpoint1 = estimated_parameters.second.second;
 
@@ -2641,7 +2651,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
         int Number_of_SR_new = Number_of_SR;
         TString ConvergeOrNot = "";
         if (!DoConverge) ConvergeOrNot = "_NoConverge";
-        TFile OutputFile("output_May25/Deconvolution_"+TString(target)+"_Ntel"+std::to_string(NTelMin)+"to"+std::to_string(NTelMax)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root",WriteType);
+        TFile OutputFile("output_Jun15/Deconvolution_"+TString(target)+"_Ntel"+std::to_string(NTelMin)+"to"+std::to_string(NTelMax)+"_Elev"+std::to_string(int(Target_Elev_cut_lower))+"to"+std::to_string(int(Target_Elev_cut_upper))+"_Azim"+std::to_string(int(Target_Azim_cut_lower))+"to"+std::to_string(int(Target_Azim_cut_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+"_MSCWCut"+std::to_string(int(10.*MSCW_cut_upper))+"_MSCWBlind"+std::to_string(int(10.*MSCW_cut_blind))+ConvergeOrNot+".root",WriteType);
         if (WriteType=="recreate")
         {
           TTree InfoTree("InfoTree","info tree");
