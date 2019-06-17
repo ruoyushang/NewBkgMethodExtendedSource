@@ -430,8 +430,8 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int chi2_type) {
         if (!includeSR && Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind) {
             continue;
         }
-        if ((data_err*data_err)==0) data_err = 1.;
-        chi2_temp += pow(bkg-data,2)/(data_err*data_err);
+        if ((data_err*data_err+bkg_err*bkg_err)==0) data_err = 1.;
+        chi2_temp += pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
         nbins += 1.;
     }
     chi2_temp = chi2_temp/nbins;
@@ -2295,7 +2295,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     gamma_integral += Hist_GammaMC_SR_MSCW_SumRuns.at(e).at(s).Integral();
                     hadron_integral += Hist_Target_SR_MSCW.at(e).at(s).Integral();
                 }
-                double fake_signal_scale = 0.05*hadron_integral/gamma_integral;
+                double fake_signal_scale = 0.01*hadron_integral/gamma_integral;
                 for (int s=0;s<Number_of_SR;s++)
                 {
                     for (int bin=0;bin<Hist_GammaMC_SR_MSCW_SumRuns.at(e).at(s).GetNbinsX();bin++)
