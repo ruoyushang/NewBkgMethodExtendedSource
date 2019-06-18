@@ -1942,7 +1942,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 int e = energy;
                 //if (e!=energy) continue;
                 if (!SelectNImages(NTelMin,NTelMax)) continue;
-                if (FoV()) {
+                if (FoV() || (TString(target)=="Proton")) {
                         if (SignalSelectionMSCL()) 
                         {
                             for (int s=0;s<Number_of_SR;s++)
@@ -2237,7 +2237,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                             }
                         }
                         if (!SelectNImages(NTelMin,NTelMax)) continue;
-                        if (FoV()) {
+                        if (FoV() || (TString(target)=="Proton")) {
                                 if (SignalSelectionMSCL()) 
                                 {
                                     for (int s=0;s<Number_of_SR;s++)
@@ -2294,6 +2294,10 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 {
                     gamma_integral += Hist_GammaMC_SR_MSCW_SumRuns.at(e).at(s).Integral();
                     hadron_integral += Hist_Target_SR_MSCW.at(e).at(s).Integral();
+                }
+                for (int s=0;s<Number_of_CR;s++)
+                {
+                    hadron_integral += Hist_Target_CR_MSCW.at(e).at(s).Integral();
                 }
                 double fake_signal_scale = 0.01*hadron_integral/gamma_integral;
                 for (int s=0;s<Number_of_SR;s++)
