@@ -1211,70 +1211,11 @@ vector< std::pair <double,int> > SortList(vector< std::pair <double,int> > list_
         }
         return sorted_list_match;
 }
-vector<int> SortRunListByElevation(string source,vector<int> Target_runlist)
-{
-        char observation[50];
-        vector< pair <double,int> > list_elev_run;
-        sprintf(observation, "%s", source.c_str());
-        if (TString(source)=="CrabA") sprintf(observation, "%s", "Crab");
-        if (TString(source)=="CrabB") sprintf(observation, "%s", "Crab");
-        if (TString(source)=="Segue1AV6") sprintf(observation, "%s", "Segue1V6");
-        if (TString(source)=="Segue1BV6") sprintf(observation, "%s", "Segue1V6");
-        for (int run=0;run<Target_runlist.size();run++) {
-            char run_number[50];
-            sprintf(run_number, "%i", int(Target_runlist[run]));
-            filename = TString("$VERITAS_USER_DATA_DIR/"+TString(observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
-            if (TString(observation)=="Coma" || TString(observation)=="BrandonValidation") {
-              filename = TString("/veritas/userspace/brandon/VERITAS/Background/anasum/"+TString(run_number)+".anasum.root");
-            }
-            if (TString(observation)=="VA_Segue1" || TString(observation)=="VA_Geminga")
-            {
-              filename = TString("/veritas/upload/Geminga_Iowa/"+TString(run_number)+".stage4.root");
-            }
-            TFile*  input_file = TFile::Open(filename.c_str());
-            TTree* pointing_tree = nullptr;
-            if (!UseVegas) 
-            {
-                pointing_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/pointingDataReduced");
-                pointing_tree->SetBranchAddress("TelElevation",&TelElevation);
-                pointing_tree->SetBranchAddress("TelAzimuth",&TelAzimuth);
-                pointing_tree->SetBranchAddress("TelRAJ2000",&TelRAJ2000);
-                pointing_tree->SetBranchAddress("TelDecJ2000",&TelDecJ2000);
-                double total_entries = (double)pointing_tree->GetEntries();
-                pointing_tree->GetEntry(int(total_entries/2.));
-            }
-            else
-            {
-                pointing_tree = (TTree*) input_file->Get("ShowerEvents/ShowerEventsTree");
-                // VEGAS
-#ifdef VEGAS
-	        VAShowerData* sh = nullptr;
-	        pointing_tree->SetBranchAddress("S", &sh);
-                double total_entries = (double)pointing_tree->GetEntries();
-                pointing_tree->GetEntry(int(total_entries/2.));
-                TelElevation = sh->fArrayTrackingElevation_Deg;
-                TelAzimuth = sh->fArrayTrackingAzimuth_Deg;
-#endif
-            }
-            double elev_primary = TelElevation;
-            double azim_primary = TelAzimuth;
-            list_elev_run.push_back(make_pair(elev_primary,Target_runlist[run]));
-            input_file->Close();
-        }
-        std::sort(list_elev_run.begin(), list_elev_run.end());
-        vector<int> new_list;
-        for (int run=0;run<Target_runlist.size();run++)
-        {
-            new_list.push_back(list_elev_run.at(run).second);
-        }
-        return new_list;
-
-}
-vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, double energy)
+vector<vector<pair<string,int>>> FindRunSublist(string source, vector<pair<string,int>> Target_runlist, double energy)
 {
         std::cout << "Getting sublist runs from " << source << std::endl;
-        vector<vector<int>> list;
-        vector<int> totallist_runnumber;
+        vector<vector<pair<string,int>>> list;
+        vector<pair<string,int>> totallist_runnumber;
         vector<double> totallist_elevation;
         vector<double> totallist_azimuth;
         double elev_primary = 0;
@@ -1286,11 +1227,6 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, do
         double ra_this = 0;
         double dec_this = 0;
         char observation[50];
-        sprintf(observation, "%s", source.c_str());
-        if (TString(source)=="CrabA") sprintf(observation, "%s", "Crab");
-        if (TString(source)=="CrabB") sprintf(observation, "%s", "Crab");
-        if (TString(source)=="Segue1AV6") sprintf(observation, "%s", "Segue1V6");
-        if (TString(source)=="Segue1BV6") sprintf(observation, "%s", "Segue1V6");
         double delta_elev = 1.0;
         double delta_azim = 2.0;
         if (energy>100.)
@@ -1340,7 +1276,8 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, do
         }
         for (int run=0;run<Target_runlist.size();run++) {
             char run_number[50];
-            sprintf(run_number, "%i", int(Target_runlist[run]));
+            sprintf(observation, "%s", Target_runlist[run].first.c_str());
+            sprintf(run_number, "%i", int(Target_runlist[run].second));
             filename = TString("$VERITAS_USER_DATA_DIR/"+TString(observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
             if (TString(observation)=="Coma" || TString(observation)=="BrandonValidation") {
               filename = TString("/veritas/userspace/brandon/VERITAS/Background/anasum/"+TString(run_number)+".anasum.root");
@@ -1394,7 +1331,7 @@ vector<vector<int>> FindRunSublist(string source, vector<int> Target_runlist, do
                 if (azim_up<=Target_Azim_cut_lower) continue;
                 if (azim_low>=Target_Azim_cut_upper) continue;
                 std::cout << "run elev. " << elev_low << "-" << elev_up << ", azim. " << azim_low << "-" << azim_up << std::endl;
-                vector<int> sublist;
+                vector<pair<string,int>> sublist;
                 for (int run=0;run<totallist_runnumber.size();run++) {
                     TelElevation = totallist_elevation.at(run);
                     TelAzimuth = totallist_azimuth.at(run);
@@ -1785,7 +1722,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
 
 
         std::cout << "Getting dark pointing distributions... " << std::endl;
-        vector<int> Dark_runlist = GetRunList("Segue1V6");
+        vector<pair<string,int>> Dark_runlist = GetRunList("Segue1V6");
         if (TString(target)=="Proton") Dark_runlist = GetRunList("Proton");
         char Dark_observation[50];
         sprintf(Dark_observation, "%s", "Segue1V6");
@@ -1803,7 +1740,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
         for (int run=0;run<Dark_runlist.size();run++)
         {
             char run_number[50];
-            sprintf(run_number, "%i", int(Dark_runlist[run]));
+            sprintf(run_number, "%i", int(Dark_runlist[run].second));
             //std::cout << "Reading run " << run_number << std::endl;
             filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Dark_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
             if (TString(Dark_observation)=="VA_DarkSegue1")
@@ -1811,21 +1748,17 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
               filename = TString("/veritas/upload/Geminga_Iowa/"+TString(run_number)+".stage4.root");
             }
 
-            double tel_elev = PointingDistribution(filename,int(Dark_runlist[run]), true, true);
+            double tel_elev = PointingDistribution(filename,int(Dark_runlist[run].second), true, true);
         }
 
         std::cout << "Getting target pointing distributions... " << std::endl;
         char observation[50];
-        sprintf(observation, "%s", target);
-        if (TString(target)=="CrabA") sprintf(observation, "%s", "Crab");
-        if (TString(target)=="CrabB") sprintf(observation, "%s", "Crab");
-        if (TString(target)=="Segue1AV6") sprintf(observation, "%s", "Segue1V6");
-        if (TString(target)=="Segue1BV6") sprintf(observation, "%s", "Segue1V6");
-        vector<int> Target_runlist = GetRunList(target);
+        vector<pair<string,int>> Target_runlist = GetRunList(target);
         for (int run=0;run<Target_runlist.size();run++)
         {
             char run_number[50];
-            sprintf(run_number, "%i", int(Target_runlist[run]));
+            sprintf(observation, "%s", Target_runlist[run].first.c_str());
+            sprintf(run_number, "%i", int(Target_runlist[run].second));
             //std::cout << "Reading run " << run_number << std::endl;
             filename = TString("$VERITAS_USER_DATA_DIR/"+TString(observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
             if (TString(observation)=="VA_Segue1" || TString(observation)=="VA_Geminga")
@@ -1833,7 +1766,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
               filename = TString("/veritas/upload/Geminga_Iowa/"+TString(run_number)+".stage4.root");
             }
 
-            double tel_elev = PointingDistribution(filename,int(Target_runlist[run]), false, true);
+            double tel_elev = PointingDistribution(filename,int(Target_runlist[run].second), false, true);
         }
 
         std::cout << "Getting dark runs... " << std::endl;
@@ -1868,7 +1801,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
         for (int run=0;run<Dark_runlist.size();run++)
         {
             char run_number[50];
-            sprintf(run_number, "%i", int(Dark_runlist[run]));
+            sprintf(run_number, "%i", int(Dark_runlist[run].second));
             //std::cout << "Reading run " << run_number << std::endl;
             filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Dark_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
             if (TString(Dark_observation)=="VA_DarkSegue1")
@@ -1880,10 +1813,10 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
             bool nominal_dark = false;
             bool LZA_dark = false;
             bool SZA_dark = false;
-            if (PointingSelection(filename,int(Dark_runlist[run]),false,50,90,0,360)) nominal_dark = true;
-            if (PointingSelection(filename,int(Dark_runlist[run]),false,50,70,0,360)) LZA_dark = true;
-            if (PointingSelection(filename,int(Dark_runlist[run]),false,70,90,0,360)) SZA_dark = true;
-            double tel_elev = PointingDistribution(filename,int(Dark_runlist[run]), true, false);
+            if (PointingSelection(filename,int(Dark_runlist[run].second),false,50,90,0,360)) nominal_dark = true;
+            if (PointingSelection(filename,int(Dark_runlist[run].second),false,50,70,0,360)) LZA_dark = true;
+            if (PointingSelection(filename,int(Dark_runlist[run].second),false,70,90,0,360)) SZA_dark = true;
+            double tel_elev = PointingDistribution(filename,int(Dark_runlist[run].second), true, false);
 
             TFile*  input_file = TFile::Open(filename.c_str());
             TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
@@ -2011,11 +1944,11 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
         }
 
         std::cout << "Getting MC runs... " << std::endl;
-        vector<int> MC_runlist = GetRunList("Photon");
+        vector<pair<string,int>> MC_runlist = GetRunList("Photon");
         for (int run=0;run<MC_runlist.size();run++)
         {
             char run_number[50];
-            sprintf(run_number, "%i", int(MC_runlist[run]));
+            sprintf(run_number, "%i", int(MC_runlist[run].second));
             //std::cout << "Reading run " << run_number << std::endl;
             sprintf(Dark_observation, "%s", "Photon");
             filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Dark_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
@@ -2091,8 +2024,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
 
 
         MSCW_cut_blind = MSCW_cut_blind_input;
-        vector<vector<int>> Sublist;
-        //Target_runlist = SortRunListByElevation(target,Target_runlist);
+        vector<vector<pair<string,int>>> Sublist;
         for (int e=0;e<N_energy_bins;e++)
         {
             if (!use_this_energy_bin[e]) continue;
@@ -2140,7 +2072,8 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 for (int run=0;run<Sublist.at(subrun).size();run++)
                 {
                     char run_number[50];
-                    sprintf(run_number, "%i", int(Sublist.at(subrun)[run]));
+                    sprintf(observation, "%s", Sublist.at(subrun)[run].first.c_str());
+                    sprintf(run_number, "%i", int(Sublist.at(subrun)[run].second));
                     //std::cout << "Reading run " << run_number << std::endl;
                     filename = TString("$VERITAS_USER_DATA_DIR/"+TString(observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
                     if (TString(observation)=="Coma" || TString(observation)=="BrandonValidation") {
@@ -2151,10 +2084,10 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                       filename = TString("/veritas/upload/Geminga_Iowa/"+TString(run_number)+".stage4.root");
                     }
 
-                    if (!PointingSelection(filename,int(Sublist.at(subrun)[run]),true,Target_Elev_cut_lower,Target_Elev_cut_upper,Target_Azim_cut_lower,Target_Azim_cut_upper)) continue;
+                    if (!PointingSelection(filename,int(Sublist.at(subrun)[run].second),true,Target_Elev_cut_lower,Target_Elev_cut_upper,Target_Azim_cut_lower,Target_Azim_cut_upper)) continue;
 
                     TFile*  input_file = TFile::Open(filename.c_str());
-		    TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Sublist.at(subrun)[run]);
+		    TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Sublist.at(subrun)[run].second);
                     double eff_area = i_hEffAreaP->GetBinContent( i_hEffAreaP->FindBin( log10(0.5*(energy_bins[e]+energy_bins[e+1])/1000.)));
                     std::cout << "eff_area = " << eff_area << std::endl; 
                     TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
@@ -2197,10 +2130,10 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     bool run_already_used = false;
                     for (int this_run=0;this_run<used_runs.size();this_run++)
                     {
-                        if (used_runs.at(this_run)==Sublist.at(subrun)[run]) run_already_used = true;
+                        if (used_runs.at(this_run)==Sublist.at(subrun)[run].second) run_already_used = true;
                     }
                     if (!run_already_used) exposure_hours += (time_1-time_0)/3600.;
-                    if (!run_already_used) used_runs.push_back(int(Sublist.at(subrun)[run]));
+                    if (!run_already_used) used_runs.push_back(int(Sublist.at(subrun)[run].second));
                     for (int entry=0;entry<Target_tree->GetEntries();entry++) {
                         theta2 = 0;
                         ra_sky = 0;
@@ -2611,7 +2544,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 }
                 for (int run=0;run<Sublist.at(subrun).size();run++)
                 {
-                    std::cout << "run " << int(Sublist.at(subrun)[run]) << std::endl;
+                    std::cout << "run " << int(Sublist.at(subrun)[run].second) << std::endl;
                 }
                 for (int s=1;s<Number_of_CR;s++)
                 {
