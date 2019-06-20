@@ -1546,6 +1546,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
         vector<TH1D> Hist_ElectronMC_SR_MSCW_SumRuns_SumSRs;
         vector<TH1D> Hist_GammaMC_SR_MSCW_SumRuns_SumSRs;
         vector<TH1D> Hist_Target_SR_MSCL;
+        vector<TH1D> Hist_RDBM_Limit;
         vector<TH1D> Hist_Target_Amplitude;
         vector<TH1D> Hist_Target_Mean;
         vector<TH1D> Hist_Target_RMS;
@@ -1596,6 +1597,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
             }
             Hist_Target_SR_ErecS.push_back(TH1D("Hist_Target_SR_ErecS_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_bins,energy_bins));
             Hist_Target_SR_MSCL.push_back(TH1D("Hist_Target_SR_MSCL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+            Hist_RDBM_Limit.push_back(TH1D("Hist_RDBM_Limit_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1,0,1));
             Hist_Target_Amplitude.push_back(TH1D("Hist_Target_Amplitude_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0]));
             Hist_Target_Mean.push_back(TH1D("Hist_Target_Mean_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0]));
             Hist_Target_RMS.push_back(TH1D("Hist_Target_RMS_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0]));
@@ -2533,7 +2535,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 PredictNextLayer(&Hist_Scaled_GammaMC_SR_MSCW.at(e).at(0),&Hist_Scaled_Dark_ElectronMC_SR_MSCW.at(e).at(0),&Hist_Scaled_ElectronMC_SR_MSCW.at(e).at(0),&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0),&Hist_Dark_SR_MSCW.at(e).at(0),&Hist_Dark_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Dark_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Dark_BkgSR_MSCW.at(e).at(0),energy_bins[e],estimated_parameters,useOldSR,doConverge);
 
                 //AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(0));
-                AddSystematics(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgSR_MSCW.at(e).at(0));
+                //AddSystematics(&Hist_Target_SR_MSCW.at(e).at(0),&Hist_Target_BkgSR_MSCW.at(e).at(0));
                 //AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(0));
                 //AddSystematics3(&Hist_Target_BkgSR_MSCW.at(e).at(0));
 
@@ -2567,7 +2569,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     PredictNextLayer(&Hist_Scaled_GammaMC_SR_MSCW.at(e).at(s),&Hist_Scaled_Dark_ElectronMC_SR_MSCW.at(e).at(s),&Hist_Scaled_ElectronMC_SR_MSCW.at(e).at(s),&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_SR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s-1),&Hist_Target_BkgSR_MSCW.at(e).at(s),&Hist_Dark_SR_MSCW.at(e).at(s),&Hist_Dark_SR_MSCW.at(e).at(s-1),&Hist_Dark_BkgSR_MSCW.at(e).at(s-1),&Hist_Dark_BkgSR_MSCW.at(e).at(s),energy_bins[e],estimated_parameters,useOldSR,doConverge);
 
                     //AddBkgStatistics(&Hist_Target_BkgSR_MSCW.at(e).at(s));
-                    AddSystematics(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s));
+                    //AddSystematics(&Hist_Target_SR_MSCW.at(e).at(s),&Hist_Target_BkgSR_MSCW.at(e).at(s));
                     //AddSystematics2(&Hist_Target_CR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgCR_MSCW.at(e).at(Number_of_CR-1),&Hist_Target_BkgSR_MSCW.at(e).at(s));
                     //AddSystematics3(&Hist_Target_BkgSR_MSCW.at(e).at(s));
 
@@ -2577,19 +2579,30 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
 
                 // here we calculate the measured e/gamma flux
                 Hist_Target_Excess_EachRun.at(e).Reset();
+                double RDBM_err = 0.;
                 for (int s=0;s<Number_of_SR;s++)
                 {
                     Hist_Target_Excess_EachRun.at(e).Add(&Hist_Target_SR_MSCW.at(e).at(s));
                     Hist_Target_Excess_EachRun.at(e).Add(&Hist_Target_BkgSR_MSCW.at(e).at(s),-1.);
+                    for (int i=0;i<Hist_Target_BkgSR_MSCW.at(e).at(s).GetNbinsX();i++)
+                    {
+                        if (Hist_Target_BkgSR_MSCW.at(e).at(s).GetBinCenter(i+1)<MSCW_cut_lower) continue;
+                        if (Hist_Target_BkgSR_MSCW.at(e).at(s).GetBinCenter(i+1)>MSCW_cut_blind) continue;
+                        RDBM_err += pow(Hist_Target_BkgSR_MSCW.at(e).at(s).GetBinError(i+1),2);
+                    }
                 }
+                RDBM_err = pow(RDBM_err,0.5);
                 norm_bin_low = Hist_Target_Excess_EachRun.at(e).FindBin(MSCW_cut_lower);
                 norm_bin_up = Hist_Target_Excess_EachRun.at(e).FindBin(MSCW_cut_blind);
                 double excess_this_run = Hist_Target_Excess_EachRun.at(e).Integral(norm_bin_low,norm_bin_up);
                 double effarea_time = Hist_EffAreaTime.GetBinContent(Hist_EffAreaTime.FindBin(energy_bins[e]));
                 double flux_this_run = excess_this_run*1000./(effarea_time*(energy_bins[e+1]-energy_bins[e])*1e-12*10000.);
+                double limit_this_run = RDBM_err*1000./(effarea_time*(energy_bins[e+1]-energy_bins[e])*1e-12*10000.);
                 std::cout << "excess_this_run = " << excess_this_run << std::endl;
                 std::cout << "flux_this_run = " << flux_this_run << std::endl;
+                std::cout << "limit_this_run = " << limit_this_run << std::endl;
                 Hist_Measured_Electron_Flux.Fill(energy_bins[e],flux_this_run,effarea_time);
+                Hist_RDBM_Limit.at(e).SetBinContent(1,limit_this_run);
                 
                 for (int s=0;s<Number_of_SR;s++)
                 {
@@ -2690,6 +2703,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
         for (int e=0;e<N_energy_bins;e++) {
                 if (e!=run_energy_bin) continue;
                 Hist_Target_SR_MSCL.at(e).Write();
+                Hist_RDBM_Limit.at(e).Write();
                 Hist_Target_Amplitude.at(e).Write();
                 Hist_Target_Mean.at(e).Write();
                 Hist_Target_RMS.at(e).Write();
