@@ -1498,7 +1498,7 @@ vector<std::pair<string,int>> GetRunList(string source) {
                 list.push_back(std::make_pair("Photon",224751));
                 list.push_back(std::make_pair("Photon",224801));
         }
-        if (source=="Proton")
+        if (source=="ProtonTraining")
         {
                 list.push_back(std::make_pair("Proton",700000));
                 list.push_back(std::make_pair("Proton",700500));
@@ -1600,6 +1600,9 @@ vector<std::pair<string,int>> GetRunList(string source) {
                 list.push_back(std::make_pair("Proton",748500));
                 list.push_back(std::make_pair("Proton",749000));
                 list.push_back(std::make_pair("Proton",749500));
+        }
+        if (source=="Proton")
+        {
                 list.push_back(std::make_pair("Proton",750000));
                 list.push_back(std::make_pair("Proton",750500));
                 list.push_back(std::make_pair("Proton",751000));

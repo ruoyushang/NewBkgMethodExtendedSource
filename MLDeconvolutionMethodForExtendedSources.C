@@ -1723,7 +1723,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
 
         std::cout << "Getting dark pointing distributions... " << std::endl;
         vector<pair<string,int>> Dark_runlist = GetRunList("Segue1V6");
-        if (TString(target)=="Proton") Dark_runlist = GetRunList("Proton");
+        if (TString(target)=="Proton") Dark_runlist = GetRunList("ProtonTraining");
         char Dark_observation[50];
         sprintf(Dark_observation, "%s", "Segue1V6");
         if (TString(target)=="Proton") sprintf(Dark_observation, "%s", "Proton");
