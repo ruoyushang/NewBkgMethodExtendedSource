@@ -99,14 +99,14 @@ double MSCL_control_cut_upper[Number_of_CR] = {2.50,2.25,2.00,1.75,1.50,1.25};
 //double MSCL_control_cut_lower[Number_of_CR] = {1.35,1.30};
 //double MSCL_control_cut_upper[Number_of_CR] = {1.40,1.35};
 double MSCW_cut_lower = 0.7;
-double MSCW_cut_blind = 1.3;
-double MSCW_cut_upper = 1.3;
-const int Number_of_SR = 6;
-double MSCL_signal_cut_lower[Number_of_SR] = {1.20,1.10,1.00,0.90,0.80,0.70};
-double MSCL_signal_cut_upper[Number_of_SR] = {1.30,1.20,1.10,1.00,0.90,0.80};
-const int Number_of_CR = 2;
-double MSCL_control_cut_lower[Number_of_CR] = {1.40,1.30};
-double MSCL_control_cut_upper[Number_of_CR] = {1.50,1.40};
+double MSCW_cut_blind = 1.2;
+double MSCW_cut_upper = 1.2;
+const int Number_of_SR = 5;
+double MSCL_signal_cut_lower[Number_of_SR] = {1.10,1.00,0.90,0.80,0.70};
+double MSCL_signal_cut_upper[Number_of_SR] = {1.20,1.10,1.00,0.90,0.80};
+const int Number_of_CR = 5;
+double MSCL_control_cut_lower[Number_of_CR] = {1.60,1.50,1.40,1.30,1.20};
+double MSCL_control_cut_upper[Number_of_CR] = {1.70,1.60,1.50,1.40,1.30};
 #endif
 
 
@@ -207,6 +207,9 @@ TH2D Hist_Target_TelElevAzim("Hist_Target_TelElevAzim","",18,0,90,18,0,360);
 TH2D Hist_Target_TelRaDec("Hist_Target_TelRaDec","",100,0,5,100,-1,1);
 
 bool FoV() {
+#ifdef VEGAS
+    return true;
+#endif
     //if (theta2<0.2) return false;
     //if (R2off<Theta2_cut_lower) return false;
     //if (R2off>Theta2_cut_upper) return false;
@@ -238,6 +241,9 @@ bool RingFoV() {
 }
 bool SelectNImages(int Nmin, int Nmax)
 {
+#ifdef VEGAS
+    return true;
+#endif
     if (NImages<Nmin) return false;
     if (NImages>Nmax) return false;
     return true;
@@ -651,11 +657,15 @@ std::pair <double,double> FindConvergeEndpoints(TH1* Hist_SR,TH1* Hist_Bkg,doubl
     for (int ep0=0;ep0<=50;ep0++) 
     {
         double tmp_endpoint_0 = -1.0-1.0+2.0*double(ep0)/50.;
+#ifdef VEGAS
+        tmp_endpoint_0 = 0.5+0.5*double(ep0)/50.;
+#endif
         for (int ep1=0;ep1<=50;ep1++) 
         {
-            //double tmp_endpoint_1 = 1.0-1.0+2.0*double(ep1)/50.;
             double tmp_endpoint_1 = tmp_endpoint_0+2.0*double(ep1)/50.;
-            //double tmp_endpoint_1 = tmp_endpoint_0+estimated_rms*(0.5+2.0*double(ep1)/50.);
+#ifdef VEGAS
+            tmp_endpoint_1 = tmp_endpoint_0+1.0*double(ep1)/50.;
+#endif
             TH1D Hist_Bkg_Tmp = TH1D("Hist_Bkg_Tmp","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
             Hist_Bkg_Tmp.Reset();
             Hist_Bkg_Tmp.Add(Hist_Bkg);
@@ -1530,7 +1540,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
             {
               if (energy_bins[e]>=100.) N_bins_for_deconv = 960;
               if (energy_bins[e]>=1000.) N_bins_for_deconv = 960;
-              if (energy_bins[e]>=3000.) N_bins_for_deconv = 960*2;
+              if (energy_bins[e]>=3000.) N_bins_for_deconv = 960;
             }
             Hist_Target_SR_ErecS.push_back(TH1D("Hist_Target_SR_ErecS_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_bins,energy_bins));
             Hist_Target_SR_MSCL.push_back(TH1D("Hist_Target_SR_MSCL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
@@ -1724,9 +1734,11 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
         std::cout << "Getting dark pointing distributions... " << std::endl;
         vector<pair<string,int>> Dark_runlist = GetRunList("Segue1V6");
         if (TString(target)=="Proton") Dark_runlist = GetRunList("ProtonTraining");
+        if (TString(target)=="ProtonTraining") Dark_runlist = GetRunList("ProtonTraining");
         char Dark_observation[50];
         sprintf(Dark_observation, "%s", "Segue1V6");
         if (TString(target)=="Proton") sprintf(Dark_observation, "%s", "Proton");
+        if (TString(target)=="ProtonTraining") sprintf(Dark_observation, "%s", "Proton");
         if (TString(target)=="Segue1V5" || TString(target)=="MGRO_J1908_V5")
         {
             Dark_runlist = GetRunList("Segue1V5");
@@ -1877,7 +1889,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 int e = energy;
                 //if (e!=energy) continue;
                 if (!SelectNImages(NTelMin,NTelMax)) continue;
-                if (FoV() || (TString(target)=="Proton")) {
+                if (FoV() || (TString(target)=="Proton") ||(TString(target)=="ProtonTraining")) {
                         if (SignalSelectionMSCL()) 
                         {
                             for (int s=0;s<Number_of_SR;s++)
@@ -1891,7 +1903,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                                         double n_target = Hist_Target_TelElev.GetBinContent(elev_bin);
                                         double weight = 0;
                                         if (n_dark!=0) weight = n_target/n_dark;
-                                        if (TString(target)=="Proton") weight = 1.;
+                                        if (TString(target)=="Proton" || TString(target)=="ProtonTraining") weight = 1.;
                                         Hist_Dark_SR_theta2.at(e).at(s).Fill(R2off,weight);
                                     }
                                     if (LZA_dark)
@@ -1916,7 +1928,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                                         double n_target = Hist_Target_TelElev.GetBinContent(elev_bin);
                                         double weight = 0;
                                         if (n_dark!=0) weight = n_target/n_dark;
-                                        if (TString(target)=="Proton") weight = 1.;
+                                        if (TString(target)=="Proton" || TString(target)=="ProtonTraining") weight = 1.;
                                         Hist_Dark_CR_theta2.at(e).at(s).Fill(R2off,weight);
                                     }
                                     if (LZA_dark)
@@ -2028,7 +2040,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
         for (int e=0;e<N_energy_bins;e++)
         {
             if (!use_this_energy_bin[e]) continue;
-            if (TString(target)=="Proton")
+            if (TString(target)=="Proton" || TString(target)=="ProtonTraining")
             {
                 Sublist.clear();
                 Sublist.push_back(Target_runlist);
@@ -2074,7 +2086,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     char run_number[50];
                     sprintf(observation, "%s", Sublist.at(subrun)[run].first.c_str());
                     sprintf(run_number, "%i", int(Sublist.at(subrun)[run].second));
-                    //std::cout << "Reading run " << run_number << std::endl;
+                    std::cout << "Reading run " << run_number << std::endl;
                     filename = TString("$VERITAS_USER_DATA_DIR/"+TString(observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
                     if (TString(observation)=="Coma" || TString(observation)=="BrandonValidation") {
                       filename = TString("/veritas/userspace/brandon/VERITAS/Background/anasum/"+TString(run_number)+".anasum.root");
@@ -2087,8 +2099,12 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     if (!PointingSelection(filename,int(Sublist.at(subrun)[run].second),true,Target_Elev_cut_lower,Target_Elev_cut_upper,Target_Azim_cut_lower,Target_Azim_cut_upper)) continue;
 
                     TFile*  input_file = TFile::Open(filename.c_str());
+#ifndef VEGAS
 		    TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Sublist.at(subrun)[run].second);
                     double eff_area = i_hEffAreaP->GetBinContent( i_hEffAreaP->FindBin( log10(0.5*(energy_bins[e]+energy_bins[e+1])/1000.)));
+#else
+                    double eff_area = 0;
+#endif
                     std::cout << "eff_area = " << eff_area << std::endl; 
                     TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
                     if (UseVegas) root_file = "ShowerEvents/ShowerEventsTree";
@@ -2172,7 +2188,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                             }
                         }
                         if (!SelectNImages(NTelMin,NTelMax)) continue;
-                        if (FoV() || (TString(target)=="Proton")) {
+                        if (FoV() || (TString(target)=="Proton" || (TString(target)=="ProtonTraining"))) {
                                 if (SignalSelectionMSCL()) 
                                 {
                                     for (int s=0;s<Number_of_SR;s++)
@@ -2267,7 +2283,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 }
                 for (int s=0;s<Number_of_SR;s++)
                 {
-                    if (TString(target)=="Proton" && theta2_cut_lower_input==0)
+                    if ((TString(target)=="Proton" || TString(target)=="ProtonTraining") && theta2_cut_lower_input==0)
                     //if (theta2_cut_lower_input==0)
                     {
                         Hist_Target_SR_MSCW.at(e).at(s).Add(&Hist_Scaled_GammaMC_SR_MSCW.at(e).at(s));
@@ -2288,9 +2304,13 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 TH1D Hist_ElectronMC_Temp = TH1D("Hist_ElectronMC_Temp","",Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
                 int norm_bin_low = Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).FindBin(MSCW_cut_lower);
                 int norm_bin_up = Hist_Target_SR_MSCW_SumRuns_SumSRs.at(e).FindBin(MSCW_cut_blind);
+                dark_electron_count[e] = electron_count[e]*dark_exposure/(exposure_hours*3600.);
+#ifdef VEGAS
+                electron_count[e] = 0.;
+                dark_electron_count[e] = 0.;
+#endif
                 std::cout << "Energy "  << energy_bins[e] << std::endl;
                 std::cout << "predicted electrons = " << electron_count[e] << std::endl;
-                dark_electron_count[e] = electron_count[e]*dark_exposure/(exposure_hours*3600.);
                 std::cout << "predicted dark electrons = " << dark_electron_count[e] << std::endl;
                 double old_integral = 0.;
                 for (int s=0;s<Number_of_SR;s++)
@@ -2305,10 +2325,16 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 double scale_err = electron_count_err[e]/old_integral;
                 double dark_scale = dark_electron_count[e]/old_integral;
                 double dark_scale_err = dark_electron_count_err[e]/old_integral;
-                if (TString(target)=="Proton") scale = 0.;
-                if (TString(target)=="Proton") scale_err = 0.;
-                if (TString(target)=="Proton") dark_scale = 0.;
-                if (TString(target)=="Proton") dark_scale_err = 0.;
+                if (TString(target)=="Proton" || TString(target)=="ProtonTraining") scale = 0.;
+                if (TString(target)=="Proton" || TString(target)=="ProtonTraining") scale_err = 0.;
+                if (TString(target)=="Proton" || TString(target)=="ProtonTraining") dark_scale = 0.;
+                if (TString(target)=="Proton" || TString(target)=="ProtonTraining") dark_scale_err = 0.;
+#ifdef VEGAS
+                scale = 0.;
+                scale_err = 0.;
+                dark_scale = 0.;
+                dark_scale_err = 0.;
+#endif
                 for (int s=0;s<Number_of_SR;s++)
                 {
                     for (int bin=0;bin<Hist_ElectronMC_SR_MSCW_SumRuns.at(e).at(s).GetNbinsX();bin++)
@@ -2458,7 +2484,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                 bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_control_cut_lower[Number_of_CR-1]+MSCL_control_cut_upper[Number_of_CR-1]));
                 estimated_rms_previous = Hist_Target_RMS.at(e).GetBinContent(bin);
                 bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[0]+MSCL_signal_cut_upper[0]));
-                if (TString(target)=="Proton")
+                if (TString(target)=="Proton" || TString(target)=="ProtonTraining")
                 {
                     estimated_mean = Hist_Target_SR_MSCW.at(e).at(0).GetMean();
                     estimated_rms = Hist_Target_SR_MSCW.at(e).at(0).GetRMS();
@@ -2491,7 +2517,7 @@ void MLDeconvolutionMethodForExtendedSources(string target_data, int NTelMin, in
                     bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[s-1]+MSCL_signal_cut_upper[s-1]));
                     estimated_rms_previous = Hist_Target_RMS.at(e).GetBinContent(bin);
                     bin = Hist_Target_Mean.at(e).FindBin(0.5*(MSCL_signal_cut_lower[s]+MSCL_signal_cut_upper[s]));
-                    if (TString(target)=="Proton")
+                    if (TString(target)=="Proton" || TString(target)=="ProtonTraining")
                     {
                         estimated_mean = Hist_Target_SR_MSCW.at(e).at(s).GetMean();
                         estimated_rms = Hist_Target_SR_MSCW.at(e).at(s).GetRMS();
