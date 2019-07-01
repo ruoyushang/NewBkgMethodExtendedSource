@@ -273,7 +273,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
-        if (!PointingSelection(filename,int(Data_runlist[run].second),0,90,0,360)) continue;
+        if (!PointingSelection(filename,int(Data_runlist[run].second),60,90,0,360)) continue;
 
         TFile*  input_file = TFile::Open(filename.c_str());
 	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Data_runlist[run].second);

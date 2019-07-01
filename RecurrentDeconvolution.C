@@ -66,6 +66,7 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int chi2_type) {
         double data = Hist_SR->GetBinContent(i+1);
         double bkg_err = Hist_Bkg->GetBinError(i+1);
         double data_err = Hist_SR->GetBinError(i+1);
+        //if (Hist_Bkg->GetBinCenter(i+1)>4.) continue;
         if (!includeSR && Hist_Bkg->GetBinCenter(i+1)>MSCW_cut_lower && Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind) {
             continue;
         }
@@ -103,7 +104,7 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, bool do
     int norm_bin_up = Hist_SR->FindBin(30.);
     if (includeSR) {
         for (int fit=0;fit<100;fit++) {
-                double shift = shift_begin-5.0*rms/2.+10.0*rms/2.*double(fit)*0.01;
+                double shift = shift_begin-1.0*rms/2.+2.0*rms/2.*double(fit)*0.01;
                 for (int i=0;i<Hist_SR->GetNbinsX();i++) {
                         int b = Hist_SR->FindBin(Hist_SR->GetBinCenter(i+1)-shift);
                         Hist_Bkg->SetBinContent(i+1,Hist_BkgTemp->GetBinContent(b));
@@ -180,10 +181,10 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, bool do
 }
 double ConvergeFunction(double x, double endpoint_0, double endpoint_1, int type)
 {
-    //if (x-(endpoint_1)>=0.) return 1.;
-    //if (x-(endpoint_0)<0.) return 0.;
-    //return pow((x-endpoint_0)/(endpoint_1-endpoint_0),1);
-    return 1./(1.+exp(-(x-(endpoint_0+endpoint_1)/2.)/(endpoint_1-endpoint_0)));
+    if (x-(endpoint_1)>=0.) return 1.;
+    if (x-(endpoint_0)<0.) return 0.;
+    return pow((x-endpoint_0)/(endpoint_1-endpoint_0),1);
+    //return 1./(1.+exp(-(x-(endpoint_0+endpoint_1)/2.)/(endpoint_1-endpoint_0)));
 
 }
 void Converge(TH1* Hist_Bkg, double endpoint_0, double endpoint_1)
@@ -380,7 +381,7 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(
     {
         parameters = PredictNextLayerHadron(niter,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
         double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,1);
-        if (chi2_previous>chi2) break;
+        //if (chi2_previous>chi2) break;
         if (chi2_best<chi2) {
             chi2_best = chi2;
             niter_best = niter;
