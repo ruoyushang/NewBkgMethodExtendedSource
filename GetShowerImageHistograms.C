@@ -54,18 +54,19 @@ double MSCL_control_cut_upper[Number_of_CR] = {2.50,2.25,2.00,1.75,1.50,1.25};
 //double MSCL_control_cut_lower[Number_of_CR] = {2.00,1.50,1.00};
 //double MSCL_control_cut_upper[Number_of_CR] = {2.50,2.00,1.50};
 
-//const int N_energy_bins = 18;
-//double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,667,794,943,1122,1332,1585,1882,2239,3162,4467,6310,8913};
-//double electron_flux[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-//double electron_flux_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-//double electron_count[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-//double electron_count_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-const int N_energy_bins = 1;
-double energy_bins[N_energy_bins+1] = {562,667};
-double electron_flux[N_energy_bins] = {0};
-double electron_flux_err[N_energy_bins] = {0};
-double electron_count[N_energy_bins] = {0};
-double electron_count_err[N_energy_bins] = {0};
+const int N_energy_bins = 18;
+double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,667,794,943,1122,1332,1585,1882,2239,3162,4467,6310,8913};
+double electron_flux[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+double electron_flux_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+double electron_count[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+double electron_count_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+bool use_this_energy_bin[N_energy_bins] = {false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false};
+//const int N_energy_bins = 1;
+//double energy_bins[N_energy_bins+1] = {282,335};
+//double electron_flux[N_energy_bins] = {0};
+//double electron_flux_err[N_energy_bins] = {0};
+//double electron_count[N_energy_bins] = {0};
+//double electron_count_err[N_energy_bins] = {0};
 
 int N_bins_for_deconv = 480;
 double MSCW_plot_lower = -30.;
@@ -232,10 +233,30 @@ bool FoV() {
     if (theta2>Theta2_cut_upper) return false;
     return true;
 }
+bool RingFoV() {
+    //if (R2off<Theta2_cut_lower) return false;
+    //if (R2off>Theta2_cut_upper) return false;
+    if (theta2<Theta2_cut_upper) return false;
+    return true;
+}
 bool SelectNImages(int Nmin, int Nmax)
 {
     if (NImages<Nmin) return false;
     if (NImages>Nmax) return false;
+    return true;
+}
+bool ControlSelectionTheta2()
+{
+    if (MSCL>MSCL_signal_cut_upper[0]) return false;
+    if (MSCW<MSCW_cut_blind*1.0) return false;
+    if (MSCW>MSCW_cut_blind*3.0) return false;
+    return true;
+}
+bool SignalSelectionTheta2()
+{
+    if (MSCL>MSCL_signal_cut_upper[0]) return false;
+    if (MSCW>MSCW_cut_blind) return false;
+    if (MSCW<MSCW_cut_lower) return false;
     return true;
 }
 void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input, double theta2_cut_upper_input)
@@ -248,7 +269,18 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
     TH1D Hist_ErecS = TH1D("Hist_ErecS","",N_energy_bins,energy_bins);
     TH1D Hist_EffAreaTime("Hist_EffAreaTime","",N_energy_bins,energy_bins);
     vector<TH2D> Hist_Data_MSCLW;
+    vector<TH2D> Hist_Ring_MSCLW;
+    vector<TH2D> Hist_CrabON_MSCLW;
+    vector<TH2D> Hist_CrabOFF_MSCLW;
     vector<TH2D> Hist_Elec_MSCLW;
+    vector<TH1D> Hist_Data_SR_FullFoV_Theta2;
+    vector<TH1D> Hist_Data_SR_SelectFoV_Theta2;
+    vector<TH1D> Hist_Data_CR_SelectFoV_Theta2;
+    vector<TH2D> Hist_Data_SR_Skymap;
+    vector<TH2D> Hist_Data_CR_Skymap;
+    vector<TH1D> Hist_Dark_SR_FullFoV_Theta2;
+    vector<TH1D> Hist_Dark_SR_SelectFoV_Theta2;
+    vector<TH1D> Hist_Dark_CR_FullFoV_Theta2;
     for (int e=0;e<N_energy_bins;e++) 
     {
         char e_low[50];
@@ -259,7 +291,77 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         if (energy_bins[e]>=1000.) N_bins_for_deconv = 480;
         if (energy_bins[e]>=3200.) N_bins_for_deconv = 240;
         Hist_Data_MSCLW.push_back(TH2D("Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_Ring_MSCLW.push_back(TH2D("Hist_Ring_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_CrabON_MSCLW.push_back(TH2D("Hist_CrabON_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_CrabOFF_MSCLW.push_back(TH2D("Hist_CrabOFF_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Elec_MSCLW.push_back(TH2D("Hist_Elec_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_Data_SR_FullFoV_Theta2.push_back(TH1D("Hist_Data_SR_FullFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
+        Hist_Data_SR_SelectFoV_Theta2.push_back(TH1D("Hist_Data_SR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
+        Hist_Data_CR_SelectFoV_Theta2.push_back(TH1D("Hist_Data_CR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
+        Hist_Data_SR_Skymap.push_back(TH2D("Hist_Data_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",100,-2,2,100,-2,2));
+        Hist_Data_CR_Skymap.push_back(TH2D("Hist_Data_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",100,-2,2,100,-2,2));
+        Hist_Dark_SR_FullFoV_Theta2.push_back(TH1D("Hist_Dark_SR_FullFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
+        Hist_Dark_SR_SelectFoV_Theta2.push_back(TH1D("Hist_Dark_SR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
+        Hist_Dark_CR_FullFoV_Theta2.push_back(TH1D("Hist_Dark_CR_FullFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
+    }
+
+    // Get a list of dark observation runs for radial acceptance
+    vector<pair<string,int>> Dark_runlist = GetRunList("Segue1V6");
+    for (int run=0;run<Dark_runlist.size();run++)
+    {
+        char run_number[50];
+        char Dark_observation[50];
+        sprintf(run_number, "%i", int(Dark_runlist[run].second));
+        sprintf(Dark_observation, "%s", Dark_runlist[run].first.c_str());
+        string filename;
+        filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Dark_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
+
+        if (!PointingSelection(filename,int(Dark_runlist[run].second),60,90,0,360)) continue;
+
+        TFile*  input_file = TFile::Open(filename.c_str());
+	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Dark_runlist[run].second);
+        TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
+        TTree* Dark_tree = (TTree*) input_file->Get(root_file);
+        Dark_tree->SetBranchAddress("Xoff",&Xoff);
+        Dark_tree->SetBranchAddress("Yoff",&Yoff);
+        Dark_tree->SetBranchAddress("theta2",&theta2);
+        Dark_tree->SetBranchAddress("ra",&ra_sky);
+        Dark_tree->SetBranchAddress("dec",&dec_sky);
+        Dark_tree->SetBranchAddress("ErecS",&ErecS);
+        Dark_tree->SetBranchAddress("EChi2S",&EChi2S);
+        Dark_tree->SetBranchAddress("MSCW",&MSCW);
+        Dark_tree->SetBranchAddress("MSCL",&MSCL);
+        Dark_tree->SetBranchAddress("NImages",&NImages);
+        Dark_tree->SetBranchAddress("Time",&Time);
+
+        for (int entry=0;entry<Dark_tree->GetEntries();entry++) 
+        {
+            ErecS = 0;
+            EChi2S = 0;
+            NImages = 0;
+            MSCW = 0;
+            MSCL = 0;
+            R2off = 0;
+            Dark_tree->GetEntry(entry);
+            R2off = Xoff*Xoff+Yoff*Yoff;
+            int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
+            if (energy<0) continue;
+            if (energy>=N_energy_bins) continue;
+            int e = energy;
+            if (!SelectNImages(3,4)) continue;
+            if (SignalSelectionTheta2())
+            {
+                Hist_Dark_SR_FullFoV_Theta2.at(e).Fill(R2off);
+                if (FoV())
+                {
+                    Hist_Dark_SR_SelectFoV_Theta2.at(e).Fill(R2off);
+                }
+            }
+            if (ControlSelectionTheta2())
+            {
+                Hist_Dark_CR_FullFoV_Theta2.at(e).Fill(R2off);
+            }
+        }
     }
 
     // Get a list of target observation runs
@@ -330,34 +432,76 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
             {
                 Hist_Data_MSCLW.at(e).Fill(MSCL,MSCW);
             }
+            if (RingFoV())
+            {
+                Hist_Ring_MSCLW.at(e).Fill(MSCL,MSCW);
+            }
+            if (SignalSelectionTheta2())
+            {
+                Hist_Data_SR_FullFoV_Theta2.at(e).Fill(theta2);
+                if (FoV())
+                {
+                    Hist_Data_SR_SelectFoV_Theta2.at(e).Fill(theta2);
+                    Hist_Data_SR_Skymap.at(e).Fill(ra_sky,dec_sky);
+                }
+            }
+            if (ControlSelectionTheta2())
+            {
+                if (FoV())
+                {
+                    int bin = Hist_Dark_CR_FullFoV_Theta2.at(e).FindBin(R2off);
+                    double dark_cr_content = Hist_Dark_CR_FullFoV_Theta2.at(e).GetBinContent(bin);
+                    double dark_sr_content = Hist_Dark_SR_FullFoV_Theta2.at(e).GetBinContent(bin);
+                    double weight = 0.;
+                    if (dark_cr_content>0.) weight = dark_sr_content/dark_cr_content;
+                    Hist_Data_CR_SelectFoV_Theta2.at(e).Fill(theta2,weight);
+                    Hist_Data_CR_Skymap.at(e).Fill(ra_sky,dec_sky,weight);
+                }
+            }
         }
     }
+    for (int e=0;e<N_energy_bins;e++) 
+    {
+        int binx_blind = Hist_Ring_MSCLW.at(e).GetXaxis()->FindBin(MSCL_signal_cut_lower[Number_of_SR-1]);
+        int binx_upper = Hist_Ring_MSCLW.at(e).GetXaxis()->FindBin(MSCL_signal_cut_upper[0]);
+        int biny_blind = Hist_Ring_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
+        int biny_upper = Hist_Ring_MSCLW.at(e).GetYaxis()->FindBin(MSCW_plot_upper);
+        double Ring_CR_Integral = Hist_Ring_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
+        double Data_CR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
+        double scale = Data_CR_Integral/Ring_CR_Integral;
+        Hist_Ring_MSCLW.at(e).Scale(scale);
+    }
 
-    // Get a list of electron MC runs
-    vector<pair<string,int>> MC_runlist = GetRunList("Photon");
-    for (int run=0;run<MC_runlist.size();run++)
+    // Get e/gamma template from Crab
+    vector<pair<string,int>> Crab_runlist = GetRunList("Crab");
+    for (int run=0;run<Crab_runlist.size();run++)
     {
         char run_number[50];
-        char MC_observation[50];
-        sprintf(run_number, "%i", int(MC_runlist[run].second));
-        sprintf(MC_observation, "%s", MC_runlist[run].first.c_str());
+        char Crab_observation[50];
+        sprintf(run_number, "%i", int(Crab_runlist[run].second));
+        sprintf(Crab_observation, "%s", Crab_runlist[run].first.c_str());
         string filename;
-        filename = TString("$VERITAS_USER_DATA_DIR/"+TString(MC_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
-        TFile*  input_file = TFile::Open(filename.c_str());
-        TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
-        TTree* MC_tree = (TTree*) input_file->Get(root_file);
-        MC_tree->SetBranchAddress("Xoff",&Xoff);
-        MC_tree->SetBranchAddress("Yoff",&Yoff);
-        MC_tree->SetBranchAddress("theta2",&theta2);
-        MC_tree->SetBranchAddress("ra",&ra_sky);
-        MC_tree->SetBranchAddress("dec",&dec_sky);
-        MC_tree->SetBranchAddress("ErecS",&ErecS);
-        MC_tree->SetBranchAddress("EChi2S",&EChi2S);
-        MC_tree->SetBranchAddress("MSCW",&MSCW);
-        MC_tree->SetBranchAddress("MSCL",&MSCL);
-        MC_tree->SetBranchAddress("NImages",&NImages);
+        filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Crab_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
-        for (int entry=0;entry<MC_tree->GetEntries();entry++) 
+        if (!PointingSelection(filename,int(Crab_runlist[run].second),60,90,0,360)) continue;
+
+        TFile*  input_file = TFile::Open(filename.c_str());
+        TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Crab_runlist[run].second);
+        TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
+        TTree* Crab_tree = (TTree*) input_file->Get(root_file);
+        Crab_tree->SetBranchAddress("Xoff",&Xoff);
+        Crab_tree->SetBranchAddress("Yoff",&Yoff);
+        Crab_tree->SetBranchAddress("theta2",&theta2);
+        Crab_tree->SetBranchAddress("ra",&ra_sky);
+        Crab_tree->SetBranchAddress("dec",&dec_sky);
+        Crab_tree->SetBranchAddress("ErecS",&ErecS);
+        Crab_tree->SetBranchAddress("EChi2S",&EChi2S);
+        Crab_tree->SetBranchAddress("MSCW",&MSCW);
+        Crab_tree->SetBranchAddress("MSCL",&MSCL);
+        Crab_tree->SetBranchAddress("NImages",&NImages);
+        Crab_tree->SetBranchAddress("Time",&Time);
+
+        for (int entry=0;entry<Crab_tree->GetEntries();entry++) 
         {
             ErecS = 0;
             EChi2S = 0;
@@ -365,34 +509,116 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
             MSCW = 0;
             MSCL = 0;
             R2off = 0;
-            MC_tree->GetEntry(entry);
+            Crab_tree->GetEntry(entry);
             R2off = Xoff*Xoff+Yoff*Yoff;
-            MSCW += 0.2;
-            MSCL += 0.2;
             int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
             int e = energy;
             if (!SelectNImages(3,4)) continue;
-            if (FoV())
+            if (theta2<0.2)
             {
-                Hist_Elec_MSCLW.at(e).Fill(MSCL,MSCW);
+                Hist_CrabON_MSCLW.at(e).Fill(MSCL,MSCW);
+            }
+            else if (theta2>0.4)
+            {
+                Hist_CrabOFF_MSCLW.at(e).Fill(MSCL,MSCW);
             }
         }
     }
-    // Normalize MC electron histograms with cosmic electron flux
     for (int e=0;e<N_energy_bins;e++) 
     {
-        double old_integral = Hist_Elec_MSCLW.at(e).Integral();
-        double scale = electron_count[e]/old_integral;
-        double scale_err = electron_count_err[e]/old_integral;
+        int binx_blind = Hist_CrabON_MSCLW.at(e).GetXaxis()->FindBin(MSCL_signal_cut_lower[Number_of_SR-1]);
+        int binx_upper = Hist_CrabON_MSCLW.at(e).GetXaxis()->FindBin(MSCL_signal_cut_upper[0]);
+        int biny_blind = Hist_CrabON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
+        int biny_upper = Hist_CrabON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_plot_upper);
+        double CrabON_CR_Integral = Hist_CrabON_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
+        double CrabOFF_CR_Integral = Hist_CrabOFF_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
+        double scale = CrabON_CR_Integral/CrabOFF_CR_Integral;
+        Hist_CrabOFF_MSCLW.at(e).Scale(scale);
+        Hist_Elec_MSCLW.at(e).Add(&Hist_CrabON_MSCLW.at(e));
+        Hist_Elec_MSCLW.at(e).Add(&Hist_CrabOFF_MSCLW.at(e),-1.);
         for (int binx=0;binx<Hist_Elec_MSCLW.at(e).GetNbinsX();binx++)
         {
             for (int biny=0;biny<Hist_Elec_MSCLW.at(e).GetNbinsY();biny++)
             {
                 double old_content = Hist_Elec_MSCLW.at(e).GetBinContent(binx+1,biny+1);
                 double old_error = Hist_Elec_MSCLW.at(e).GetBinError(binx+1,biny+1);
-                double new_content = old_content*scale;
+                if (old_content<0)
+                {
+                    Hist_Elec_MSCLW.at(e).SetBinContent(binx+1,biny+1,0);
+                    Hist_Elec_MSCLW.at(e).SetBinError(binx+1,biny+1,0);
+                }
+            }
+        }
+    }
+
+    // Get a list of electron MC runs
+    //vector<pair<string,int>> MC_runlist = GetRunList("Photon");
+    //for (int run=0;run<MC_runlist.size();run++)
+    //{
+    //    char run_number[50];
+    //    char MC_observation[50];
+    //    sprintf(run_number, "%i", int(MC_runlist[run].second));
+    //    sprintf(MC_observation, "%s", MC_runlist[run].first.c_str());
+    //    string filename;
+    //    filename = TString("$VERITAS_USER_DATA_DIR/"+TString(MC_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
+    //    TFile*  input_file = TFile::Open(filename.c_str());
+    //    TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
+    //    TTree* MC_tree = (TTree*) input_file->Get(root_file);
+    //    MC_tree->SetBranchAddress("Xoff",&Xoff);
+    //    MC_tree->SetBranchAddress("Yoff",&Yoff);
+    //    MC_tree->SetBranchAddress("theta2",&theta2);
+    //    MC_tree->SetBranchAddress("ra",&ra_sky);
+    //    MC_tree->SetBranchAddress("dec",&dec_sky);
+    //    MC_tree->SetBranchAddress("ErecS",&ErecS);
+    //    MC_tree->SetBranchAddress("EChi2S",&EChi2S);
+    //    MC_tree->SetBranchAddress("MSCW",&MSCW);
+    //    MC_tree->SetBranchAddress("MSCL",&MSCL);
+    //    MC_tree->SetBranchAddress("NImages",&NImages);
+
+    //    for (int entry=0;entry<MC_tree->GetEntries();entry++) 
+    //    {
+    //        ErecS = 0;
+    //        EChi2S = 0;
+    //        NImages = 0;
+    //        MSCW = 0;
+    //        MSCL = 0;
+    //        R2off = 0;
+    //        MC_tree->GetEntry(entry);
+    //        R2off = Xoff*Xoff+Yoff*Yoff;
+    //        //MSCW += 0.2;
+    //        //MSCL += 0.2;
+    //        int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
+    //        if (energy<0) continue;
+    //        if (energy>=N_energy_bins) continue;
+    //        int e = energy;
+    //        if (!SelectNImages(3,4)) continue;
+    //        if (FoV())
+    //        {
+    //            Hist_Elec_MSCLW.at(e).Fill(MSCL,MSCW);
+    //        }
+    //    }
+    //}
+    
+     
+    // Normalize MC electron histograms with cosmic electron flux
+    for (int e=0;e<N_energy_bins;e++) 
+    {
+        double old_integral = Hist_Elec_MSCLW.at(e).Integral();
+        double scale = electron_count[e]/old_integral;
+        //double scale_err = electron_count_err[e]/old_integral;
+        double scale_err = 0.;
+        double select_fov_integral = Hist_Dark_SR_SelectFoV_Theta2.at(e).Integral();
+        double full_fov_integral = Hist_Dark_SR_FullFoV_Theta2.at(e).Integral();
+        double scale_fov = select_fov_integral/full_fov_integral;
+        for (int binx=0;binx<Hist_Elec_MSCLW.at(e).GetNbinsX();binx++)
+        {
+            for (int biny=0;biny<Hist_Elec_MSCLW.at(e).GetNbinsY();biny++)
+            {
+                double old_content = Hist_Elec_MSCLW.at(e).GetBinContent(binx+1,biny+1);
+                double old_error = Hist_Elec_MSCLW.at(e).GetBinError(binx+1,biny+1);
+                double new_content = old_content*scale*scale_fov;
                 double new_error = old_error*old_error*scale*scale+(old_content*scale_err)*(old_content*scale_err);
                 if (new_error>0) new_error = pow(new_error,0.5);
                 Hist_Elec_MSCLW.at(e).SetBinContent(binx+1,biny+1,new_content);
@@ -406,7 +632,12 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
     for (int e=0;e<N_energy_bins;e++)
     {
         Hist_Data_MSCLW.at(e).Write();
+        Hist_Ring_MSCLW.at(e).Write();
         Hist_Elec_MSCLW.at(e).Write();
+        Hist_Data_SR_SelectFoV_Theta2.at(e).Write();
+        Hist_Data_CR_SelectFoV_Theta2.at(e).Write();
+        Hist_Data_SR_Skymap.at(e).Write();
+        Hist_Data_CR_Skymap.at(e).Write();
     }
     OutputFile.Close();
 
