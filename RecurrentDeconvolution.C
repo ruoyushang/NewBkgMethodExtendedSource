@@ -181,10 +181,10 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, bool do
 }
 double ConvergeFunction(double x, double endpoint_0, double endpoint_1, int type)
 {
-    //if (x-(endpoint_1)>=0.) return 1.;
-    //if (x-(endpoint_0)<0.) return 0.;
-    //return pow((x-endpoint_0)/(endpoint_1-endpoint_0),1);
-    return 1./(1.+exp(-(x-(endpoint_0+endpoint_1)/2.)/(endpoint_1-endpoint_0)));
+    if (x-(endpoint_1)>=0.) return 1.;
+    if (x-(endpoint_0)<0.) return 0.;
+    return pow((x-endpoint_0)/(endpoint_1-endpoint_0),1);
+    //return 1./(1.+exp(-(x-(endpoint_0+endpoint_1)/2.)/(endpoint_1-endpoint_0)));
 
 }
 void Converge(TH1* Hist_Bkg, double endpoint_0, double endpoint_1)
@@ -377,7 +377,7 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(
     int niter_best = 0;
     for (int niter=1;niter<=10;niter++)
     {
-        parameters = PredictNextLayerHadron(niter,1.0,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
+        parameters = PredictNextLayerHadron(niter,0.0,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
         double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,1);
         //if (chi2_previous>chi2) break;
         if (chi2_best<chi2) {
@@ -388,10 +388,10 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(
     }
 
     chi2_best = 0.;
-    double best_electron_scale = 1.;
+    double best_electron_scale = 0.;
     for (int nscale=0;nscale<=10;nscale++)
     {
-        double scale = 0.5+1.0*(double)nscale/10.;
+        double scale = 2.0*(double)nscale/10.;
         parameters = PredictNextLayerHadron(niter_best,scale,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
         double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,1);
         if (chi2_best<chi2) {
@@ -435,15 +435,19 @@ void PredictBackground(TH2D* Hist_Target_Data, TH2D* Hist_Target_Elec, TH2D* His
         TH1* Hist_DarkBkg = Hist_Dark_Bkg->ProjectionY("Hist_DarkBkg",region,region);
         TH1* Hist_DarkBkg_Previous = Hist_Dark_Bkg->ProjectionY("Hist_DarkBkg_Previous",region+1,region+1);
         if (binx==1) Hist_DarkBkg_Previous = Hist_Dark_Data->ProjectionY("Hist_DarkBkg_Previous",region+1,region+1);
+        std::cout << "Before, Hist_Target_ElectronMC->Integral() = " << Hist_Target_ElectronMC->Integral() << std::endl;
         parameters = PredictNextLayer(Hist_Dark_ElectronMC,Hist_Target_ElectronMC,Hist_SR,Hist_SR_Previous,Hist_Bkg,Hist_Bkg_Previous,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,parameters,energy);
+        std::cout << "After, Hist_Target_ElectronMC->Integral() = " << Hist_Target_ElectronMC->Integral() << std::endl;
         for (int biny=0;biny<Hist_Target_Bkg->GetNbinsY();biny++)
         {
             Hist_Target_Bkg->SetBinContent(region,biny+1,Hist_Bkg->GetBinContent(biny+1));
             Hist_Target_Bkg->SetBinError(region,biny+1,Hist_Bkg->GetBinError(biny+1));
             Hist_Dark_Bkg->SetBinContent(region,biny+1,Hist_DarkBkg->GetBinContent(biny+1));
             Hist_Dark_Bkg->SetBinError(region,biny+1,Hist_DarkBkg->GetBinError(biny+1));
-            Hist_Dark_Elec->SetBinError(region,biny+1,Hist_Dark_ElectronMC->GetBinError(biny+1));
+            Hist_Target_Elec->SetBinContent(region,biny+1,Hist_Target_ElectronMC->GetBinContent(biny+1));
             Hist_Target_Elec->SetBinError(region,biny+1,Hist_Target_ElectronMC->GetBinError(biny+1));
+            Hist_Dark_Elec->SetBinContent(region,biny+1,Hist_Dark_ElectronMC->GetBinContent(biny+1));
+            Hist_Dark_Elec->SetBinError(region,biny+1,Hist_Dark_ElectronMC->GetBinError(biny+1));
         }
     }
     for (int binx=0;binx<Number_of_SR;binx++)
@@ -462,15 +466,19 @@ void PredictBackground(TH2D* Hist_Target_Data, TH2D* Hist_Target_Elec, TH2D* His
         TH1* Hist_DarkBkg = Hist_Dark_Bkg->ProjectionY("Hist_DarkBkg",region,region);
         TH1* Hist_DarkBkg_Previous = Hist_Dark_Bkg->ProjectionY("Hist_DarkBkg_Previous",region+1,region+1);
         if (binx==0) Hist_DarkBkg_Previous = Hist_Dark_Data->ProjectionY("Hist_DarkBkg_Previous",region+1,region+1);
+        std::cout << "Before, Hist_Target_ElectronMC->Integral() = " << Hist_Target_ElectronMC->Integral() << std::endl;
         parameters = PredictNextLayer(Hist_Dark_ElectronMC,Hist_Target_ElectronMC,Hist_SR,Hist_SR_Previous,Hist_Bkg,Hist_Bkg_Previous,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,parameters,energy);
+        std::cout << "After, Hist_Target_ElectronMC->Integral() = " << Hist_Target_ElectronMC->Integral() << std::endl;
         for (int biny=0;biny<Hist_Target_Bkg->GetNbinsY();biny++)
         {
             Hist_Target_Bkg->SetBinContent(region,biny+1,Hist_Bkg->GetBinContent(biny+1));
             Hist_Target_Bkg->SetBinError(region,biny+1,Hist_Bkg->GetBinError(biny+1));
             Hist_Dark_Bkg->SetBinContent(region,biny+1,Hist_DarkBkg->GetBinContent(biny+1));
             Hist_Dark_Bkg->SetBinError(region,biny+1,Hist_DarkBkg->GetBinError(biny+1));
-            Hist_Dark_Elec->SetBinError(region,biny+1,Hist_Dark_ElectronMC->GetBinError(biny+1));
+            Hist_Target_Elec->SetBinContent(region,biny+1,Hist_Target_ElectronMC->GetBinContent(biny+1));
             Hist_Target_Elec->SetBinError(region,biny+1,Hist_Target_ElectronMC->GetBinError(biny+1));
+            Hist_Dark_Elec->SetBinContent(region,biny+1,Hist_Dark_ElectronMC->GetBinContent(biny+1));
+            Hist_Dark_Elec->SetBinError(region,biny+1,Hist_Dark_ElectronMC->GetBinError(biny+1));
         }
     }
 }

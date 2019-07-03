@@ -60,7 +60,7 @@ double electron_flux[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_flux_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_count[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_count_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-bool use_this_energy_bin[N_energy_bins] = {false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false};
+bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] = {282,335};
 //double electron_flux[N_energy_bins] = {0};
@@ -450,7 +450,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
                 if (FoV())
                 {
                     Hist_Data_SR_SelectFoV_Theta2.at(e).Fill(theta2);
-                    Hist_Data_SR_Skymap.at(e).Fill(ra_sky,dec_sky);
+                    Hist_Data_SR_Skymap.at(e).Fill(-1.*ra_sky,dec_sky);
                 }
             }
             if (ControlSelectionTheta2())
@@ -463,7 +463,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
                     double weight = 0.;
                     if (dark_cr_content>0.) weight = dark_sr_content/dark_cr_content;
                     Hist_Data_CR_SelectFoV_Theta2.at(e).Fill(theta2,weight);
-                    Hist_Data_CR_Skymap.at(e).Fill(ra_sky,dec_sky,weight);
+                    Hist_Data_CR_Skymap.at(e).Fill(-1.*ra_sky,dec_sky,weight);
                 }
             }
         }
@@ -539,7 +539,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
             {
                 Hist_CrabON_MSCLW.at(e).Fill(MSCL,MSCW);
             }
-            else if (theta2>0.4)
+            else if (theta2>0.2 && theta2<0.4)
             {
                 Hist_CrabOFF_MSCLW.at(e).Fill(MSCL,MSCW);
             }
