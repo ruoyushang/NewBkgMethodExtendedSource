@@ -35,8 +35,16 @@
 #include "TROOT.h"
 #include "TChain.h"
 #include "TBranch.h"
+#include "TSpline.h"
 
 #include "GetRunList.h"
+
+ClassImp(TSplinePoly);
+ClassImp(TSplinePoly3);
+ClassImp(TSplinePoly5);
+ClassImp(TSpline3);
+ClassImp(TSpline5);
+ClassImp(TSpline);
 
 double MSCW_cut_lower = -1.0;
 double MSCW_cut_blind = 1.0;
@@ -60,7 +68,7 @@ double electron_flux[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_flux_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_count[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_count_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false};
+bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] = {282,335};
 //double electron_flux[N_energy_bins] = {0};
@@ -221,10 +229,13 @@ std::pair <double,double> GetMcGillElectronFlux(double energy)
             }
         }
     }
-    TF1 *func = new TF1("func",FitPowerLawFunction,energy_bins[0],energy_bins[N_energy_bins-1],2);
-    func->SetParameter(0,314);
-    func->SetParameter(1,-2.);
-    Hist_Flux.Fit("func","","",energy_bins[0],energy_bins[N_energy_bins-1]);
+    //TF1 *func = new TF1("func",FitPowerLawFunction,energy_bins[0],energy_bins[N_energy_bins-1],2);
+    //func->SetParameter(0,314);
+    //func->SetParameter(1,-2.);
+    //Hist_Flux.Fit("func","","",energy_bins[0],energy_bins[N_energy_bins-1]);
+    //return std::make_pair(func->Eval(energy),func->Eval(energy));
+    //
+    TGraph *func = new TGraph(&Hist_Flux);
     return std::make_pair(func->Eval(energy),func->Eval(energy));
 }
 bool FoV() {
@@ -248,6 +259,7 @@ bool SelectNImages(int Nmin, int Nmax)
 }
 bool ControlSelectionTheta2()
 {
+    if (MSCL<MSCL_signal_cut_lower[Number_of_SR-1]) return false;
     if (MSCL>MSCL_signal_cut_upper[0]) return false;
     if (MSCW<MSCW_cut_blind*1.0) return false;
     if (MSCW>MSCW_cut_blind*3.0) return false;
@@ -255,6 +267,7 @@ bool ControlSelectionTheta2()
 }
 bool SignalSelectionTheta2()
 {
+    if (MSCL<MSCL_signal_cut_lower[Number_of_SR-1]) return false;
     if (MSCL>MSCL_signal_cut_upper[0]) return false;
     if (MSCW>MSCW_cut_blind) return false;
     if (MSCW<MSCW_cut_lower) return false;
@@ -473,7 +486,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         int binx_blind = Hist_Ring_MSCLW.at(e).GetXaxis()->FindBin(MSCL_signal_cut_lower[Number_of_SR-1]);
         int binx_upper = Hist_Ring_MSCLW.at(e).GetXaxis()->FindBin(MSCL_signal_cut_upper[0])-1;
         int biny_blind = Hist_Ring_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
-        int biny_upper = Hist_Ring_MSCLW.at(e).GetYaxis()->FindBin(MSCW_plot_upper)-1;
+        int biny_upper = Hist_Ring_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
         double Ring_CR_Integral = Hist_Ring_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double Data_CR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double scale = Data_CR_Integral/Ring_CR_Integral;
@@ -484,7 +497,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         int binx_blind = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_signal_cut_lower[Number_of_SR-1]);
         int binx_upper = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_signal_cut_upper[0])-1;
         int biny_blind = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
-        int biny_upper = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_plot_upper)-1;
+        int biny_upper = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
         double Dark_CR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double Data_CR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double scale = Data_CR_Integral/Dark_CR_Integral;
@@ -550,7 +563,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         int binx_blind = Hist_CrabON_MSCLW.at(e).GetXaxis()->FindBin(MSCL_signal_cut_lower[Number_of_SR-1]);
         int binx_upper = Hist_CrabON_MSCLW.at(e).GetXaxis()->FindBin(MSCL_signal_cut_upper[0])-1;
         int biny_blind = Hist_CrabON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
-        int biny_upper = Hist_CrabON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_plot_upper)-1;
+        int biny_upper = Hist_CrabON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
         double CrabON_CR_Integral = Hist_CrabON_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double CrabOFF_CR_Integral = Hist_CrabOFF_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double scale = CrabON_CR_Integral/CrabOFF_CR_Integral;
@@ -626,8 +639,8 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
     {
         double old_integral = Hist_Elec_MSCLW.at(e).Integral();
         double scale = electron_count[e]/old_integral;
-        //double scale_err = electron_count_err[e]/old_integral;
-        double scale_err = 0.;
+        double scale_err = electron_count_err[e]/old_integral;
+        //double scale_err = 0.;
         double select_fov_integral = Hist_Dark_SR_SelectFoV_Theta2.at(e).Integral();
         double full_fov_integral = Hist_Dark_SR_FullFoV_Theta2.at(e).Integral();
         double scale_fov = select_fov_integral/full_fov_integral;

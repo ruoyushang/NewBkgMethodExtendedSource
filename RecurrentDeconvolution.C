@@ -179,7 +179,7 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, bool do
     Hist_Bkg->Scale(scale_fit);
     return shift_fit;
 }
-double ConvergeFunction(double x, double endpoint_0, double endpoint_1, int type)
+double CutoffFunction(double x, double endpoint_0, double endpoint_1, int type)
 {
     if (x-(endpoint_1)>=0.) return 1.;
     if (x-(endpoint_0)<0.) return 0.;
@@ -187,12 +187,12 @@ double ConvergeFunction(double x, double endpoint_0, double endpoint_1, int type
     //return 1./(1.+exp(-(x-(endpoint_0+endpoint_1)/2.)/(endpoint_1-endpoint_0)));
 
 }
-void Converge(TH1* Hist_Bkg, double endpoint_0, double endpoint_1)
+void Cutoff(TH1* Hist_Bkg, double endpoint_0, double endpoint_1)
 {
     for (int i=0;i<Hist_Bkg->GetNbinsX();i++)
     {
         double old_content = Hist_Bkg->GetBinContent(i+1);
-        double new_content = old_content*ConvergeFunction(Hist_Bkg->GetBinCenter(i+1),endpoint_0,endpoint_1,0);
+        double new_content = old_content*CutoffFunction(Hist_Bkg->GetBinCenter(i+1),endpoint_0,endpoint_1,0);
         double old_error = Hist_Bkg->GetBinError(i+1);
         double new_error = old_error;
         Hist_Bkg->SetBinContent(i+1,new_content);
@@ -243,7 +243,7 @@ double FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTemp, TH1
         Deconvolution(Hist_CR,Hist_Deconv,Hist_BkgTemp,n_iter);
         if (!IsReasonableResult(Hist_BkgTemp)) continue;
         double offset = ShiftAndNormalize(Hist_SR,Hist_BkgTemp,Hist_Bkg,DoShift,includeSR,chi2_type,0.);
-        Converge(Hist_Bkg,endpoint_0,endpoint_1);
+        Cutoff(Hist_Bkg,endpoint_0,endpoint_1);
         chi2 = GetChi2(Hist_SR, Hist_Bkg,includeSR,2);
         unblinded_chi2 = GetChi2(Hist_SR, Hist_Bkg,true,2);
         if (chi2_best<chi2) {
@@ -279,7 +279,7 @@ void MakeBkgPrevious(TH1* Hist_SR,TH1* Hist_Bkg,TH1* Hist_Previous, bool include
         std::cout << "Hist_Previous->Integral() = 0!!!" << std::endl;
     }
 }
-std::pair <double,double> FindConvergeEndpoints(TH1* Hist_SR,TH1* Hist_Bkg,double init_endpoint_0,double init_endpoint_1)
+std::pair <double,double> FindCutoffEndpoints(TH1* Hist_SR,TH1* Hist_Bkg,double init_endpoint_0,double init_endpoint_1)
 {
     double endpoint_0_best = 0.;
     double endpoint_1_best = 0.;
@@ -293,7 +293,7 @@ std::pair <double,double> FindConvergeEndpoints(TH1* Hist_SR,TH1* Hist_Bkg,doubl
             TH1D Hist_Bkg_Tmp = TH1D("Hist_Bkg_Tmp","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
             Hist_Bkg_Tmp.Reset();
             Hist_Bkg_Tmp.Add(Hist_Bkg);
-            Converge(&Hist_Bkg_Tmp,tmp_endpoint_0,tmp_endpoint_1);
+            Cutoff(&Hist_Bkg_Tmp,tmp_endpoint_0,tmp_endpoint_1);
             double chi2 = GetChi2(Hist_SR,&Hist_Bkg_Tmp,true,1);
             if (chi2_best<chi2) {
                 chi2_best = chi2;
@@ -319,7 +319,8 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerH
         double content = 0;
         content = Hist_SR->GetBinContent(b+1)-Hist_ElectronMC->GetBinContent(b+1)*electron_flux_scale;
         if (content<0.) content = 0.;
-        double error = Hist_SR->GetBinError(b+1);
+        double error = Hist_SR->GetBinError(b+1)*Hist_SR->GetBinError(b+1)+Hist_ElectronMC->GetBinError(b+1)*Hist_ElectronMC->GetBinError(b+1);
+        if (error!=0) error = pow(error,0.5);
         Hist_SR_Temp.SetBinContent(b+1,content);
         Hist_SR_Temp.SetBinError(b+1,error);
     }
@@ -351,22 +352,23 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerH
         double content = 0;
         content = Hist_SR->GetBinContent(b+1)-Hist_ElectronMC->GetBinContent(b+1)*electron_flux_scale;
         if (content<0.) content = 0.;
-        double error = Hist_SR->GetBinError(b+1);
+        double error = Hist_SR->GetBinError(b+1)*Hist_SR->GetBinError(b+1)+Hist_ElectronMC->GetBinError(b+1)*Hist_ElectronMC->GetBinError(b+1);
+        if (error!=0) error = pow(error,0.5);
         Hist_SR_Temp.SetBinContent(b+1,content);
         Hist_SR_Temp.SetBinError(b+1,error);
     }
-    std::pair <double,double> converge;
-    converge.first = endpoint_0;
-    converge.second = endpoint_1;
+    std::pair <double,double> cutoff;
+    cutoff.first = endpoint_0;
+    cutoff.second = endpoint_1;
     if (isDark)
     {
-        converge = FindConvergeEndpoints(&Hist_SR_Temp,Hist_Bkg,endpoint_0,endpoint_1);
+        cutoff = FindCutoffEndpoints(&Hist_SR_Temp,Hist_Bkg,endpoint_0,endpoint_1);
     }
-    Converge(Hist_Bkg,converge.first,converge.second);
+    Cutoff(Hist_Bkg,cutoff.first,cutoff.second);
     parameters.first.first = kernel_rms;
     parameters.first.second = offset;
-    parameters.second.first = converge.first;
-    parameters.second.second = converge.second;
+    parameters.second.first = cutoff.first;
+    parameters.second.second = cutoff.second;
     return parameters;
 }
 std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(TH1* Hist_Dark_ElectronMC, TH1* Hist_ElectronMC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg, TH1* Hist_Bkg_Previous, TH1* Hist_DarkSR, TH1* Hist_DarkSR_Previous, TH1* Hist_DarkBkg, TH1* Hist_DarkBkg_Previous, std::pair <std::pair <double,double>,std::pair <double,double>> parameters_0, double energy)
@@ -389,18 +391,19 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(
 
     chi2_best = 0.;
     double best_electron_scale = 0.;
-    for (int nscale=0;nscale<=10;nscale++)
-    {
-        double scale = 2.0*(double)nscale/10.;
-        parameters = PredictNextLayerHadron(niter_best,scale,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
-        double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,1);
-        if (chi2_best<chi2) {
-            chi2_best = chi2;
-            best_electron_scale = scale;
-        } 
-    }
+    //for (int nscale=0;nscale<=10;nscale++)
+    //{
+    //    double scale = 2.0*(double)nscale/10.;
+    //    parameters = PredictNextLayerHadron(niter_best,scale,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
+    //    double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,1);
+    //    if (chi2_best<chi2) {
+    //        chi2_best = chi2;
+    //        best_electron_scale = scale;
+    //    } 
+    //}
     parameters = PredictNextLayerHadron(niter_best,best_electron_scale,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
 
+    std::cout << "best n iterations = " << niter_best << std::endl;
     std::cout << "best_electron_scale = " << best_electron_scale << std::endl;
     std::cout << "Dark field found kernel RMS = " << parameters.first.first << std::endl;
     std::cout << "Dark field found kernel offset = " << parameters.first.second << std::endl;
@@ -411,6 +414,17 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(
     //parameters = PredictNextLayerHadron(niter_best,best_electron_scale,Hist_ElectronMC,Hist_SR,Hist_SR_Previous,Hist_Bkg,Hist_Bkg_Previous,energy,parameters_0,true);
     std::cout << "Dark bkg integral = " << Hist_DarkBkg->Integral() << std::endl;
     std::cout << "Target bkg integral = " << Hist_Bkg->Integral() << std::endl;
+
+    int norm_bin_low = Hist_Dark_ElectronMC->FindBin(MSCW_cut_lower);
+    int norm_bin_blind = Hist_Dark_ElectronMC->FindBin(MSCW_cut_blind);
+    double mc_electron_integral = Hist_Dark_ElectronMC->Integral(norm_bin_low,norm_bin_blind);
+    double data_excess_integral = Hist_DarkSR->Integral(norm_bin_low,norm_bin_blind)-Hist_DarkBkg->Integral(norm_bin_low,norm_bin_blind);
+    best_electron_scale = 0.;
+    if (data_excess_integral>0 && mc_electron_integral>0)
+    {
+        best_electron_scale = data_excess_integral/mc_electron_integral;
+    }
+
     Hist_Dark_ElectronMC->Scale(best_electron_scale);
     Hist_ElectronMC->Scale(best_electron_scale);
     return parameters;
@@ -482,16 +496,16 @@ void PredictBackground(TH2D* Hist_Target_Data, TH2D* Hist_Target_Elec, TH2D* His
         }
     }
 }
-void RecurrentDeconvolution(string target_data, string dark_data, double theta2_cut_lower_input, double theta2_cut_upper_input)
+void RecurrentDeconvolution(string target_data, double theta2_cut_lower_input, double theta2_cut_upper_input)
 {
 
     Theta2_cut_lower = theta2_cut_lower_input;
     Theta2_cut_upper = theta2_cut_upper_input;
 
     vector<TH2D> Hist_Target_Bkg_MSCLW;
+    vector<TH2D> Hist_Target_Ele_MSCLW;
     vector<TH2D> Hist_Dark_Bkg_MSCLW;
     TFile InputDataFile("output_Jun15/Deconvolution_"+TString(target_data)+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root");
-    TFile InputDarkFile("output_Jun15/Deconvolution_"+TString(dark_data)+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root");
     for (int e=0;e<N_energy_bins;e++) 
     {
         std::cout << "energy = " << energy_bins[e] << std::endl;
@@ -500,27 +514,30 @@ void RecurrentDeconvolution(string target_data, string dark_data, double theta2_
         char e_up[50];
         sprintf(e_up, "%i", int(energy_bins[e+1]));
         TString filename_data  = "Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
+        TString filename_dark  = "Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TString filename_elec  = "Hist_Elec_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TH2D* Hist_Target_Data = (TH2D*)InputDataFile.Get(filename_data);
         TH2D* Hist_Target_Elec = (TH2D*)InputDataFile.Get(filename_elec);
-        TH2D* Hist_Dark_Data = (TH2D*)InputDarkFile.Get(filename_data);
-        TH2D* Hist_Dark_Elec = (TH2D*)InputDarkFile.Get(filename_elec);
+        TH2D* Hist_Dark_Data = (TH2D*)InputDataFile.Get(filename_dark);
+        TH2D* Hist_Dark_Elec = (TH2D*)InputDataFile.Get(filename_elec);
 
         N_bins_for_deconv = Hist_Target_Data->GetNbinsY();
         Hist_Target_Bkg_MSCLW.push_back(TH2D("Hist_Target_Bkg_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_Target_Ele_MSCLW.push_back(TH2D("Hist_Target_Ele_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Dark_Bkg_MSCLW.push_back(TH2D("Hist_Dark_Bkg_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
 
         //if (use_this_energy_bin[e]==false) continue;
-        PredictBackground(Hist_Target_Data,Hist_Target_Elec,Hist_Dark_Data,Hist_Dark_Elec,&Hist_Target_Bkg_MSCLW.at(e),&Hist_Dark_Bkg_MSCLW.at(e),energy_bins[e]);
+        Hist_Target_Ele_MSCLW.at(e).Add(Hist_Target_Elec);
+        PredictBackground(Hist_Target_Data,&Hist_Target_Ele_MSCLW.at(e),Hist_Dark_Data,Hist_Dark_Elec,&Hist_Target_Bkg_MSCLW.at(e),&Hist_Dark_Bkg_MSCLW.at(e),energy_bins[e]);
 
     }
     InputDataFile.Close();
-    InputDarkFile.Close();
 
     TFile OutputDataFile("output_Jun15/Deconvolution_"+TString(target_data)+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","update");
     for (int e=0;e<N_energy_bins;e++)
     {
         Hist_Target_Bkg_MSCLW.at(e).Write();
+        Hist_Target_Ele_MSCLW.at(e).Write();
     }
     OutputDataFile.Close();
 
