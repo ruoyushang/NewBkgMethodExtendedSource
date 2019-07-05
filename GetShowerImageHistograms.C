@@ -68,7 +68,7 @@ double electron_flux[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_flux_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_count[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_count_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false};
+bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] = {282,335};
 //double electron_flux[N_energy_bins] = {0};
@@ -76,7 +76,7 @@ bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,false,false,f
 //double electron_count[N_energy_bins] = {0};
 //double electron_count_err[N_energy_bins] = {0};
 
-int N_bins_for_deconv = 480;
+int N_bins_for_deconv = 960;
 double MSCW_plot_lower = -30.;
 double MSCW_plot_upper = 30.;
 double Theta2_cut_lower = 0;
@@ -302,9 +302,9 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         sprintf(e_low, "%i", int(energy_bins[e]));
         char e_up[50];
         sprintf(e_up, "%i", int(energy_bins[e+1]));
-        if (energy_bins[e]>=200.) N_bins_for_deconv = 960;
-        if (energy_bins[e]>=1000.) N_bins_for_deconv = 480;
-        if (energy_bins[e]>=3200.) N_bins_for_deconv = 240;
+        //if (energy_bins[e]>=200.) N_bins_for_deconv = 960;
+        //if (energy_bins[e]>=1000.) N_bins_for_deconv = 480;
+        //if (energy_bins[e]>=3200.) N_bins_for_deconv = 240;
         Hist_Data_MSCLW.push_back(TH2D("Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Ring_MSCLW.push_back(TH2D("Hist_Ring_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Dark_MSCLW.push_back(TH2D("Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
@@ -660,7 +660,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
     }
 
 
-    TFile OutputFile("output_Jun15/Deconvolution_"+TString(target)+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","recreate");
+    TFile OutputFile("output_Jul05/Deconvolution_"+TString(target)+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","recreate");
     TTree InfoTree("InfoTree","info tree");
     InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
     InfoTree.Fill();
