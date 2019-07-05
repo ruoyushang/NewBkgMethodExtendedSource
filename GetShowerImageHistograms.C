@@ -276,6 +276,7 @@ bool SignalSelectionTheta2()
 void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input, double theta2_cut_upper_input)
 {
 
+    TH1::SetDefaultSumw2();
     sprintf(target, "%s", target_data.c_str());
     Theta2_cut_lower = theta2_cut_lower_input;
     Theta2_cut_upper = theta2_cut_upper_input;
