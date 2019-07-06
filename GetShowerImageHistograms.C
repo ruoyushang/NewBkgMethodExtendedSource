@@ -68,7 +68,7 @@ double electron_flux[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_flux_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_count[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_count_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false};
+bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] = {282,335};
 //double electron_flux[N_energy_bins] = {0};
@@ -82,6 +82,8 @@ double MSCW_plot_upper = 30.;
 double Theta2_cut_lower = 0;
 double Theta2_cut_upper = 0;
 double Theta2_upper_limit = 10;
+double TelElev_upper = 90.;
+double TelElev_lower = 60.;
 char target[50] = "";
 
 double TelElevation = 0;
@@ -333,7 +335,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Dark_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
-        if (!PointingSelection(filename,int(Dark_runlist[run].second),60,90,0,360)) continue;
+        if (!PointingSelection(filename,int(Dark_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
 
         TFile*  input_file = TFile::Open(filename.c_str());
 	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Dark_runlist[run].second);
@@ -396,7 +398,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
-        if (!PointingSelection(filename,int(Data_runlist[run].second),60,90,0,360)) continue;
+        if (!PointingSelection(filename,int(Data_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
 
         TFile*  input_file = TFile::Open(filename.c_str());
 	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Data_runlist[run].second);
@@ -516,7 +518,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Crab_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
-        if (!PointingSelection(filename,int(Crab_runlist[run].second),60,90,0,360)) continue;
+        if (!PointingSelection(filename,int(Crab_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
 
         TFile*  input_file = TFile::Open(filename.c_str());
         TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Crab_runlist[run].second);
