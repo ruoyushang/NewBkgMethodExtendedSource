@@ -523,10 +523,11 @@ void RecurrentDeconvolution(string target_data, double theta2_cut_lower_input, d
         TString filename_data  = "Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TString filename_dark  = "Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TString filename_elec  = "Hist_Elec_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
+        TString filename_darkelec  = "Hist_DarkElec_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TH2D* Hist_Target_Data = (TH2D*)InputDataFile.Get(filename_data);
         TH2D* Hist_Target_Elec = (TH2D*)InputDataFile.Get(filename_elec);
         TH2D* Hist_Dark_Data = (TH2D*)InputDataFile.Get(filename_dark);
-        TH2D* Hist_Dark_Elec = (TH2D*)InputDataFile.Get(filename_elec);
+        TH2D* Hist_Dark_Elec = (TH2D*)InputDataFile.Get(filename_darkelec);
 
         N_bins_for_deconv = Hist_Target_Data->GetNbinsY();
         Hist_Target_Bkg_MSCLW.push_back(TH2D("Hist_Target_Bkg_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));

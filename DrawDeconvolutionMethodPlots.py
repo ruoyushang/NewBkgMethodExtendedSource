@@ -18,15 +18,16 @@ theta2_lower = 0.2
 theta2_upper = 10.0
 target = "Segue1V6"
 source = []
-#source += ['Everything']
+source += ['Everything']
 #source += ['Segue1V6']
 source += ['IC443HotSpot']
 source += ['Crab']
 source += ['Mrk421']
+source += ['H1426']
+
 source += ['CasA']
 source += ['1ES0229']
 source += ['PKS1424']
-source += ['H1426']
 source += ['3C264']
 source += ['G079']
 source += ['RGBJ0710']
@@ -37,20 +38,20 @@ energy_list = []
 #energy_list += [282]
 #energy_list += [335]
 #energy_list += [398]
-energy_list += [473]
+#energy_list += [473]  # works from here
 energy_list += [562]
 energy_list += [667]
-energy_list += [794]
-energy_list += [943]
-energy_list += [1122]
-energy_list += [1332]
-energy_list += [1585]
-energy_list += [1882]
-energy_list += [2239]
-energy_list += [3162]
-energy_list += [4467]
-energy_list += [6310]
-energy_list += [8913]
+#energy_list += [794]
+#energy_list += [943]
+#energy_list += [1122]
+#energy_list += [1332]
+#energy_list += [1585]
+#energy_list += [1882]
+#energy_list += [2239]
+#energy_list += [3162]
+#energy_list += [4467]
+#energy_list += [6310]
+#energy_list += [8913]
 
 MSCW_lower_cut = -1.0
 MSCW_upper_cut = 1.0
@@ -174,6 +175,24 @@ def Theta2HistScale(Hist,scale,scale_err):
             new_error = new_content*pow(pow(old_error/old_content,2)+pow(scale_err/scale,2),0.5)
             Hist.SetBinContent(b,new_content)
             Hist.SetBinError(b,pow(new_error*new_error+old_error*old_error,0.5))
+
+def Variation_ratio(Hist_SR, Hist_Bkg,range_lower,range_upper,syst):
+
+    norm_bin_low_target = Hist_SR.FindBin(range_lower)
+    norm_bin_up_target = Hist_Bkg.FindBin(range_upper)-1
+    err_SR = 0
+    data_SR = 0
+    data_SR, err_SR = IntegralAndError(Hist_SR,norm_bin_low_target,norm_bin_up_target)
+    err_bkg = 0
+    predict_bkg = 0
+    predict_bkg, err_bkg = IntegralAndError(Hist_Bkg,norm_bin_low_target,norm_bin_up_target)
+    #predict_bkg, err_bkg = IntegralAndSystError(Hist_Bkg,norm_bin_low_target,norm_bin_up_target,syst)
+    sbratio = 0
+    sbratio_err = 0
+    if not predict_bkg==0 and not data_SR==0:
+        sbratio = (data_SR)/(predict_bkg)
+        sbratio_err = (data_SR)/(predict_bkg)*pow(pow(err_SR/data_SR,2)+pow(err_bkg/predict_bkg,2),0.5)
+    return sbratio, sbratio_err
 
 def set_histStyle( hist , color):
     hist.SetFillColor(color)
@@ -351,8 +370,10 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     Hist_Band.GetYaxis().SetTitle("#sqrt{#chi^{2}} (per bin)")
     Hist_Band.GetYaxis().SetTitleSize(0.13)
     Hist_Band.GetYaxis().SetNdivisions(505)
-    Hist_Band.SetMaximum(5)
-    Hist_Band.SetMinimum(-5)
+    #Hist_Band.SetMaximum(5)
+    #Hist_Band.SetMinimum(-5)
+    Hist_Band.SetMaximum(1.5)
+    Hist_Band.SetMinimum(-1.5)
     Hist_Band.GetXaxis().SetRangeUser(low_end,high_end)
     Hist_Band.Draw("e2")
     Hist_Ratio = Hists[0].Clone()
@@ -361,8 +382,10 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
         edata = Hists[0].GetBinError(b+1)
         nbkg = Hist_Sum.GetBinContent(b+1)
         ebkg = Hist_Sum.GetBinError(b+1)
-        if not (ebkg*ebkg+edata*edata)==0 and not (ndata-nbkg)==0:
-            Hist_Ratio.SetBinContent(b+1,(ndata-nbkg)/abs(ndata-nbkg)*pow((ndata-nbkg)*(ndata-nbkg)/(ebkg*ebkg+edata*edata),0.5))
+        #if not (ebkg*ebkg+edata*edata)==0 and not (ndata-nbkg)==0:
+        #    Hist_Ratio.SetBinContent(b+1,(ndata-nbkg)/abs(ndata-nbkg)*pow((ndata-nbkg)*(ndata-nbkg)/(ebkg*ebkg+edata*edata),0.5))
+        if not ndata==0:
+            Hist_Ratio.SetBinContent(b+1,(nbkg-ndata)/ndata)
         else:
             Hist_Ratio.SetBinContent(b+1,0)
         Hist_Ratio.SetBinError(b+1,0)
@@ -435,6 +458,176 @@ def MakeGaussComparisonPlot(Hists,legends,colors,title,name):
 
     c_both.SaveAs('output_plots/%s_%s.pdf'%(name,target))
 
+def MakeComparisonPlotNoRatio(Hists,legends,colors,title,name,minheight,maxheight,logx,logy):
+    
+    c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
+    pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
+    pad3.SetBottomMargin(0.0)
+    pad3.SetTopMargin(0.03)
+    pad3.SetBorderMode(1)
+    pad1 = ROOT.TPad("pad1","pad1",0,0.4,1,0.8)
+    pad1.SetBottomMargin(0.1)
+    pad1.SetTopMargin(0.0)
+    pad1.SetBorderMode(0)
+    pad2 = ROOT.TPad("pad2","pad2",0,0,1,0.4)
+    pad2.SetBottomMargin(0.2)
+    pad2.SetTopMargin(0.1)
+    pad2.SetBorderMode(0)
+    if logy: pad1.SetGrid()
+    pad2.Draw()
+    pad1.Draw()
+    pad3.Draw()
+
+    pad1.cd()
+    if logy: pad1.SetLogy()
+
+    max_heigh = 0
+    max_hist = 0
+    mean = []
+    rms = []
+    amp = []
+    for h in range(0,len(Hists)):
+        mean += [0]
+        rms += [0]
+        amp += [0]
+        if Hists[h]!=0:
+            Hists[h].GetXaxis().SetTitle(title)
+            if max_heigh < Hists[h].GetMaximum(): 
+                max_heigh = Hists[h].GetMaximum()
+                max_hist = h
+
+    if 'MSCW' in name:
+        low_end = Hists[0].GetMean()-3.*Hists[0].GetRMS()
+        high_end = Hists[0].GetMean()+3.*Hists[0].GetRMS()
+        for h in range(0,len(Hists)):
+            Hists[h].GetXaxis().SetRangeUser(low_end,high_end)
+
+    if not logy: Hists[max_hist].SetMinimum(0)
+    if not maxheight==0: Hists[max_hist].SetMaximum(maxheight)
+    Hists[max_hist].SetMinimum(minheight)
+    Hists[max_hist].GetXaxis().SetTitle(title)
+    Hists[max_hist].GetXaxis().SetTitleOffset(0.6)
+    Hists[max_hist].GetXaxis().SetTitleSize(0.06)
+    Hists[max_hist].GetXaxis().SetLabelSize(0.06)
+    Hists[max_hist].GetYaxis().SetLabelSize(0.06)
+    Hists[max_hist].GetYaxis().SetTitleOffset(0.5)
+    Hists[max_hist].GetYaxis().SetTitle("R = data / bkg")
+    Hists[max_hist].GetYaxis().SetTitleSize(0.08)
+    Hists[max_hist].Draw("E")
+
+    for h in range(0,len(Hists)):
+        if Hists[h]!=0:
+            Hists[h].SetLineColor(colors[h])
+            Hists[h].Draw("E same")
+
+    pad3.cd()
+    legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.15)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+    legend.Clear()
+    for h in range(0,len(Hists)):
+        if Hists[h]!=0:
+            legend.AddEntry(Hists[h],legends[h],"pl")
+    legend.Draw("SAME")
+
+    if logx: 
+        pad1.SetLogx()
+
+    pad2.cd()
+    Hist_Sig = ROOT.TH1D("Hist_Sig","",32,-8,8)
+    for h in range(0,len(Hists)):
+        for b in range(0,Hists[h].GetNbinsX()):
+            if not Hists[h].GetBinError(b+1)==0:
+                Hist_Sig.Fill((Hists[h].GetBinContent(b+1)-1.)/Hists[h].GetBinError(b+1))
+    Hist_Sig.GetXaxis().SetLabelSize(0.06)
+    Hist_Sig.GetYaxis().SetLabelSize(0.06)
+    Hist_Sig.GetXaxis().SetTitleSize(0.06)
+    Hist_Sig.GetXaxis().SetTitle('s = (R-1)/#DeltaR')
+    Hist_Sig.GetXaxis().SetTitleOffset(1.0)
+    Hist_Sig.Draw("E")
+
+    lumilab1 = ROOT.TLatex(0.15,0.80,'mean = %0.1f, RMS = %0.1f'%(Hist_Sig.GetMean(),Hist_Sig.GetRMS()) )
+    lumilab1.SetNDC()
+    lumilab1.SetTextSize(0.10)
+    lumilab1.Draw()
+
+    c_both.SaveAs('output_plots/%s.pdf'%(name))
+
+def MakeComparisonPlot(Hists,legends,colors,title,name,maxhight,logx,logy):
+    
+    c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
+    pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
+    pad3.SetBottomMargin(0.0)
+    pad3.SetTopMargin(0.03)
+    pad3.SetBorderMode(1)
+    pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.8)
+    pad1.SetBottomMargin(0.1)
+    pad1.SetTopMargin(0.0)
+    pad1.SetBorderMode(0)
+    if logy: pad1.SetGrid()
+    pad1.Draw()
+    pad3.Draw()
+
+    pad1.cd()
+    if logy: pad1.SetLogy()
+
+    max_heigh = 0
+    max_hist = 0
+    mean = []
+    rms = []
+    amp = []
+    for h in range(0,len(Hists)):
+        mean += [0]
+        rms += [0]
+        amp += [0]
+        if Hists[h]!=0:
+            Hists[h].GetXaxis().SetTitle(title)
+            if max_heigh < Hists[h].GetMaximum(): 
+                max_heigh = Hists[h].GetMaximum()
+                max_hist = h
+
+    if 'MSCW' in name:
+        low_end = Hists[0].GetMean()-3.*Hists[0].GetRMS()
+        high_end = Hists[0].GetMean()+3.*Hists[0].GetRMS()
+        for h in range(0,len(Hists)):
+            Hists[h].GetXaxis().SetRangeUser(low_end,high_end)
+
+    if not maxhight==0: Hists[max_hist].SetMaximum(maxhight)
+    Hists[max_hist].Draw("E")
+    #Hists[0].Draw("E")
+
+    for h in range(0,len(Hists)):
+        #if colors[h]==1 or colors[h]==2: Hists[0].SetLineWidth(3)
+        if Hists[h]!=0:
+            Hists[h].SetLineColor(colors[h])
+            Hists[h].SetLineWidth(2)
+            Hists[h].Draw("E same")
+
+    pad3.cd()
+    legend = ROOT.TLegend(0.55,0.1,0.94,0.9)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.15)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+    legend.Clear()
+    for h in range(0,len(Hists)):
+        if Hists[h]!=0:
+            legend.AddEntry(Hists[h],'%s'%(legends[h]),"pl")
+    legend.Draw("SAME")
+
+
+    if logx: 
+        pad1.SetLogx()
+
+    c_both.SaveAs('output_plots/%s.pdf'%(name))
+
+
 def Make2DSignificancePlot(Hist_SR,Hist_Bkg,xtitle,ytitle,name):
 
     canvas = ROOT.TCanvas("canvas","canvas", 200, 10, 600, 600)
@@ -498,8 +691,13 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,xtitle,ytitle,name):
     return Hist_Sig
 
 
+Hist_RDBM_S2B = []
+legend_S2B = []
+color_S2B = []
 
 for s in range(0,len(source)):
+
+    target = source[s]
 
     Hist_Hadr_Skymap = ROOT.TH2D("Hist_Hadr_Skymap","",100,-2,2,100,-2,2)
     Hist_Elec_Skymap = ROOT.TH2D("Hist_Elec_Skymap","",100,-2,2,100,-2,2)
@@ -512,6 +710,9 @@ for s in range(0,len(source)):
     Hist_Data_MSCW = ROOT.TH1D("Hist_Data_MSCW","",960,-30,30)
     Hist_Hadr_MSCW = ROOT.TH1D("Hist_Hadr_MSCW","",960,-30,30)
     Hist_Elec_MSCW = ROOT.TH1D("Hist_Elec_MSCW","",960,-30,30)
+    Hist_CR_Data_MSCW = ROOT.TH1D("Hist_CR_Data_MSCW","",960,-30,30)
+    Hist_CR_Hadr_MSCW = ROOT.TH1D("Hist_CR_Hadr_MSCW","",960,-30,30)
+    Hist_CR_Elec_MSCW = ROOT.TH1D("Hist_CR_Elec_MSCW","",960,-30,30)
     Hist_Ring_MSCW = ROOT.TH1D("Hist_Ring_MSCW","",960,-30,30)
     Hist_Dark_MSCW = ROOT.TH1D("Hist_Dark_MSCW","",960,-30,30)
     hadron_integral = 0
@@ -524,12 +725,17 @@ for s in range(0,len(source)):
     dark_integral_err = 0
     exposure_hours = 0.
 
-    target = source[s]
-    FilePath = "output_Jul05/Deconvolution_"+target+"_Theta2%sto%s"%(int(theta2_lower*10.),int(theta2_upper*10.))+".root";
+    #FilePath = "output_Jul05/Deconvolution_"+target+"_Theta2%sto%s"%(int(theta2_lower*10.),int(theta2_upper*10.))+".root";
+    FilePath = "output_Jul05/Deconvolution_"+target+"_Theta2%sto%s"%(int(0.*10.),int(theta2_upper*10.))+".root";
     InputFile = ROOT.TFile(FilePath)
     InfoTree = InputFile.Get("InfoTree")
     InfoTree.GetEntry(0)
     exposure_hours = InfoTree.exposure_hours
+
+    Hist_RDBM_S2B += [ROOT.TH1D("Hist_RDBM_S2B_%s"%(target),"",len(energy_list)-1,array('d',energy_list))]
+    legend_S2B += ['%s (%0.1f hrs)'%(target,exposure_hours)]
+    color_S2B += [s+1]
+
     for e in range(0,len(energy_list)-1):
         ErecS_lower_cut = energy_list[e]
         ErecS_upper_cut = energy_list[e+1]
@@ -541,11 +747,12 @@ for s in range(0,len(source)):
         Hist2D_Data = InputFile.Get(HistName)
         HistName = "Hist_Ring_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
         Hist2D_Ring = InputFile.Get(HistName)
-        HistName = "Hist_Dark_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+        HistName = "Hist_DarkScaled_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
         Hist2D_Dark = InputFile.Get(HistName)
         print HistName
         print 'Hist2D_Data.Integral() = %s'%(Hist2D_Data.Integral())
         Hist1D_Hadr_all = Hist2D_Hadr.ProjectionY("Hist1D_Hadr",1,1)
+        Hist1D_Bkgd_all = Hist2D_Data.ProjectionY("Hist1D_Bkgd",1,1)
         Hist1D_Elec_all = Hist2D_Elec.ProjectionY("Hist1D_Elec",1,1)
         Hist1D_Data_all = Hist2D_Data.ProjectionY("Hist1D_Data",1,1)
         Hist1D_Ring_all = Hist2D_Ring.ProjectionY("Hist1D_Ring",1,1)
@@ -556,6 +763,7 @@ for s in range(0,len(source)):
         Hist1D_Hadr_all.Reset()
         Hist1D_Elec_all.Reset()
         Hist1D_Data_all.Reset()
+        Hist1D_Bkgd_all.Reset()
         Hist1D_Ring_all.Reset()
         Hist1D_Dark_all.Reset()
         Hist1D_CR_Hadr_all.Reset()
@@ -571,6 +779,8 @@ for s in range(0,len(source)):
                 Hist1D_Hadr_all.Add(Hist1D_Hadr)
                 Hist1D_Elec_all.Add(Hist1D_Elec)
                 Hist1D_Data_all.Add(Hist1D_Data)
+                Hist1D_Bkgd_all.Add(Hist1D_Hadr)
+                Hist1D_Bkgd_all.Add(Hist1D_Elec)
                 Hist1D_Ring_all.Add(Hist1D_Ring)
                 Hist1D_Dark_all.Add(Hist1D_Dark)
             else:
@@ -597,9 +807,16 @@ for s in range(0,len(source)):
                 title = 'MSCW'
                 MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,-1)
 
+        s2b, s2b_err = Variation_ratio(Hist1D_Data_all,Hist1D_Bkgd_all,MSCW_lower_cut,MSCW_upper_cut,-1)
+        Hist_RDBM_S2B[len(Hist_RDBM_S2B)-1].SetBinContent(e+1,s2b)
+        Hist_RDBM_S2B[len(Hist_RDBM_S2B)-1].SetBinError(e+1,s2b_err)
+
         Hist_Data_MSCW.Add(Hist1D_Data_all)
         Hist_Hadr_MSCW.Add(Hist1D_Hadr_all)
         Hist_Elec_MSCW.Add(Hist1D_Elec_all)
+        Hist_CR_Data_MSCW.Add(Hist1D_CR_Data_all)
+        Hist_CR_Hadr_MSCW.Add(Hist1D_CR_Hadr_all)
+        Hist_CR_Elec_MSCW.Add(Hist1D_CR_Elec_all)
         Hist_Ring_MSCW.Add(Hist1D_Ring_all)
         Hist_Dark_MSCW.Add(Hist1D_Dark_all)
         if PlotAllEnergies:
@@ -821,6 +1038,21 @@ for s in range(0,len(source)):
     Hists = []
     legends = []
     colors = []
+    Hists += [Hist_CR_Data_MSCW]
+    legends += ['%s'%(target)]
+    colors += [1]
+    Hists += [Hist_CR_Hadr_MSCW]
+    legends += ['hadron']
+    colors += [4]
+    Hists += [Hist_CR_Elec_MSCW]
+    legends += ['electron (MC)']
+    colors += [3]
+    plotname = 'Target_CRall_RDBM_MSCW'
+    title = 'MSCW'
+    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,-1)
+    Hists = []
+    legends = []
+    colors = []
     Hists += [Hist_Data_MSCW]
     legends += ['%s'%(target)]
     colors += [1]
@@ -855,6 +1087,21 @@ for s in range(0,len(source)):
     legends += ['Segue1']
     colors += [4]
     plotname = 'Target_SRall_Dark_MSCW'
+    title = 'MSCW'
+    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,-1)
+    Hists = []
+    legends = []
+    colors = []
+    Hists += [Hist_CR_Data_MSCW]
+    legends += ['%s'%(target)]
+    colors += [1]
+    Hists += [Hist_CR_Hadr_MSCW]
+    legends += ['hadron']
+    colors += [4]
+    Hists += [Hist_CR_Elec_MSCW]
+    legends += ['electron (MC)']
+    colors += [3]
+    plotname = 'Target_CRall_ZoomInRDBM_MSCW'
     title = 'MSCW'
     MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,-1)
     Hists = []
@@ -923,3 +1170,4 @@ for s in range(0,len(source)):
         plotname = 'Target_SRall_RDBM_Skymap_Smooth'
         Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap_smooth,Hist_Bkg_Skymap_smooth,'RA','Dec',plotname)
 
+MakeComparisonPlotNoRatio(Hist_RDBM_S2B,legend_S2B,color_S2B,'E [GeV]','Mismodeling_systematics',0.6,1.4,True,False)
