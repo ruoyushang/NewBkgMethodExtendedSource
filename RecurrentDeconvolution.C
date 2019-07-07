@@ -513,6 +513,9 @@ void RecurrentDeconvolution(string target_data, double theta2_cut_lower_input, d
     vector<TH2D> Hist_Target_Bkg_MSCLW;
     vector<TH2D> Hist_Target_Ele_MSCLW;
     vector<TH2D> Hist_Dark_Bkg_MSCLW;
+    vector<TH2D> Hist_Target_Bkg_MSCWL;
+    vector<TH2D> Hist_Target_Ele_MSCWL;
+    vector<TH2D> Hist_Dark_Bkg_MSCWL;
     TFile InputDataFile("output_Jul05/Deconvolution_"+TString(target_data)+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root");
     for (int e=0;e<N_energy_bins;e++) 
     {
@@ -535,9 +538,35 @@ void RecurrentDeconvolution(string target_data, double theta2_cut_lower_input, d
         Hist_Target_Ele_MSCLW.push_back(TH2D("Hist_Target_Ele_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Dark_Bkg_MSCLW.push_back(TH2D("Hist_Dark_Bkg_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
 
-        //if (use_this_energy_bin[e]==false) continue;
+        if (use_this_energy_bin[e]==false) continue;
         Hist_Target_Ele_MSCLW.at(e).Add(Hist_Target_Elec);
         PredictBackground(Hist_Target_Data,&Hist_Target_Ele_MSCLW.at(e),Hist_Dark_Data,Hist_Dark_Elec,&Hist_Target_Bkg_MSCLW.at(e),&Hist_Dark_Bkg_MSCLW.at(e),energy_bins[e]);
+
+    }
+    for (int e=0;e<N_energy_bins;e++) 
+    {
+        std::cout << "energy = " << energy_bins[e] << std::endl;
+        char e_low[50];
+        sprintf(e_low, "%i", int(energy_bins[e]));
+        char e_up[50];
+        sprintf(e_up, "%i", int(energy_bins[e+1]));
+        TString filename_data  = "Hist_Data_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up);
+        TString filename_dark  = "Hist_Dark_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up);
+        TString filename_elec  = "Hist_Elec_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up);
+        TString filename_darkelec  = "Hist_DarkElec_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up);
+        TH2D* Hist_Target_Data = (TH2D*)InputDataFile.Get(filename_data);
+        TH2D* Hist_Target_Elec = (TH2D*)InputDataFile.Get(filename_elec);
+        TH2D* Hist_Dark_Data = (TH2D*)InputDataFile.Get(filename_dark);
+        TH2D* Hist_Dark_Elec = (TH2D*)InputDataFile.Get(filename_darkelec);
+
+        N_bins_for_deconv = Hist_Target_Data->GetNbinsY();
+        Hist_Target_Bkg_MSCWL.push_back(TH2D("Hist_Target_Bkg_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_Target_Ele_MSCWL.push_back(TH2D("Hist_Target_Ele_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_Dark_Bkg_MSCWL.push_back(TH2D("Hist_Dark_Bkg_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+
+        if (use_this_energy_bin[e]==false) continue;
+        Hist_Target_Ele_MSCWL.at(e).Add(Hist_Target_Elec);
+        PredictBackground(Hist_Target_Data,&Hist_Target_Ele_MSCWL.at(e),Hist_Dark_Data,Hist_Dark_Elec,&Hist_Target_Bkg_MSCWL.at(e),&Hist_Dark_Bkg_MSCWL.at(e),energy_bins[e]);
 
     }
     InputDataFile.Close();
@@ -547,6 +576,8 @@ void RecurrentDeconvolution(string target_data, double theta2_cut_lower_input, d
     {
         Hist_Target_Bkg_MSCLW.at(e).Write();
         Hist_Target_Ele_MSCLW.at(e).Write();
+        Hist_Target_Bkg_MSCWL.at(e).Write();
+        Hist_Target_Ele_MSCWL.at(e).Write();
     }
     OutputDataFile.Close();
 
