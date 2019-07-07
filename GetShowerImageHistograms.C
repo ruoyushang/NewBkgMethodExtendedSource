@@ -70,7 +70,7 @@ double electron_count[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_count_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double darkelectron_count[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double darkelectron_count_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false};
+bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] = {282,335};
 //double electron_flux[N_energy_bins] = {0};
@@ -240,7 +240,7 @@ std::pair <double,double> GetMcGillElectronFlux(double energy)
     //return std::make_pair(func->Eval(energy),func->Eval(energy));
     //
     TGraph *func = new TGraph(&Hist_Flux);
-    return std::make_pair(func->Eval(energy),func->Eval(energy));
+    return std::make_pair(1.*func->Eval(energy),1.*func->Eval(energy));
 }
 bool FoV() {
     //if (R2off<Theta2_cut_lower) return false;

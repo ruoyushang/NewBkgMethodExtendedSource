@@ -57,7 +57,7 @@ void Deconvolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Deconv, int n
             Hist_Deconv->SetBinError(i+1,pow(max(source[i],0.),0.5));
         }
 }
-double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int chi2_type) {
+double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, double endpoint) {
     if (Hist_Bkg->Integral()==0) return 0.;
     double chi2_temp = 0.;
     double nbins = 0.;
@@ -66,9 +66,10 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int chi2_type) {
         double data = Hist_SR->GetBinContent(i+1);
         double bkg_err = Hist_Bkg->GetBinError(i+1);
         double data_err = Hist_SR->GetBinError(i+1);
+        if (Hist_Bkg->GetBinCenter(i+1)<endpoint) continue;
         if (includeSR)
         {
-            if (Hist_Bkg->GetBinCenter(i+1)>3.*MSCW_cut_blind) continue;
+            if (Hist_Bkg->GetBinCenter(i+1)>10.*MSCW_cut_blind) continue;
         }
         else 
         {
@@ -82,14 +83,7 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, int chi2_type) {
     }
     chi2_temp = chi2_temp/nbins;
     double chi2_total = 1.;
-    if (includeSR || chi2_type==1) 
-    {
-        chi2_total = chi2_temp;
-    }
-    else
-    {
-        chi2_total = chi2_temp;
-    }
+    chi2_total = chi2_temp;
     chi2_total = 1./chi2_total;
     return chi2_total;
 }
@@ -128,8 +122,8 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, bool do
                 double scale = scale_begin;
                 Hist_Bkg->Scale(norm/Hist_Bkg->Integral());
                 Hist_Bkg->Scale(scale);
-                double chi2_temp = GetChi2(Hist_SR, Hist_Bkg,includeSR,1);
-                double unblinded_chi2_temp = GetChi2(Hist_SR, Hist_Bkg,true,1);
+                double chi2_temp = GetChi2(Hist_SR, Hist_Bkg,includeSR,-10);
+                double unblinded_chi2_temp = GetChi2(Hist_SR, Hist_Bkg,true,-10);
                 if (chi2<chi2_temp && Hist_Bkg->Integral()!=0) {
                     chi2 = chi2_temp;
                     shift_fit = shift;
@@ -185,10 +179,10 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, bool do
 }
 double CutoffFunction(double x, double endpoint_0, double endpoint_1, int type)
 {
-    if (x-(endpoint_1)>=0.) return 1.;
-    if (x-(endpoint_0)<0.) return 0.;
-    return pow((x-endpoint_0)/(endpoint_1-endpoint_0),1);
-    //return 1./(1.+exp(-(x-(endpoint_0+endpoint_1)/2.)/(endpoint_1-endpoint_0)));
+    //if (x-(endpoint_1)>=0.) return 1.;
+    //if (x-(endpoint_0)<0.) return 0.;
+    //return pow((x-endpoint_0)/(endpoint_1-endpoint_0),1);
+    return 1./(1.+exp(-(x-(endpoint_0+endpoint_1)/2.)/(endpoint_1-endpoint_0)));
 
 }
 void Cutoff(TH1* Hist_Bkg, double endpoint_0, double endpoint_1)
@@ -248,8 +242,8 @@ double FindRMS(TH1* Hist_SR, TH1* Hist_CR, TH1* Hist_Bkg, TH1* Hist_BkgTemp, TH1
         if (!IsReasonableResult(Hist_BkgTemp)) continue;
         double offset = ShiftAndNormalize(Hist_SR,Hist_BkgTemp,Hist_Bkg,DoShift,includeSR,chi2_type,0.);
         Cutoff(Hist_Bkg,endpoint_0,endpoint_1);
-        chi2 = GetChi2(Hist_SR, Hist_Bkg,includeSR,2);
-        unblinded_chi2 = GetChi2(Hist_SR, Hist_Bkg,true,2);
+        chi2 = GetChi2(Hist_SR, Hist_Bkg,includeSR,0.4);
+        unblinded_chi2 = GetChi2(Hist_SR, Hist_Bkg,true,0.4);
         if (chi2_best<chi2) {
             chi2_best = chi2;
             rms_final = rms;
@@ -298,7 +292,7 @@ std::pair <double,double> FindCutoffEndpoints(TH1* Hist_SR,TH1* Hist_Bkg,double 
             Hist_Bkg_Tmp.Reset();
             Hist_Bkg_Tmp.Add(Hist_Bkg);
             Cutoff(&Hist_Bkg_Tmp,tmp_endpoint_0,tmp_endpoint_1);
-            double chi2 = GetChi2(Hist_SR,&Hist_Bkg_Tmp,true,1);
+            double chi2 = GetChi2(Hist_SR,&Hist_Bkg_Tmp,true,-10);
             if (chi2_best<chi2) {
                 chi2_best = chi2;
                 endpoint_0_best = tmp_endpoint_0;
@@ -384,7 +378,7 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(
     for (int niter=1;niter<=10;niter++)
     {
         parameters = PredictNextLayerHadron(niter,0.0,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
-        double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,1);
+        double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,0.4);
         //if (chi2_previous>chi2) break;
         if (chi2_best<chi2) {
             chi2_best = chi2;
@@ -394,18 +388,25 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(
     }
 
     chi2_best = 0.;
-    double best_electron_scale = 1.;
+    double best_electron_scale = 0.;
     //for (int nscale=0;nscale<=10;nscale++)
     //{
     //    double scale = 2.0*(double)nscale/10.;
     //    parameters = PredictNextLayerHadron(niter_best,scale,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
-    //    double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,1);
+    //    double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,parameters_0.second.second);
     //    if (chi2_best<chi2) {
     //        chi2_best = chi2;
     //        best_electron_scale = scale;
     //    } 
     //}
     parameters = PredictNextLayerHadron(niter_best,best_electron_scale,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
+
+    int norm_bin_low = Hist_DarkSR->FindBin(MSCW_cut_lower);
+    int norm_bin_blind = Hist_DarkSR->FindBin(MSCW_cut_blind);
+    double excess = Hist_DarkSR->Integral(norm_bin_low,norm_bin_blind)-Hist_DarkBkg->Integral(norm_bin_low,norm_bin_blind);
+    if (excess<0.) excess = 0.;
+    double elec_integral = double(Hist_Dark_ElectronMC->Integral());
+    if (elec_integral>0.) best_electron_scale = excess/elec_integral;
 
     std::cout << "best dark n iterations = " << niter_best << std::endl;
     std::cout << "best_electron_scale = " << best_electron_scale << std::endl;
@@ -420,7 +421,7 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(
     //for (int niter=1;niter<=10;niter++)
     //{
     //    parameters = PredictNextLayerHadron(niter,best_electron_scale,Hist_ElectronMC,Hist_SR,Hist_SR_Previous,Hist_Bkg,Hist_Bkg_Previous,energy,parameters,false);
-    //    double chi2 = GetChi2(Hist_SR,Hist_Bkg,false,1);
+    //    double chi2 = GetChi2(Hist_SR,Hist_Bkg,false,parameters_0.second.second);
     //    if (chi2_best<chi2) {
     //        chi2_best = chi2;
     //        niter_best = niter;
