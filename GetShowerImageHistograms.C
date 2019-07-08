@@ -233,14 +233,14 @@ std::pair <double,double> GetMcGillElectronFlux(double energy)
             }
         }
     }
-    //TF1 *func = new TF1("func",FitPowerLawFunction,energy_bins[0],energy_bins[N_energy_bins-1],2);
-    //func->SetParameter(0,314);
-    //func->SetParameter(1,-2.);
-    //Hist_Flux.Fit("func","","",energy_bins[0],energy_bins[N_energy_bins-1]);
-    //return std::make_pair(func->Eval(energy),func->Eval(energy));
+    TF1 *func = new TF1("func",FitPowerLawFunction,energy_bins[0],energy_bins[N_energy_bins-1],2);
+    func->SetParameter(0,314);
+    func->SetParameter(1,-2.);
+    Hist_Flux.Fit("func","","",energy_bins[0],energy_bins[N_energy_bins-1]);
+    return std::make_pair(func->Eval(energy),func->Eval(energy));
     //
-    TGraph *func = new TGraph(&Hist_Flux);
-    return std::make_pair(1.*func->Eval(energy),1.*func->Eval(energy));
+    //TGraph *func = new TGraph(&Hist_Flux);
+    //return std::make_pair(1.*func->Eval(energy),1.*func->Eval(energy));
 }
 bool FoV() {
     //if (R2off<Theta2_cut_lower) return false;
@@ -272,7 +272,7 @@ bool SignalSelectionTheta2()
 bool ControlSelectionTheta2()
 {
     if (SignalSelectionTheta2()) return false;
-    if (MSCL>MSCL_signal_cut_upper[0]*3.0) return false;
+    if (MSCL>MSCL_signal_cut_upper[0]*1.0) return false;
     if (MSCW>MSCW_cut_blind*3.0) return false;
     return true;
 }
@@ -310,6 +310,8 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
     vector<TH1D> Hist_Dark_SR_FullFoV_Theta2;
     vector<TH1D> Hist_Dark_SR_SelectFoV_Theta2;
     vector<TH1D> Hist_Dark_CR_FullFoV_Theta2;
+    vector<TH1D> Hist_Data_Camera_Theta2;
+    vector<TH1D> Hist_Dark_Camera_Theta2;
     for (int e=0;e<N_energy_bins;e++) 
     {
         char e_low[50];
@@ -343,10 +345,110 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         Hist_Dark_SR_FullFoV_Theta2.push_back(TH1D("Hist_Dark_SR_FullFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
         Hist_Dark_SR_SelectFoV_Theta2.push_back(TH1D("Hist_Dark_SR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
         Hist_Dark_CR_FullFoV_Theta2.push_back(TH1D("Hist_Dark_CR_FullFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
+        Hist_Dark_Camera_Theta2.push_back(TH1D("Hist_Dark_Camera_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
+        Hist_Data_Camera_Theta2.push_back(TH1D("Hist_Data_Camera_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
     }
 
     // Get a list of dark observation runs for radial acceptance
     vector<pair<string,int>> Dark_runlist = GetRunList("Segue1V6");
+    for (int run=0;run<Dark_runlist.size();run++)
+    {
+        char run_number[50];
+        char Dark_observation[50];
+        sprintf(run_number, "%i", int(Dark_runlist[run].second));
+        sprintf(Dark_observation, "%s", Dark_runlist[run].first.c_str());
+        string filename;
+        filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Dark_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
+
+        if (!PointingSelection(filename,int(Dark_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
+
+        TFile*  input_file = TFile::Open(filename.c_str());
+	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Dark_runlist[run].second);
+        TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
+        TTree* Dark_tree = (TTree*) input_file->Get(root_file);
+        Dark_tree->SetBranchAddress("Xoff",&Xoff);
+        Dark_tree->SetBranchAddress("Yoff",&Yoff);
+        Dark_tree->SetBranchAddress("theta2",&theta2);
+        Dark_tree->SetBranchAddress("ra",&ra_sky);
+        Dark_tree->SetBranchAddress("dec",&dec_sky);
+        Dark_tree->SetBranchAddress("ErecS",&ErecS);
+        Dark_tree->SetBranchAddress("EChi2S",&EChi2S);
+        Dark_tree->SetBranchAddress("MSCW",&MSCW);
+        Dark_tree->SetBranchAddress("MSCL",&MSCL);
+        Dark_tree->SetBranchAddress("NImages",&NImages);
+        Dark_tree->SetBranchAddress("Time",&Time);
+
+        for (int entry=0;entry<Dark_tree->GetEntries();entry++) 
+        {
+            ErecS = 0;
+            EChi2S = 0;
+            NImages = 0;
+            MSCW = 0;
+            MSCL = 0;
+            R2off = 0;
+            Dark_tree->GetEntry(entry);
+            R2off = Xoff*Xoff+Yoff*Yoff;
+            int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
+            if (energy<0) continue;
+            if (energy>=N_energy_bins) continue;
+            int e = energy;
+            if (!SelectNImages(3,4)) continue;
+            Hist_Dark_Camera_Theta2.at(e).Fill(R2off);
+        }
+    }
+
+    // Get a list of target observation runs
+    vector<pair<string,int>> Data_runlist = GetRunList(target);
+    for (int run=0;run<Data_runlist.size();run++)
+    {
+        char run_number[50];
+        char Data_observation[50];
+        sprintf(run_number, "%i", int(Data_runlist[run].second));
+        sprintf(Data_observation, "%s", Data_runlist[run].first.c_str());
+        string filename;
+        filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
+
+        if (!PointingSelection(filename,int(Data_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
+
+        TFile*  input_file = TFile::Open(filename.c_str());
+	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Data_runlist[run].second);
+        TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
+        TTree* Data_tree = (TTree*) input_file->Get(root_file);
+        Data_tree->SetBranchAddress("Xoff",&Xoff);
+        Data_tree->SetBranchAddress("Yoff",&Yoff);
+        Data_tree->SetBranchAddress("theta2",&theta2);
+        Data_tree->SetBranchAddress("ra",&ra_sky);
+        Data_tree->SetBranchAddress("dec",&dec_sky);
+        Data_tree->SetBranchAddress("ErecS",&ErecS);
+        Data_tree->SetBranchAddress("EChi2S",&EChi2S);
+        Data_tree->SetBranchAddress("MSCW",&MSCW);
+        Data_tree->SetBranchAddress("MSCL",&MSCL);
+        Data_tree->SetBranchAddress("NImages",&NImages);
+        Data_tree->SetBranchAddress("Time",&Time);
+
+        for (int entry=0;entry<Data_tree->GetEntries();entry++) 
+        {
+            ErecS = 0;
+            EChi2S = 0;
+            NImages = 0;
+            MSCW = 0;
+            MSCL = 0;
+            R2off = 0;
+            Data_tree->GetEntry(entry);
+            R2off = Xoff*Xoff+Yoff*Yoff;
+            int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
+            if (energy<0) continue;
+            if (energy>=N_energy_bins) continue;
+            int e = energy;
+            if (!SelectNImages(3,4)) continue;
+            if (FoV())
+            {
+                Hist_Data_Camera_Theta2.at(e).Fill(R2off);
+            }
+        }
+    }
+
+    // Get a list of dark observation runs for radial acceptance
     for (int run=0;run<Dark_runlist.size();run++)
     {
         char run_number[50];
@@ -408,20 +510,19 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
             if (energy>=N_energy_bins) continue;
             int e = energy;
             if (!SelectNImages(3,4)) continue;
-            if (FoV())
-            {
-                Hist_Dark_MSCLW.at(e).Fill(MSCL,MSCW);
-                Hist_DarkScaled_MSCLW.at(e).Fill(MSCL,MSCW);
-                Hist_Dark_MSCWL.at(e).Fill(MSCW,MSCL);
-                Hist_DarkScaled_MSCWL.at(e).Fill(MSCW,MSCL);
-            }
+            int bin = Hist_Dark_Camera_Theta2.at(e).FindBin(R2off);
+            double dark_content = Hist_Dark_Camera_Theta2.at(e).GetBinContent(bin);
+            double data_content = Hist_Data_Camera_Theta2.at(e).GetBinContent(bin);
+            double weight = 0.;
+            if (dark_content>0.) weight = data_content/dark_content;
+            Hist_Dark_MSCLW.at(e).Fill(MSCL,MSCW,weight);
+            Hist_DarkScaled_MSCLW.at(e).Fill(MSCL,MSCW,weight);
+            Hist_Dark_MSCWL.at(e).Fill(MSCW,MSCL,weight);
+            Hist_DarkScaled_MSCWL.at(e).Fill(MSCW,MSCL,weight);
             if (SignalSelectionTheta2())
             {
                 Hist_Dark_SR_FullFoV_Theta2.at(e).Fill(R2off);
-                if (FoV())
-                {
-                    Hist_Dark_SR_SelectFoV_Theta2.at(e).Fill(R2off);
-                }
+                Hist_Dark_SR_SelectFoV_Theta2.at(e).Fill(R2off,weight);
             }
             if (ControlSelectionTheta2())
             {
@@ -431,7 +532,6 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
     }
 
     // Get a list of target observation runs
-    vector<pair<string,int>> Data_runlist = GetRunList(target);
     for (int run=0;run<Data_runlist.size();run++)
     {
         char run_number[50];
