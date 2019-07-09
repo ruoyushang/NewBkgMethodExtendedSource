@@ -395,6 +395,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
             if (!SelectNImages(3,4)) continue;
             Hist_Dark_Camera_Theta2.at(e).Fill(R2off);
         }
+        input_file->Close();
     }
 
     // Get a list of target observation runs
@@ -443,9 +444,11 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
             if (!SelectNImages(3,4)) continue;
             if (FoV())
             {
+                if (theta2<0.2) continue;
                 Hist_Data_Camera_Theta2.at(e).Fill(R2off);
             }
         }
+        input_file->Close();
     }
 
     // Get a list of dark observation runs for radial acceptance
@@ -513,8 +516,8 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
             int bin = Hist_Dark_Camera_Theta2.at(e).FindBin(R2off);
             double dark_content = Hist_Dark_Camera_Theta2.at(e).GetBinContent(bin);
             double data_content = Hist_Data_Camera_Theta2.at(e).GetBinContent(bin);
-            double weight = 0.;
-            if (dark_content>0.) weight = data_content/dark_content;
+            double weight = 1.;
+            //if (dark_content>0.) weight = data_content/dark_content;
             Hist_Dark_MSCLW.at(e).Fill(MSCL,MSCW,weight);
             Hist_DarkScaled_MSCLW.at(e).Fill(MSCL,MSCW,weight);
             Hist_Dark_MSCWL.at(e).Fill(MSCW,MSCL,weight);
@@ -529,6 +532,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
                 Hist_Dark_CR_FullFoV_Theta2.at(e).Fill(R2off);
             }
         }
+        input_file->Close();
     }
 
     // Get a list of target observation runs
@@ -628,6 +632,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
                 }
             }
         }
+        input_file->Close();
     }
     for (int e=0;e<N_energy_bins;e++) 
     {
@@ -729,6 +734,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
                 Hist_CrabOFF_MSCWL.at(e).Fill(MSCW,MSCL);
             }
         }
+        input_file->Close();
     }
     for (int e=0;e<N_energy_bins;e++) 
     {
@@ -840,6 +846,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
     //            Hist_DarkElec_MSCWL.at(e).Fill(MSCW,MSCL);
     //        }
     //    }
+    //    input_file->Close();
     //}
     
      
