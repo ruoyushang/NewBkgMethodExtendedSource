@@ -340,8 +340,8 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         Hist_Data_SR_FullFoV_Theta2.push_back(TH1D("Hist_Data_SR_FullFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
         Hist_Data_SR_SelectFoV_Theta2.push_back(TH1D("Hist_Data_SR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
         Hist_Data_CR_SelectFoV_Theta2.push_back(TH1D("Hist_Data_CR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
-        Hist_Data_SR_Skymap.push_back(TH2D("Hist_Data_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",100,-2,2,100,-2,2));
-        Hist_Data_CR_Skymap.push_back(TH2D("Hist_Data_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",100,-2,2,100,-2,2));
+        Hist_Data_SR_Skymap.push_back(TH2D("Hist_Data_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
+        Hist_Data_CR_Skymap.push_back(TH2D("Hist_Data_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
         Hist_Dark_SR_FullFoV_Theta2.push_back(TH1D("Hist_Dark_SR_FullFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
         Hist_Dark_SR_SelectFoV_Theta2.push_back(TH1D("Hist_Dark_SR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
         Hist_Dark_CR_FullFoV_Theta2.push_back(TH1D("Hist_Dark_CR_FullFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
@@ -855,8 +855,8 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
     {
         double old_integral = Hist_DarkElec_MSCLW.at(e).Integral();
         double scale = darkelectron_count[e]/old_integral;
-        double scale_err = darkelectron_count_err[e]/old_integral;
-        //double scale_err = 0.;
+        //double scale_err = darkelectron_count_err[e]/old_integral;
+        double scale_err = 0.;
         double select_fov_integral = Hist_Dark_SR_SelectFoV_Theta2.at(e).Integral();
         double full_fov_integral = Hist_Dark_SR_FullFoV_Theta2.at(e).Integral();
         double scale_fov = select_fov_integral/full_fov_integral;
@@ -878,8 +878,8 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
     {
         double old_integral = Hist_DarkElec_MSCWL.at(e).Integral();
         double scale = darkelectron_count[e]/old_integral;
-        double scale_err = darkelectron_count_err[e]/old_integral;
-        //double scale_err = 0.;
+        //double scale_err = darkelectron_count_err[e]/old_integral;
+        double scale_err = 0.;
         double select_fov_integral = Hist_Dark_SR_SelectFoV_Theta2.at(e).Integral();
         double full_fov_integral = Hist_Dark_SR_FullFoV_Theta2.at(e).Integral();
         double scale_fov = select_fov_integral/full_fov_integral;
@@ -901,8 +901,8 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
     {
         double old_integral = Hist_Elec_MSCLW.at(e).Integral();
         double scale = electron_count[e]/old_integral;
-        double scale_err = electron_count_err[e]/old_integral;
-        //double scale_err = 0.;
+        //double scale_err = electron_count_err[e]/old_integral;
+        double scale_err = 0.;
         double select_fov_integral = Hist_Dark_SR_SelectFoV_Theta2.at(e).Integral();
         double full_fov_integral = Hist_Dark_SR_FullFoV_Theta2.at(e).Integral();
         double scale_fov = select_fov_integral/full_fov_integral;
@@ -924,8 +924,8 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
     {
         double old_integral = Hist_Elec_MSCWL.at(e).Integral();
         double scale = electron_count[e]/old_integral;
-        double scale_err = electron_count_err[e]/old_integral;
-        //double scale_err = 0.;
+        //double scale_err = electron_count_err[e]/old_integral;
+        double scale_err = 0.;
         double select_fov_integral = Hist_Dark_SR_SelectFoV_Theta2.at(e).Integral();
         double full_fov_integral = Hist_Dark_SR_FullFoV_Theta2.at(e).Integral();
         double scale_fov = select_fov_integral/full_fov_integral;

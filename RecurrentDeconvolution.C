@@ -39,10 +39,11 @@ void Deconvolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Deconv, int n
         Hist_Deconv->Reset();
         const int N_bins = Hist_source->GetNbinsX();
         Double_t *source = new Double_t[N_bins];
+        Double_t *source_new = new Double_t[N_bins];
         Double_t *response = new Double_t[N_bins];
         for (int i=0;i<N_bins;i++) {
             source[i] = max(Hist_source->GetBinContent(i+1),0.);
-            //if (Hist_source->GetBinCenter(i+1)<MSCW_cut_lower) source[i] = 0.;
+            if (Hist_source->GetBinCenter(i+1)>MSCW_cut_blind) source_new[i] = max(Hist_source->GetBinContent(i+1),0.);
             if (i<N_bins/2) 
             {
                 response[i] = max(Hist_response->GetBinContent(i+1+N_bins/2),0.);
@@ -52,9 +53,10 @@ void Deconvolution(TH1* Hist_source, TH1* Hist_response, TH1* Hist_Deconv, int n
         }
         TSpectrum sp;
         sp.Deconvolution(source,response,N_bins,n_iteration,1,100000); // new best option
+        sp.Deconvolution(source_new,response,N_bins,n_iteration,1,100000); // new best option
         for (int i=0;i<N_bins;i++) {
             Hist_Deconv->SetBinContent(i+1,max(source[i],0.));
-            Hist_Deconv->SetBinError(i+1,pow(max(source[i],0.),0.5));
+            Hist_Deconv->SetBinError(i+1,pow(max(source_new[i],0.),0.5));
         }
 }
 double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, double endpoint) {
@@ -64,7 +66,7 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, double endpoint) {
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
         double bkg = Hist_Bkg->GetBinContent(i+1);
         double data = Hist_SR->GetBinContent(i+1);
-        double bkg_err = Hist_Bkg->GetBinError(i+1);
+        double bkg_err = pow(Hist_Bkg->GetBinContent(i+1),0.5);
         double data_err = Hist_SR->GetBinError(i+1);
         if (Hist_Bkg->GetBinCenter(i+1)<endpoint) continue;
         if (includeSR)
@@ -77,8 +79,6 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, double endpoint) {
         }
         if ((data_err*data_err+bkg_err*bkg_err)==0) data_err = 1.;
         chi2_temp += pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
-        //if ((data_err*data_err)==0) data_err = 1.;
-        //chi2_temp += pow(bkg-data,2)/(data_err*data_err);
         nbins += 1.;
     }
     chi2_temp = chi2_temp/nbins;
@@ -538,7 +538,7 @@ void RecurrentDeconvolution(string target_data, double theta2_cut_lower_input, d
         Hist_Target_Ele_MSCLW.push_back(TH2D("Hist_Target_Ele_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Dark_Bkg_MSCLW.push_back(TH2D("Hist_Dark_Bkg_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
 
-        if (use_this_energy_bin[e]==false) continue;
+        //if (use_this_energy_bin[e]==false) continue;
         Hist_Target_Ele_MSCLW.at(e).Add(Hist_Target_Elec);
         PredictBackground(Hist_Target_Data,&Hist_Target_Ele_MSCLW.at(e),Hist_Dark_Data,Hist_Dark_Elec,&Hist_Target_Bkg_MSCLW.at(e),&Hist_Dark_Bkg_MSCLW.at(e),energy_bins[e]);
 
@@ -564,7 +564,7 @@ void RecurrentDeconvolution(string target_data, double theta2_cut_lower_input, d
         Hist_Target_Ele_MSCWL.push_back(TH2D("Hist_Target_Ele_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Dark_Bkg_MSCWL.push_back(TH2D("Hist_Dark_Bkg_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
 
-        if (use_this_energy_bin[e]==false) continue;
+        //if (use_this_energy_bin[e]==false) continue;
         Hist_Target_Ele_MSCWL.at(e).Add(Hist_Target_Elec);
         PredictBackground(Hist_Target_Data,&Hist_Target_Ele_MSCWL.at(e),Hist_Dark_Data,Hist_Dark_Elec,&Hist_Target_Bkg_MSCWL.at(e),&Hist_Dark_Bkg_MSCWL.at(e),energy_bins[e]);
 
