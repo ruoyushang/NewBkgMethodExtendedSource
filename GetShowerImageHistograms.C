@@ -253,6 +253,7 @@ bool RingFoV() {
     //if (R2off<Theta2_cut_lower) return false;
     //if (R2off>Theta2_cut_upper) return false;
     if (theta2<Theta2_cut_upper) return false;
+    if (theta2>Theta2_cut_upper*5) return false;
     return true;
 }
 bool SelectNImages(int Nmin, int Nmax)
