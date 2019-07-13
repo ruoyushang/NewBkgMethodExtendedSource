@@ -57,6 +57,20 @@ void NormalizeHist2D(TH2D* hist_ref, TH2D* hist_sub)
     if (integral_sub>0.) scale = integral_ref/integral_sub;
     hist_sub->Scale(scale);
 }
+MatrixXcd NoiseRemove(MatrixXcd mtx_data)
+{
+    //return mtx_data;
+    MatrixXcd matrix(mtx_data.cols(),mtx_data.rows());
+    for (int i=0;i<mtx_data.cols();i++)
+    {
+        for (int j=0;j<mtx_data.rows();j++)
+        {
+            if (i>50) matrix(i,j) = mtx_data(i,j);
+            else matrix(i,j) = 0;
+        }
+    }
+    return matrix;
+}
 MatrixXcd replaceMatrix(MatrixXcd mtx_data, MatrixXcd mtx_dark, int binx_blind, int biny_blind)
 {
     MatrixXcd matrix(mtx_data.cols(),mtx_data.rows());
@@ -122,53 +136,50 @@ MatrixXcd fillMatrix(TH2D* hist)
     }
     return matrix;
 }
+void fillHistogram(TH2D* hist,MatrixXcd mtx)
+{
+    for (int binx=0;binx<hist->GetNbinsX();binx++)
+    {
+        for (int biny=0;biny<hist->GetNbinsY();biny++)
+        {
+            hist->SetBinContent(binx+1,biny+1,abs(mtx(binx,biny).real()));
+        }
+    }
+}
 MatrixXcd EigenvaluePrediction(MatrixXcd mtx_data, MatrixXcd mtx_bkgd, MatrixXcd mtx_eigenvalue, int binx_lower, int biny_lower)
 {
-    MatrixXcd mtx_ratio(mtx_data.cols(),mtx_data.rows());
+    //MatrixXcd mtx_ratio(mtx_data.cols(),mtx_data.rows());
     mtx_bkgd = replaceMatrix(mtx_data,mtx_bkgd,binx_lower,biny_lower);
     ComplexEigenSolver<MatrixXcd> eigensolver_bkgd(mtx_bkgd);
+    MatrixXcd mtx_eigenvalue_inferring(mtx_data.cols(),mtx_data.rows());
+    MatrixXcd mtx_eigenvector_inferring(mtx_data.cols(),mtx_data.rows());
+    //mtx_eigenvalue_inferring = NoiseRemove(mtx_eigenvalue);
+    //mtx_eigenvector_inferring = NoiseRemove(eigensolver_bkgd.eigenvectors());
+    //mtx_bkgd = mtx_eigenvector_inferring*mtx_eigenvalue_inferring*mtx_eigenvector_inferring.inverse();
     mtx_bkgd = eigensolver_bkgd.eigenvectors()*mtx_eigenvalue*eigensolver_bkgd.eigenvectors().inverse();
-    //for (int i=0;i<mtx_data.cols();i++)
-    //{
-    //    for (int j=0;j<mtx_data.rows();j++)
-    //    {
-    //        if (mtx_bkgd(i,j).real()<0) mtx_bkgd(i,j) = 0;
-    //    }
-    //}
-    mtx_ratio = MatrixRatio(mtx_data,mtx_bkgd,binx_lower,biny_lower);
-    return mtx_bkgd;
-}
-MatrixXcd EigenvectorPrediction(MatrixXcd mtx_data, MatrixXcd mtx_bkgd, MatrixXcd mtx_eigenvalue, MatrixXcd mtx_eigenvector, int binx_lower, int biny_lower)
-{
-    mtx_bkgd = replaceMatrix(mtx_data,mtx_bkgd,binx_lower,biny_lower);
-    std::cout << "mtx_data :\n" << mtx_data.real() << std::endl;
-    std::cout << "mtx_bkgd :\n" << mtx_bkgd.real() << std::endl;
-    ComplexEigenSolver<MatrixXcd> eigensolver_bkgd(mtx_bkgd);
     for (int i=0;i<mtx_data.cols();i++)
     {
         for (int j=0;j<mtx_data.rows();j++)
         {
-            if (i==j) mtx_eigenvalue(i,j) = eigensolver_bkgd.eigenvalues()(i);
-            else mtx_eigenvalue(i,j) = 0;
+            mtx_bkgd(i,j) = abs(mtx_bkgd(i,j).real());
         }
     }
-    mtx_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector.inverse();
-    std::cout << "mtx_bkgd :\n" << mtx_bkgd.real() << std::endl;
+    //mtx_ratio = MatrixRatio(mtx_data,mtx_bkgd,binx_lower,biny_lower);
     return mtx_bkgd;
 }
 void NetflixMethodPrediction(string target_data, double theta2_cut_lower_input, double theta2_cut_upper_input)
 {
 
+    TH1::SetDefaultSumw2();
+    sprintf(target, "%s", target_data.c_str());
     Theta2_cut_lower = theta2_cut_lower_input;
     Theta2_cut_upper = theta2_cut_upper_input;
 
-    vector<TH2D> Hist_Data_MSCLW;
-    vector<TH2D> Hist_Dark_MSCLW;
+    vector<TH2D> Hist_Bkgd_MSCLW;
     TFile InputDataFile("output_Jul05/Netflix_"+TString(target_data)+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root");
     for (int e=0;e<N_energy_bins;e++) 
     {
-        if (energy_bins[e]<200.) continue;
-        if (energy_bins[e]>250.) continue;
+        std::cout << "++++++++++++++++++++++++++++++++++++++" << std::endl;
         std::cout << "energy = " << energy_bins[e] << std::endl;
         char e_low[50];
         sprintf(e_low, "%i", int(energy_bins[e]));
@@ -178,6 +189,10 @@ void NetflixMethodPrediction(string target_data, double theta2_cut_lower_input, 
         TString filename_dark  = "Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TH2D* Hist_Data = (TH2D*)InputDataFile.Get(filename_data);
         TH2D* Hist_Dark = (TH2D*)InputDataFile.Get(filename_dark);
+        Hist_Bkgd_MSCLW.push_back(TH2D("Hist_Bkgd_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-1,19,N_bins_for_deconv,-1,19));
+
+        if (energy_bins[e]<1100.) continue;
+        if (energy_bins[e]>1200.) continue;
 
         NormalizeHist2D(Hist_Data,Hist_Dark);
         MatrixXcd mtx_data(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
@@ -194,7 +209,7 @@ void NetflixMethodPrediction(string target_data, double theta2_cut_lower_input, 
         int biny_lower = Hist_Data->GetYaxis()->FindBin(MSCW_cut_blind)-1;
 
         ComplexEigenSolver<MatrixXcd> eigensolver_dark(mtx_dark);
-        std::cout << "The eigenvalues of mtx_dark are:\n" << eigensolver_dark.eigenvalues() << std::endl;
+        //std::cout << "The eigenvalues of mtx_dark are:\n" << eigensolver_dark.eigenvalues() << std::endl;
         for (int i=0;i<mtx_data.cols();i++)
         {
             for (int j=0;j<mtx_data.rows();j++)
@@ -208,38 +223,40 @@ void NetflixMethodPrediction(string target_data, double theta2_cut_lower_input, 
             }
         }
         mtx_eigenvector = eigensolver_dark.eigenvectors();
+        mtx_eigenvalue = NoiseRemove(mtx_eigenvalue);
 
         //mtx_data_bkgd = mtx_dark;
 
         for (int iter=0;iter<5;iter++)
         {
-            std::cout << "+++++++++++++++++++ iteration " << iter << std::endl;
             mtx_dark_bkgd = EigenvaluePrediction(mtx_dark,mtx_dark_bkgd,mtx_eigenvalue,binx_lower,biny_lower);
         }
         mtx_dark_corr = MatrixRatio(mtx_dark_bkgd,mtx_dark,binx_lower,biny_lower);
         for (int iter=0;iter<5;iter++)
         {
-            std::cout << "+++++++++++++++++++ iteration " << iter << std::endl;
             mtx_data_bkgd = EigenvaluePrediction(mtx_data,mtx_data_bkgd,mtx_eigenvalue,binx_lower,biny_lower);
         }
-        mtx_data_bkgd = MatrixScale(mtx_dark_corr,mtx_data_bkgd);
+        //mtx_data_bkgd = MatrixScale(mtx_dark_corr,mtx_data_bkgd);
+        mtx_data_bkgd = replaceMatrix(mtx_data,mtx_data_bkgd,binx_lower,biny_lower);
         std::cout << "mtx_data :\n" << mtx_data.block(0,0,binx_lower,biny_lower).real() << std::endl;
         std::cout << "mtx_data_bkgd :\n" << mtx_data_bkgd.block(0,0,binx_lower,biny_lower).real() << std::endl;
         mtx_data_corr = MatrixRatio(mtx_data,mtx_data_bkgd,binx_lower,biny_lower);
-        std::cout << "mtx_dark_corr :\n" << mtx_dark_corr.block(0,0,binx_lower,biny_lower).real() << std::endl;
+        //std::cout << "mtx_dark_corr :\n" << mtx_dark_corr.block(0,0,binx_lower,biny_lower).real() << std::endl;
         std::cout << "mtx_data_corr :\n" << mtx_data_corr.block(0,0,binx_lower,biny_lower).real() << std::endl;
 
+        fillHistogram(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
 
     }
     InputDataFile.Close();
 
 
-    //TFile OutputFile("output_Jul05/Netflix_"+TString(target)+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","update");
-    //for (int e=0;e<N_energy_bins;e++)
-    //{
-    //    Hist_Data_MSCLW.at(e).Write();
-    //    Hist_Dark_MSCLW.at(e).Write();
-    //}
-    //OutputFile.Close();
+    TFile OutputFile("output_Jul05/Netflix_"+TString(target)+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","update");
+    for (int e=0;e<N_energy_bins;e++)
+    {
+        if (energy_bins[e]<1100.) continue;
+        if (energy_bins[e]>1200.) continue;
+        Hist_Bkgd_MSCLW.at(e).Write();
+    }
+    OutputFile.Close();
 
 }

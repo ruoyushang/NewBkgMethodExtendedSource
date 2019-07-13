@@ -76,7 +76,7 @@ bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,fa
 //double electron_count[N_energy_bins] = {0};
 //double electron_count_err[N_energy_bins] = {0};
 
-int N_bins_for_deconv = 960;
+int N_bins_for_deconv = 100;
 double MSCW_plot_lower = -30.;
 double MSCW_plot_upper = 30.;
 double Theta2_cut_lower = 0;
@@ -291,10 +291,6 @@ void NetflixMethodGetShowerImage(string target_data, double theta2_cut_lower_inp
         sprintf(e_low, "%i", int(energy_bins[e]));
         char e_up[50];
         sprintf(e_up, "%i", int(energy_bins[e+1]));
-        //if (energy_bins[e]>=200.) N_bins_for_deconv = 960;
-        //if (energy_bins[e]>=1000.) N_bins_for_deconv = 480;
-        //if (energy_bins[e]>=3200.) N_bins_for_deconv = 240;
-        N_bins_for_deconv = 50;
         Hist_Data_MSCLW.push_back(TH2D("Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-1,19,N_bins_for_deconv,-1,19));
         Hist_Dark_MSCLW.push_back(TH2D("Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-1,19,N_bins_for_deconv,-1,19));
     }
