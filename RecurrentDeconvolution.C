@@ -306,9 +306,9 @@ std::pair <double,double> FindCutoffEndpoints(TH1* Hist_SR,TH1* Hist_Bkg,double 
 std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerHadron(int niter, double electron_flux_scale, TH1* Hist_ElectronMC, TH1* Hist_SR, TH1* Hist_SR_Previous,TH1* Hist_Bkg, TH1* Hist_Bkg_Previous, double energy, std::pair <std::pair <double,double>,std::pair <double,double>> parameters, bool isDark)
 {
     Hist_Bkg->Reset();
-    TH1D Hist_Bkg_Privous_Adapt = TH1D("Hist_Bkg_Privous_Adapt","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
-    MakeBkgPrevious(Hist_SR_Previous,Hist_Bkg_Previous,&Hist_Bkg_Privous_Adapt,false);
-    //MakeBkgPrevious(Hist_SR_Previous,Hist_Bkg_Previous,&Hist_Bkg_Privous_Adapt,isDark);
+    TH1D Hist_Bkg_Previous_Adapt = TH1D("Hist_Bkg_Previous_Adapt","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
+    MakeBkgPrevious(Hist_SR_Previous,Hist_Bkg_Previous,&Hist_Bkg_Previous_Adapt,false);
+    //MakeBkgPrevious(Hist_SR_Previous,Hist_Bkg_Previous,&Hist_Bkg_Previous_Adapt,isDark);
 
     TH1D Hist_SR_Temp = TH1D("Hist_SR_Temp","",Hist_SR->GetNbinsX(),MSCW_plot_lower,MSCW_plot_upper);
     Hist_SR_Temp.Reset();
@@ -330,7 +330,8 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerH
     double offset_begin = parameters.first.second;
     double endpoint_0 = parameters.second.first;
     double endpoint_1 = parameters.second.second;
-    if (isDark) kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_Bkg_Privous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,kernel_rms,0,SR_Niter,true,1,endpoint_0,endpoint_1);
+    //if (isDark) kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_Bkg_Previous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,kernel_rms,0,SR_Niter,true,1,endpoint_0,endpoint_1);
+    if (isDark) kernel_rms = FindRMS(&Hist_SR_Temp,Hist_SR_Previous,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,kernel_rms,0,SR_Niter,true,1,endpoint_0,endpoint_1);
     TF1 *myfunc = new TF1("myfunc",Kernel,-50.,50.,1);
     myfunc->SetParameter(0,kernel_rms);
     Hist_Kernel.Reset();
@@ -341,7 +342,7 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerH
         Hist_Kernel.SetBinError(b+1,pow(content,0.5));
     }
                     
-    Deconvolution(&Hist_Bkg_Privous_Adapt,&Hist_Kernel,&Hist_Bkg_Temp,SR_Niter);
+    Deconvolution(&Hist_Bkg_Previous_Adapt,&Hist_Kernel,&Hist_Bkg_Temp,SR_Niter);
     double offset = ShiftAndNormalize(&Hist_SR_Temp,&Hist_Bkg_Temp,Hist_Bkg,true,isDark,2,offset_begin);
 
     Hist_SR_Temp.Reset();
@@ -375,32 +376,21 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(
     double chi2_best = 0.;
     double chi2_previous = 0.;
     int niter_best = 3;
-    //for (int niter=1;niter<=10;niter++)
-    //{
-    //    parameters = PredictNextLayerHadron(niter,0.0,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
-    //    double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,0.4);
-    //    //if (chi2_previous>chi2) break;
-    //    if (chi2_best<chi2) {
-    //        chi2_best = chi2;
-    //        niter_best = niter;
-    //    } 
-    //    chi2_previous = chi2;
-    //}
+    for (int niter=1;niter<=10;niter++)
+    {
+        parameters = PredictNextLayerHadron(niter,1.0,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
+        double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,0.4);
+        //if (chi2_previous>chi2) break;
+        if (chi2_best<chi2) {
+            chi2_best = chi2;
+            niter_best = niter;
+        } 
+        chi2_previous = chi2;
+    }
 
-    chi2_best = 0.;
+    parameters = PredictNextLayerHadron(niter_best,1.0,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
+
     double best_electron_scale = 0.;
-    //for (int nscale=0;nscale<=10;nscale++)
-    //{
-    //    double scale = 2.0*(double)nscale/10.;
-    //    parameters = PredictNextLayerHadron(niter_best,scale,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
-    //    double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,parameters_0.second.second);
-    //    if (chi2_best<chi2) {
-    //        chi2_best = chi2;
-    //        best_electron_scale = scale;
-    //    } 
-    //}
-    parameters = PredictNextLayerHadron(niter_best,best_electron_scale,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
-
     int norm_bin_low = Hist_DarkSR->FindBin(MSCW_cut_lower);
     int norm_bin_blind = Hist_DarkSR->FindBin(MSCW_cut_blind);
     double excess = Hist_DarkSR->Integral(norm_bin_low,norm_bin_blind)-Hist_DarkBkg->Integral(norm_bin_low,norm_bin_blind);
@@ -415,20 +405,6 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(
     std::cout << "Dark field found endpoint 0 = " << parameters.second.first << std::endl;
     std::cout << "Dark field found endpoint 1 = " << parameters.second.second << std::endl;
 
-    //chi2_best = 0.;
-    //chi2_previous = 0.;
-    //niter_best = 0;
-    //for (int niter=1;niter<=10;niter++)
-    //{
-    //    parameters = PredictNextLayerHadron(niter,best_electron_scale,Hist_ElectronMC,Hist_SR,Hist_SR_Previous,Hist_Bkg,Hist_Bkg_Previous,energy,parameters,false);
-    //    double chi2 = GetChi2(Hist_SR,Hist_Bkg,false,parameters_0.second.second);
-    //    if (chi2_best<chi2) {
-    //        chi2_best = chi2;
-    //        niter_best = niter;
-    //    } 
-    //    chi2_previous = chi2;
-    //}
-    //std::cout << "best target n iterations = " << niter_best << std::endl;
     parameters = PredictNextLayerHadron(niter_best,best_electron_scale,Hist_ElectronMC,Hist_SR,Hist_SR_Previous,Hist_Bkg,Hist_Bkg_Previous,energy,parameters,false);
     std::cout << "Dark bkg integral = " << Hist_DarkBkg->Integral() << std::endl;
     std::cout << "Target bkg integral = " << Hist_Bkg->Integral() << std::endl;
