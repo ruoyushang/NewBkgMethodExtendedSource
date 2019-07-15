@@ -374,18 +374,18 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(
     std::pair <std::pair <double,double>,std::pair <double,double>> parameters;
     double chi2_best = 0.;
     double chi2_previous = 0.;
-    int niter_best = 0;
-    for (int niter=1;niter<=10;niter++)
-    {
-        parameters = PredictNextLayerHadron(niter,0.0,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
-        double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,0.4);
-        //if (chi2_previous>chi2) break;
-        if (chi2_best<chi2) {
-            chi2_best = chi2;
-            niter_best = niter;
-        } 
-        chi2_previous = chi2;
-    }
+    int niter_best = 3;
+    //for (int niter=1;niter<=10;niter++)
+    //{
+    //    parameters = PredictNextLayerHadron(niter,0.0,Hist_Dark_ElectronMC,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
+    //    double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,0.4);
+    //    //if (chi2_previous>chi2) break;
+    //    if (chi2_best<chi2) {
+    //        chi2_best = chi2;
+    //        niter_best = niter;
+    //    } 
+    //    chi2_previous = chi2;
+    //}
 
     chi2_best = 0.;
     double best_electron_scale = 0.;
