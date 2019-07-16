@@ -13,25 +13,39 @@ ROOT.gStyle.SetPaintTextFormat("0.3f")
 PlotAllEnergies = False
 PlotAllSRs = False
 DoSkymap = True
+UseRDBM = False
+UseDark = False
+UseRing = False
 
-tag = "ON"
 theta2_lower = 0.0
-theta2_upper = 0.5
+theta2_upper = 7.0
+
+#tag = "Small"
+#file_theta2_lower = 0.0
+#file_theta2_upper = 0.2
+#UseRing = True
+tag = "Large"
+file_theta2_lower = 0.0
+file_theta2_upper = 10.0
+UseRDBM = True
+UseDark = True
+
 target = ""
 source = []
 #source += ['Everything']
 #source += ['Segue1V6']
-source += ['IC443HotSpot']
+#source += ['IC443HotSpot']
 #source += ['Crab']
 #source += ['Mrk421']
 #source += ['H1426']
-#source += ['CasA']
 #source += ['1ES0229']
 #source += ['PKS1424']
 #source += ['3C264']
 #source += ['G079']
 #source += ['RGBJ0710']
-#source += ['WComaeV6']
+#source += ['CasA']
+source += ['WComaeV6']
+#source += ['1ES1218V6']
 
 energy_list = []
 energy_list += [200]
@@ -169,7 +183,7 @@ def GetSkyScaleFactor(Hist_Bkg_MSCW,MSCW_cut_lower,MSCW_cut_upper,Hist_CR_theta2
         scale_err = scale*(bkg_err/bkg_total)
     return scale, scale_err
 
-def RaDecHistScale(Hist,scale,scale_err):
+def RaDecHistScale(Hist,Hist_Syst,scale,scale_err):
 
     #Hist.Scale(scale)
 
@@ -180,9 +194,14 @@ def RaDecHistScale(Hist,scale,scale_err):
             new_content = old_content*scale
             new_error = 0
             if old_content>0 and scale>0:
-                new_error = new_content*pow(pow(old_error/old_content,2)+pow(scale_err/scale,2),0.5)
+                new_error = new_content*(old_error/old_content)
             Hist.SetBinContent(bx,by,new_content)
-            Hist.SetBinError(bx,by,pow(new_error*new_error+old_error*old_error,0.5))
+            Hist.SetBinError(bx,by,new_error)
+            new_error = 0
+            if old_content>0 and scale>0:
+                new_error = new_content*(scale_err/scale)
+            Hist_Syst.SetBinContent(bx,by,0)
+            Hist_Syst.SetBinError(bx,by,new_error)
 
 def Theta2HistScale(Hist,scale,scale_err):
 
@@ -374,10 +393,12 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
 
     pad2.cd()
     Hist_Band = Hist_Sum.Clone()
-    #Hist_Band.Divide(Hist_All)
+    #Hist_Band.Divide(Hists[0])
     for b in range(0,Hist_Band.GetNbinsX()):
-        Hist_Band.SetBinContent(b+1,0)
-        Hist_Band.SetBinError(b+1,3)
+        #Hist_Band.SetBinContent(b+1,0)
+        #Hist_Band.SetBinError(b+1,3)
+        Hist_Band.SetBinContent(b+1,1)
+        Hist_Band.SetBinError(b+1,0.1)
     Hist_Band.SetFillColor(1)
     Hist_Band.SetFillStyle(3004)
     Hist_Band.SetMarkerSize(0)
@@ -387,25 +408,30 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     Hist_Band.GetXaxis().SetLabelSize(0.1)
     Hist_Band.GetYaxis().SetLabelSize(0.1)
     Hist_Band.GetYaxis().SetTitleOffset(0.3)
-    Hist_Band.GetYaxis().SetTitle("#sqrt{#chi^{2}} (per bin)")
+    #Hist_Band.GetYaxis().SetTitle("#sqrt{#chi^{2}} (per bin)")
+    Hist_Band.GetYaxis().SetTitle("Data/BKG")
     Hist_Band.GetYaxis().SetTitleSize(0.13)
     Hist_Band.GetYaxis().SetNdivisions(505)
-    Hist_Band.SetMaximum(5)
-    Hist_Band.SetMinimum(-5)
+    #Hist_Band.SetMaximum(5)
+    #Hist_Band.SetMinimum(-5)
+    Hist_Band.SetMaximum(1.2)
+    Hist_Band.SetMinimum(0.8)
     Hist_Band.GetXaxis().SetRangeUser(low_end,high_end)
     Hist_Band.Draw("e2")
     Hist_Ratio = Hists[0].Clone()
-    for b in range(0,Hist_Ratio.GetNbinsX()):
-        ndata = Hists[0].GetBinContent(b+1)
-        edata = Hists[0].GetBinError(b+1)
-        nbkg = Hist_Sum.GetBinContent(b+1)
-        ebkg = Hist_Sum.GetBinError(b+1)
-        if not (ebkg*ebkg+edata*edata)==0 and not (ndata-nbkg)==0:
-            Hist_Ratio.SetBinContent(b+1,(ndata-nbkg)/abs(ndata-nbkg)*pow((ndata-nbkg)*(ndata-nbkg)/(ebkg*ebkg+edata*edata),0.5))
-        else:
-            Hist_Ratio.SetBinContent(b+1,0)
-        Hist_Ratio.SetBinError(b+1,0)
-    Hist_Ratio.SetFillColor(1)
+    Hist_Ratio.Divide(Hist_Sum)
+    #for b in range(0,Hist_Ratio.GetNbinsX()):
+    #    ndata = Hists[0].GetBinContent(b+1)
+    #    edata = Hists[0].GetBinError(b+1)
+    #    nbkg = Hist_Sum.GetBinContent(b+1)
+    #    ebkg = Hist_Sum.GetBinError(b+1)
+    #    if not (ebkg*ebkg+edata*edata)==0 and not (ndata-nbkg)==0:
+    #        Hist_Ratio.SetBinContent(b+1,(ndata-nbkg)/abs(ndata-nbkg)*pow((ndata-nbkg)*(ndata-nbkg)/(ebkg*ebkg+edata*edata),0.5))
+    #    else:
+    #        Hist_Ratio.SetBinContent(b+1,0)
+    #    Hist_Ratio.SetBinError(b+1,0)
+    #Hist_Ratio.SetFillColor(1)
+    Hist_Ratio.SetLineWidth(2)
     Hist_Ratio.Draw("B same")
 
     if 'Energy' in name:
@@ -534,6 +560,7 @@ def MakeComparisonPlotNoRatio(Hists,legends,colors,title,name,minheight,maxheigh
     for h in range(0,len(Hists)):
         if Hists[h]!=0:
             Hists[h].SetLineColor(colors[h])
+            Hists[h].SetMarkerStyle(22)
             Hists[h].Draw("E same")
 
     pad3.cd()
@@ -735,6 +762,8 @@ for s in range(0,len(source)):
 
     Hist_Hadr_Skymap = ROOT.TH2D("Hist_Hadr_Skymap","",150,-3,3,150,-3,3)
     Hist_Elec_Skymap = ROOT.TH2D("Hist_Elec_Skymap","",150,-3,3,150,-3,3)
+    Hist_Hadr_Syst_Skymap = ROOT.TH2D("Hist_Hadr_Syst_Skymap","",150,-3,3,150,-3,3)
+    Hist_Elec_Syst_Skymap = ROOT.TH2D("Hist_Elec_Syst_Skymap","",150,-3,3,150,-3,3)
     Hist_Data_Skymap = ROOT.TH2D("Hist_Data_Skymap","",150,-3,3,150,-3,3)
     Hist_Data_Theta2 = ROOT.TH1D("Hist_Data_Theta2","",1024,0,10)
     Hist_Hadr_Theta2 = ROOT.TH1D("Hist_Hadr_Theta2","",1024,0,10)
@@ -762,8 +791,8 @@ for s in range(0,len(source)):
     dark_integral_err = 0
     exposure_hours = 0.
 
-    #FilePath = "output_Jul05/Deconvolution_"+target+"_Theta2%sto%s"%(int(theta2_lower*10.),int(theta2_upper*10.))+".root";
-    FilePath = "output_Jul05/Deconvolution_"+target+"_Theta2%sto%s"%(int(0.*10.),int(10.*10.))+".root";
+    FilePath = "output_Jul05/Deconvolution_"+target+"_Theta2%sto%s"%(int(file_theta2_lower*10.),int(file_theta2_upper*10.))+".root";
+    #FilePath = "output_Jul05/Deconvolution_"+target+"_Theta2%sto%s"%(int(0.*10.),int(10.*10.))+".root";
     InputFile = ROOT.TFile(FilePath)
     InfoTree = InputFile.Get("InfoTree")
     InfoTree.GetEntry(0)
@@ -1022,6 +1051,21 @@ for s in range(0,len(source)):
             MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,-1)
 
 
+        bin_lower = Hist1D_W_Hadr_SumSRs.FindBin(MSCW_blind_cut)
+        bin_upper = Hist1D_W_Hadr_SumSRs.FindBin(MSCW_blind_cut*3)-1
+
+        w_cr_data_total, w_cr_data_err = IntegralAndError(Hist1D_W_Data_SumSRs,bin_lower,bin_upper)
+        w_cr_hadr_total, w_cr_data_err = IntegralAndError(Hist1D_W_Hadr_SumSRs,bin_lower,bin_upper)
+        l_cr_data_total, l_cr_data_err = IntegralAndError(Hist1D_L_Data_SumSRs,bin_lower,bin_upper)
+        l_cr_hadr_total, l_cr_data_err = IntegralAndError(Hist1D_L_Hadr_SumSRs,bin_lower,bin_upper)
+
+        #w_cr2_syst = 0
+        #w_cr2_syst = abs(w_cr_data_total-w_cr_hadr_total)/w_cr_data_total
+        #print 'w_cr2_syst = %s'%(w_cr2_syst)
+        #l_cr2_syst = 0
+        #l_cr2_syst = abs(l_cr_data_total-l_cr_hadr_total)/l_cr_data_total
+        #print 'l_cr2_syst = %s'%(l_cr2_syst)
+
         bin_lower = Hist1D_W_Hadr_SumSRs.FindBin(MSCW_lower_cut)
         bin_upper = Hist1D_W_Hadr_SumSRs.FindBin(MSCW_blind_cut)-1
 
@@ -1030,21 +1074,21 @@ for s in range(0,len(source)):
         l_cr_data_total, l_cr_data_err = IntegralAndError(Hist1D_L_CR_Data_SumSRs,bin_lower,bin_upper)
         l_cr_hadr_total, l_cr_data_err = IntegralAndError(Hist1D_L_CR_Hadr_SumSRs,bin_lower,bin_upper)
 
-        cr_syst = 0
-        cr_syst = abs(w_cr_data_total-w_cr_hadr_total)/w_cr_data_total
-        print 'w_cr_syst = %s'%(cr_syst)
-        Hist1D_W_Hadr_SumSRs = AddSystCR(Hist1D_W_Hadr_SumSRs,bin_lower,bin_upper,cr_syst)
-        cr_syst = 0
-        cr_syst = abs(l_cr_data_total-l_cr_hadr_total)/l_cr_data_total
-        print 'l_cr_syst = %s'%(cr_syst)
-        Hist1D_L_Hadr_SumSRs = AddSystCR(Hist1D_L_Hadr_SumSRs,bin_lower,bin_upper,cr_syst)
+        w_cr1_syst = 0
+        w_cr1_syst = abs(w_cr_data_total-w_cr_hadr_total)/w_cr_data_total
+        print 'w_cr1_syst = %s'%(w_cr1_syst)
+        #Hist1D_W_Hadr_SumSRs = AddSystCR(Hist1D_W_Hadr_SumSRs,bin_lower,bin_upper,cr1_syst)
+        l_cr1_syst = 0
+        l_cr1_syst = abs(l_cr_data_total-l_cr_hadr_total)/l_cr_data_total
+        print 'l_cr1_syst = %s'%(l_cr1_syst)
+        #Hist1D_L_Hadr_SumSRs = AddSystCR(Hist1D_L_Hadr_SumSRs,bin_lower,bin_upper,cr1_syst)
 
         w_bkg_total, w_bkg_err = IntegralAndError(Hist1D_W_Hadr_SumSRs,bin_lower,bin_upper)
         l_bkg_total, l_bkg_err = IntegralAndError(Hist1D_L_Hadr_SumSRs,bin_lower,bin_upper)
         w_weight = 1
-        #if (w_bkg_err>0): w_weight = pow(1./w_bkg_err,2)
+        if (w_cr1_syst>0): w_weight = pow(1./w_cr1_syst,1)
         l_weight = 1
-        #if (l_bkg_err>0): l_weight = pow(1./l_bkg_err,2)
+        if (l_cr1_syst>0): l_weight = pow(1./l_cr1_syst,1)
         bkg_total = w_bkg_total*w_weight + l_bkg_total*l_weight
         if (w_weight+l_weight)>0:
             bkg_total = bkg_total/(w_weight+l_weight)
@@ -1076,6 +1120,8 @@ for s in range(0,len(source)):
         old_integral = Hist_Hadr_Skymap_Tmp.Integral()
         scale = 0
         scale_err = 0
+        Hist_Hadr_Syst_Skymap_Tmp = InputFile.Get(HistName)
+        Hist_Hadr_Syst_Skymap_Tmp.Reset()
         if not bkg_total==0 and not old_integral==0:
             scale = bkg_total/old_integral
             scale_err = scale*(bkg_err/bkg_total)
@@ -1083,17 +1129,18 @@ for s in range(0,len(source)):
             scale = 0
             scale_err = 0
         if not bkg_total==0:
-            RaDecHistScale(Hist_Hadr_Skymap_Tmp,scale,scale_err)
+            RaDecHistScale(Hist_Hadr_Skymap_Tmp,Hist_Hadr_Syst_Skymap_Tmp,scale,scale_err)
         else:
             Hist_Hadr_Skymap_Tmp.Scale(0)
         Hist_Hadr_Skymap.Add(Hist_Hadr_Skymap_Tmp)
+        Hist_Hadr_Syst_Skymap.Add(Hist_Hadr_Syst_Skymap_Tmp)
 
         w_bkg_total, w_bkg_err = IntegralAndError(Hist1D_W_Elec_SumSRs,bin_lower,bin_upper)
         l_bkg_total, l_bkg_err = IntegralAndError(Hist1D_L_Elec_SumSRs,bin_lower,bin_upper)
         w_weight = 1
-        #if (w_bkg_err>0): w_weight = pow(1./w_bkg_err,2)
+        if (w_cr1_syst>0): w_weight = pow(1./w_cr1_syst,1)
         l_weight = 1
-        #if (l_bkg_err>0): l_weight = pow(1./l_bkg_err,2)
+        if (l_cr1_syst>0): l_weight = pow(1./l_cr1_syst,1)
         bkg_total = w_bkg_total*w_weight + l_bkg_total*l_weight
         if (w_weight+l_weight)>0:
             bkg_total = bkg_total/(w_weight+l_weight)
@@ -1121,6 +1168,8 @@ for s in range(0,len(source)):
         old_integral = Hist_Elec_Skymap_Tmp.Integral()
         scale = 0
         scale_err = 0
+        Hist_Elec_Syst_Skymap_Tmp = InputFile.Get(HistName)
+        Hist_Elec_Syst_Skymap_Tmp.Reset()
         if not bkg_total==0 and not old_integral==0:
             scale = bkg_total/old_integral
             scale_err = scale*(bkg_err/bkg_total)
@@ -1128,10 +1177,11 @@ for s in range(0,len(source)):
             scale = 0
             scale_err = 0
         if not bkg_total==0:
-            RaDecHistScale(Hist_Elec_Skymap_Tmp,scale,scale_err)
+            RaDecHistScale(Hist_Elec_Skymap_Tmp,Hist_Elec_Syst_Skymap_Tmp,scale,scale_err)
         else:
             Hist_Elec_Skymap_Tmp.Scale(0)
         Hist_Elec_Skymap.Add(Hist_Elec_Skymap_Tmp)
+        Hist_Elec_Syst_Skymap.Add(Hist_Elec_Syst_Skymap_Tmp)
 
         HistName = "Hist_Data_SR_SelectFoV_Theta2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
         Hist_Data_Theta2_Tmp = InputFile.Get(HistName)
@@ -1217,231 +1267,247 @@ for s in range(0,len(source)):
     Hist_Dark_Theta2.Rebin(n_rebin)
     Hist_Data_Theta2.Rebin(n_rebin)
     
-    Hists = []
-    legends = []
-    colors = []
-    Hists += [Hist_Data_Theta2]
-    legends += ['%s'%(target)]
-    colors += [1]
-    Hists += [Hist_Hadr_Theta2]
-    legends += ['hadron']
-    colors += [4]
-    Hists += [Hist_Elec_Theta2]
-    legends += ['electron']
-    colors += [3]
-    plotname = 'Target_SRall_RDBM_ZoomInTheta2_E%s'%(ErecS_lower_cut)
-    title = '#theta^{2}'
-    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,theta2_lower,theta2_upper,hadr_syst)
+    if UseRDBM:
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_Data_Theta2]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_Hadr_Theta2]
+        legends += ['hadron']
+        colors += [4]
+        Hists += [Hist_Elec_Theta2]
+        legends += ['electron']
+        colors += [3]
+        plotname = 'Target_SRall_RDBM_ZoomInTheta2_E%s'%(ErecS_lower_cut)
+        title = '#theta^{2}'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,theta2_lower,theta2_upper,hadr_syst)
     
-    Hists = []
-    legends = []
-    colors = []
-    Hists += [Hist_Data_Theta2]
-    legends += ['%s'%(target)]
-    colors += [1]
-    Hists += [Hist_Ring_Theta2]
-    legends += ['ring']
-    colors += [4]
-    plotname = 'Target_SRall_Ring_ZoomInTheta2'
-    title = '#theta^{2}'
-    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,theta2_lower,theta2_upper,ring_syst)
+    if UseRing:
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_Data_Theta2]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_Ring_Theta2]
+        legends += ['ring']
+        colors += [4]
+        plotname = 'Target_SRall_Ring_ZoomInTheta2'
+        title = '#theta^{2}'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,theta2_lower,theta2_upper,ring_syst)
     
-    Hists = []
-    legends = []
-    colors = []
-    Hists += [Hist_Data_Theta2]
-    legends += ['%s'%(target)]
-    colors += [1]
-    Hists += [Hist_Dark_Theta2]
-    legends += ['Segue1']
-    colors += [4]
-    plotname = 'Target_SRall_Dark_ZoomInTheta2'
-    title = '#theta^{2}'
-    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,theta2_lower,theta2_upper,dark_syst)
+    if UseDark:
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_Data_Theta2]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_Dark_Theta2]
+        legends += ['Segue1']
+        colors += [4]
+        plotname = 'Target_SRall_Dark_ZoomInTheta2'
+        title = '#theta^{2}'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,theta2_lower,theta2_upper,dark_syst)
     
-    Hists = []
-    legends = []
-    colors = []
-    Hists += [Hist_CR_Data_MSCW_SumE]
-    legends += ['%s'%(target)]
-    colors += [1]
-    Hists += [Hist_CR_Hadr_MSCW_SumE]
-    legends += ['hadron']
-    colors += [4]
-    Hists += [Hist_CR_Elec_MSCW_SumE]
-    legends += ['electron (MC)']
-    colors += [3]
-    plotname = 'Target_CRall_RDBM_MSCW'
-    title = 'MSCW'
-    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
-    Hists = []
-    legends = []
-    colors = []
-    Hists += [Hist_CR_Data_MSCL_SumE]
-    legends += ['%s'%(target)]
-    colors += [1]
-    Hists += [Hist_CR_Hadr_MSCL_SumE]
-    legends += ['hadron']
-    colors += [4]
-    Hists += [Hist_CR_Elec_MSCL_SumE]
-    legends += ['electron (MC)']
-    colors += [3]
-    plotname = 'Target_CRall_RDBM_MSCL'
-    title = 'MSCL'
-    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
-    Hists = []
-    legends = []
-    colors = []
-    Hists += [Hist_Data_MSCW_SumE]
-    legends += ['%s'%(target)]
-    colors += [1]
-    Hists += [Hist_Hadr_MSCW_SumE]
-    legends += ['hadron']
-    colors += [4]
-    Hists += [Hist_Elec_MSCW_SumE]
-    legends += ['electron (MC)']
-    colors += [3]
-    plotname = 'Target_SRall_RDBM_MSCW'
-    title = 'MSCW'
-    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
-    Hists = []
-    legends = []
-    colors = []
-    Hists += [Hist_Data_MSCL_SumE]
-    legends += ['%s'%(target)]
-    colors += [1]
-    Hists += [Hist_Hadr_MSCL_SumE]
-    legends += ['hadron']
-    colors += [4]
-    Hists += [Hist_Elec_MSCL_SumE]
-    legends += ['electron (MC)']
-    colors += [3]
-    plotname = 'Target_SRall_RDBM_MSCL'
-    title = 'MSCL'
-    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
-    Hists = []
-    legends = []
-    colors = []
-    Hists += [Hist_Data_MSCW_SumE]
-    legends += ['%s'%(target)]
-    colors += [1]
-    Hists += [Hist_Ring_MSCW_SumE]
-    legends += ['Ring']
-    colors += [4]
-    plotname = 'Target_SRall_Ring_MSCW'
-    title = 'MSCW'
-    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
-    Hists = []
-    legends = []
-    colors = []
-    Hists += [Hist_Data_MSCW_SumE]
-    legends += ['%s'%(target)]
-    colors += [1]
-    Hists += [Hist_Dark_MSCW_SumE]
-    legends += ['Segue1']
-    colors += [4]
-    plotname = 'Target_SRall_Dark_MSCW'
-    title = 'MSCW'
-    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
-    Hists = []
-    legends = []
-    colors = []
-    Hists += [Hist_CR_Data_MSCW_SumE]
-    legends += ['%s'%(target)]
-    colors += [1]
-    Hists += [Hist_CR_Hadr_MSCW_SumE]
-    legends += ['hadron']
-    colors += [4]
-    Hists += [Hist_CR_Elec_MSCW_SumE]
-    legends += ['electron (MC)']
-    colors += [3]
-    plotname = 'Target_CRall_ZoomInRDBM_MSCW'
-    title = 'MSCW'
-    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
-    Hists = []
-    legends = []
-    colors = []
-    Hists += [Hist_CR_Data_MSCL_SumE]
-    legends += ['%s'%(target)]
-    colors += [1]
-    Hists += [Hist_CR_Hadr_MSCL_SumE]
-    legends += ['hadron']
-    colors += [4]
-    Hists += [Hist_CR_Elec_MSCL_SumE]
-    legends += ['electron (MC)']
-    colors += [3]
-    plotname = 'Target_CRall_ZoomInRDBM_MSCL'
-    title = 'MSCL'
-    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
-    Hists = []
-    legends = []
-    colors = []
-    Hists += [Hist_Data_MSCW_SumE]
-    legends += ['%s'%(target)]
-    colors += [1]
-    Hists += [Hist_Hadr_MSCW_SumE]
-    legends += ['hadron']
-    colors += [4]
-    Hists += [Hist_Elec_MSCW_SumE]
-    legends += ['electron (MC)']
-    colors += [3]
-    plotname = 'Target_SRall_ZoomInRDBM_MSCW'
-    title = 'MSCW'
-    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
-    Hists = []
-    legends = []
-    colors = []
-    Hists += [Hist_Data_MSCL_SumE]
-    legends += ['%s'%(target)]
-    colors += [1]
-    Hists += [Hist_Hadr_MSCL_SumE]
-    legends += ['hadron']
-    colors += [4]
-    Hists += [Hist_Elec_MSCL_SumE]
-    legends += ['electron (MC)']
-    colors += [3]
-    plotname = 'Target_SRall_ZoomInRDBM_MSCL'
-    title = 'MSCL'
-    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
-    Hists = []
-    legends = []
-    colors = []
-    Hists += [Hist_Data_MSCW_SumE]
-    legends += ['%s'%(target)]
-    colors += [1]
-    Hists += [Hist_Ring_MSCW_SumE]
-    legends += ['Ring']
-    colors += [4]
-    plotname = 'Target_SRall_ZoomInRing_MSCW'
-    title = 'MSCW'
-    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
-    Hists = []
-    legends = []
-    colors = []
-    Hists += [Hist_Data_MSCW_SumE]
-    legends += ['%s'%(target)]
-    colors += [1]
-    Hists += [Hist_Dark_MSCW_SumE]
-    legends += ['Segue1']
-    colors += [4]
-    plotname = 'Target_SRall_ZoomInDark_MSCW'
-    title = 'MSCW'
-    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
+    if UseRDBM:
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_CR_Data_MSCW_SumE]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_CR_Hadr_MSCW_SumE]
+        legends += ['hadron']
+        colors += [4]
+        Hists += [Hist_CR_Elec_MSCW_SumE]
+        legends += ['electron (MC)']
+        colors += [3]
+        plotname = 'Target_CRall_RDBM_MSCW'
+        title = 'MSCW'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_CR_Data_MSCL_SumE]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_CR_Hadr_MSCL_SumE]
+        legends += ['hadron']
+        colors += [4]
+        Hists += [Hist_CR_Elec_MSCL_SumE]
+        legends += ['electron (MC)']
+        colors += [3]
+        plotname = 'Target_CRall_RDBM_MSCL'
+        title = 'MSCL'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_Data_MSCW_SumE]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_Hadr_MSCW_SumE]
+        legends += ['hadron']
+        colors += [4]
+        Hists += [Hist_Elec_MSCW_SumE]
+        legends += ['electron (MC)']
+        colors += [3]
+        plotname = 'Target_SRall_RDBM_MSCW'
+        title = 'MSCW'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_Data_MSCL_SumE]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_Hadr_MSCL_SumE]
+        legends += ['hadron']
+        colors += [4]
+        Hists += [Hist_Elec_MSCL_SumE]
+        legends += ['electron (MC)']
+        colors += [3]
+        plotname = 'Target_SRall_RDBM_MSCL'
+        title = 'MSCL'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
+    if UseRing:
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_Data_MSCW_SumE]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_Ring_MSCW_SumE]
+        legends += ['Ring']
+        colors += [4]
+        plotname = 'Target_SRall_Ring_MSCW'
+        title = 'MSCW'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
+    if UseDark:
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_Data_MSCW_SumE]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_Dark_MSCW_SumE]
+        legends += ['Segue1']
+        colors += [4]
+        plotname = 'Target_SRall_Dark_MSCW'
+        title = 'MSCW'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
+    if UseRDBM:
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_CR_Data_MSCW_SumE]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_CR_Hadr_MSCW_SumE]
+        legends += ['hadron']
+        colors += [4]
+        Hists += [Hist_CR_Elec_MSCW_SumE]
+        legends += ['electron (MC)']
+        colors += [3]
+        plotname = 'Target_CRall_ZoomInRDBM_MSCW'
+        title = 'MSCW'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_CR_Data_MSCL_SumE]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_CR_Hadr_MSCL_SumE]
+        legends += ['hadron']
+        colors += [4]
+        Hists += [Hist_CR_Elec_MSCL_SumE]
+        legends += ['electron (MC)']
+        colors += [3]
+        plotname = 'Target_CRall_ZoomInRDBM_MSCL'
+        title = 'MSCL'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_Data_MSCW_SumE]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_Hadr_MSCW_SumE]
+        legends += ['hadron']
+        colors += [4]
+        Hists += [Hist_Elec_MSCW_SumE]
+        legends += ['electron (MC)']
+        colors += [3]
+        plotname = 'Target_SRall_ZoomInRDBM_MSCW'
+        title = 'MSCW'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_Data_MSCL_SumE]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_Hadr_MSCL_SumE]
+        legends += ['hadron']
+        colors += [4]
+        Hists += [Hist_Elec_MSCL_SumE]
+        legends += ['electron (MC)']
+        colors += [3]
+        plotname = 'Target_SRall_ZoomInRDBM_MSCL'
+        title = 'MSCL'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
+    if UseRing:
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_Data_MSCW_SumE]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_Ring_MSCW_SumE]
+        legends += ['Ring']
+        colors += [4]
+        plotname = 'Target_SRall_ZoomInRing_MSCW'
+        title = 'MSCW'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
+    if UseDark:
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_Data_MSCW_SumE]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_Dark_MSCW_SumE]
+        legends += ['Segue1']
+        colors += [4]
+        plotname = 'Target_SRall_ZoomInDark_MSCW'
+        title = 'MSCW'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,0)
     
-    if DoSkymap:
+    if DoSkymap and UseRDBM:
         
         
         plotname = 'Target_SRall_RDBM_Skymap'
         Hist_Bkg_Skymap = Hist_Hadr_Skymap.Clone()
         Hist_Bkg_Skymap.Add(Hist_Elec_Skymap)
+        Hist_Bkg_Syst_Skymap = Hist_Hadr_Syst_Skymap.Clone()
+        Hist_Bkg_Syst_Skymap.Add(Hist_Elec_Syst_Skymap)
         Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap,Hist_Bkg_Skymap,'RA','Dec',theta2_lower,theta2_upper,plotname)
         
         smooth_size = 0.05
         Hist_Data_Skymap_smooth = Smooth2DMap(Hist_Data_Skymap,smooth_size,False)
         Hist_Bkg_Skymap_smooth = Smooth2DMap(Hist_Bkg_Skymap,smooth_size,False)
+        Hist_Bkg_Syst_Skymap_smooth = Smooth2DMap(Hist_Bkg_Syst_Skymap,smooth_size,True)
+        Hist_Bkg_Skymap_smooth.Add(Hist_Bkg_Syst_Skymap_smooth)
         plotname = 'Target_SRall_RDBM_Skymap_Smooth'
         Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap_smooth,Hist_Bkg_Skymap_smooth,'RA','Dec',theta2_lower,theta2_upper,plotname)
 
-MakeComparisonPlotNoRatio(Hist_RDBM_S2B,legend_S2B,color_S2B,'E [GeV]','Mismodeling_RDBM_systematics',0.6,1.4,True,False)
-MakeComparisonPlotNoRatio(Hist_Dark_S2B,legend_S2B,color_S2B,'E [GeV]','Mismodeling_Dark_systematics',0.6,1.4,True,False)
-MakeComparisonPlotNoRatio(Hist_Ring_S2B,legend_S2B,color_S2B,'E [GeV]','Mismodeling_Ring_systematics',0.6,1.4,True,False)
+if UseRDBM:
+    MakeComparisonPlotNoRatio(Hist_RDBM_S2B,legend_S2B,color_S2B,'E [GeV]','Mismodeling_RDBM_systematics',0.6,1.4,True,False)
+if UseDark:
+    MakeComparisonPlotNoRatio(Hist_Dark_S2B,legend_S2B,color_S2B,'E [GeV]','Mismodeling_Dark_systematics',0.6,1.4,True,False)
+if UseRing:
+    MakeComparisonPlotNoRatio(Hist_Ring_S2B,legend_S2B,color_S2B,'E [GeV]','Mismodeling_Ring_systematics',0.6,1.4,True,False)
