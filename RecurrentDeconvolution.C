@@ -71,7 +71,7 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, double endpoint) {
         if (Hist_Bkg->GetBinCenter(i+1)<endpoint) continue;
         if (includeSR)
         {
-            if (Hist_Bkg->GetBinCenter(i+1)>10.*MSCW_cut_blind) continue;
+            if (Hist_Bkg->GetBinCenter(i+1)>5.*MSCW_cut_blind) continue;
         }
         else 
         {
@@ -387,10 +387,12 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(
     std::pair <std::pair <double,double>,std::pair <double,double>> parameters;
     double chi2_best = 0.;
     double chi2_previous = 0.;
-    int niter_best = 3;
+    int niter_best = 5;
+    parameters = PredictNextLayerHadron(niter_best,1.0,Hist_Dark_ElectronMC,Hist_Dark_ElectronMC_Previous,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
+
     for (int niter=1;niter<=10;niter++)
     {
-        parameters = PredictNextLayerHadron(niter,1.0,Hist_Dark_ElectronMC,Hist_Dark_ElectronMC_Previous,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
+        parameters = PredictNextLayerHadron(niter,1.0,Hist_Dark_ElectronMC,Hist_Dark_ElectronMC_Previous,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters,true);
         double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,0.4);
         //if (chi2_previous>chi2) break;
         if (chi2_best<chi2) {
@@ -400,7 +402,7 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(
         chi2_previous = chi2;
     }
 
-    parameters = PredictNextLayerHadron(niter_best,1.0,Hist_Dark_ElectronMC,Hist_Dark_ElectronMC_Previous,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
+    parameters = PredictNextLayerHadron(niter_best,1.0,Hist_Dark_ElectronMC,Hist_Dark_ElectronMC_Previous,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters,true);
 
     double best_electron_scale = 1.;
     //int norm_bin_low = Hist_DarkSR->FindBin(MSCW_cut_lower);
@@ -418,11 +420,18 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(
     std::cout << "Dark field found endpoint 1 = " << parameters.second.second << std::endl;
 
     parameters = PredictNextLayerHadron(niter_best,best_electron_scale,Hist_ElectronMC,Hist_ElectronMC_Previous,Hist_SR,Hist_SR_Previous,Hist_Bkg,Hist_Bkg_Previous,energy,parameters,false);
-    std::cout << "Dark bkg integral = " << Hist_DarkBkg->Integral() << std::endl;
-    std::cout << "Target bkg integral = " << Hist_Bkg->Integral() << std::endl;
 
     Hist_Dark_ElectronMC->Scale(best_electron_scale);
     Hist_ElectronMC->Scale(best_electron_scale);
+
+    int norm_bin_low = Hist_SR->FindBin(MSCW_cut_lower);
+    int norm_bin_blind = Hist_SR->FindBin(MSCW_cut_blind);
+    std::cout << "Dark SR integral = " << Hist_DarkSR->Integral(norm_bin_low,norm_bin_blind) << std::endl;
+    std::cout << "Dark bkg integral = " << Hist_DarkBkg->Integral(norm_bin_low,norm_bin_blind) << std::endl;
+    std::cout << "Dark elec integral = " << Hist_Dark_ElectronMC->Integral(norm_bin_low,norm_bin_blind) << std::endl;
+    std::cout << "Target SR integral = " << Hist_SR->Integral(norm_bin_low,norm_bin_blind) << std::endl;
+    std::cout << "Target bkg integral = " << Hist_Bkg->Integral(norm_bin_low,norm_bin_blind) << std::endl;
+    std::cout << "Target elec integral = " << Hist_ElectronMC->Integral(norm_bin_low,norm_bin_blind) << std::endl;
     return parameters;
 
 }
@@ -496,11 +505,13 @@ void PredictBackground(TH2D* Hist_Target_Data, TH2D* Hist_Target_Elec, TH2D* His
         }
     }
 }
-void RecurrentDeconvolution(string target_data, double theta2_cut_lower_input, double theta2_cut_upper_input)
+void RecurrentDeconvolution(string target_data, double tel_elev_lower_input, double tel_elev_upper_input, double theta2_cut_lower_input, double theta2_cut_upper_input)
 {
 
     Theta2_cut_lower = theta2_cut_lower_input;
     Theta2_cut_upper = theta2_cut_upper_input;
+    TelElev_lower = tel_elev_lower_input;
+    TelElev_upper = tel_elev_upper_input;
 
     vector<TH2D> Hist_Target_Bkg_MSCLW;
     vector<TH2D> Hist_Target_Ele_MSCLW;
@@ -508,7 +519,7 @@ void RecurrentDeconvolution(string target_data, double theta2_cut_lower_input, d
     vector<TH2D> Hist_Target_Bkg_MSCWL;
     vector<TH2D> Hist_Target_Ele_MSCWL;
     vector<TH2D> Hist_Dark_Bkg_MSCWL;
-    TFile InputDataFile("output_Jul05/Deconvolution_"+TString(target_data)+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root");
+    TFile InputDataFile("output_Jul16/Deconvolution_"+TString(target_data)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root");
     for (int e=0;e<N_energy_bins;e++) 
     {
         std::cout << "energy = " << energy_bins[e] << std::endl;
@@ -563,7 +574,7 @@ void RecurrentDeconvolution(string target_data, double theta2_cut_lower_input, d
     }
     InputDataFile.Close();
 
-    TFile OutputDataFile("output_Jul05/Deconvolution_"+TString(target_data)+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","update");
+    TFile OutputDataFile("output_Jul16/Deconvolution_"+TString(target_data)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","update");
     for (int e=0;e<N_energy_bins;e++)
     {
         Hist_Target_Bkg_MSCLW.at(e).Write();

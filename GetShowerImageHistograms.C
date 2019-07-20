@@ -99,6 +99,7 @@ int NImages = 0;
 double MSCL = 0;
 double Time = 0;
 double Shower_Ze = 0;
+double Shower_Az = 0;
 double SlantDepth = 0;
 float EmissionHeight = 0;
 float EmissionHeightChi2 = 0;
@@ -278,30 +279,38 @@ bool ControlSelectionTheta2()
     if (MSCW>MSCW_cut_blind*3.0) return false;
     return true;
 }
-void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input, double theta2_cut_upper_input)
+void GetShowerImageHistograms(string target_data, double tel_elev_lower_input, double tel_elev_upper_input, double theta2_cut_lower_input, double theta2_cut_upper_input)
 {
 
     TH1::SetDefaultSumw2();
     sprintf(target, "%s", target_data.c_str());
     Theta2_cut_lower = theta2_cut_lower_input;
     Theta2_cut_upper = theta2_cut_upper_input;
+    TelElev_lower = tel_elev_lower_input;
+    TelElev_upper = tel_elev_upper_input;
 
     TH1D Hist_ErecS = TH1D("Hist_ErecS","",N_energy_bins,energy_bins);
     TH1D Hist_EffAreaTime("Hist_EffAreaTime","",N_energy_bins,energy_bins);
     TH1D Hist_Dark_TelElev = TH1D("Hist_Dark_TelElev","",18,0,90);
     TH1D Hist_Target_TelElev = TH1D("Hist_Target_TelElev","",18,0,90);
+    TH2D Hist_Dark_ShowerDirection = TH2D("Hist_Dark_ShowerDirection","",180,0,360,90,0,90);
+    TH2D Hist_Data_ShowerDirection = TH2D("Hist_Data_ShowerDirection","",180,0,360,90,0,90);
     vector<TH2D> Hist_Data_MSCLW;
     vector<TH2D> Hist_Ring_MSCLW;
+    vector<TH2D> Hist_Ring_Syst_MSCLW;
     vector<TH2D> Hist_Dark_MSCLW;
     vector<TH2D> Hist_DarkScaled_MSCLW;
+    vector<TH2D> Hist_DarkScaled_Syst_MSCLW;
     vector<TH2D> Hist_CrabON_MSCLW;
     vector<TH2D> Hist_CrabOFF_MSCLW;
     vector<TH2D> Hist_Elec_MSCLW;
     vector<TH2D> Hist_DarkElec_MSCLW;
     vector<TH2D> Hist_Data_MSCWL;
     vector<TH2D> Hist_Ring_MSCWL;
+    vector<TH2D> Hist_Ring_Syst_MSCWL;
     vector<TH2D> Hist_Dark_MSCWL;
     vector<TH2D> Hist_DarkScaled_MSCWL;
+    vector<TH2D> Hist_DarkScaled_Syst_MSCWL;
     vector<TH2D> Hist_CrabON_MSCWL;
     vector<TH2D> Hist_CrabOFF_MSCWL;
     vector<TH2D> Hist_Elec_MSCWL;
@@ -329,16 +338,20 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         //if (energy_bins[e]>=3200.) N_bins_for_deconv = 240;
         Hist_Data_MSCLW.push_back(TH2D("Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Ring_MSCLW.push_back(TH2D("Hist_Ring_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_Ring_Syst_MSCLW.push_back(TH2D("Hist_Ring_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Dark_MSCLW.push_back(TH2D("Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_DarkScaled_MSCLW.push_back(TH2D("Hist_DarkScaled_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_DarkScaled_Syst_MSCLW.push_back(TH2D("Hist_DarkScaled_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_CrabON_MSCLW.push_back(TH2D("Hist_CrabON_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_CrabOFF_MSCLW.push_back(TH2D("Hist_CrabOFF_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Elec_MSCLW.push_back(TH2D("Hist_Elec_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_DarkElec_MSCLW.push_back(TH2D("Hist_DarkElec_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Data_MSCWL.push_back(TH2D("Hist_Data_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Ring_MSCWL.push_back(TH2D("Hist_Ring_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_Ring_Syst_MSCWL.push_back(TH2D("Hist_Ring_Syst_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Dark_MSCWL.push_back(TH2D("Hist_Dark_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_DarkScaled_MSCWL.push_back(TH2D("Hist_DarkScaled_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_DarkScaled_Syst_MSCWL.push_back(TH2D("Hist_DarkScaled_Syst_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_CrabON_MSCWL.push_back(TH2D("Hist_CrabON_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_CrabOFF_MSCWL.push_back(TH2D("Hist_CrabOFF_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Elec_MSCWL.push_back(TH2D("Hist_Elec_MSCWL_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
@@ -368,7 +381,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Dark_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
-        if (!PointingSelection(filename,int(Dark_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
+        if (!PointingSelection(filename,int(Dark_runlist[run].second),70,85,0,360)) continue;
 
         TFile*  input_file = TFile::Open(filename.c_str());
 	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Dark_runlist[run].second);
@@ -386,6 +399,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         Dark_tree->SetBranchAddress("NImages",&NImages);
         Dark_tree->SetBranchAddress("Time",&Time);
         Dark_tree->SetBranchAddress("Shower_Ze",&Shower_Ze);
+        Dark_tree->SetBranchAddress("Shower_Az",&Shower_Az);
 
         for (int entry=0;entry<Dark_tree->GetEntries();entry++) 
         {
@@ -404,6 +418,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
             if (!SelectNImages(3,4)) continue;
             Hist_Dark_Camera_Theta2.at(e).Fill(R2off);
             Hist_Dark_TelElev.Fill(Shower_Ze);
+            Hist_Dark_ShowerDirection.Fill(Shower_Az,Shower_Ze);
         }
         input_file->Close();
     }
@@ -437,6 +452,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         Data_tree->SetBranchAddress("NImages",&NImages);
         Data_tree->SetBranchAddress("Time",&Time);
         Data_tree->SetBranchAddress("Shower_Ze",&Shower_Ze);
+        Data_tree->SetBranchAddress("Shower_Az",&Shower_Az);
 
         for (int entry=0;entry<Data_tree->GetEntries();entry++) 
         {
@@ -454,6 +470,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
             int e = energy;
             if (!SelectNImages(3,4)) continue;
             Hist_Target_TelElev.Fill(Shower_Ze);
+            Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze);
             if (FoV())
             {
                 if (theta2<0.2) continue;
@@ -473,7 +490,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Dark_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
-        if (!PointingSelection(filename,int(Dark_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
+        if (!PointingSelection(filename,int(Dark_runlist[run].second),70,85,0,360)) continue;
 
         TFile*  input_file = TFile::Open(filename.c_str());
 	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Dark_runlist[run].second);
@@ -491,6 +508,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         Dark_tree->SetBranchAddress("NImages",&NImages);
         Dark_tree->SetBranchAddress("Time",&Time);
         Dark_tree->SetBranchAddress("Shower_Ze",&Shower_Ze);
+        Dark_tree->SetBranchAddress("Shower_Az",&Shower_Az);
 
         // Get effective area and livetime and determine the cosmic electron counts for the dark run.
         Dark_tree->GetEntry(0);
@@ -533,8 +551,10 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
             //if (dark_content>0.) weight = data_content/dark_content;
             Hist_Dark_MSCLW.at(e).Fill(MSCL,MSCW,weight);
             Hist_DarkScaled_MSCLW.at(e).Fill(MSCL,MSCW,weight);
+            Hist_DarkScaled_Syst_MSCLW.at(e).Fill(MSCL,MSCW,weight);
             Hist_Dark_MSCWL.at(e).Fill(MSCW,MSCL,weight);
             Hist_DarkScaled_MSCWL.at(e).Fill(MSCW,MSCL,weight);
+            Hist_DarkScaled_Syst_MSCWL.at(e).Fill(MSCW,MSCL,weight);
             if (SignalSelectionTheta2())
             {
                 Hist_Dark_SR_FullFoV_Theta2.at(e).Fill(R2off,weight);
@@ -622,7 +642,9 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
             if (RingFoV())
             {
                 Hist_Ring_MSCLW.at(e).Fill(MSCL,MSCW);
+                Hist_Ring_Syst_MSCLW.at(e).Fill(MSCL,MSCW);
                 Hist_Ring_MSCWL.at(e).Fill(MSCW,MSCL);
+                Hist_Ring_Syst_MSCWL.at(e).Fill(MSCW,MSCL);
             }
             if (SignalSelectionTheta2())
             {
@@ -661,8 +683,12 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         int biny_upper = Hist_Ring_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
         double Ring_CR_Integral = Hist_Ring_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double Data_CR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
+        double Ring_CR_Error = pow(Ring_CR_Integral,0.5);
+        double Data_CR_Error = pow(Data_CR_Integral,0.5);
         double scale = Data_CR_Integral/Ring_CR_Integral;
+        double scale_err = scale*pow(pow(Ring_CR_Error/Ring_CR_Integral,2)+pow(Data_CR_Error/Data_CR_Integral,2),0.5);
         Hist_Ring_MSCLW.at(e).Scale(scale);
+        Hist_Ring_Syst_MSCLW.at(e).Scale(scale_err);
     }
     for (int e=0;e<N_energy_bins;e++) 
     {
@@ -672,8 +698,12 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         int biny_upper = Hist_Ring_MSCWL.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
         double Ring_CR_Integral = Hist_Ring_MSCWL.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double Data_CR_Integral = Hist_Data_MSCWL.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
+        double Ring_CR_Error = pow(Ring_CR_Integral,0.5);
+        double Data_CR_Error = pow(Data_CR_Integral,0.5);
         double scale = Data_CR_Integral/Ring_CR_Integral;
+        double scale_err = scale*pow(pow(Ring_CR_Error/Ring_CR_Integral,2)+pow(Data_CR_Error/Data_CR_Integral,2),0.5);
         Hist_Ring_MSCWL.at(e).Scale(scale);
+        Hist_Ring_Syst_MSCWL.at(e).Scale(scale_err);
     }
     for (int e=0;e<N_energy_bins;e++) 
     {
@@ -683,8 +713,12 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         int biny_upper = Hist_DarkScaled_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
         double Dark_CR_Integral = Hist_DarkScaled_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double Data_CR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
+        double Dark_CR_Error = pow(Dark_CR_Integral,0.5);
+        double Data_CR_Error = pow(Data_CR_Integral,0.5);
         double scale = Data_CR_Integral/Dark_CR_Integral;
+        double scale_err = scale*pow(pow(Dark_CR_Error/Dark_CR_Integral,2)+pow(Data_CR_Error/Data_CR_Integral,2),0.5);
         Hist_DarkScaled_MSCLW.at(e).Scale(scale);
+        Hist_DarkScaled_Syst_MSCLW.at(e).Scale(scale_err);
     }
     for (int e=0;e<N_energy_bins;e++) 
     {
@@ -694,8 +728,12 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         int biny_upper = Hist_DarkScaled_MSCWL.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
         double Dark_CR_Integral = Hist_DarkScaled_MSCWL.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double Data_CR_Integral = Hist_Data_MSCWL.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
+        double Dark_CR_Error = pow(Dark_CR_Integral,0.5);
+        double Data_CR_Error = pow(Data_CR_Integral,0.5);
         double scale = Data_CR_Integral/Dark_CR_Integral;
+        double scale_err = scale*pow(pow(Dark_CR_Error/Dark_CR_Integral,2)+pow(Data_CR_Error/Data_CR_Integral,2),0.5);
         Hist_DarkScaled_MSCWL.at(e).Scale(scale);
+        Hist_DarkScaled_Syst_MSCWL.at(e).Scale(scale_err);
     }
 
     // Get e/gamma template from Crab
@@ -709,7 +747,7 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Crab_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
-        if (!PointingSelection(filename,int(Crab_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
+        if (!PointingSelection(filename,int(Crab_runlist[run].second),70,85,0,360)) continue;
 
         TFile*  input_file = TFile::Open(filename.c_str());
         TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Crab_runlist[run].second);
@@ -964,23 +1002,29 @@ void GetShowerImageHistograms(string target_data, double theta2_cut_lower_input,
     }
 
 
-    TFile OutputFile("output_Jul05/Deconvolution_"+TString(target)+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","recreate");
+    TFile OutputFile("output_Jul16/Deconvolution_"+TString(target)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","recreate");
     TTree InfoTree("InfoTree","info tree");
     InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
     InfoTree.Fill();
     InfoTree.Write();
+    Hist_Dark_ShowerDirection.Write();
+    Hist_Data_ShowerDirection.Write();
     for (int e=0;e<N_energy_bins;e++)
     {
         Hist_Data_MSCLW.at(e).Write();
         Hist_Ring_MSCLW.at(e).Write();
+        Hist_Ring_Syst_MSCLW.at(e).Write();
         Hist_Dark_MSCLW.at(e).Write();
         Hist_DarkScaled_MSCLW.at(e).Write();
+        Hist_DarkScaled_Syst_MSCLW.at(e).Write();
         Hist_Elec_MSCLW.at(e).Write();
         Hist_DarkElec_MSCLW.at(e).Write();
         Hist_Data_MSCWL.at(e).Write();
         Hist_Ring_MSCWL.at(e).Write();
+        Hist_Ring_Syst_MSCWL.at(e).Write();
         Hist_Dark_MSCWL.at(e).Write();
         Hist_DarkScaled_MSCWL.at(e).Write();
+        Hist_DarkScaled_Syst_MSCWL.at(e).Write();
         Hist_Elec_MSCWL.at(e).Write();
         Hist_DarkElec_MSCWL.at(e).Write();
         Hist_Data_SR_SelectFoV_Theta2.at(e).Write();
