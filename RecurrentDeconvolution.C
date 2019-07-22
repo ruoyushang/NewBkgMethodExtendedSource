@@ -63,6 +63,8 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, double endpoint) {
     if (Hist_Bkg->Integral()==0) return 0.;
     double chi2_temp = 0.;
     double nbins = 0.;
+    double mean = Hist_SR->GetMean();
+    double rms = Hist_SR->GetRMS();
     for (int i=0;i<Hist_SR->GetNbinsX();i++) {
         double bkg = Hist_Bkg->GetBinContent(i+1);
         double data = Hist_SR->GetBinContent(i+1);
@@ -71,11 +73,16 @@ double GetChi2(TH1* Hist_SR, TH1* Hist_Bkg, bool includeSR, double endpoint) {
         if (Hist_Bkg->GetBinCenter(i+1)<endpoint) continue;
         if (includeSR)
         {
-            if (Hist_Bkg->GetBinCenter(i+1)>5.*MSCW_cut_blind) continue;
+            //if (Hist_Bkg->GetBinCenter(i+1)>4.*MSCW_cut_blind) continue;
+            //if (Hist_Bkg->GetBinCenter(i+1)>1.*MSCW_cut_blind) continue;
+            double limit = std::max(MSCW_cut_blind,mean+3.*rms);
+            if (Hist_Bkg->GetBinCenter(i+1)>limit) continue;
         }
         else 
         {
             if (Hist_Bkg->GetBinCenter(i+1)<MSCW_cut_blind) continue;
+            double limit = mean+3.*rms;
+            if (Hist_Bkg->GetBinCenter(i+1)>limit) continue;
         }
         if ((data_err*data_err+bkg_err*bkg_err)==0) data_err = 1.;
         chi2_temp += pow(bkg-data,2)/(data_err*data_err+bkg_err*bkg_err);
@@ -114,7 +121,9 @@ double ShiftAndNormalize(TH1* Hist_SR, TH1* Hist_BkgTemp, TH1* Hist_Bkg, bool do
                 double SR_area1 = Hist_SR->Integral(norm_bin_low,norm_bin_up);
                 double Bkg_area1 = Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
                 norm_bin_low = Hist_SR->FindBin(MSCW_cut_blind);
-                norm_bin_up = Hist_SR->FindBin(mean+8.*rms);
+                //double limit = mean+3.*rms;
+                double limit = MSCW_cut_blind*4.;
+                norm_bin_up = Hist_SR->FindBin(limit);
                 double SR_area2 = Hist_SR->Integral(norm_bin_low,norm_bin_up);
                 double Bkg_area2 = Hist_Bkg->Integral(norm_bin_low,norm_bin_up);
                 double scale_begin = (SR_area1+SR_area2)/(Bkg_area1+Bkg_area2);
@@ -315,9 +324,11 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerH
     for (int b=0;b<Hist_SR_Temp.GetNbinsX();b++)
     {
         double content = 0;
-        content = Hist_SR->GetBinContent(b+1)-Hist_ElectronMC->GetBinContent(b+1)*electron_flux_scale;
+        //content = Hist_SR->GetBinContent(b+1)-Hist_ElectronMC->GetBinContent(b+1)*electron_flux_scale;
+        content = Hist_SR->GetBinContent(b+1);
         if (content<0.) content = 0.;
-        double error = Hist_SR->GetBinError(b+1)*Hist_SR->GetBinError(b+1)+Hist_ElectronMC->GetBinError(b+1)*Hist_ElectronMC->GetBinError(b+1);
+        //double error = Hist_SR->GetBinError(b+1)*Hist_SR->GetBinError(b+1)+Hist_ElectronMC->GetBinError(b+1)*Hist_ElectronMC->GetBinError(b+1);
+        double error = Hist_SR->GetBinError(b+1)*Hist_SR->GetBinError(b+1);
         if (error!=0) error = pow(error,0.5);
         Hist_SR_Temp.SetBinContent(b+1,content);
         Hist_SR_Temp.SetBinError(b+1,error);
@@ -327,9 +338,11 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerH
     for (int b=0;b<Hist_SR_Temp_Previous.GetNbinsX();b++)
     {
         double content = 0;
-        content = Hist_SR_Previous->GetBinContent(b+1)-Hist_ElectronMC_Previous->GetBinContent(b+1)*electron_flux_scale;
+        //content = Hist_SR_Previous->GetBinContent(b+1)-Hist_ElectronMC_Previous->GetBinContent(b+1)*electron_flux_scale;
+        content = Hist_SR_Previous->GetBinContent(b+1);
         if (content<0.) content = 0.;
-        double error = Hist_SR_Previous->GetBinError(b+1)*Hist_SR_Previous->GetBinError(b+1)+Hist_ElectronMC_Previous->GetBinError(b+1)*Hist_ElectronMC_Previous->GetBinError(b+1);
+        //double error = Hist_SR_Previous->GetBinError(b+1)*Hist_SR_Previous->GetBinError(b+1)+Hist_ElectronMC_Previous->GetBinError(b+1)*Hist_ElectronMC_Previous->GetBinError(b+1);
+        double error = Hist_SR_Previous->GetBinError(b+1)*Hist_SR_Previous->GetBinError(b+1);
         if (error!=0) error = pow(error,0.5);
         Hist_SR_Temp_Previous.SetBinContent(b+1,content);
         Hist_SR_Temp_Previous.SetBinError(b+1,error);
@@ -343,7 +356,14 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerH
     double endpoint_0 = parameters.second.first;
     double endpoint_1 = parameters.second.second;
     //if (isDark) kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_Bkg_Previous_Adapt,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,kernel_rms,0,SR_Niter,true,1,endpoint_0,endpoint_1);
-    if (isDark) kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_SR_Temp_Previous,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,kernel_rms,0,SR_Niter,true,1,endpoint_0,endpoint_1);
+    if (isDark) 
+    {
+        kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_SR_Temp_Previous,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,kernel_rms,0,SR_Niter,true,1,endpoint_0,endpoint_1);
+    }
+    //else
+    //{
+    //    kernel_rms = FindRMS(&Hist_SR_Temp,&Hist_SR_Temp_Previous,Hist_Bkg,&Hist_Bkg_Temp,&Hist_Kernel,kernel_rms,0,SR_Niter,false,1,endpoint_0,endpoint_1);
+    //}
     TF1 *myfunc = new TF1("myfunc",Kernel,-50.,50.,1);
     myfunc->SetParameter(0,kernel_rms);
     Hist_Kernel.Reset();
@@ -361,9 +381,11 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerH
     for (int b=0;b<Hist_SR_Temp.GetNbinsX();b++)
     {
         double content = 0;
-        content = Hist_SR->GetBinContent(b+1)-Hist_ElectronMC->GetBinContent(b+1)*electron_flux_scale;
+        //content = Hist_SR->GetBinContent(b+1)-Hist_ElectronMC->GetBinContent(b+1)*electron_flux_scale;
+        content = Hist_SR->GetBinContent(b+1);
         if (content<0.) content = 0.;
-        double error = Hist_SR->GetBinError(b+1)*Hist_SR->GetBinError(b+1)+Hist_ElectronMC->GetBinError(b+1)*Hist_ElectronMC->GetBinError(b+1);
+        //double error = Hist_SR->GetBinError(b+1)*Hist_SR->GetBinError(b+1)+Hist_ElectronMC->GetBinError(b+1)*Hist_ElectronMC->GetBinError(b+1);
+        double error = Hist_SR->GetBinError(b+1)*Hist_SR->GetBinError(b+1);
         if (error!=0) error = pow(error,0.5);
         Hist_SR_Temp.SetBinContent(b+1,content);
         Hist_SR_Temp.SetBinError(b+1,error);
@@ -387,10 +409,10 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(
     std::pair <std::pair <double,double>,std::pair <double,double>> parameters;
     double chi2_best = 0.;
     double chi2_previous = 0.;
-    int niter_best = 5;
+    int niter_best = 3;
     parameters = PredictNextLayerHadron(niter_best,1.0,Hist_Dark_ElectronMC,Hist_Dark_ElectronMC_Previous,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters_0,true);
 
-    for (int niter=1;niter<=10;niter++)
+    for (int niter=1;niter<=5;niter++)
     {
         parameters = PredictNextLayerHadron(niter,1.0,Hist_Dark_ElectronMC,Hist_Dark_ElectronMC_Previous,Hist_DarkSR,Hist_DarkSR_Previous,Hist_DarkBkg,Hist_DarkBkg_Previous,energy,parameters,true);
         double chi2 = GetChi2(Hist_DarkSR,Hist_DarkBkg,true,0.4);
@@ -421,8 +443,17 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayer(
 
     parameters = PredictNextLayerHadron(niter_best,best_electron_scale,Hist_ElectronMC,Hist_ElectronMC_Previous,Hist_SR,Hist_SR_Previous,Hist_Bkg,Hist_Bkg_Previous,energy,parameters,false);
 
-    Hist_Dark_ElectronMC->Scale(best_electron_scale);
-    Hist_ElectronMC->Scale(best_electron_scale);
+    //double eff_area_ratio = 0;
+    //if (Hist_Dark_ElectronMC->Integral()>0)
+    //{
+    //    eff_area_ratio = double(Hist_ElectronMC->Integral())/double(Hist_Dark_ElectronMC->Integral());
+    //}
+    //Hist_Dark_ElectronMC->Reset();
+    //Hist_Dark_ElectronMC->Add(Hist_DarkSR);
+    //Hist_Dark_ElectronMC->Add(Hist_DarkBkg,-1);
+    //Hist_ElectronMC->Reset();
+    //Hist_ElectronMC->Add(Hist_Dark_ElectronMC);
+    //Hist_ElectronMC->Scale(eff_area_ratio);
 
     int norm_bin_low = Hist_SR->FindBin(MSCW_cut_lower);
     int norm_bin_blind = Hist_SR->FindBin(MSCW_cut_blind);

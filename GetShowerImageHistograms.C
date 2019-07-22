@@ -70,7 +70,7 @@ double electron_count[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_count_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double darkelectron_count[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double darkelectron_count_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false};
+bool use_this_energy_bin[N_energy_bins] = {true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] = {282,335};
 //double electron_flux[N_energy_bins] = {0};
@@ -333,9 +333,9 @@ void GetShowerImageHistograms(string target_data, double tel_elev_lower_input, d
         sprintf(e_low, "%i", int(energy_bins[e]));
         char e_up[50];
         sprintf(e_up, "%i", int(energy_bins[e+1]));
-        //if (energy_bins[e]>=200.) N_bins_for_deconv = 960;
-        //if (energy_bins[e]>=1000.) N_bins_for_deconv = 480;
-        //if (energy_bins[e]>=3200.) N_bins_for_deconv = 240;
+        if (energy_bins[e]>=200.) N_bins_for_deconv = 960;
+        if (energy_bins[e]>=1000.) N_bins_for_deconv = 480;
+        if (energy_bins[e]>=3200.) N_bins_for_deconv = 240;
         Hist_Data_MSCLW.push_back(TH2D("Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Ring_MSCLW.push_back(TH2D("Hist_Ring_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Ring_Syst_MSCLW.push_back(TH2D("Hist_Ring_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",Number_of_SR+Number_of_CR,MSCL_signal_cut_lower[Number_of_SR-1],MSCL_control_cut_upper[0],N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
@@ -680,7 +680,7 @@ void GetShowerImageHistograms(string target_data, double tel_elev_lower_input, d
         int binx_blind = Hist_Ring_MSCLW.at(e).GetXaxis()->FindBin(MSCL_signal_cut_lower[Number_of_SR-1]);
         int binx_upper = Hist_Ring_MSCLW.at(e).GetXaxis()->FindBin(MSCL_signal_cut_upper[0])-1;
         int biny_blind = Hist_Ring_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
-        int biny_upper = Hist_Ring_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
+        int biny_upper = Hist_Ring_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*4)-1;
         double Ring_CR_Integral = Hist_Ring_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double Data_CR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double Ring_CR_Error = pow(Ring_CR_Integral,0.5);
@@ -695,7 +695,7 @@ void GetShowerImageHistograms(string target_data, double tel_elev_lower_input, d
         int binx_blind = Hist_Ring_MSCWL.at(e).GetXaxis()->FindBin(MSCL_signal_cut_lower[Number_of_SR-1]);
         int binx_upper = Hist_Ring_MSCWL.at(e).GetXaxis()->FindBin(MSCL_signal_cut_upper[0])-1;
         int biny_blind = Hist_Ring_MSCWL.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
-        int biny_upper = Hist_Ring_MSCWL.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
+        int biny_upper = Hist_Ring_MSCWL.at(e).GetYaxis()->FindBin(MSCW_cut_blind*4)-1;
         double Ring_CR_Integral = Hist_Ring_MSCWL.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double Data_CR_Integral = Hist_Data_MSCWL.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double Ring_CR_Error = pow(Ring_CR_Integral,0.5);
@@ -710,7 +710,7 @@ void GetShowerImageHistograms(string target_data, double tel_elev_lower_input, d
         int binx_blind = Hist_DarkScaled_MSCLW.at(e).GetXaxis()->FindBin(MSCL_signal_cut_lower[Number_of_SR-1]);
         int binx_upper = Hist_DarkScaled_MSCLW.at(e).GetXaxis()->FindBin(MSCL_signal_cut_upper[0])-1;
         int biny_blind = Hist_DarkScaled_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
-        int biny_upper = Hist_DarkScaled_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
+        int biny_upper = Hist_DarkScaled_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*4)-1;
         double Dark_CR_Integral = Hist_DarkScaled_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double Data_CR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double Dark_CR_Error = pow(Dark_CR_Integral,0.5);
@@ -725,7 +725,7 @@ void GetShowerImageHistograms(string target_data, double tel_elev_lower_input, d
         int binx_blind = Hist_DarkScaled_MSCWL.at(e).GetXaxis()->FindBin(MSCL_signal_cut_lower[Number_of_SR-1]);
         int binx_upper = Hist_DarkScaled_MSCWL.at(e).GetXaxis()->FindBin(MSCL_signal_cut_upper[0])-1;
         int biny_blind = Hist_DarkScaled_MSCWL.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
-        int biny_upper = Hist_DarkScaled_MSCWL.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
+        int biny_upper = Hist_DarkScaled_MSCWL.at(e).GetYaxis()->FindBin(MSCW_cut_blind*4)-1;
         double Dark_CR_Integral = Hist_DarkScaled_MSCWL.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double Data_CR_Integral = Hist_Data_MSCWL.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double Dark_CR_Error = pow(Dark_CR_Integral,0.5);
@@ -798,7 +798,7 @@ void GetShowerImageHistograms(string target_data, double tel_elev_lower_input, d
         int binx_blind = Hist_CrabON_MSCLW.at(e).GetXaxis()->FindBin(MSCL_signal_cut_lower[Number_of_SR-1]);
         int binx_upper = Hist_CrabON_MSCLW.at(e).GetXaxis()->FindBin(MSCL_signal_cut_upper[0])-1;
         int biny_blind = Hist_CrabON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
-        int biny_upper = Hist_CrabON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
+        int biny_upper = Hist_CrabON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*4)-1;
         double CrabON_CR_Integral = Hist_CrabON_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double CrabOFF_CR_Integral = Hist_CrabOFF_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double scale = CrabON_CR_Integral/CrabOFF_CR_Integral;
@@ -828,7 +828,7 @@ void GetShowerImageHistograms(string target_data, double tel_elev_lower_input, d
         int binx_blind = Hist_CrabON_MSCWL.at(e).GetXaxis()->FindBin(MSCL_signal_cut_lower[Number_of_SR-1]);
         int binx_upper = Hist_CrabON_MSCWL.at(e).GetXaxis()->FindBin(MSCL_signal_cut_upper[0])-1;
         int biny_blind = Hist_CrabON_MSCWL.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
-        int biny_upper = Hist_CrabON_MSCWL.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
+        int biny_upper = Hist_CrabON_MSCWL.at(e).GetYaxis()->FindBin(MSCW_cut_blind*4)-1;
         double CrabON_CR_Integral = Hist_CrabON_MSCWL.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double CrabOFF_CR_Integral = Hist_CrabOFF_MSCWL.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double scale = CrabON_CR_Integral/CrabOFF_CR_Integral;
