@@ -324,8 +324,8 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerH
     for (int b=0;b<Hist_SR_Temp.GetNbinsX();b++)
     {
         double content = 0;
-        //content = Hist_SR->GetBinContent(b+1)-Hist_ElectronMC->GetBinContent(b+1)*electron_flux_scale;
-        content = Hist_SR->GetBinContent(b+1);
+        content = Hist_SR->GetBinContent(b+1)-Hist_ElectronMC->GetBinContent(b+1)*electron_flux_scale;
+        //content = Hist_SR->GetBinContent(b+1);
         if (content<0.) content = 0.;
         //double error = Hist_SR->GetBinError(b+1)*Hist_SR->GetBinError(b+1)+Hist_ElectronMC->GetBinError(b+1)*Hist_ElectronMC->GetBinError(b+1);
         double error = Hist_SR->GetBinError(b+1)*Hist_SR->GetBinError(b+1);
@@ -338,8 +338,8 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerH
     for (int b=0;b<Hist_SR_Temp_Previous.GetNbinsX();b++)
     {
         double content = 0;
-        //content = Hist_SR_Previous->GetBinContent(b+1)-Hist_ElectronMC_Previous->GetBinContent(b+1)*electron_flux_scale;
-        content = Hist_SR_Previous->GetBinContent(b+1);
+        content = Hist_SR_Previous->GetBinContent(b+1)-Hist_ElectronMC_Previous->GetBinContent(b+1)*electron_flux_scale;
+        //content = Hist_SR_Previous->GetBinContent(b+1);
         if (content<0.) content = 0.;
         //double error = Hist_SR_Previous->GetBinError(b+1)*Hist_SR_Previous->GetBinError(b+1)+Hist_ElectronMC_Previous->GetBinError(b+1)*Hist_ElectronMC_Previous->GetBinError(b+1);
         double error = Hist_SR_Previous->GetBinError(b+1)*Hist_SR_Previous->GetBinError(b+1);
@@ -381,8 +381,8 @@ std::pair <std::pair<double,double>,std::pair <double,double>> PredictNextLayerH
     for (int b=0;b<Hist_SR_Temp.GetNbinsX();b++)
     {
         double content = 0;
-        //content = Hist_SR->GetBinContent(b+1)-Hist_ElectronMC->GetBinContent(b+1)*electron_flux_scale;
-        content = Hist_SR->GetBinContent(b+1);
+        content = Hist_SR->GetBinContent(b+1)-Hist_ElectronMC->GetBinContent(b+1)*electron_flux_scale;
+        //content = Hist_SR->GetBinContent(b+1);
         if (content<0.) content = 0.;
         //double error = Hist_SR->GetBinError(b+1)*Hist_SR->GetBinError(b+1)+Hist_ElectronMC->GetBinError(b+1)*Hist_ElectronMC->GetBinError(b+1);
         double error = Hist_SR->GetBinError(b+1)*Hist_SR->GetBinError(b+1);

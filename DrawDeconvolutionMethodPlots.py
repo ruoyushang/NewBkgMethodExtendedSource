@@ -11,13 +11,13 @@ ROOT.TH1.AddDirectory(False) # without this, the histograms returned from a func
 ROOT.gStyle.SetPaintTextFormat("0.3f")
 
 PlotAllSRs = False
-DoSkymap = True
+DoSkymap = False
 UseRDBM = False
 UseDark = False
 UseRing = False
 
-theta2_lower = 0.0
-theta2_upper = 0.5
+theta2_lower = 0.2
+theta2_upper = 10.0
 
 file_elev_lower = 70
 file_elev_upper = 85
@@ -34,9 +34,9 @@ UseDark = True
 
 target = ""
 source = []
-#source += ['Everything']
+source += ['Everything']
 #source += ['Segue1V6']
-source += ['IC443HotSpot']
+#source += ['IC443HotSpot']
 #source += ['Crab']
 #source += ['Mrk421']
 #source += ['H1426']
@@ -62,14 +62,14 @@ energy_list += [667]
 energy_list += [794]
 energy_list += [943]
 energy_list += [1122]
-#energy_list += [1332]
-#energy_list += [1585]
-#energy_list += [1882]
-#energy_list += [2239]
-#energy_list += [3162]
-#energy_list += [4467]
-#energy_list += [6310]
-#energy_list += [8913]
+energy_list += [1332]
+energy_list += [1585]
+energy_list += [1882]
+energy_list += [2239]
+energy_list += [3162]
+energy_list += [4467]
+energy_list += [6310]
+energy_list += [8913]
 
 MSCW_lower_cut = -1.0
 MSCW_upper_cut = 1.0
@@ -128,9 +128,13 @@ def AddSystCR(Hist,bin1,bin2,Hist_CR_Data,Hist_CR_Bkgd):
         #if b<bin1: continue
         #if b>bin2: continue
         syst = 0
-        norm = (Hist_CR_Data.GetBinContent(b)+Hist_CR_Bkgd.GetBinContent(b))
+        norm = 0.5*(Hist_CR_Data.GetBinContent(b)+Hist_CR_Bkgd.GetBinContent(b))
         if norm>0:
             syst = 2.*abs(Hist_CR_Data.GetBinContent(b)-Hist_CR_Bkgd.GetBinContent(b))/norm
+        if norm>0:
+            old_content = Hist.GetBinContent(b)
+            new_content = Hist.GetBinContent(b)*(Hist_CR_Data.GetBinContent(b)-Hist_CR_Bkgd.GetBinContent(b))/norm
+            Hist.SetBinContent(b,old_content+new_content)
         old_err = Hist.GetBinError(b)
         new_err = Hist.GetBinContent(b)*syst
         Hist_sys.SetBinContent(b,0)
@@ -1117,8 +1121,8 @@ for s in range(0,len(source)):
 
         w_bkg_total, w_bkg_err = IntegralAndError(Hist1D_W_Hadr_SumSRs,bin_lower,bin_upper)
         l_bkg_total, l_bkg_err = IntegralAndError(Hist1D_L_Hadr_SumSRs,bin_lower,bin_upper)
-        w_sys_total, w_sys_err = IntegralAndSystError(Hist1D_W_Hadr_Syst_SumSRs,bin_lower,bin_upper,-1)
-        l_sys_total, l_sys_err = IntegralAndSystError(Hist1D_L_Hadr_Syst_SumSRs,bin_lower,bin_upper,-1)
+        w_sys_total, w_sys_err = IntegralAndError(Hist1D_W_Hadr_Syst_SumSRs,bin_lower,bin_upper)
+        l_sys_total, l_sys_err = IntegralAndError(Hist1D_L_Hadr_Syst_SumSRs,bin_lower,bin_upper)
         w_weight = 1
         if (w_cr1_syst>0): w_weight = pow(1./w_cr1_syst,1)
         l_weight = 1
@@ -1130,10 +1134,10 @@ for s in range(0,len(source)):
             bkg_total = 0
         bkg_err = 0
         if (w_cr1_syst>0 and w_bkg_total>0):
-            bkg_err += pow(w_bkg_err/w_cr1_syst,2)+pow(w_sys_err/w_cr1_syst,2)
+            bkg_err += w_weight*(pow(w_bkg_err,2)+pow(w_sys_err,2))
         if (l_cr1_syst>0 and l_bkg_total>0):
-            bkg_err += pow(l_bkg_err/l_cr1_syst,2)+pow(l_sys_err/l_cr1_syst,2)
-        bkg_err = pow(bkg_err,0.5)/(w_weight+l_weight)
+            bkg_err += l_weight*(pow(l_bkg_err,2)+pow(l_sys_err,2))
+        bkg_err = pow(bkg_err/(w_weight+l_weight),0.5)
 
         HistName = "Hist_Data_CR_SelectFoV_Theta2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
         Hist_Hadr_Theta2_Tmp = InputFile.Get(HistName)
@@ -1190,7 +1194,8 @@ for s in range(0,len(source)):
             bkg_total = bkg_total/(w_weight+l_weight)
         else:
             bkg_total = 0
-        bkg_err = pow(w_bkg_err*w_bkg_err+l_bkg_err*l_bkg_err,0.5)
+        bkg_err = pow(0.5*(w_bkg_err*w_bkg_err+l_bkg_err*l_bkg_err),0.5)
+
         HistName = "Hist_Data_CR_SelectFoV_Theta2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
         Hist_Elec_Theta2_Tmp = InputFile.Get(HistName)
         Hist_Elec_Syst_Theta2_Tmp = InputFile.Get(HistName)
