@@ -16,7 +16,7 @@ UseRDBM = False
 UseDark = False
 UseRing = False
 
-theta2_lower = 0.2
+theta2_lower = 0.0
 theta2_upper = 10.0
 
 file_elev_lower = 70
@@ -27,23 +27,23 @@ file_elev_upper = 85
 #file_theta2_upper = 0.2
 #UseRing = True
 tag = "Large"
-file_theta2_lower = 0.0
+file_theta2_lower = 0.2
 file_theta2_upper = 10.0
 UseRDBM = True
 UseDark = True
 
 target = ""
 source = []
-source += ['Everything']
+#source += ['Everything']
 #source += ['Segue1V6']
 #source += ['IC443HotSpot']
-#source += ['Crab']
-#source += ['Mrk421']
-#source += ['H1426']
-#source += ['1ES0229']
-#source += ['PKS1424']
-#source += ['3C264']
-#source += ['G079']
+source += ['Crab']
+source += ['Mrk421']
+source += ['H1426']
+source += ['1ES0229']
+source += ['PKS1424']
+source += ['3C264']
+source += ['G079']
 #source += ['RGBJ0710']
 #source += ['CasA']
 #source += ['M82']
@@ -51,7 +51,7 @@ source += ['Everything']
 #source += ['1ES1218V6']
 
 energy_list = []
-energy_list += [200]
+#energy_list += [200]
 energy_list += [237]
 energy_list += [282]
 energy_list += [335]
@@ -62,14 +62,14 @@ energy_list += [667]
 energy_list += [794]
 energy_list += [943]
 energy_list += [1122]
-energy_list += [1332]
-energy_list += [1585]
-energy_list += [1882]
-energy_list += [2239]
-energy_list += [3162]
-energy_list += [4467]
-energy_list += [6310]
-energy_list += [8913]
+#energy_list += [1332]
+#energy_list += [1585]
+#energy_list += [1882]
+#energy_list += [2239]
+#energy_list += [3162]
+#energy_list += [4467]
+#energy_list += [6310]
+#energy_list += [8913]
 
 MSCW_lower_cut = -1.0
 MSCW_upper_cut = 1.0
@@ -123,6 +123,10 @@ def IntegralAndSystError(Hist,bin1,bin2,syst):
 
 def AddSystCR(Hist,bin1,bin2,Hist_CR_Data,Hist_CR_Bkgd):
 
+    norm_bin_low_target = Hist.FindBin(MSCW_blind_cut)
+    norm_bin_up_target = Hist.FindBin(MSCW_blind_cut*4)-1
+    old_total, old_err = IntegralAndError(Hist,norm_bin_low_target,norm_bin_up_target)
+
     Hist_sys = Hist.Clone()
     for b in range(1,Hist.GetNbinsX()+1):
         #if b<bin1: continue
@@ -134,11 +138,16 @@ def AddSystCR(Hist,bin1,bin2,Hist_CR_Data,Hist_CR_Bkgd):
         if norm>0:
             old_content = Hist.GetBinContent(b)
             new_content = Hist.GetBinContent(b)*(Hist_CR_Data.GetBinContent(b)-Hist_CR_Bkgd.GetBinContent(b))/norm
-            Hist.SetBinContent(b,old_content+new_content)
+            #Hist.SetBinContent(b,old_content+new_content)
         old_err = Hist.GetBinError(b)
         new_err = Hist.GetBinContent(b)*syst
         Hist_sys.SetBinContent(b,0)
         Hist_sys.SetBinError(b,new_err)
+
+    new_total, new_err = IntegralAndError(Hist,norm_bin_low_target,norm_bin_up_target)
+    scale = old_total/new_total
+    #Hist.Scale(scale)
+
     return Hist_sys
 
 def CalculateSignificance(s,b,err):
@@ -927,6 +936,8 @@ for s in range(0,len(source)):
     exposure_hours = 0.
 
     #FilePath = "output_backup/Deconvolution_"+target+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_Theta2%sto%s"%(int(file_theta2_lower*10.),int(file_theta2_upper*10.))+".root";
+    #FilePath = "output_Segue1/Deconvolution_"+target+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_Theta2%sto%s"%(int(file_theta2_lower*10.),int(file_theta2_upper*10.))+".root";
+    #FilePath = "output_Mrk421/Deconvolution_"+target+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_Theta2%sto%s"%(int(file_theta2_lower*10.),int(file_theta2_upper*10.))+".root";
     FilePath = "output_Jul16/Deconvolution_"+target+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_Theta2%sto%s"%(int(file_theta2_lower*10.),int(file_theta2_upper*10.))+".root";
     InputFile = ROOT.TFile(FilePath)
     InfoTree = InputFile.Get("InfoTree")

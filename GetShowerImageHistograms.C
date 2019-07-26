@@ -70,7 +70,7 @@ double electron_count[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double electron_count_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double darkelectron_count[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 double darkelectron_count_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-bool use_this_energy_bin[N_energy_bins] = {true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false};
+bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false};
 //const int N_energy_bins = 1;
 //double energy_bins[N_energy_bins+1] = {282,335};
 //double electron_flux[N_energy_bins] = {0};
@@ -244,6 +244,13 @@ std::pair <double,double> GetMcGillElectronFlux(double energy)
     //TGraph *func = new TGraph(&Hist_Flux);
     //return std::make_pair(1.*func->Eval(energy),1.*func->Eval(energy));
 }
+bool DarkFoV() {
+    //if (R2off<Theta2_cut_lower) return false;
+    //if (R2off>Theta2_cut_upper) return false;
+    if (theta2<0.1) return false;
+    if (theta2>Theta2_cut_upper) return false;
+    return true;
+}
 bool FoV() {
     //if (R2off<Theta2_cut_lower) return false;
     //if (R2off>Theta2_cut_upper) return false;
@@ -372,6 +379,7 @@ void GetShowerImageHistograms(string target_data, double tel_elev_lower_input, d
 
     // Get a list of dark observation runs for radial acceptance
     vector<pair<string,int>> Dark_runlist = GetRunList("Segue1V6");
+    //vector<pair<string,int>> Dark_runlist = GetRunList("Mrk421");
     for (int run=0;run<Dark_runlist.size();run++)
     {
         char run_number[50];
@@ -416,9 +424,12 @@ void GetShowerImageHistograms(string target_data, double tel_elev_lower_input, d
             if (energy>=N_energy_bins) continue;
             int e = energy;
             if (!SelectNImages(3,4)) continue;
-            Hist_Dark_Camera_Theta2.at(e).Fill(R2off);
-            Hist_Dark_TelElev.Fill(Shower_Ze);
-            Hist_Dark_ShowerDirection.Fill(Shower_Az,Shower_Ze);
+            if (DarkFoV())
+            {
+                Hist_Dark_Camera_Theta2.at(e).Fill(R2off);
+                Hist_Dark_TelElev.Fill(Shower_Ze);
+                Hist_Dark_ShowerDirection.Fill(Shower_Az,Shower_Ze);
+            }
         }
         input_file->Close();
     }
@@ -544,27 +555,30 @@ void GetShowerImageHistograms(string target_data, double tel_elev_lower_input, d
             if (energy>=N_energy_bins) continue;
             int e = energy;
             if (!SelectNImages(3,4)) continue;
-            int bin = Hist_Dark_TelElev.FindBin(Shower_Ze);
-            double dark_content = Hist_Dark_TelElev.GetBinContent(bin);
-            double data_content = Hist_Target_TelElev.GetBinContent(bin);
-            double weight = 1.;
-            //if (dark_content>0.) weight = data_content/dark_content;
-            Hist_Dark_MSCLW.at(e).Fill(MSCL,MSCW,weight);
-            Hist_DarkScaled_MSCLW.at(e).Fill(MSCL,MSCW,weight);
-            Hist_DarkScaled_Syst_MSCLW.at(e).Fill(MSCL,MSCW,weight);
-            Hist_Dark_MSCWL.at(e).Fill(MSCW,MSCL,weight);
-            Hist_DarkScaled_MSCWL.at(e).Fill(MSCW,MSCL,weight);
-            Hist_DarkScaled_Syst_MSCWL.at(e).Fill(MSCW,MSCL,weight);
-            if (SignalSelectionTheta2())
+            if (DarkFoV())
             {
-                Hist_Dark_SR_FullFoV_Theta2.at(e).Fill(R2off,weight);
-                Hist_Dark_SR_SelectFoV_Theta2.at(e).Fill(R2off,weight);
-                Hist_Dark_SR_Skymap.at(e).Fill(Xoff,Yoff,weight);
-            }
-            if (ControlSelectionTheta2())
-            {
-                Hist_Dark_CR_FullFoV_Theta2.at(e).Fill(R2off,weight);
-                Hist_Dark_CR_Skymap.at(e).Fill(Xoff,Yoff,weight);
+                int bin = Hist_Dark_TelElev.FindBin(Shower_Ze);
+                double dark_content = Hist_Dark_TelElev.GetBinContent(bin);
+                double data_content = Hist_Target_TelElev.GetBinContent(bin);
+                double weight = 1.;
+                //if (dark_content>0.) weight = data_content/dark_content;
+                Hist_Dark_MSCLW.at(e).Fill(MSCL,MSCW,weight);
+                Hist_DarkScaled_MSCLW.at(e).Fill(MSCL,MSCW,weight);
+                Hist_DarkScaled_Syst_MSCLW.at(e).Fill(MSCL,MSCW,weight);
+                Hist_Dark_MSCWL.at(e).Fill(MSCW,MSCL,weight);
+                Hist_DarkScaled_MSCWL.at(e).Fill(MSCW,MSCL,weight);
+                Hist_DarkScaled_Syst_MSCWL.at(e).Fill(MSCW,MSCL,weight);
+                if (SignalSelectionTheta2())
+                {
+                    Hist_Dark_SR_FullFoV_Theta2.at(e).Fill(R2off,weight);
+                    Hist_Dark_SR_SelectFoV_Theta2.at(e).Fill(R2off,weight);
+                    Hist_Dark_SR_Skymap.at(e).Fill(Xoff,Yoff,weight);
+                }
+                if (ControlSelectionTheta2())
+                {
+                    Hist_Dark_CR_FullFoV_Theta2.at(e).Fill(R2off,weight);
+                    Hist_Dark_CR_Skymap.at(e).Fill(Xoff,Yoff,weight);
+                }
             }
         }
         input_file->Close();
