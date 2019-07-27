@@ -11,15 +11,15 @@ ROOT.TH1.AddDirectory(False) # without this, the histograms returned from a func
 ROOT.gStyle.SetPaintTextFormat("0.3f")
 
 PlotAllSRs = False
-DoSkymap = False
+DoSkymap = True
 UseRDBM = False
 UseDark = False
 UseRing = False
 
 theta2_lower = 0.0
-theta2_upper = 10.0
+theta2_upper = 0.5
 
-file_elev_lower = 70
+file_elev_lower = 55
 file_elev_upper = 85
 
 #tag = "Small"
@@ -27,7 +27,7 @@ file_elev_upper = 85
 #file_theta2_upper = 0.2
 #UseRing = True
 tag = "Large"
-file_theta2_lower = 0.2
+file_theta2_lower = 0.0
 file_theta2_upper = 10.0
 UseRDBM = True
 UseDark = True
@@ -36,32 +36,34 @@ target = ""
 source = []
 #source += ['Everything']
 #source += ['Segue1V6']
-#source += ['IC443HotSpot']
-source += ['Crab']
-source += ['Mrk421']
-source += ['H1426']
-source += ['1ES0229']
-source += ['PKS1424']
-source += ['3C264']
-source += ['G079']
+source += ['IC443HotSpot']
+#source += ['Crab']
+#source += ['Mrk421']
+#source += ['H1426']
+#source += ['1ES0229']
+#source += ['PKS1424']
+#source += ['3C264']
+#source += ['G079']
 #source += ['RGBJ0710']
 #source += ['CasA']
 #source += ['M82']
 #source += ['WComaeV6']
 #source += ['1ES1218V6']
 
-energy_list = []
+Number_Of_SRs = 8
+
+#energy_list = []
 #energy_list += [200]
-energy_list += [237]
-energy_list += [282]
-energy_list += [335]
-energy_list += [398] # works from here
-energy_list += [473]
-energy_list += [562]
-energy_list += [667]
-energy_list += [794]
-energy_list += [943]
-energy_list += [1122]
+#energy_list += [237]
+#energy_list += [282]
+#energy_list += [335]
+#energy_list += [398] # works from here
+#energy_list += [473]
+#energy_list += [562]
+#energy_list += [667]
+#energy_list += [794]
+#energy_list += [943]
+#energy_list += [1122]
 #energy_list += [1332]
 #energy_list += [1585]
 #energy_list += [1882]
@@ -70,6 +72,20 @@ energy_list += [1122]
 #energy_list += [4467]
 #energy_list += [6310]
 #energy_list += [8913]
+
+energy_list = []
+#energy_list += [200]
+#energy_list += [237]
+energy_list += [282]
+energy_list += [335]
+energy_list += [398] # works from here
+energy_list += [473]
+energy_list += [562]
+energy_list += [794]
+energy_list += [1122]
+energy_list += [1585]
+energy_list += [2239]
+energy_list += [4467]
 
 MSCW_lower_cut = -1.0
 MSCW_upper_cut = 1.0
@@ -144,8 +160,8 @@ def AddSystCR(Hist,bin1,bin2,Hist_CR_Data,Hist_CR_Bkgd):
         Hist_sys.SetBinContent(b,0)
         Hist_sys.SetBinError(b,new_err)
 
-    new_total, new_err = IntegralAndError(Hist,norm_bin_low_target,norm_bin_up_target)
-    scale = old_total/new_total
+    #new_total, new_err = IntegralAndError(Hist,norm_bin_low_target,norm_bin_up_target)
+    #scale = old_total/new_total
     #Hist.Scale(scale)
 
     return Hist_sys
@@ -1026,7 +1042,7 @@ for s in range(0,len(source)):
             Hist1D_W_Ring_Syst = Hist2D_W_Ring_Syst.ProjectionY("Hist1D_W_Ring_Syst",region+1,region+1)
             Hist1D_W_Dark = Hist2D_W_Dark.ProjectionY("Hist1D_W_Dark",region+1,region+1)
             Hist1D_L_Dark = Hist2D_L_Dark.ProjectionY("Hist1D_L_Dark",region+1,region+1)
-            if region+1<=6:
+            if region+1<=Number_Of_SRs:
                 Hist1D_W_Hadr_SumSRs.Add(Hist1D_W_Hadr)
                 Hist1D_W_Elec_SumSRs.Add(Hist1D_W_Elec)
                 Hist1D_W_Data_SumSRs.Add(Hist1D_W_Data)
