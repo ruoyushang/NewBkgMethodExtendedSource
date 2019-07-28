@@ -76,9 +76,11 @@ bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,fa
 //double electron_count[N_energy_bins] = {0};
 //double electron_count_err[N_energy_bins] = {0};
 
-int N_bins_for_deconv = 100;
-double MSCW_plot_lower = -30.;
-double MSCW_plot_upper = 30.;
+int N_bins_for_deconv = 20;
+double MSCW_plot_lower = -1.;
+double MSCW_plot_upper = 3.;
+double MSCL_plot_lower = -1.;
+double MSCL_plot_upper = 3.;
 double Theta2_cut_lower = 0;
 double Theta2_cut_upper = 0;
 double Theta2_upper_limit = 10;
@@ -291,8 +293,8 @@ void NetflixMethodGetShowerImage(string target_data, double theta2_cut_lower_inp
         sprintf(e_low, "%i", int(energy_bins[e]));
         char e_up[50];
         sprintf(e_up, "%i", int(energy_bins[e+1]));
-        Hist_Data_MSCLW.push_back(TH2D("Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-1,19,N_bins_for_deconv,-1,19));
-        Hist_Dark_MSCLW.push_back(TH2D("Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,-1,19,N_bins_for_deconv,-1,19));
+        Hist_Data_MSCLW.push_back(TH2D("Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_Dark_MSCLW.push_back(TH2D("Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
     }
 
     // Get a list of dark observation runs
@@ -458,7 +460,7 @@ void NetflixMethodGetShowerImage(string target_data, double theta2_cut_lower_inp
     //}
 
 
-    TFile OutputFile("output_Jul05/Netflix_"+TString(target)+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","recreate");
+    TFile OutputFile("output_Jul16/Netflix_"+TString(target)+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","recreate");
     TTree InfoTree("InfoTree","info tree");
     InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
     InfoTree.Fill();
