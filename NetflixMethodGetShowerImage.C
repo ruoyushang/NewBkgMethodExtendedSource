@@ -44,37 +44,16 @@
 using namespace Eigen;
 //using Eigen::MatrixXd;
 
-double MSCW_cut_lower = -0.5;
+double MSCW_cut_lower = -1.0;
 double MSCW_cut_blind = 1.0;
 double MSCW_cut_upper = 1.0;
-const int Number_of_SR = 6;
-double MSCL_signal_cut_lower[Number_of_SR] = {0.75,0.50,0.25,0.00,-0.25,-0.50};
-double MSCL_signal_cut_upper[Number_of_SR] = {1.00,0.75,0.50,0.25, 0.00,-0.25};
-const int Number_of_CR = 6;
-double MSCL_control_cut_lower[Number_of_CR] = {2.25,2.00,1.75,1.50,1.25,1.00};
-double MSCL_control_cut_upper[Number_of_CR] = {2.50,2.25,2.00,1.75,1.50,1.25};
-//const int Number_of_SR = 3;
-//double MSCL_signal_cut_lower[Number_of_SR] = {0.50,0.00,-0.50};
-//double MSCL_signal_cut_upper[Number_of_SR] = {1.00,0.50,0.00};
-//const int Number_of_CR = 3;
-//double MSCL_control_cut_lower[Number_of_CR] = {2.00,1.50,1.00};
-//double MSCL_control_cut_upper[Number_of_CR] = {2.50,2.00,1.50};
+double MSCL_cut_lower = -1.0;
+double MSCL_cut_blind = 1.0;
+double MSCL_cut_upper = 1.0;
 
-const int N_energy_bins = 18;
-double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,667,794,943,1122,1332,1585,1882,2239,3162,4467,6310,8913};
-double electron_flux[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-double electron_flux_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-double electron_count[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-double electron_count_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-double darkelectron_count[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-double darkelectron_count_err[N_energy_bins] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false};
-//const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] = {282,335};
-//double electron_flux[N_energy_bins] = {0};
-//double electron_flux_err[N_energy_bins] = {0};
-//double electron_count[N_energy_bins] = {0};
-//double electron_count_err[N_energy_bins] = {0};
+const int N_energy_bins = 12;
+double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,1585,2239,4467,8913};
+bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,false,false,false,false,false,false};
 
 int N_bins_for_deconv = 20;
 double MSCW_plot_lower = -1.;
@@ -250,9 +229,8 @@ bool FoV() {
     return true;
 }
 bool RingFoV() {
-    //if (R2off<Theta2_cut_lower) return false;
-    //if (R2off>Theta2_cut_upper) return false;
     if (theta2<Theta2_cut_upper) return false;
+    if (theta2>Theta2_cut_upper*5) return false;
     return true;
 }
 bool SelectNImages(int Nmin, int Nmax)
@@ -263,30 +241,35 @@ bool SelectNImages(int Nmin, int Nmax)
 }
 bool SignalSelectionTheta2()
 {
-    if (MSCL<MSCL_signal_cut_lower[Number_of_SR-1]) return false;
-    if (MSCL>MSCL_signal_cut_upper[0]) return false;
     if (MSCW>MSCW_cut_blind) return false;
     if (MSCW<MSCW_cut_lower) return false;
+    if (MSCL>MSCL_cut_blind) return false;
+    if (MSCL<MSCL_cut_lower) return false;
     return true;
 }
 bool ControlSelectionTheta2()
 {
     if (SignalSelectionTheta2()) return false;
-    if (MSCL>MSCL_signal_cut_upper[0]*1.0) return false;
+    if (MSCL>MSCL_cut_blind*1.0) return false;
     if (MSCW>MSCW_cut_blind*3.0) return false;
     return true;
 }
-void NetflixMethodGetShowerImage(string target_data, double theta2_cut_lower_input, double theta2_cut_upper_input)
+void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input, double tel_elev_upper_input, double theta2_cut_lower_input, double theta2_cut_upper_input)
 {
 
     TH1::SetDefaultSumw2();
     sprintf(target, "%s", target_data.c_str());
     Theta2_cut_lower = theta2_cut_lower_input;
     Theta2_cut_upper = theta2_cut_upper_input;
+    TelElev_lower = tel_elev_lower_input;
+    TelElev_upper = tel_elev_upper_input;
 
     TH1D Hist_ErecS = TH1D("Hist_ErecS","",N_energy_bins,energy_bins);
     vector<TH2D> Hist_Data_MSCLW;
+    vector<TH2D> Hist_Ring_MSCLW;
+    vector<TH2D> Hist_Ring_Syst_MSCLW;
     vector<TH2D> Hist_Dark_MSCLW;
+    vector<TH2D> Hist_Dark_Syst_MSCLW;
     for (int e=0;e<N_energy_bins;e++) 
     {
         char e_low[50];
@@ -294,7 +277,10 @@ void NetflixMethodGetShowerImage(string target_data, double theta2_cut_lower_inp
         char e_up[50];
         sprintf(e_up, "%i", int(energy_bins[e+1]));
         Hist_Data_MSCLW.push_back(TH2D("Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_Ring_MSCLW.push_back(TH2D("Hist_Ring_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_Ring_Syst_MSCLW.push_back(TH2D("Hist_Ring_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Dark_MSCLW.push_back(TH2D("Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_Dark_Syst_MSCLW.push_back(TH2D("Hist_Dark_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
     }
 
     // Get a list of dark observation runs
@@ -309,7 +295,8 @@ void NetflixMethodGetShowerImage(string target_data, double theta2_cut_lower_inp
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Dark_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
-        if (!PointingSelection(filename,int(Dark_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
+        //if (!PointingSelection(filename,int(Dark_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
+        if (!PointingSelection(filename,int(Dark_runlist[run].second),70,85,0,360)) continue;
 
         TFile*  input_file = TFile::Open(filename.c_str());
 	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Dark_runlist[run].second);
@@ -342,10 +329,11 @@ void NetflixMethodGetShowerImage(string target_data, double theta2_cut_lower_inp
             if (energy>=N_energy_bins) continue;
             int e = energy;
             if (!SelectNImages(3,4)) continue;
-            if (FoV())
-            {
+            //if (FoV())
+            //{
                 Hist_Dark_MSCLW.at(e).Fill(MSCL,MSCW);
-            }
+                Hist_Dark_Syst_MSCLW.at(e).Fill(MSCL,MSCW);
+            //}
         }
         input_file->Close();
     }
@@ -364,6 +352,7 @@ void NetflixMethodGetShowerImage(string target_data, double theta2_cut_lower_inp
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
         if (!PointingSelection(filename,int(Data_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
+        //if (!PointingSelection(filename,int(Data_runlist[run].second),55,70,0,360)) continue;
 
         TFile*  input_file = TFile::Open(filename.c_str());
 	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Data_runlist[run].second);
@@ -407,60 +396,48 @@ void NetflixMethodGetShowerImage(string target_data, double theta2_cut_lower_inp
             {
                 Hist_Data_MSCLW.at(e).Fill(MSCL,MSCW);
             }
+            if (RingFoV())
+            {
+                Hist_Ring_MSCLW.at(e).Fill(MSCL,MSCW);
+                Hist_Ring_Syst_MSCLW.at(e).Fill(MSCL,MSCW);
+            }
         }
         input_file->Close();
     }
 
-    //for (int e=0;e<N_energy_bins;e++)
-    //{
-    //    NormalizeHist2D(&Hist_Data_MSCLW.at(e),&Hist_Dark_MSCLW.at(e));
-    //    MatrixXcd mtx_data(Hist_Data_MSCLW.at(e).GetNbinsX(),Hist_Data_MSCLW.at(e).GetNbinsY());
-    //    MatrixXcd mtx_dark(Hist_Dark_MSCLW.at(e).GetNbinsX(),Hist_Dark_MSCLW.at(e).GetNbinsY());
-    //    MatrixXcd mtx_bkgd(Hist_Dark_MSCLW.at(e).GetNbinsX(),Hist_Dark_MSCLW.at(e).GetNbinsY());
-    //    MatrixXcd mtx_eigenvalue(Hist_Dark_MSCLW.at(e).GetNbinsX(),Hist_Dark_MSCLW.at(e).GetNbinsY());
-    //    MatrixXcd mtx_eigenvector(Hist_Dark_MSCLW.at(e).GetNbinsX(),Hist_Dark_MSCLW.at(e).GetNbinsY());
-    //    mtx_data = fillMatrix(&Hist_Data_MSCLW.at(e));
-    //    mtx_dark = fillMatrix(&Hist_Dark_MSCLW.at(e));
-    //    int binx_lower = Hist_Data_MSCLW.at(e).GetXaxis()->FindBin(MSCW_cut_blind)-1;
-    //    int biny_lower = Hist_Data_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind)-1;
-
-    //    ComplexEigenSolver<MatrixXcd> eigensolver_dark(mtx_dark);
-    //    std::cout << "The eigenvalues of mtx_dark are:\n" << eigensolver_dark.eigenvalues() << std::endl;
-    //    for (int i=0;i<mtx_data.cols();i++)
-    //    {
-    //        for (int j=0;j<mtx_data.rows();j++)
-    //        {
-    //            if (i==j) mtx_eigenvalue(i,j) = eigensolver_dark.eigenvalues()(i);
-    //            else mtx_eigenvalue(i,j) = 0;
-    //        }
-    //    }
-
-    //    mtx_bkgd = mtx_dark;
-
-    //    mtx_bkgd = replaceMatrix(mtx_data,mtx_bkgd,binx_lower,biny_lower);
-    //    ComplexEigenSolver<MatrixXcd> eigensolver_bkgd_0(mtx_bkgd);
-    //    std::cout << "The eigenvalues of mtx_bkgd are:\n" << eigensolver_bkgd_0.eigenvalues() << std::endl;
-    //    mtx_bkgd = eigensolver_bkgd_0.eigenvectors()*mtx_eigenvalue*eigensolver_bkgd_0.eigenvectors().inverse();
-    //    std::cout << "mtx_eigenvalue :\n" << mtx_eigenvalue << std::endl;
-    //    std::cout << "mtx_data :\n" << mtx_data << std::endl;
-    //    std::cout << "mtx_dark :\n" << mtx_dark << std::endl;
-    //    std::cout << "mtx_bkgd :\n" << mtx_bkgd.real() << std::endl;
-
-    //    mtx_bkgd = replaceMatrix(mtx_data,mtx_bkgd,binx_lower,biny_lower);
-    //    ComplexEigenSolver<MatrixXcd> eigensolver_bkgd_1(mtx_bkgd);
-    //    std::cout << "The eigenvalues of mtx_bkgd are:\n" << eigensolver_bkgd_1.eigenvalues() << std::endl;
-    //    mtx_bkgd = eigensolver_bkgd_1.eigenvectors()*mtx_eigenvalue*eigensolver_bkgd_1.eigenvectors().inverse();
-    //    std::cout << "mtx_bkgd :\n" << mtx_bkgd.real() << std::endl;
-
-    //    mtx_bkgd = replaceMatrix(mtx_data,mtx_bkgd,binx_lower,biny_lower);
-    //    ComplexEigenSolver<MatrixXcd> eigensolver_bkgd_2(mtx_bkgd);
-    //    std::cout << "The eigenvalues of mtx_bkgd are:\n" << eigensolver_bkgd_2.eigenvalues() << std::endl;
-    //    mtx_bkgd = eigensolver_bkgd_2.eigenvectors()*mtx_eigenvalue*eigensolver_bkgd_2.eigenvectors().inverse();
-    //    std::cout << "mtx_bkgd :\n" << mtx_bkgd.real() << std::endl;
-    //}
+    for (int e=0;e<N_energy_bins;e++) 
+    {
+        int binx_blind = Hist_Ring_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_lower);
+        int binx_upper = Hist_Ring_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_blind)-1;
+        int biny_blind = Hist_Ring_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
+        int biny_upper = Hist_Ring_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
+        double Ring_CR_Integral = Hist_Ring_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
+        double Data_CR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
+        double Ring_CR_Error = pow(Ring_CR_Integral,0.5);
+        double Data_CR_Error = pow(Data_CR_Integral,0.5);
+        double scale = Data_CR_Integral/Ring_CR_Integral;
+        double scale_err = scale*pow(pow(Ring_CR_Error/Ring_CR_Integral,2)+pow(Data_CR_Error/Data_CR_Integral,2),0.5);
+        Hist_Ring_MSCLW.at(e).Scale(scale);
+        Hist_Ring_Syst_MSCLW.at(e).Scale(scale_err);
+    }
+    for (int e=0;e<N_energy_bins;e++) 
+    {
+        int binx_blind = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_lower);
+        int binx_upper = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_blind)-1;
+        int biny_blind = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
+        int biny_upper = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
+        double Dark_CR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
+        double Data_CR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
+        double Dark_CR_Error = pow(Dark_CR_Integral,0.5);
+        double Data_CR_Error = pow(Data_CR_Integral,0.5);
+        double scale = Data_CR_Integral/Dark_CR_Integral;
+        double scale_err = scale*pow(pow(Dark_CR_Error/Dark_CR_Integral,2)+pow(Data_CR_Error/Data_CR_Integral,2),0.5);
+        Hist_Dark_MSCLW.at(e).Scale(scale);
+        Hist_Dark_Syst_MSCLW.at(e).Scale(scale_err);
+    }
 
 
-    TFile OutputFile("output_Jul16/Netflix_"+TString(target)+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","recreate");
+    TFile OutputFile("output_Jul16/Netflix_"+TString(target)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","recreate");
     TTree InfoTree("InfoTree","info tree");
     InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
     InfoTree.Fill();
@@ -468,7 +445,10 @@ void NetflixMethodGetShowerImage(string target_data, double theta2_cut_lower_inp
     for (int e=0;e<N_energy_bins;e++)
     {
         Hist_Data_MSCLW.at(e).Write();
+        Hist_Ring_MSCLW.at(e).Write();
+        Hist_Ring_Syst_MSCLW.at(e).Write();
         Hist_Dark_MSCLW.at(e).Write();
+        Hist_Dark_Syst_MSCLW.at(e).Write();
     }
     OutputFile.Close();
 
