@@ -55,7 +55,7 @@ const int N_energy_bins = 12;
 double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,1585,2239,4467,8913};
 bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,false,false,false,false,false,false};
 
-int N_bins_for_deconv = 20;
+int N_bins_for_deconv = 40;
 double MSCW_plot_lower = -1.;
 double MSCW_plot_upper = 3.;
 double MSCL_plot_lower = -1.;
@@ -422,12 +422,18 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     }
     for (int e=0;e<N_energy_bins;e++) 
     {
-        int binx_blind = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_lower);
-        int binx_upper = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_blind)-1;
-        int biny_blind = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
+        int binx_lower = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_lower);
+        int binx_blind = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_blind)-1;
+        int binx_upper = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_blind*3)-1;
+        int biny_lower = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_lower);
+        int biny_blind = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind)-1;
         int biny_upper = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
-        double Dark_CR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
-        double Data_CR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
+        double Dark_SR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        double Data_SR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        double Dark_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
+        double Data_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
+        double Dark_CR_Integral = Dark_Integral-Dark_SR_Integral;
+        double Data_CR_Integral = Data_Integral-Data_SR_Integral;
         double Dark_CR_Error = pow(Dark_CR_Integral,0.5);
         double Data_CR_Error = pow(Data_CR_Integral,0.5);
         double scale = Data_CR_Integral/Dark_CR_Integral;

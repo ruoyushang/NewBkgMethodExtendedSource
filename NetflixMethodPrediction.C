@@ -47,8 +47,8 @@ using namespace Eigen;
 
 void NormalizeHist2D(TH2D* hist_ref, TH2D* hist_sub)
 {
-    int binx_lower = hist_ref->GetXaxis()->FindBin(MSCW_cut_blind);
-    int binx_upper = hist_ref->GetXaxis()->FindBin(3.*MSCW_cut_blind);
+    int binx_lower = hist_ref->GetXaxis()->FindBin(MSCW_cut_lower);
+    int binx_upper = hist_ref->GetXaxis()->FindBin(MSCW_cut_blind);
     int biny_lower = hist_ref->GetYaxis()->FindBin(MSCW_cut_blind);
     int biny_upper = hist_ref->GetYaxis()->FindBin(3.*MSCW_cut_blind);
     double integral_ref = double(hist_ref->Integral(binx_lower,binx_upper,biny_lower,biny_upper));
@@ -65,8 +65,8 @@ MatrixXcd NoiseRemove(MatrixXcd mtx_data)
     {
         for (int j=0;j<mtx_data.rows();j++)
         {
-            if (mtx_data(i,j).real()*mtx_data(i,j).real()+mtx_data(i,j).imag()*mtx_data(i,j).imag()>1) 
-            //if (i>=mtx_data.cols()-1) 
+            //if (mtx_data(i,j).real()*mtx_data(i,j).real()+mtx_data(i,j).imag()*mtx_data(i,j).imag()>1) 
+            if (i>=mtx_data.cols()-20) 
             {
                 matrix(i,j) = mtx_data(i,j);
             }
@@ -95,7 +95,7 @@ MatrixXcd replaceEigenVectorMatrix(MatrixXcd mtx_data, MatrixXcd mtx_dark, int b
     }
     return matrix;
 }
-MatrixXcd replaceMatrix(MatrixXcd mtx_data, MatrixXcd mtx_dark, int binx_blind, int biny_blind)
+MatrixXcd replaceMatrix(MatrixXcd mtx_data_blind, MatrixXcd mtx_data, int binx_blind, int biny_blind)
 {
     MatrixXcd matrix(mtx_data.cols(),mtx_data.rows());
     for (int i=0;i<mtx_data.cols();i++)
@@ -105,7 +105,7 @@ MatrixXcd replaceMatrix(MatrixXcd mtx_data, MatrixXcd mtx_dark, int binx_blind, 
             //matrix(i,j) = mtx_data(i,j);
             if (i<binx_blind && j<biny_blind)
             {
-                matrix(i,j) = mtx_dark(i,j);
+                matrix(i,j) = mtx_data_blind(i,j);
             }
             else
             {
@@ -135,19 +135,39 @@ double GetChi2(MatrixXcd mtx_data, MatrixXcd mtx_bkgd, int binx_blind, int biny_
     chi2 = 1./chi2;
     return chi2;
 }
-MatrixXcd MatrixRatio(MatrixXcd mtx_data, MatrixXcd mtx_bkgd, int binx_blind, int biny_blind)
+MatrixXcd MatrixBlind(MatrixXcd mtx_data, int binx_blind, int biny_blind)
 {
     MatrixXcd matrix(mtx_data.cols(),mtx_data.rows());
     for (int i=0;i<mtx_data.cols();i++)
     {
         for (int j=0;j<mtx_data.rows();j++)
         {
-            double data_content = mtx_data(i,j).real();
-            double bkgd_content = mtx_bkgd(i,j).real();
-            matrix(i,j) = 1;
-            if (i<binx_blind && j<biny_blind)
+            matrix(i,j) = mtx_data(i,j);
+            if (i<=binx_blind && j<=biny_blind)
             {
-                if (data_content>0) matrix(i,j) = bkgd_content/data_content;
+                matrix(i,j) = 0;
+            }
+        }
+    }
+    return matrix;
+}
+MatrixXcd MatrixRatio(MatrixXcd mtx_data, MatrixXcd mtx_dark)
+{
+    MatrixXcd matrix(mtx_data.cols(),mtx_data.rows());
+    for (int i=0;i<mtx_data.cols();i++)
+    {
+        for (int j=0;j<mtx_data.rows();j++)
+        {
+            double data_content = pow(mtx_data(i,j).real()*mtx_data(i,j).real()+mtx_data(i,j).imag()*mtx_data(i,j).imag(),0.5);
+            double dark_content = pow(mtx_dark(i,j).real()*mtx_dark(i,j).real()+mtx_dark(i,j).imag()*mtx_dark(i,j).imag(),0.5);
+            matrix(i,j) = 1;
+            //if (dark_content>0)
+            //{
+            //    matrix(i,j) = data_content/dark_content;
+            //}
+            if (data_content>0)
+            {
+                matrix(i,j) = dark_content/data_content;
             }
         }
     }
@@ -190,33 +210,55 @@ void fillHistogram(TH2D* hist,MatrixXcd mtx)
         }
     }
 }
-MatrixXcd EigenvaluePrediction(MatrixXcd mtx_data, MatrixXcd mtx_bkgd, MatrixXcd mtx_eigenvalue, MatrixXcd mtx_eigenvector, int binx_lower, int biny_lower, int n_eigen_replace)
+MatrixXcd EigenvaluePrediction(MatrixXcd mtx_data,MatrixXcd mtx_data_blind, MatrixXcd mtx_dark, int binx_blind, int biny_blind)
 {
+
+    MatrixXcd mtx_bkgd(mtx_dark.cols(),mtx_dark.rows());
+
+    mtx_data_blind = replaceMatrix(mtx_data_blind,mtx_data,binx_blind,biny_blind);
+    ComplexEigenSolver<MatrixXcd> eigensolver_data_blind(mtx_data_blind);
+    ComplexEigenSolver<MatrixXcd> eigensolver_dark(mtx_dark);
+
+    MatrixXcd mtx_eigenvalue_data_blind(mtx_dark.cols(),mtx_dark.rows());
+    MatrixXcd mtx_eigenvalue_dark(mtx_dark.cols(),mtx_dark.rows());
+    MatrixXcd mtx_eigenvector_data_blind(mtx_dark.cols(),mtx_dark.rows());
+    MatrixXcd mtx_eigenvector_dark(mtx_dark.cols(),mtx_dark.rows());
+    for (int i=0;i<mtx_dark.cols();i++)
+    {
+        for (int j=0;j<mtx_dark.rows();j++)
+        {
+            if (i==j) 
+            {
+                mtx_eigenvalue_data_blind(i,j) = eigensolver_data_blind.eigenvalues()(i);
+                mtx_eigenvalue_dark(i,j) = eigensolver_dark.eigenvalues()(i);
+            }
+            else
+            {
+                mtx_eigenvalue_data_blind(i,j) = 0;
+                mtx_eigenvalue_dark(i,j) = 0;
+            }
+        }
+    }
+    mtx_eigenvector_data_blind = eigensolver_data_blind.eigenvectors();
+    mtx_eigenvector_dark = eigensolver_dark.eigenvectors();
+
+    mtx_eigenvalue_data_blind = NoiseRemove(mtx_eigenvalue_data_blind);
+    mtx_eigenvalue_dark = NoiseRemove(mtx_eigenvalue_dark);
+    MatrixXcd mtx_eigenvalue_dark_modify(mtx_dark.cols(),mtx_dark.rows());
+    mtx_eigenvalue_dark_modify = replaceEigenVectorMatrix(mtx_eigenvalue_data_blind, mtx_eigenvalue_dark, 2);
+    MatrixXcd mtx_eigenvector_dark_modify(mtx_dark.cols(),mtx_dark.rows());
+    mtx_eigenvector_dark_modify = replaceEigenVectorMatrix(mtx_eigenvector_data_blind, mtx_eigenvector_dark, 2);
+
+    //mtx_bkgd = mtx_eigenvector_dark_modify*mtx_eigenvalue_dark*mtx_eigenvector_dark_modify.inverse();
+    mtx_bkgd = mtx_eigenvector_data_blind*mtx_eigenvalue_dark*mtx_eigenvector_data_blind.inverse();
+
     TH2D Hist_Data_Temp("Hist_Data_Temp","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D Hist_Bkgd_Temp("Hist_Bkgd_Temp","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     fillHistogram(&Hist_Data_Temp,mtx_data);
     fillHistogram(&Hist_Bkgd_Temp,mtx_bkgd);
-    //NormalizeHist2D(&Hist_Data_Temp,&Hist_Bkgd_Temp);
+    NormalizeHist2D(&Hist_Data_Temp,&Hist_Bkgd_Temp);
     mtx_bkgd = fillMatrix(&Hist_Bkgd_Temp);
-    mtx_bkgd = replaceMatrix(mtx_data,mtx_bkgd,binx_lower,biny_lower);
-    ComplexEigenSolver<MatrixXcd> eigensolver_bkgd(mtx_bkgd);
-    MatrixXcd mtx_eigenvalue_bkgd(mtx_data.cols(),mtx_data.rows());
-    for (int i=0;i<mtx_data.cols();i++)
-    {
-        for (int j=0;j<mtx_data.rows();j++)
-        {
-            if (i==j) mtx_eigenvalue_bkgd(i,j) = eigensolver_bkgd.eigenvalues()(i);
-            else mtx_eigenvalue_bkgd(i,j) = 0;
-        }
-    }
-    mtx_eigenvalue_bkgd = NoiseRemove(mtx_eigenvalue_bkgd);
-    MatrixXcd mtx_eigenvector_modified(mtx_data.cols(),mtx_data.rows());
-    mtx_eigenvector_modified =  replaceEigenVectorMatrix(eigensolver_bkgd.eigenvectors(),mtx_eigenvector,n_eigen_replace);
-    //mtx_eigenvector_modified =  replaceEigenVectorMatrix(eigensolver_bkgd.eigenvectors(),mtx_eigenvector,3);
-    MatrixXcd mtx_eigenvalue_modified(mtx_data.cols(),mtx_data.rows());
-    mtx_eigenvalue_modified =  replaceEigenVectorMatrix(mtx_eigenvalue_bkgd,mtx_eigenvalue,n_eigen_replace);
-    //mtx_eigenvalue_modified =  replaceEigenVectorMatrix(mtx_eigenvalue_bkgd,mtx_eigenvalue,3);
-    mtx_bkgd = mtx_eigenvector_modified*mtx_eigenvalue_modified*mtx_eigenvector_modified.inverse();
+
     return mtx_bkgd;
 }
 void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, double tel_elev_upper_input, double theta2_cut_lower_input, double theta2_cut_upper_input)
@@ -248,80 +290,30 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         //if (energy_bins[e]<300.) continue;
         //if (energy_bins[e]>350.) continue;
 
-        //NormalizeHist2D(Hist_Data,Hist_Dark);
         MatrixXcd mtx_data(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         MatrixXcd mtx_dark(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
+        MatrixXcd mtx_data_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
+        MatrixXcd mtx_dark_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         MatrixXcd mtx_data_bkgd(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         MatrixXcd mtx_dark_bkgd(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
-        MatrixXcd mtx_dark_corr(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
-        MatrixXcd mtx_data_corr(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
-        MatrixXcd mtx_eigenvalue(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
-        MatrixXcd mtx_eigenvector(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         mtx_data = fillMatrix(Hist_Data);
         mtx_dark = fillMatrix(Hist_Dark);
-        int binx_lower = Hist_Data->GetXaxis()->FindBin(MSCW_cut_blind)-1;
+        int binx_lower = Hist_Data->GetXaxis()->FindBin(MSCL_cut_blind)-1;
         int biny_lower = Hist_Data->GetYaxis()->FindBin(MSCW_cut_blind)-1;
+        mtx_data_blind = MatrixBlind(mtx_data, binx_lower, biny_lower);
+        mtx_dark_blind = MatrixBlind(mtx_dark, binx_lower, biny_lower);
 
-        ComplexEigenSolver<MatrixXcd> eigensolver_data(mtx_data);
-        ComplexEigenSolver<MatrixXcd> eigensolver_dark(mtx_dark);
-        std::cout << "The eigenvalues of mtx_data are:\n" << eigensolver_data.eigenvalues() << std::endl;
-        std::cout << "The eigenvalues of mtx_dark are:\n" << eigensolver_dark.eigenvalues() << std::endl;
-        for (int i=0;i<mtx_data.cols();i++)
-        {
-            for (int j=0;j<mtx_data.rows();j++)
-            {
-                if (i==j) mtx_eigenvalue(i,j) = eigensolver_dark.eigenvalues()(i);
-                else mtx_eigenvalue(i,j) = 0;
-                mtx_data_bkgd(i,j) = 0;
-                mtx_dark_bkgd(i,j) = 0;
-                mtx_data_corr(i,j) = 0;
-                mtx_dark_corr(i,j) = 0;
-            }
-        }
-        mtx_eigenvector = eigensolver_dark.eigenvectors();
-        mtx_eigenvalue = NoiseRemove(mtx_eigenvalue);
-
-        // initial condition
+        //initial condition
+        //mtx_data_bkgd = mtx_data_blind;
         mtx_data_bkgd = mtx_dark;
 
-        int best_n_eigen_replace = 4;
-        if (energy_bins[e]>=398.) best_n_eigen_replace = 3;
-        if (energy_bins[e]>=794.) best_n_eigen_replace = 2;
-        if (energy_bins[e]>=4467.) best_n_eigen_replace = 1;
-        double best_chi2 = 0;
-        //for (int n_eigen_replace=1;n_eigen_replace<=5;n_eigen_replace++)
-        //{
-        //    for (int iter=0;iter<10;iter++)
-        //    {
-        //        mtx_data_bkgd = EigenvaluePrediction(mtx_data,mtx_data_bkgd,mtx_eigenvalue,mtx_eigenvector,binx_lower,biny_lower,n_eigen_replace);
-        //    }
-        //    double chi2 = GetChi2(mtx_data,mtx_data_bkgd,binx_lower,biny_lower);
-        //    if (best_chi2<chi2)
-        //    {
-        //        best_chi2 = chi2;
-        //        best_n_eigen_replace = n_eigen_replace;
-        //    }
-        //}
-        //std::cout << "best_n_eigen_replace = " << best_n_eigen_replace << std::endl;
-
-        for (int n_eigen_replace=1;n_eigen_replace<=best_n_eigen_replace;n_eigen_replace++)
+        std::cout << "Hist_Dark->Integral() = " << Hist_Dark->Integral() << std::endl;
+        for (int iter=0;iter<4;iter++)
         {
-            for (int iter=0;iter<5;iter++)
-            {
-                mtx_dark_bkgd = EigenvaluePrediction(mtx_dark,mtx_dark_bkgd,mtx_eigenvalue,mtx_eigenvector,binx_lower,biny_lower,n_eigen_replace);
-                mtx_dark_corr = MatrixRatio(mtx_dark_bkgd,mtx_dark,binx_lower,biny_lower);
-                mtx_data_bkgd = EigenvaluePrediction(mtx_data,mtx_data_bkgd,mtx_eigenvalue,mtx_eigenvector,binx_lower,biny_lower,n_eigen_replace);
-                mtx_data_corr = MatrixRatio(mtx_data,mtx_data_bkgd,binx_lower,biny_lower);
-                //std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-                //std::cout << "iteration = " << iter << std::endl;
-                //std::cout << "mtx_dark_corr :\n" << mtx_dark_corr.block(0,0,binx_lower,biny_lower).real() << std::endl;
-                //std::cout << "mtx_data_corr :\n" << mtx_data_corr.block(0,0,binx_lower,biny_lower).real() << std::endl;
-            }
+            mtx_data_bkgd = EigenvaluePrediction(mtx_data,mtx_data_bkgd, mtx_dark, binx_lower, biny_lower);
+            fillHistogram(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
+            std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral() << std::endl;
         }
-        //mtx_data_bkgd = MatrixScale(mtx_dark_corr,mtx_data_bkgd);
-        //mtx_data_bkgd = replaceMatrix(mtx_data,mtx_data_bkgd,binx_lower,biny_lower);
-        //std::cout << "mtx_data :\n" << mtx_data.block(0,0,binx_lower,biny_lower).real() << std::endl;
-        //std::cout << "mtx_data_bkgd :\n" << mtx_data_bkgd.block(0,0,binx_lower,biny_lower).real() << std::endl;
 
         fillHistogram(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
 
