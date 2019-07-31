@@ -35,7 +35,14 @@
 #include "TROOT.h"
 #include "TChain.h"
 #include "TBranch.h"
+#include "TSpline.h"
 
+ClassImp(TSplinePoly);
+ClassImp(TSplinePoly3);
+ClassImp(TSplinePoly5);
+ClassImp(TSpline3);
+ClassImp(TSpline5);
+ClassImp(TSpline);
 
 #include <complex>
 #include "/home/rshang/Eigen/eigen-eigen-323c052e1731/Eigen/Dense"
@@ -66,7 +73,8 @@ MatrixXcd NoiseRemove(MatrixXcd mtx_data)
         for (int j=0;j<mtx_data.rows();j++)
         {
             //if (mtx_data(i,j).real()*mtx_data(i,j).real()+mtx_data(i,j).imag()*mtx_data(i,j).imag()>1) 
-            if (i>=mtx_data.cols()-20) 
+            if (i>=mtx_data.cols()-2) 
+            //if (i>=mtx_data.cols()-30) 
             {
                 matrix(i,j) = mtx_data(i,j);
             }
@@ -95,7 +103,7 @@ MatrixXcd replaceEigenVectorMatrix(MatrixXcd mtx_data, MatrixXcd mtx_dark, int b
     }
     return matrix;
 }
-MatrixXcd replaceMatrix(MatrixXcd mtx_data_blind, MatrixXcd mtx_data, int binx_blind, int biny_blind)
+MatrixXcd replaceMatrix(MatrixXcd mtx_data_blind, MatrixXcd mtx_data, int binx_lower, int biny_lower, int binx_blind, int biny_blind)
 {
     MatrixXcd matrix(mtx_data.cols(),mtx_data.rows());
     for (int i=0;i<mtx_data.cols();i++)
@@ -103,7 +111,7 @@ MatrixXcd replaceMatrix(MatrixXcd mtx_data_blind, MatrixXcd mtx_data, int binx_b
         for (int j=0;j<mtx_data.rows();j++)
         {
             //matrix(i,j) = mtx_data(i,j);
-            if (i<binx_blind && j<biny_blind)
+            if (i>binx_lower && j>biny_lower && i<binx_blind && j<biny_blind)
             {
                 matrix(i,j) = mtx_data_blind(i,j);
             }
@@ -135,7 +143,7 @@ double GetChi2(MatrixXcd mtx_data, MatrixXcd mtx_bkgd, int binx_blind, int biny_
     chi2 = 1./chi2;
     return chi2;
 }
-MatrixXcd MatrixBlind(MatrixXcd mtx_data, int binx_blind, int biny_blind)
+MatrixXcd MatrixBlind(MatrixXcd mtx_data, int binx_lower, int biny_lower, int binx_blind, int biny_blind)
 {
     MatrixXcd matrix(mtx_data.cols(),mtx_data.rows());
     for (int i=0;i<mtx_data.cols();i++)
@@ -143,7 +151,7 @@ MatrixXcd MatrixBlind(MatrixXcd mtx_data, int binx_blind, int biny_blind)
         for (int j=0;j<mtx_data.rows();j++)
         {
             matrix(i,j) = mtx_data(i,j);
-            if (i<=binx_blind && j<=biny_blind)
+            if (i>=binx_lower && j>=biny_lower && i<=binx_blind && j<=biny_blind)
             {
                 matrix(i,j) = 0;
             }
@@ -210,12 +218,65 @@ void fillHistogram(TH2D* hist,MatrixXcd mtx)
         }
     }
 }
-MatrixXcd EigenvaluePrediction(MatrixXcd mtx_data,MatrixXcd mtx_data_blind, MatrixXcd mtx_dark, int binx_blind, int biny_blind)
+MatrixXcd MakeSmoothSplineFunction(MatrixXcd mtx_origin)
+{
+    TH2D hist_2d = TH2D("hist_2d","",mtx_origin.cols(),0,mtx_origin.cols(),mtx_origin.rows(),0,mtx_origin.rows());
+    TH2D hist_2d_smooth_col = TH2D("hist_2d_smooth_col","",mtx_origin.cols(),0,mtx_origin.cols(),mtx_origin.rows(),0,mtx_origin.rows());
+    TH2D hist_2d_smooth_row = TH2D("hist_2d_smooth_row","",mtx_origin.cols(),0,mtx_origin.cols(),mtx_origin.rows(),0,mtx_origin.rows());
+    fillHistogram(&hist_2d,mtx_origin);
+    for (int col=0;col<mtx_origin.cols();col++)
+    {
+        TH1D* hist = hist_2d.ProjectionY("hist",col+1,col+1);
+        double bin_width = hist->GetBinLowEdge(2)-hist->GetBinLowEdge(1);
+        double nbins_in_RMS = hist->GetRMS()/bin_width;
+        int knot_size = 5;
+        TH1D hist_rebin = TH1D("hist_rebin","",mtx_origin.rows(),0,mtx_origin.rows());
+        hist_rebin.Reset();
+        hist_rebin.Add(hist);
+        hist_rebin.Rebin(knot_size);
+        TSpline3 spline = TSpline3(&hist_rebin);
+        for (int i=0;i<hist->GetNbinsX();i++) {
+            double x = hist->GetBinCenter(i+1);
+            hist_2d_smooth_col.SetBinContent(col+1,i+1,spline.Eval(x)/double(knot_size));
+        }
+    }
+    for (int row=0;row<mtx_origin.rows();row++)
+    {
+        TH1D* hist = hist_2d.ProjectionX("hist",row+1,row+1);
+        double bin_width = hist->GetBinLowEdge(2)-hist->GetBinLowEdge(1);
+        double nbins_in_RMS = hist->GetRMS()/bin_width;
+        int knot_size = 5;
+        TH1D hist_rebin = TH1D("hist_rebin","",mtx_origin.cols(),0,mtx_origin.cols());
+        hist_rebin.Reset();
+        hist_rebin.Add(hist);
+        hist_rebin.Rebin(knot_size);
+        TSpline3 spline = TSpline3(&hist_rebin);
+        for (int i=0;i<hist->GetNbinsX();i++) {
+            double x = hist->GetBinCenter(i+1);
+            hist_2d_smooth_row.SetBinContent(i+1,row+1,spline.Eval(x)/double(knot_size));
+        }
+    }
+    for (int col=0;col<mtx_origin.cols();col++)
+    {
+        for (int row=0;row<mtx_origin.rows();row++)
+        {
+            hist_2d.SetBinContent(col+1,row+1,0.5*(hist_2d_smooth_col.GetBinContent(col+1,row+1)+hist_2d_smooth_row.GetBinContent(col+1,row+1)));
+        }
+    }
+    MatrixXcd matrix(mtx_origin.cols(),mtx_origin.rows());
+    matrix = fillMatrix(&hist_2d);
+    //std::cout << "mtx_origin.col(0) = " << mtx_origin.col(0) << std::endl;
+    //std::cout << "matrix.col(0) = " << matrix.col(0) << std::endl;
+    return matrix;
+}
+MatrixXcd EigenvaluePrediction(MatrixXcd mtx_data,MatrixXcd mtx_data_blind, MatrixXcd mtx_dark, int binx_lower, int biny_lower, int binx_blind, int biny_blind)
 {
 
     MatrixXcd mtx_bkgd(mtx_dark.cols(),mtx_dark.rows());
 
-    mtx_data_blind = replaceMatrix(mtx_data_blind,mtx_data,binx_blind,biny_blind);
+    mtx_data_blind = replaceMatrix(mtx_data_blind,mtx_data,binx_lower,biny_lower,binx_blind,biny_blind);
+    //mtx_data_blind = MakeSmoothSplineFunction(mtx_data_blind);
+
     ComplexEigenSolver<MatrixXcd> eigensolver_data_blind(mtx_data_blind);
     ComplexEigenSolver<MatrixXcd> eigensolver_dark(mtx_dark);
 
@@ -244,6 +305,7 @@ MatrixXcd EigenvaluePrediction(MatrixXcd mtx_data,MatrixXcd mtx_data_blind, Matr
 
     mtx_eigenvalue_data_blind = NoiseRemove(mtx_eigenvalue_data_blind);
     mtx_eigenvalue_dark = NoiseRemove(mtx_eigenvalue_dark);
+    
     MatrixXcd mtx_eigenvalue_dark_modify(mtx_dark.cols(),mtx_dark.rows());
     mtx_eigenvalue_dark_modify = replaceEigenVectorMatrix(mtx_eigenvalue_data_blind, mtx_eigenvalue_dark, 2);
     MatrixXcd mtx_eigenvector_dark_modify(mtx_dark.cols(),mtx_dark.rows());
@@ -258,6 +320,8 @@ MatrixXcd EigenvaluePrediction(MatrixXcd mtx_data,MatrixXcd mtx_data_blind, Matr
     fillHistogram(&Hist_Bkgd_Temp,mtx_bkgd);
     NormalizeHist2D(&Hist_Data_Temp,&Hist_Bkgd_Temp);
     mtx_bkgd = fillMatrix(&Hist_Bkgd_Temp);
+
+    //mtx_bkgd = MakeSmoothSplineFunction(mtx_bkgd);
 
     return mtx_bkgd;
 }
@@ -298,19 +362,23 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         MatrixXcd mtx_dark_bkgd(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         mtx_data = fillMatrix(Hist_Data);
         mtx_dark = fillMatrix(Hist_Dark);
-        int binx_lower = Hist_Data->GetXaxis()->FindBin(MSCL_cut_blind)-1;
-        int biny_lower = Hist_Data->GetYaxis()->FindBin(MSCW_cut_blind)-1;
-        mtx_data_blind = MatrixBlind(mtx_data, binx_lower, biny_lower);
-        mtx_dark_blind = MatrixBlind(mtx_dark, binx_lower, biny_lower);
+        int binx_lower = Hist_Data->GetXaxis()->FindBin(MSCL_cut_lower);
+        int biny_lower = Hist_Data->GetYaxis()->FindBin(MSCW_cut_lower);
+        int binx_blind = Hist_Data->GetXaxis()->FindBin(MSCL_cut_blind)-1;
+        int biny_blind = Hist_Data->GetYaxis()->FindBin(MSCW_cut_blind)-1;
+        mtx_data_blind = MatrixBlind(mtx_data, binx_lower, biny_lower, binx_blind, biny_blind);
+        mtx_dark_blind = MatrixBlind(mtx_dark, binx_lower, biny_lower, binx_blind, biny_blind);
+
+        //mtx_dark = MakeSmoothSplineFunction(mtx_dark);
 
         //initial condition
         //mtx_data_bkgd = mtx_data_blind;
         mtx_data_bkgd = mtx_dark;
 
         std::cout << "Hist_Dark->Integral() = " << Hist_Dark->Integral() << std::endl;
-        for (int iter=0;iter<4;iter++)
+        for (int iter=0;iter<5;iter++)
         {
-            mtx_data_bkgd = EigenvaluePrediction(mtx_data,mtx_data_bkgd, mtx_dark, binx_lower, biny_lower);
+            mtx_data_bkgd = EigenvaluePrediction(mtx_data,mtx_data_bkgd,mtx_dark,binx_lower,biny_lower,binx_blind,biny_blind);
             fillHistogram(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
             std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral() << std::endl;
         }
