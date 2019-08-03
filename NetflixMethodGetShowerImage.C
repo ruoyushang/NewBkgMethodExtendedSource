@@ -55,11 +55,11 @@ const int N_energy_bins = 12;
 double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,1585,2239,4467,8913};
 bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,false,false,false,false,false,false};
 
-int N_bins_for_deconv = 25;
+int N_bins_for_deconv = 20;
 double MSCW_plot_lower = -1.;
-double MSCW_plot_upper = 4.;
+double MSCW_plot_upper = 3.;
 double MSCL_plot_lower = -1.;
-double MSCL_plot_upper = 4.;
+double MSCL_plot_upper = 3.;
 double Theta2_cut_lower = 0;
 double Theta2_cut_upper = 0;
 double Theta2_upper_limit = 10;
