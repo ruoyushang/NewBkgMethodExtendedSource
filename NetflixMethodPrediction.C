@@ -47,6 +47,7 @@ ClassImp(TSpline3);
 ClassImp(TSpline5);
 ClassImp(TSpline);
 
+#include <math.h>
 #include <complex>
 #include "/home/rshang/Eigen/eigen-eigen-323c052e1731/Eigen/Dense"
 #include "/home/rshang/Eigen/eigen-eigen-323c052e1731/Eigen/StdVector"
@@ -132,22 +133,24 @@ void ParametrizeEigenvectors(const double *par)
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             double x = double(row+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
+            double x_norm = 1*M_PI*(x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
             mtx_eigenvector(row,col_fix) += par[first_index]/2.;
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
-                mtx_eigenvector(row,col_fix) += par[first_index+2*mode-1]*cos(double(mode)*x);
-                mtx_eigenvector(row,col_fix) += par[first_index+2*mode]*sin(double(mode)*x);
+                mtx_eigenvector(row,col_fix) += par[first_index+2*mode-1]*cos(double(mode)*x_norm);
+                mtx_eigenvector(row,col_fix) += par[first_index+2*mode]*sin(double(mode)*x_norm);
             }
         }
         first_index = (4*NthEigenvector-3)*(1+2*n_fourier_modes)+(NthEigenvector-1);
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             double x = double(row+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
+            double x_norm = 1*M_PI*(x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
             mtx_eigenvector(row,col_fix) += If*par[first_index]/2.;
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
-                mtx_eigenvector(row,col_fix) += If*par[first_index+2*mode-1]*cos(double(mode)*x);
-                mtx_eigenvector(row,col_fix) += If*par[first_index+2*mode]*sin(double(mode)*x);
+                mtx_eigenvector(row,col_fix) += If*par[first_index+2*mode-1]*cos(double(mode)*x_norm);
+                mtx_eigenvector(row,col_fix) += If*par[first_index+2*mode]*sin(double(mode)*x_norm);
             }
         }
         row_fix = N_bins_for_deconv-NthEigenvector;
@@ -155,22 +158,24 @@ void ParametrizeEigenvectors(const double *par)
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             double x = double(col+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
+            double x_norm = 1*M_PI*(x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
             mtx_eigenvector_inv(row_fix,col) += par[first_index]/2.;
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
-                mtx_eigenvector_inv(row_fix,col) += par[first_index+2*mode-1]*cos(double(mode)*x);
-                mtx_eigenvector_inv(row_fix,col) += par[first_index+2*mode]*sin(double(mode)*x);
+                mtx_eigenvector_inv(row_fix,col) += par[first_index+2*mode-1]*cos(double(mode)*x_norm);
+                mtx_eigenvector_inv(row_fix,col) += par[first_index+2*mode]*sin(double(mode)*x_norm);
             }
         }
         first_index = (4*NthEigenvector-1)*(1+2*n_fourier_modes)+(NthEigenvector-1);
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             double x = double(col+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
+            double x_norm = 1*M_PI*(x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
             mtx_eigenvector_inv(row_fix,col) += If*par[first_index]/2.;
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
-                mtx_eigenvector_inv(row_fix,col) += If*par[first_index+2*mode-1]*cos(double(mode)*x);
-                mtx_eigenvector_inv(row_fix,col) += If*par[first_index+2*mode]*sin(double(mode)*x);
+                mtx_eigenvector_inv(row_fix,col) += If*par[first_index+2*mode-1]*cos(double(mode)*x_norm);
+                mtx_eigenvector_inv(row_fix,col) += If*par[first_index+2*mode]*sin(double(mode)*x_norm);
             }
         }
         // build eigenvalue matrix
@@ -204,10 +209,11 @@ double EigenvectorFunction(Double_t *x, Double_t *par) {
     double xx =x[0];
     double func = 0.;
     func += par[0]/2.;
+    double x_norm = 1*M_PI*(xx-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
     for (int mode=1;mode<=n_fourier_modes;mode++)
     {
-        func += par[2*mode-1]*cos(double(mode)*xx);
-        func += par[2*mode]*sin(double(mode)*xx);
+        func += par[2*mode-1]*cos(double(mode)*x_norm);
+        func += par[2*mode]*sin(double(mode)*x_norm);
     }
     return func;
 }
