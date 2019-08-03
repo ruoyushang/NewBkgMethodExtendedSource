@@ -124,6 +124,10 @@ MatrixXcd SmoothEigenvectors(MatrixXcd mtx,int type)
             for (int i=0;i<hist_eigenvector.GetNbinsX();i++) {
                 double x = hist_eigenvector.GetBinCenter(i+1);
                 hist_eigenvector.SetBinContent(i+1,spline.Eval(x)/double(knot_size));
+                if (x<-0.5)
+                {
+                    hist_eigenvector.SetBinContent(i+1,0.);
+                }
             }
             mtx_smooth.col(N_bins_for_deconv-NthEigenvector) = fillVector(&hist_eigenvector);
         }
@@ -138,6 +142,10 @@ MatrixXcd SmoothEigenvectors(MatrixXcd mtx,int type)
             for (int i=0;i<hist_eigenvector.GetNbinsX();i++) {
                 double x = hist_eigenvector.GetBinCenter(i+1);
                 hist_eigenvector.SetBinContent(i+1,spline.Eval(x)/double(knot_size));
+                if (x<-0.5)
+                {
+                    hist_eigenvector.SetBinContent(i+1,0.);
+                }
             }
             mtx_smooth.row(N_bins_for_deconv-NthEigenvector) = fillVector(&hist_eigenvector);
         }
@@ -158,7 +166,8 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_model)
             double weight = 1.;
             double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(-0.5);
             double dy = hist_data->GetYaxis()->GetBinCenter(by)-(-0.5);
-            weight = exp(-dx*dx)*exp(-dy*dy);
+            double width = 1.0;
+            weight = exp(-0.5*dx*dx/(width*width))*exp(-0.5*dy*dy/(width*width));
             if (bx>=binx_blind || by>=biny_blind)
             {
                 double data = hist_data->GetBinContent(bx,by);
@@ -579,8 +588,8 @@ void SetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixXcd mtx_
     double step_size = 0.001;
     double eigenvec_upper_limit = 10.0;
     double eigenvec_lower_limit = 0.1;
-    double eigenval_upper_limit = 1.0;
-    double eigenval_lower_limit = 1.0;
+    double eigenval_upper_limit = 1.2;
+    double eigenval_lower_limit = 0.8;
 
     // 1st eigenvector
     
