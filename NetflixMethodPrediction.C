@@ -50,6 +50,8 @@ ClassImp(TSpline);
 #include <complex>
 #include "/home/rshang/Eigen/eigen-eigen-323c052e1731/Eigen/Dense"
 #include "/home/rshang/Eigen/eigen-eigen-323c052e1731/Eigen/StdVector"
+#include <complex>
+#include <cmath>
 using namespace Eigen;
 //using Eigen::MatrixXcd;
 
@@ -78,7 +80,7 @@ void fill1DHistogram(TH1D* hist,VectorXcd vtr)
     for (int binx=0;binx<hist->GetNbinsX();binx++)
     {
         hist->SetBinContent(binx+1,vtr(binx).real());
-        hist->SetBinError(binx+1,0.1*abs(vtr(binx).real()));
+        hist->SetBinError(binx+1,0.01*abs(vtr(binx).real()));
     }
 }
 double BlindedChi2(TH2D* hist_data, TH2D* hist_model)
@@ -107,9 +109,18 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_model)
     return chi2;
 }
 
-double Chi2Function(const double *par)
+void ParametrizeEigenvectors(const double *par)
 {
-
+    for (int col=0;col<N_bins_for_deconv;col++)
+    {
+        for (int row=0;row<N_bins_for_deconv;row++)
+        {
+            mtx_eigenvector(row,col) = 0.;
+            mtx_eigenvector_inv(row,col) = 0.;
+            mtx_eigenvalue(row,col) = 0.;
+        }
+    }
+    const std::complex<double> If(0.0, 1.0);
     // build eigenvector matrix
     int col_fix = 0;
     int row_fix = 0;
@@ -117,33 +128,61 @@ double Chi2Function(const double *par)
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
     {
         col_fix = N_bins_for_deconv-NthEigenvector;
-        first_index = (2*NthEigenvector-2)*(1+2*n_fourier_modes)+(NthEigenvector-1);
+        first_index = (4*NthEigenvector-4)*(1+2*n_fourier_modes)+(NthEigenvector-1);
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             double x = double(row+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
-            mtx_eigenvector(row,col_fix) = par[first_index]/2.;
+            mtx_eigenvector(row,col_fix) += par[first_index]/2.;
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
                 mtx_eigenvector(row,col_fix) += par[first_index+2*mode-1]*cos(double(mode)*x);
                 mtx_eigenvector(row,col_fix) += par[first_index+2*mode]*sin(double(mode)*x);
             }
         }
+        first_index = (4*NthEigenvector-3)*(1+2*n_fourier_modes)+(NthEigenvector-1);
+        for (int row=0;row<N_bins_for_deconv;row++)
+        {
+            double x = double(row+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
+            mtx_eigenvector(row,col_fix) += If*par[first_index]/2.;
+            for (int mode=1;mode<=n_fourier_modes;mode++)
+            {
+                mtx_eigenvector(row,col_fix) += If*par[first_index+2*mode-1]*cos(double(mode)*x);
+                mtx_eigenvector(row,col_fix) += If*par[first_index+2*mode]*sin(double(mode)*x);
+            }
+        }
         row_fix = N_bins_for_deconv-NthEigenvector;
-        first_index = (2*NthEigenvector-1)*(1+2*n_fourier_modes)+(NthEigenvector-1);
+        first_index = (4*NthEigenvector-2)*(1+2*n_fourier_modes)+(NthEigenvector-1);
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             double x = double(col+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
-            mtx_eigenvector_inv(row_fix,col) = par[first_index]/2.;
+            mtx_eigenvector_inv(row_fix,col) += par[first_index]/2.;
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
                 mtx_eigenvector_inv(row_fix,col) += par[first_index+2*mode-1]*cos(double(mode)*x);
                 mtx_eigenvector_inv(row_fix,col) += par[first_index+2*mode]*sin(double(mode)*x);
             }
         }
+        first_index = (4*NthEigenvector-1)*(1+2*n_fourier_modes)+(NthEigenvector-1);
+        for (int col=0;col<N_bins_for_deconv;col++)
+        {
+            double x = double(col+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
+            mtx_eigenvector_inv(row_fix,col) += If*par[first_index]/2.;
+            for (int mode=1;mode<=n_fourier_modes;mode++)
+            {
+                mtx_eigenvector_inv(row_fix,col) += If*par[first_index+2*mode-1]*cos(double(mode)*x);
+                mtx_eigenvector_inv(row_fix,col) += If*par[first_index+2*mode]*sin(double(mode)*x);
+            }
+        }
         // build eigenvalue matrix
-        first_index = (2*NthEigenvector-0)*(1+2*n_fourier_modes)+(NthEigenvector-1);
+        first_index = (4*NthEigenvector-0)*(1+2*n_fourier_modes)+(NthEigenvector-1);
         mtx_eigenvalue(N_bins_for_deconv-NthEigenvector,N_bins_for_deconv-NthEigenvector) = par[first_index];
     }
+}
+
+double Chi2Function(const double *par)
+{
+
+    ParametrizeEigenvectors(par);
     
     // build model
     MatrixXcd mtx_model(N_bins_for_deconv,N_bins_for_deconv);
@@ -201,7 +240,8 @@ void SetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixXcd mtx_
     
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
     {
-        fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().col(mtx_input.cols()-NthEigenvector));
+
+        fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().col(mtx_input.cols()-NthEigenvector).real());
         func->SetParameter(0,0.);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
@@ -209,16 +249,15 @@ void SetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixXcd mtx_
             func->SetParameter(2*mode,1.);
         }
         Hist_Data_Eigenvector.Fit("func","","",MSCL_plot_lower,MSCL_plot_upper);
-
-        first_index = (2*NthEigenvector-2)*(1+2*n_fourier_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",func->GetParameter(0),0.001);
+        first_index = (4*NthEigenvector-4)*(1+2*n_fourier_modes)+(NthEigenvector-1);
+        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",func->GetParameter(0),0.01);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
-            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]", func->GetParameter(2*mode-1), 0.001);
-            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]", func->GetParameter(2*mode), 0.001);
+            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]", func->GetParameter(2*mode-1), 0.01);
+            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]", func->GetParameter(2*mode), 0.01);
         }
 
-        fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().inverse().row(mtx_input.cols()-NthEigenvector));
+        fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().col(mtx_input.cols()-NthEigenvector).imag());
         func->SetParameter(0,0.);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
@@ -226,18 +265,50 @@ void SetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixXcd mtx_
             func->SetParameter(2*mode,1.);
         }
         Hist_Data_Eigenvector.Fit("func","","",MSCL_plot_lower,MSCL_plot_upper);
-
-        first_index = (2*NthEigenvector-1)*(1+2*n_fourier_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",func->GetParameter(0),0.001);
+        first_index = (4*NthEigenvector-3)*(1+2*n_fourier_modes)+(NthEigenvector-1);
+        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",func->GetParameter(0),0.01);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
-            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]", func->GetParameter(2*mode-1), 0.001);
-            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]", func->GetParameter(2*mode), 0.001);
+            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]", func->GetParameter(2*mode-1), 0.01);
+            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]", func->GetParameter(2*mode), 0.01);
+        }
+
+        fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().inverse().row(mtx_input.cols()-NthEigenvector).real());
+        func->SetParameter(0,0.);
+        for (int mode=1;mode<=n_fourier_modes;mode++)
+        {
+            func->SetParameter(2*mode-1,1.);
+            func->SetParameter(2*mode,1.);
+        }
+        Hist_Data_Eigenvector.Fit("func","","",MSCL_plot_lower,MSCL_plot_upper);
+        first_index = (4*NthEigenvector-2)*(1+2*n_fourier_modes)+(NthEigenvector-1);
+        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",func->GetParameter(0),0.01);
+        for (int mode=1;mode<=n_fourier_modes;mode++)
+        {
+            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]", func->GetParameter(2*mode-1), 0.01);
+            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]", func->GetParameter(2*mode), 0.01);
+        }
+
+        fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().inverse().row(mtx_input.cols()-NthEigenvector).imag());
+        func->SetParameter(0,0.);
+        for (int mode=1;mode<=n_fourier_modes;mode++)
+        {
+            func->SetParameter(2*mode-1,1.);
+            func->SetParameter(2*mode,1.);
+        }
+        Hist_Data_Eigenvector.Fit("func","","",MSCL_plot_lower,MSCL_plot_upper);
+        first_index = (4*NthEigenvector-1)*(1+2*n_fourier_modes)+(NthEigenvector-1);
+        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",func->GetParameter(0),0.01);
+        for (int mode=1;mode<=n_fourier_modes;mode++)
+        {
+            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]", func->GetParameter(2*mode-1), 0.01);
+            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]", func->GetParameter(2*mode), 0.01);
         }
 
         // eigenvalues
-        first_index = (2*NthEigenvector-0)*(1+2*n_fourier_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index, "par["+std::to_string(int(first_index))+"]", eigensolver_data.eigenvalues()(N_bins_for_deconv-NthEigenvector).real(), 0.001);
+        first_index = (4*NthEigenvector-0)*(1+2*n_fourier_modes)+(NthEigenvector-1);
+        Chi2Minimizer->SetVariable(first_index, "par["+std::to_string(int(first_index))+"]", eigensolver_data.eigenvalues()(N_bins_for_deconv-NthEigenvector).real(), 0.01);
+        Chi2Minimizer->FixVariable(first_index);
     }
 
 }
@@ -293,9 +364,9 @@ MatrixXcd MatrixBlind(MatrixXcd mtx_input, int binx_lower, int biny_lower, int b
     }
     return matrix;
 }
-VectorXcd fillVector(TH1D* hist)
+VectorXd fillVector(TH1D* hist)
 {
-    VectorXcd vtr(hist->GetNbinsX());
+    VectorXd vtr(hist->GetNbinsX());
     for (int binx=0;binx<hist->GetNbinsX();binx++)
     {
         vtr(binx) = hist->GetBinContent(binx+1);
@@ -376,24 +447,42 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
     TelElev_upper = tel_elev_upper_input;
 
     vector<TH2D> Hist_Bkgd_MSCLW;
-    vector<TH1D> Hist_Data_Eigenvector_0;
-    vector<TH1D> Hist_Fit_Eigenvector_0;
-    vector<TH1D> Hist_Dark_Eigenvector_0;
-    vector<TH1D> Hist_Data_Eigenvector_1;
-    vector<TH1D> Hist_Fit_Eigenvector_1;
-    vector<TH1D> Hist_Dark_Eigenvector_1;
-    vector<TH1D> Hist_Data_Eigenvector_2;
-    vector<TH1D> Hist_Fit_Eigenvector_2;
-    vector<TH1D> Hist_Dark_Eigenvector_2;
-    vector<TH1D> Hist_Data_InvEigenvector_0;
-    vector<TH1D> Hist_Fit_InvEigenvector_0;
-    vector<TH1D> Hist_Dark_InvEigenvector_0;
-    vector<TH1D> Hist_Data_InvEigenvector_1;
-    vector<TH1D> Hist_Fit_InvEigenvector_1;
-    vector<TH1D> Hist_Dark_InvEigenvector_1;
-    vector<TH1D> Hist_Data_InvEigenvector_2;
-    vector<TH1D> Hist_Fit_InvEigenvector_2;
-    vector<TH1D> Hist_Dark_InvEigenvector_2;
+    vector<TH1D> Hist_Data_EigenvectorReal_0;
+    vector<TH1D> Hist_Fit_EigenvectorReal_0;
+    vector<TH1D> Hist_Dark_EigenvectorReal_0;
+    vector<TH1D> Hist_Data_EigenvectorReal_1;
+    vector<TH1D> Hist_Fit_EigenvectorReal_1;
+    vector<TH1D> Hist_Dark_EigenvectorReal_1;
+    vector<TH1D> Hist_Data_EigenvectorReal_2;
+    vector<TH1D> Hist_Fit_EigenvectorReal_2;
+    vector<TH1D> Hist_Dark_EigenvectorReal_2;
+    vector<TH1D> Hist_Data_InvEigenvectorReal_0;
+    vector<TH1D> Hist_Fit_InvEigenvectorReal_0;
+    vector<TH1D> Hist_Dark_InvEigenvectorReal_0;
+    vector<TH1D> Hist_Data_InvEigenvectorReal_1;
+    vector<TH1D> Hist_Fit_InvEigenvectorReal_1;
+    vector<TH1D> Hist_Dark_InvEigenvectorReal_1;
+    vector<TH1D> Hist_Data_InvEigenvectorReal_2;
+    vector<TH1D> Hist_Fit_InvEigenvectorReal_2;
+    vector<TH1D> Hist_Dark_InvEigenvectorReal_2;
+    vector<TH1D> Hist_Data_EigenvectorImag_0;
+    vector<TH1D> Hist_Fit_EigenvectorImag_0;
+    vector<TH1D> Hist_Dark_EigenvectorImag_0;
+    vector<TH1D> Hist_Data_EigenvectorImag_1;
+    vector<TH1D> Hist_Fit_EigenvectorImag_1;
+    vector<TH1D> Hist_Dark_EigenvectorImag_1;
+    vector<TH1D> Hist_Data_EigenvectorImag_2;
+    vector<TH1D> Hist_Fit_EigenvectorImag_2;
+    vector<TH1D> Hist_Dark_EigenvectorImag_2;
+    vector<TH1D> Hist_Data_InvEigenvectorImag_0;
+    vector<TH1D> Hist_Fit_InvEigenvectorImag_0;
+    vector<TH1D> Hist_Dark_InvEigenvectorImag_0;
+    vector<TH1D> Hist_Data_InvEigenvectorImag_1;
+    vector<TH1D> Hist_Fit_InvEigenvectorImag_1;
+    vector<TH1D> Hist_Dark_InvEigenvectorImag_1;
+    vector<TH1D> Hist_Data_InvEigenvectorImag_2;
+    vector<TH1D> Hist_Fit_InvEigenvectorImag_2;
+    vector<TH1D> Hist_Dark_InvEigenvectorImag_2;
     TFile InputDataFile("output_Jul16/Netflix_"+TString(target_data)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root");
     for (int e=0;e<N_energy_bins;e++) 
     {
@@ -408,24 +497,42 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         TH2D* Hist_Data = (TH2D*)InputDataFile.Get(filename_data);
         TH2D* Hist_Dark = (TH2D*)InputDataFile.Get(filename_dark);
         Hist_Bkgd_MSCLW.push_back(TH2D("Hist_Bkgd_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-        Hist_Data_Eigenvector_0.push_back(TH1D("Hist_Data_Eigenvector_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Fit_Eigenvector_0.push_back(TH1D("Hist_Fit_Eigenvector_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Dark_Eigenvector_0.push_back(TH1D("Hist_Dark_Eigenvector_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Data_Eigenvector_1.push_back(TH1D("Hist_Data_Eigenvector_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Fit_Eigenvector_1.push_back(TH1D("Hist_Fit_Eigenvector_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Dark_Eigenvector_1.push_back(TH1D("Hist_Dark_Eigenvector_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Data_Eigenvector_2.push_back(TH1D("Hist_Data_Eigenvector_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Fit_Eigenvector_2.push_back(TH1D("Hist_Fit_Eigenvector_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Dark_Eigenvector_2.push_back(TH1D("Hist_Dark_Eigenvector_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Data_InvEigenvector_0.push_back(TH1D("Hist_Data_InvEigenvector_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Fit_InvEigenvector_0.push_back(TH1D("Hist_Fit_InvEigenvector_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Dark_InvEigenvector_0.push_back(TH1D("Hist_Dark_InvEigenvector_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Data_InvEigenvector_1.push_back(TH1D("Hist_Data_InvEigenvector_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Fit_InvEigenvector_1.push_back(TH1D("Hist_Fit_InvEigenvector_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Dark_InvEigenvector_1.push_back(TH1D("Hist_Dark_InvEigenvector_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Data_InvEigenvector_2.push_back(TH1D("Hist_Data_InvEigenvector_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Fit_InvEigenvector_2.push_back(TH1D("Hist_Fit_InvEigenvector_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
-        Hist_Dark_InvEigenvector_2.push_back(TH1D("Hist_Dark_InvEigenvector_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Data_EigenvectorReal_0.push_back(TH1D("Hist_Data_EigenvectorReal_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Fit_EigenvectorReal_0.push_back(TH1D("Hist_Fit_EigenvectorReal_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Dark_EigenvectorReal_0.push_back(TH1D("Hist_Dark_EigenvectorReal_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Data_EigenvectorReal_1.push_back(TH1D("Hist_Data_EigenvectorReal_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Fit_EigenvectorReal_1.push_back(TH1D("Hist_Fit_EigenvectorReal_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Dark_EigenvectorReal_1.push_back(TH1D("Hist_Dark_EigenvectorReal_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Data_EigenvectorReal_2.push_back(TH1D("Hist_Data_EigenvectorReal_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Fit_EigenvectorReal_2.push_back(TH1D("Hist_Fit_EigenvectorReal_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Dark_EigenvectorReal_2.push_back(TH1D("Hist_Dark_EigenvectorReal_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Data_InvEigenvectorReal_0.push_back(TH1D("Hist_Data_InvEigenvectorReal_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Fit_InvEigenvectorReal_0.push_back(TH1D("Hist_Fit_InvEigenvectorReal_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Dark_InvEigenvectorReal_0.push_back(TH1D("Hist_Dark_InvEigenvectorReal_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Data_InvEigenvectorReal_1.push_back(TH1D("Hist_Data_InvEigenvectorReal_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Fit_InvEigenvectorReal_1.push_back(TH1D("Hist_Fit_InvEigenvectorReal_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Dark_InvEigenvectorReal_1.push_back(TH1D("Hist_Dark_InvEigenvectorReal_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Data_InvEigenvectorReal_2.push_back(TH1D("Hist_Data_InvEigenvectorReal_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Fit_InvEigenvectorReal_2.push_back(TH1D("Hist_Fit_InvEigenvectorReal_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Dark_InvEigenvectorReal_2.push_back(TH1D("Hist_Dark_InvEigenvectorReal_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Data_EigenvectorImag_0.push_back(TH1D("Hist_Data_EigenvectorImag_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Fit_EigenvectorImag_0.push_back(TH1D("Hist_Fit_EigenvectorImag_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Dark_EigenvectorImag_0.push_back(TH1D("Hist_Dark_EigenvectorImag_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Data_EigenvectorImag_1.push_back(TH1D("Hist_Data_EigenvectorImag_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Fit_EigenvectorImag_1.push_back(TH1D("Hist_Fit_EigenvectorImag_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Dark_EigenvectorImag_1.push_back(TH1D("Hist_Dark_EigenvectorImag_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Data_EigenvectorImag_2.push_back(TH1D("Hist_Data_EigenvectorImag_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Fit_EigenvectorImag_2.push_back(TH1D("Hist_Fit_EigenvectorImag_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Dark_EigenvectorImag_2.push_back(TH1D("Hist_Dark_EigenvectorImag_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Data_InvEigenvectorImag_0.push_back(TH1D("Hist_Data_InvEigenvectorImag_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Fit_InvEigenvectorImag_0.push_back(TH1D("Hist_Fit_InvEigenvectorImag_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Dark_InvEigenvectorImag_0.push_back(TH1D("Hist_Dark_InvEigenvectorImag_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Data_InvEigenvectorImag_1.push_back(TH1D("Hist_Data_InvEigenvectorImag_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Fit_InvEigenvectorImag_1.push_back(TH1D("Hist_Fit_InvEigenvectorImag_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Dark_InvEigenvectorImag_1.push_back(TH1D("Hist_Dark_InvEigenvectorImag_1_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Data_InvEigenvectorImag_2.push_back(TH1D("Hist_Data_InvEigenvectorImag_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Fit_InvEigenvectorImag_2.push_back(TH1D("Hist_Fit_InvEigenvectorImag_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
+        Hist_Dark_InvEigenvectorImag_2.push_back(TH1D("Hist_Dark_InvEigenvectorImag_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
 
         if (energy_bins[e]<237) continue;
         if (energy_bins[e]>=282) continue;
@@ -445,25 +552,43 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
 
         n_fourier_modes = 6;
         ComplexEigenSolver<MatrixXcd> eigensolver_data(mtx_data);
-        fill1DHistogram(&Hist_Data_Eigenvector_0.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-1));
-        fill1DHistogram(&Hist_Data_Eigenvector_1.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-2));
-        fill1DHistogram(&Hist_Data_Eigenvector_2.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-3));
-        fill1DHistogram(&Hist_Data_InvEigenvector_0.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-1));
-        fill1DHistogram(&Hist_Data_InvEigenvector_1.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-2));
-        fill1DHistogram(&Hist_Data_InvEigenvector_2.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-3));
-        FitEigenvector(&Hist_Data_Eigenvector_0.at(e),&Hist_Fit_Eigenvector_0.at(e));
-        FitEigenvector(&Hist_Data_Eigenvector_1.at(e),&Hist_Fit_Eigenvector_1.at(e));
-        FitEigenvector(&Hist_Data_Eigenvector_2.at(e),&Hist_Fit_Eigenvector_2.at(e));
-        FitEigenvector(&Hist_Data_InvEigenvector_0.at(e),&Hist_Fit_InvEigenvector_0.at(e));
-        FitEigenvector(&Hist_Data_InvEigenvector_1.at(e),&Hist_Fit_InvEigenvector_1.at(e));
-        FitEigenvector(&Hist_Data_InvEigenvector_2.at(e),&Hist_Fit_InvEigenvector_2.at(e));
         ComplexEigenSolver<MatrixXcd> eigensolver_dark(mtx_dark);
-        fill1DHistogram(&Hist_Dark_Eigenvector_0.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-1));
-        fill1DHistogram(&Hist_Dark_Eigenvector_1.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-2));
-        fill1DHistogram(&Hist_Dark_Eigenvector_2.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-3));
-        fill1DHistogram(&Hist_Dark_InvEigenvector_0.at(e),eigensolver_dark.eigenvectors().inverse().row(mtx_data.cols()-1));
-        fill1DHistogram(&Hist_Dark_InvEigenvector_1.at(e),eigensolver_dark.eigenvectors().inverse().row(mtx_data.cols()-2));
-        fill1DHistogram(&Hist_Dark_InvEigenvector_2.at(e),eigensolver_dark.eigenvectors().inverse().row(mtx_data.cols()-3));
+        fill1DHistogram(&Hist_Data_EigenvectorReal_0.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-1).real());
+        fill1DHistogram(&Hist_Data_EigenvectorReal_1.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-2).real());
+        fill1DHistogram(&Hist_Data_EigenvectorReal_2.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-3).real());
+        fill1DHistogram(&Hist_Data_InvEigenvectorReal_0.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-1).real());
+        fill1DHistogram(&Hist_Data_InvEigenvectorReal_1.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-2).real());
+        fill1DHistogram(&Hist_Data_InvEigenvectorReal_2.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-3).real());
+        FitEigenvector(&Hist_Data_EigenvectorReal_0.at(e),&Hist_Fit_EigenvectorReal_0.at(e));
+        FitEigenvector(&Hist_Data_EigenvectorReal_1.at(e),&Hist_Fit_EigenvectorReal_1.at(e));
+        FitEigenvector(&Hist_Data_EigenvectorReal_2.at(e),&Hist_Fit_EigenvectorReal_2.at(e));
+        FitEigenvector(&Hist_Data_InvEigenvectorReal_0.at(e),&Hist_Fit_InvEigenvectorReal_0.at(e));
+        FitEigenvector(&Hist_Data_InvEigenvectorReal_1.at(e),&Hist_Fit_InvEigenvectorReal_1.at(e));
+        FitEigenvector(&Hist_Data_InvEigenvectorReal_2.at(e),&Hist_Fit_InvEigenvectorReal_2.at(e));
+        fill1DHistogram(&Hist_Dark_EigenvectorReal_0.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-1).real());
+        fill1DHistogram(&Hist_Dark_EigenvectorReal_1.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-2).real());
+        fill1DHistogram(&Hist_Dark_EigenvectorReal_2.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-3).real());
+        fill1DHistogram(&Hist_Dark_InvEigenvectorReal_0.at(e),eigensolver_dark.eigenvectors().inverse().row(mtx_data.cols()-1).real());
+        fill1DHistogram(&Hist_Dark_InvEigenvectorReal_1.at(e),eigensolver_dark.eigenvectors().inverse().row(mtx_data.cols()-2).real());
+        fill1DHistogram(&Hist_Dark_InvEigenvectorReal_2.at(e),eigensolver_dark.eigenvectors().inverse().row(mtx_data.cols()-3).real());
+        fill1DHistogram(&Hist_Data_EigenvectorImag_0.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-1).imag());
+        fill1DHistogram(&Hist_Data_EigenvectorImag_1.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-2).imag());
+        fill1DHistogram(&Hist_Data_EigenvectorImag_2.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-3).imag());
+        fill1DHistogram(&Hist_Data_InvEigenvectorImag_0.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-1).imag());
+        fill1DHistogram(&Hist_Data_InvEigenvectorImag_1.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-2).imag());
+        fill1DHistogram(&Hist_Data_InvEigenvectorImag_2.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-3).imag());
+        FitEigenvector(&Hist_Data_EigenvectorImag_0.at(e),&Hist_Fit_EigenvectorImag_0.at(e));
+        FitEigenvector(&Hist_Data_EigenvectorImag_1.at(e),&Hist_Fit_EigenvectorImag_1.at(e));
+        FitEigenvector(&Hist_Data_EigenvectorImag_2.at(e),&Hist_Fit_EigenvectorImag_2.at(e));
+        FitEigenvector(&Hist_Data_InvEigenvectorImag_0.at(e),&Hist_Fit_InvEigenvectorImag_0.at(e));
+        FitEigenvector(&Hist_Data_InvEigenvectorImag_1.at(e),&Hist_Fit_InvEigenvectorImag_1.at(e));
+        FitEigenvector(&Hist_Data_InvEigenvectorImag_2.at(e),&Hist_Fit_InvEigenvectorImag_2.at(e));
+        fill1DHistogram(&Hist_Dark_EigenvectorImag_0.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-1).imag());
+        fill1DHistogram(&Hist_Dark_EigenvectorImag_1.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-2).imag());
+        fill1DHistogram(&Hist_Dark_EigenvectorImag_2.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-3).imag());
+        fill1DHistogram(&Hist_Dark_InvEigenvectorImag_0.at(e),eigensolver_dark.eigenvectors().inverse().row(mtx_data.cols()-1).imag());
+        fill1DHistogram(&Hist_Dark_InvEigenvectorImag_1.at(e),eigensolver_dark.eigenvectors().inverse().row(mtx_data.cols()-2).imag());
+        fill1DHistogram(&Hist_Dark_InvEigenvectorImag_2.at(e),eigensolver_dark.eigenvectors().inverse().row(mtx_data.cols()-3).imag());
 
         mtx_data_bkgd = mtx_dark;
 
@@ -496,84 +621,85 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         // kVectorBFGS2, kSteepestDescent
 
         std::cout << "++++++++++++++++++++ Searching for 1st eigenvector... ++++++++++++++++++++" << std::endl;
-        //n_fourier_modes = 6;
-        //FitEigenvector(&Hist_Data_Eigenvector_0.at(e),&Hist_Fit_Eigenvector_0.at(e));
-        //FitEigenvector(&Hist_Data_InvEigenvector_0.at(e),&Hist_Fit_InvEigenvector_0.at(e));
-        n_fourier_modes = 6;
+        n_fourier_modes = 8;
         NumberOfEigenvectors = 3;
         ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
         //ROOT::Minuit2::Minuit2Minimizer Chi2Minimizer_1st( ROOT::Minuit2::kMigrad );
         //Chi2Minimizer_1st.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
         //Chi2Minimizer_1st.SetMaxIterations(100000); // for GSL
         //Chi2Minimizer_1st.SetTolerance(0.001);
-        Chi2Minimizer_1st.SetMaxFunctionCalls(1000); // for Minuit/Minuit2
-        Chi2Minimizer_1st.SetMaxIterations(1000); // for GSL
-        Chi2Minimizer_1st.SetTolerance(0.001);
-        ROOT::Math::Functor Chi2Func_1st(&Chi2Function,2*NumberOfEigenvectors*(1+2*n_fourier_modes)+NumberOfEigenvectors); 
+        Chi2Minimizer_1st.SetMaxFunctionCalls(100); // for Minuit/Minuit2
+        Chi2Minimizer_1st.SetMaxIterations(100); // for GSL
+        Chi2Minimizer_1st.SetTolerance(0.01);
+        ROOT::Math::Functor Chi2Func_1st(&Chi2Function,4*NumberOfEigenvectors*(1+2*n_fourier_modes)+NumberOfEigenvectors); 
         Chi2Minimizer_1st.SetFunction(Chi2Func_1st);
         SetInitialVariables(&Chi2Minimizer_1st, mtx_dark);
-        //Chi2Minimizer_1st.Minimize();
+        Chi2Minimizer_1st.Minimize();
         const double *par = Chi2Minimizer_1st.X();
-        // build eigenvector matrix
-        for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
-        {
-            col_fix = N_bins_for_deconv-NthEigenvector;
-            first_index = (2*NthEigenvector-2)*(1+2*n_fourier_modes)+(NthEigenvector-1);
-            std::cout << "first_index = " << first_index << std::endl;
-            std::cout << "parameter = " << par[first_index] << std::endl;
-            for (int row=0;row<N_bins_for_deconv;row++)
-            {
-                double x = double(row+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
-                mtx_eigenvector(row,col_fix) = par[first_index]/2.;
-                for (int mode=1;mode<=n_fourier_modes;mode++)
-                {
-                    mtx_eigenvector(row,col_fix) += par[first_index+2*mode-1]*cos(double(mode)*x);
-                    mtx_eigenvector(row,col_fix) += par[first_index+2*mode]*sin(double(mode)*x);
-                }
-            }
-            row_fix = N_bins_for_deconv-NthEigenvector;
-            first_index = (2*NthEigenvector-1)*(1+2*n_fourier_modes)+(NthEigenvector-1);
-            std::cout << "first_index = " << first_index << std::endl;
-            std::cout << "parameter = " << par[first_index] << std::endl;
-            for (int col=0;col<N_bins_for_deconv;col++)
-            {
-                double x = double(col+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
-                mtx_eigenvector_inv(row_fix,col) = par[first_index]/2.;
-                for (int mode=1;mode<=n_fourier_modes;mode++)
-                {
-                    mtx_eigenvector_inv(row_fix,col) += par[first_index+2*mode-1]*cos(double(mode)*x);
-                    mtx_eigenvector_inv(row_fix,col) += par[first_index+2*mode]*sin(double(mode)*x);
-                }
-            }
-            // build eigenvalue matrix
-            first_index = (2*NthEigenvector-0)*(1+2*n_fourier_modes)+(NthEigenvector-1);
-            std::cout << "first_index = " << first_index << std::endl;
-            mtx_eigenvalue(N_bins_for_deconv-NthEigenvector,N_bins_for_deconv-NthEigenvector) = par[first_index];
-            std::cout << "Minimum: (" << par[first_index] << ") " << std::endl;
-        }
+        ParametrizeEigenvectors(par);
 
+        std::cout << "eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-1).transpose()" << std::endl;
+        std::cout << eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-1).transpose() << std::endl;
+        std::cout << "mtx_eigenvector_inv.row(mtx_data.cols()-1).transpose()" << std::endl;
+        std::cout << mtx_eigenvector_inv.row(mtx_data.cols()-1).transpose() << std::endl;
+        std::cout << "Hist_Data_InvEigenvectorReal_0.at(e).Print():" << std::endl;
+        Hist_Data_InvEigenvectorReal_0.at(e).Print("All");
 
-        fill1DHistogram(&Hist_Fit_Eigenvector_0.at(e),mtx_eigenvector.col(mtx_data.cols()-1));
-        fill1DHistogram(&Hist_Fit_Eigenvector_1.at(e),mtx_eigenvector.col(mtx_data.cols()-2));
-        fill1DHistogram(&Hist_Fit_Eigenvector_2.at(e),mtx_eigenvector.col(mtx_data.cols()-3));
-        fill1DHistogram(&Hist_Fit_InvEigenvector_0.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-1));
-        fill1DHistogram(&Hist_Fit_InvEigenvector_1.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-2));
-        fill1DHistogram(&Hist_Fit_InvEigenvector_2.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-3));
-        //mtx_eigenvector.col(mtx_data.cols()-1) = fillVector(&Hist_Data_Eigenvector_0.at(e));
-        //mtx_eigenvector.col(mtx_data.cols()-2) = fillVector(&Hist_Data_Eigenvector_1.at(e));
-        //mtx_eigenvector.col(mtx_data.cols()-3) = fillVector(&Hist_Data_Eigenvector_2.at(e));
-        //mtx_eigenvector_inv.col(mtx_data.cols()-1) = fillVector(&Hist_Data_InvEigenvector_0.at(e));
-        //mtx_eigenvector_inv.col(mtx_data.cols()-2) = fillVector(&Hist_Data_InvEigenvector_1.at(e));
-        //mtx_eigenvector_inv.col(mtx_data.cols()-3) = fillVector(&Hist_Data_InvEigenvector_2.at(e));
-        //mtx_eigenvector.col(mtx_data.cols()-1) = fillVector(&Hist_Fit_Eigenvector_0.at(e));
-        //mtx_eigenvector.col(mtx_data.cols()-2) = fillVector(&Hist_Fit_Eigenvector_1.at(e));
-        //mtx_eigenvector.col(mtx_data.cols()-3) = fillVector(&Hist_Fit_Eigenvector_2.at(e));
-        //mtx_eigenvector_inv.col(mtx_data.cols()-1) = fillVector(&Hist_Fit_InvEigenvector_0.at(e));
-        //mtx_eigenvector_inv.col(mtx_data.cols()-2) = fillVector(&Hist_Fit_InvEigenvector_1.at(e));
-        //mtx_eigenvector_inv.col(mtx_data.cols()-3) = fillVector(&Hist_Fit_InvEigenvector_2.at(e));
+        fill1DHistogram(&Hist_Fit_EigenvectorReal_0.at(e),mtx_eigenvector.col(mtx_data.cols()-1).real());
+        fill1DHistogram(&Hist_Fit_EigenvectorReal_1.at(e),mtx_eigenvector.col(mtx_data.cols()-2).real());
+        fill1DHistogram(&Hist_Fit_EigenvectorReal_2.at(e),mtx_eigenvector.col(mtx_data.cols()-3).real());
+        fill1DHistogram(&Hist_Fit_InvEigenvectorReal_0.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-1).real());
+        fill1DHistogram(&Hist_Fit_InvEigenvectorReal_1.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-2).real());
+        fill1DHistogram(&Hist_Fit_InvEigenvectorReal_2.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-3).real());
+        fill1DHistogram(&Hist_Fit_EigenvectorImag_0.at(e),mtx_eigenvector.col(mtx_data.cols()-1).imag());
+        fill1DHistogram(&Hist_Fit_EigenvectorImag_1.at(e),mtx_eigenvector.col(mtx_data.cols()-2).imag());
+        fill1DHistogram(&Hist_Fit_EigenvectorImag_2.at(e),mtx_eigenvector.col(mtx_data.cols()-3).imag());
+        fill1DHistogram(&Hist_Fit_InvEigenvectorImag_0.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-1).imag());
+        fill1DHistogram(&Hist_Fit_InvEigenvectorImag_1.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-2).imag());
+        fill1DHistogram(&Hist_Fit_InvEigenvectorImag_2.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-3).imag());
+        //
+        //mtx_eigenvector.col(mtx_data.cols()-1).real() = fillVector(&Hist_Data_EigenvectorReal_0.at(e));
+        //mtx_eigenvector.col(mtx_data.cols()-2).real() = fillVector(&Hist_Data_EigenvectorReal_1.at(e));
+        //mtx_eigenvector.col(mtx_data.cols()-3).real() = fillVector(&Hist_Data_EigenvectorReal_2.at(e));
+        //mtx_eigenvector_inv.row(mtx_data.cols()-1).real() = fillVector(&Hist_Data_InvEigenvectorReal_0.at(e));
+        //mtx_eigenvector_inv.row(mtx_data.cols()-2).real() = fillVector(&Hist_Data_InvEigenvectorReal_1.at(e));
+        //mtx_eigenvector_inv.row(mtx_data.cols()-3).real() = fillVector(&Hist_Data_InvEigenvectorReal_2.at(e));
+        //mtx_eigenvector.col(mtx_data.cols()-1).imag() = fillVector(&Hist_Data_EigenvectorImag_0.at(e));
+        //mtx_eigenvector.col(mtx_data.cols()-2).imag() = fillVector(&Hist_Data_EigenvectorImag_1.at(e));
+        //mtx_eigenvector.col(mtx_data.cols()-3).imag() = fillVector(&Hist_Data_EigenvectorImag_2.at(e));
+        //mtx_eigenvector_inv.row(mtx_data.cols()-1).imag() = fillVector(&Hist_Data_InvEigenvectorImag_0.at(e));
+        //mtx_eigenvector_inv.row(mtx_data.cols()-2).imag() = fillVector(&Hist_Data_InvEigenvectorImag_1.at(e));
+        //mtx_eigenvector_inv.row(mtx_data.cols()-3).imag() = fillVector(&Hist_Data_InvEigenvectorImag_2.at(e));
+        //std::cout << "mtx_eigenvector_inv.row(mtx_data.cols()-1)" << std::endl;
+        //std::cout << mtx_eigenvector_inv.row(mtx_data.cols()-1) << std::endl;
+        //
+        //mtx_eigenvector.col(mtx_data.cols()-1).real() = fillVector(&Hist_Fit_EigenvectorReal_0.at(e));
+        //mtx_eigenvector.col(mtx_data.cols()-2).real() = fillVector(&Hist_Fit_EigenvectorReal_1.at(e));
+        //mtx_eigenvector.col(mtx_data.cols()-3).real() = fillVector(&Hist_Fit_EigenvectorReal_2.at(e));
+        //mtx_eigenvector_inv.row(mtx_data.cols()-1).real() = fillVector(&Hist_Fit_InvEigenvectorReal_0.at(e));
+        //mtx_eigenvector_inv.row(mtx_data.cols()-2).real() = fillVector(&Hist_Fit_InvEigenvectorReal_1.at(e));
+        //mtx_eigenvector_inv.row(mtx_data.cols()-3).real() = fillVector(&Hist_Fit_InvEigenvectorReal_2.at(e));
+        //mtx_eigenvector.col(mtx_data.cols()-1).imag() = fillVector(&Hist_Fit_EigenvectorImag_0.at(e));
+        //mtx_eigenvector.col(mtx_data.cols()-2).imag() = fillVector(&Hist_Fit_EigenvectorImag_1.at(e));
+        //mtx_eigenvector.col(mtx_data.cols()-3).imag() = fillVector(&Hist_Fit_EigenvectorImag_2.at(e));
+        //mtx_eigenvector_inv.row(mtx_data.cols()-1).imag() = fillVector(&Hist_Fit_InvEigenvectorImag_0.at(e));
+        //mtx_eigenvector_inv.row(mtx_data.cols()-2).imag() = fillVector(&Hist_Fit_InvEigenvectorImag_1.at(e));
+        //mtx_eigenvector_inv.row(mtx_data.cols()-3).imag() = fillVector(&Hist_Fit_InvEigenvectorImag_2.at(e));
+        //
+        //for (int col=0;col<N_bins_for_deconv;col++)
+        //{
+        //    for (int row=0;row<N_bins_for_deconv;row++)
+        //    {
+        //        mtx_eigenvector(row,col) = 0.;
+        //        mtx_eigenvector_inv(row,col) = 0.;
+        //    }
+        //}
         //mtx_eigenvector.col(mtx_data.cols()-1) = eigensolver_data.eigenvectors().col(mtx_data.cols()-1);
         //mtx_eigenvector.col(mtx_data.cols()-2) = eigensolver_data.eigenvectors().col(mtx_data.cols()-2);
         //mtx_eigenvector.col(mtx_data.cols()-3) = eigensolver_data.eigenvectors().col(mtx_data.cols()-3);
+        //mtx_eigenvector_inv.row(mtx_data.cols()-1) = eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-1);
+        //mtx_eigenvector_inv.row(mtx_data.cols()-2) = eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-2);
+        //mtx_eigenvector_inv.row(mtx_data.cols()-3) = eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-3);
         //for (int i=0;i<mtx_dark.cols();i++)
         //{
         //    for (int j=0;j<mtx_dark.rows();j++)
@@ -603,24 +729,42 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
     for (int e=0;e<N_energy_bins;e++)
     {
         Hist_Bkgd_MSCLW.at(e).Write();
-        Hist_Data_Eigenvector_0.at(e).Write();
-        Hist_Fit_Eigenvector_0.at(e).Write();
-        Hist_Dark_Eigenvector_0.at(e).Write();
-        Hist_Data_Eigenvector_1.at(e).Write();
-        Hist_Fit_Eigenvector_1.at(e).Write();
-        Hist_Dark_Eigenvector_1.at(e).Write();
-        Hist_Data_Eigenvector_2.at(e).Write();
-        Hist_Fit_Eigenvector_2.at(e).Write();
-        Hist_Dark_Eigenvector_2.at(e).Write();
-        Hist_Data_InvEigenvector_0.at(e).Write();
-        Hist_Fit_InvEigenvector_0.at(e).Write();
-        Hist_Dark_InvEigenvector_0.at(e).Write();
-        Hist_Data_InvEigenvector_1.at(e).Write();
-        Hist_Fit_InvEigenvector_1.at(e).Write();
-        Hist_Dark_InvEigenvector_1.at(e).Write();
-        Hist_Data_InvEigenvector_2.at(e).Write();
-        Hist_Fit_InvEigenvector_2.at(e).Write();
-        Hist_Dark_InvEigenvector_2.at(e).Write();
+        Hist_Data_EigenvectorReal_0.at(e).Write();
+        Hist_Fit_EigenvectorReal_0.at(e).Write();
+        Hist_Dark_EigenvectorReal_0.at(e).Write();
+        Hist_Data_EigenvectorReal_1.at(e).Write();
+        Hist_Fit_EigenvectorReal_1.at(e).Write();
+        Hist_Dark_EigenvectorReal_1.at(e).Write();
+        Hist_Data_EigenvectorReal_2.at(e).Write();
+        Hist_Fit_EigenvectorReal_2.at(e).Write();
+        Hist_Dark_EigenvectorReal_2.at(e).Write();
+        Hist_Data_InvEigenvectorReal_0.at(e).Write();
+        Hist_Fit_InvEigenvectorReal_0.at(e).Write();
+        Hist_Dark_InvEigenvectorReal_0.at(e).Write();
+        Hist_Data_InvEigenvectorReal_1.at(e).Write();
+        Hist_Fit_InvEigenvectorReal_1.at(e).Write();
+        Hist_Dark_InvEigenvectorReal_1.at(e).Write();
+        Hist_Data_InvEigenvectorReal_2.at(e).Write();
+        Hist_Fit_InvEigenvectorReal_2.at(e).Write();
+        Hist_Dark_InvEigenvectorReal_2.at(e).Write();
+        Hist_Data_EigenvectorImag_0.at(e).Write();
+        Hist_Fit_EigenvectorImag_0.at(e).Write();
+        Hist_Dark_EigenvectorImag_0.at(e).Write();
+        Hist_Data_EigenvectorImag_1.at(e).Write();
+        Hist_Fit_EigenvectorImag_1.at(e).Write();
+        Hist_Dark_EigenvectorImag_1.at(e).Write();
+        Hist_Data_EigenvectorImag_2.at(e).Write();
+        Hist_Fit_EigenvectorImag_2.at(e).Write();
+        Hist_Dark_EigenvectorImag_2.at(e).Write();
+        Hist_Data_InvEigenvectorImag_0.at(e).Write();
+        Hist_Fit_InvEigenvectorImag_0.at(e).Write();
+        Hist_Dark_InvEigenvectorImag_0.at(e).Write();
+        Hist_Data_InvEigenvectorImag_1.at(e).Write();
+        Hist_Fit_InvEigenvectorImag_1.at(e).Write();
+        Hist_Dark_InvEigenvectorImag_1.at(e).Write();
+        Hist_Data_InvEigenvectorImag_2.at(e).Write();
+        Hist_Fit_InvEigenvectorImag_2.at(e).Write();
+        Hist_Dark_InvEigenvectorImag_2.at(e).Write();
     }
     OutputFile.Close();
 
