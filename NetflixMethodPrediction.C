@@ -170,7 +170,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_model)
             double weight = 1.;
             double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(-0.5);
             double dy = hist_data->GetYaxis()->GetBinCenter(by)-(-0.5);
-            double width = 1.0;
+            double width = 2.0;
             weight = exp(-0.5*dx*dx/(1.0*width*1.0*width))*exp(-0.5*dy*dy/(1.0*width*1.0*width));
             if (bx>=binx_blind || by>=biny_blind)
             {
@@ -1012,8 +1012,8 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
 
         //if (energy_bins[e]<237) continue;
         //if (energy_bins[e]>=282) continue;
-        if (energy_bins[e]<335) continue;
-        if (energy_bins[e]>=398) continue;
+        //if (energy_bins[e]<335) continue;
+        //if (energy_bins[e]>=398) continue;
 
         MatrixXcd mtx_data_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         MatrixXcd mtx_dark_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
