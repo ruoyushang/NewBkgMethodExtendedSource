@@ -66,6 +66,8 @@ MatrixXcd mtx_dark(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvector(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvector_inv(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvalue(N_bins_for_deconv,N_bins_for_deconv);
+ComplexEigenSolver<MatrixXcd> eigensolver_dark;
+ComplexEigenSolver<MatrixXcd> eigensolver_data;
 
 void fill2DHistogram(TH2D* hist,MatrixXcd mtx)
 {
@@ -297,8 +299,8 @@ void ParametrizeEigenvectors(const double *par)
         first_index = (4*NthEigenvector-0)*(N_bins_for_deconv)+(NthEigenvector-1);
         mtx_eigenvalue(N_bins_for_deconv-NthEigenvector,N_bins_for_deconv-NthEigenvector) = par[first_index];
     }
-    mtx_eigenvector = SmoothEigenvectors(mtx_eigenvector,0);
-    mtx_eigenvector_inv = SmoothEigenvectors(mtx_eigenvector_inv,1);
+    //mtx_eigenvector = SmoothEigenvectors(mtx_eigenvector,0);
+    //mtx_eigenvector_inv = SmoothEigenvectors(mtx_eigenvector_inv,1);
 }
 void FourierParametrizeEigenvectors(const double *par)
 {
@@ -311,6 +313,13 @@ void FourierParametrizeEigenvectors(const double *par)
             mtx_eigenvalue(row,col) = 0.;
         }
     }
+
+    for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
+    {
+        mtx_eigenvector.col(mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector);
+        mtx_eigenvector_inv.row(mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector);
+    }
+
     const std::complex<double> If(0.0, 1.0);
     // build eigenvector matrix
     int col_fix = 0;
@@ -323,7 +332,7 @@ void FourierParametrizeEigenvectors(const double *par)
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             double x = double(row+1)*(MSCW_plot_upper-MSCW_plot_lower)/double(N_bins_for_deconv)+MSCW_plot_lower;
-            double x_norm = 1*M_PI*(x-MSCW_plot_lower)/(MSCW_plot_upper-MSCW_plot_lower);
+            double x_norm = 1.0*M_PI*(x-MSCW_plot_lower)/(MSCW_plot_upper-MSCW_plot_lower);
             mtx_eigenvector(row,col_fix) += par[first_index]/2.;
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
@@ -335,7 +344,7 @@ void FourierParametrizeEigenvectors(const double *par)
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             double x = double(row+1)*(MSCW_plot_upper-MSCW_plot_lower)/double(N_bins_for_deconv)+MSCW_plot_lower;
-            double x_norm = 1*M_PI*(x-MSCW_plot_lower)/(MSCW_plot_upper-MSCW_plot_lower);
+            double x_norm = 1.0*M_PI*(x-MSCW_plot_lower)/(MSCW_plot_upper-MSCW_plot_lower);
             mtx_eigenvector(row,col_fix) += If*par[first_index]/2.;
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
@@ -348,7 +357,7 @@ void FourierParametrizeEigenvectors(const double *par)
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             double x = double(col+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
-            double x_norm = 1*M_PI*(x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
+            double x_norm = 1.0*M_PI*(x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
             mtx_eigenvector_inv(row_fix,col) += par[first_index]/2.;
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
@@ -360,7 +369,7 @@ void FourierParametrizeEigenvectors(const double *par)
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             double x = double(col+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
-            double x_norm = 1*M_PI*(x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
+            double x_norm = 1.0*M_PI*(x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
             mtx_eigenvector_inv(row_fix,col) += If*par[first_index]/2.;
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
@@ -452,7 +461,7 @@ double FourierEigenvectorFunction(Double_t *x, Double_t *par) {
     double xx =x[0];
     double func = 0.;
     func += par[0]/2.;
-    double x_norm = 1*M_PI*(xx-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
+    double x_norm = 1.0*M_PI*(xx-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
     for (int mode=1;mode<=n_fourier_modes;mode++)
     {
         func += par[2*mode-1]*cos(double(mode)*x_norm);
@@ -574,8 +583,8 @@ void TaylorSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixXc
 }
 void SetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixXcd mtx_dark, MatrixXcd mtx_data)
 {
-    ComplexEigenSolver<MatrixXcd> eigensolver_dark(mtx_dark);
-    ComplexEigenSolver<MatrixXcd> eigensolver_data(mtx_data);
+    eigensolver_dark = ComplexEigenSolver<MatrixXcd>(mtx_dark);
+    eigensolver_data = ComplexEigenSolver<MatrixXcd>(mtx_data);
     TH1D Hist_Dark_Eigenvector = TH1D("Hist_Dark_Eigenvector","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
     TH1D Hist_Data_Eigenvector = TH1D("Hist_Data_Eigenvector","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
 
@@ -583,13 +592,11 @@ void SetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixXcd mtx_
     int col_fix = 0;
     int row_fix = 0;
     int first_index = 0;
-    double scale_real = 0.;
-    double scale_imag = 0.;
+    double scale_real = 1.;
+    double scale_imag = 1.;
+    double scale_inv_real = 1.;
+    double scale_inv_imag = 1.;
     double step_size = 0.001;
-    double eigenvec_upper_limit = 10.0;
-    double eigenvec_lower_limit = 0.1;
-    double eigenval_upper_limit = 1.2;
-    double eigenval_lower_limit = 0.8;
 
     // 1st eigenvector
     
@@ -599,9 +606,37 @@ void SetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixXcd mtx_
         fill1DHistogram(&Hist_Dark_Eigenvector,eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector).real());
         fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector).real());
         scale_real = double(Hist_Data_Eigenvector.Integral())/double(Hist_Dark_Eigenvector.Integral());
+        double eigenvec_real_range = 0.01*double(Hist_Data_Eigenvector.Integral());
         fill1DHistogram(&Hist_Dark_Eigenvector,eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector).imag());
         fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector).imag());
         scale_imag = double(Hist_Data_Eigenvector.Integral())/double(Hist_Dark_Eigenvector.Integral());
+        double eigenvec_imag_range = 0.01*double(Hist_Data_Eigenvector.Integral());
+
+        fill1DHistogram(&Hist_Dark_Eigenvector,eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector).real());
+        fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector).real());
+        scale_inv_real = double(Hist_Data_Eigenvector.Integral())/double(Hist_Dark_Eigenvector.Integral());
+        double eigenvec_inv_real_range = 0.01*double(Hist_Data_Eigenvector.Integral());
+        fill1DHistogram(&Hist_Dark_Eigenvector,eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector).imag());
+        fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector).imag());
+        scale_inv_imag = double(Hist_Data_Eigenvector.Integral())/double(Hist_Dark_Eigenvector.Integral());
+        double eigenvec_inv_imag_range = 0.01*double(Hist_Data_Eigenvector.Integral());
+
+        //if (scale_real>0.) scale_real = 1.;
+        //else scale_real = -1.;
+        //if (scale_imag>0.) scale_imag = 1.;
+        //else scale_imag = -1.;
+        //if (scale_inv_real>0.) scale_inv_real = 1.;
+        //else scale_inv_real = -1.;
+        //if (scale_inv_imag>0.) scale_inv_imag = 1.;
+        //else scale_inv_imag = -1.;
+        std::cout << "Nth Eigenvec = " << NthEigenvector << std::endl;
+        std::cout << "scale_real = " << scale_real << std::endl;
+        std::cout << "scale_imag = " << scale_imag << std::endl;
+        std::cout << "scale_inv_real = " << scale_inv_real << std::endl;
+        std::cout << "scale_inv_imag = " << scale_inv_imag << std::endl;
+
+        double eigenval_upper_limit = 1.0;
+        double eigenval_lower_limit = 1.0;
 
         col_fix = N_bins_for_deconv-NthEigenvector;
         first_index = (4*NthEigenvector-4)*(N_bins_for_deconv)+(NthEigenvector-1);
@@ -609,29 +644,29 @@ void SetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixXcd mtx_
         {
             double initial_par = scale_real*eigensolver_dark.eigenvectors().col(col_fix)(row).real();
             Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",initial_par,step_size);
-            Chi2Minimizer->SetVariableLimits(first_index+row,initial_par*eigenvec_lower_limit,initial_par*eigenvec_upper_limit);
+            Chi2Minimizer->SetVariableLimits(first_index+row,initial_par-eigenvec_real_range,initial_par+eigenvec_real_range);
         }
         first_index = (4*NthEigenvector-3)*(N_bins_for_deconv)+(NthEigenvector-1);
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             double initial_par = scale_imag*eigensolver_dark.eigenvectors().col(col_fix)(row).imag();
             Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",initial_par,step_size);
-            Chi2Minimizer->SetVariableLimits(first_index+row,initial_par*eigenvec_lower_limit,initial_par*eigenvec_upper_limit);
+            Chi2Minimizer->SetVariableLimits(first_index+row,initial_par-eigenvec_imag_range,initial_par+eigenvec_imag_range);
         }
         row_fix = N_bins_for_deconv-NthEigenvector;
         first_index = (4*NthEigenvector-2)*(N_bins_for_deconv)+(NthEigenvector-1);
         for (int col=0;col<N_bins_for_deconv;col++)
         {
-            double initial_par = scale_real*eigensolver_dark.eigenvectors().inverse().row(row_fix)(col).real();
+            double initial_par = scale_inv_real*eigensolver_dark.eigenvectors().inverse().row(row_fix)(col).real();
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",initial_par,step_size);
-            Chi2Minimizer->SetVariableLimits(first_index+col,initial_par*eigenvec_lower_limit,initial_par*eigenvec_upper_limit);
+            Chi2Minimizer->SetVariableLimits(first_index+col,initial_par-eigenvec_inv_real_range,initial_par+eigenvec_inv_real_range);
         }
         first_index = (4*NthEigenvector-1)*(N_bins_for_deconv)+(NthEigenvector-1);
         for (int col=0;col<N_bins_for_deconv;col++)
         {
-            double initial_par = scale_imag*eigensolver_dark.eigenvectors().inverse().row(row_fix)(col).imag();
+            double initial_par = scale_inv_imag*eigensolver_dark.eigenvectors().inverse().row(row_fix)(col).imag();
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",initial_par,step_size);
-            Chi2Minimizer->SetVariableLimits(first_index+col,initial_par*eigenvec_lower_limit,initial_par*eigenvec_upper_limit);
+            Chi2Minimizer->SetVariableLimits(first_index+col,initial_par-eigenvec_inv_imag_range,initial_par+eigenvec_inv_imag_range);
         }
         // build eigenvalue matrix
         first_index = (4*NthEigenvector-0)*(N_bins_for_deconv)+(NthEigenvector-1);
@@ -643,10 +678,8 @@ void SetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixXcd mtx_
 }
 void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixXcd mtx_dark, MatrixXcd mtx_data)
 {
-    ComplexEigenSolver<MatrixXcd> eigensolver_dark(mtx_dark);
-    ComplexEigenSolver<MatrixXcd> eigensolver_data(mtx_data);
-    TF1 *func = new TF1("func",FourierEigenvectorFunction,MSCL_plot_lower,MSCL_plot_upper,1+2*n_fourier_modes);
-    TH1D Hist_Dark_Eigenvector = TH1D("Hist_Dark_Eigenvector","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
+    eigensolver_dark = ComplexEigenSolver<MatrixXcd>(mtx_dark);
+    eigensolver_data = ComplexEigenSolver<MatrixXcd>(mtx_data);
     TH1D Hist_Data_Eigenvector = TH1D("Hist_Data_Eigenvector","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
 
     int col_fix = 0;
@@ -659,88 +692,56 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixX
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
     {
 
-        fill1DHistogram(&Hist_Dark_Eigenvector,eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector).real());
         fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector).real());
-        scale = double(Hist_Data_Eigenvector.Integral())/double(Hist_Dark_Eigenvector.Integral());
-        func->SetParameter(0,0.);
-        for (int mode=1;mode<=n_fourier_modes;mode++)
-        {
-            func->SetParameter(2*mode-1,1.);
-            func->SetParameter(2*mode,1.);
-        }
-        Hist_Dark_Eigenvector.Fit("func","","",MSCL_plot_lower,MSCL_plot_upper);
+        scale = double(Hist_Data_Eigenvector.Integral());
         first_index = (4*NthEigenvector-4)*(1+2*n_fourier_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",scale*func->GetParameter(0),0.01);
-        Chi2Minimizer->SetVariableLimits(first_index,scale*func->GetParameter(0)*0.8,scale*func->GetParameter(0)*1.2);
+        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",0.,0.001);
+        Chi2Minimizer->SetVariableLimits(first_index,-0.1*scale,0.1*scale);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
-            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]", scale*func->GetParameter(2*mode-1), 0.01);
-            Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,scale*func->GetParameter(2*mode-1)*0.8,scale*func->GetParameter(2*mode-1)*1.2);
-            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]", scale*func->GetParameter(2*mode), 0.01);
-            Chi2Minimizer->SetVariableLimits(first_index+2*mode,scale*func->GetParameter(2*mode)*0.8,scale*func->GetParameter(2*mode)*1.2);
+            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]",0.,0.001);
+            Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,-0.1*scale,0.1*scale);
+            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]",0.,0.001);
+            Chi2Minimizer->SetVariableLimits(first_index+2*mode,-0.1*scale,0.1*scale);
         }
 
-        fill1DHistogram(&Hist_Dark_Eigenvector,eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector).imag());
         fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector).imag());
-        scale = double(Hist_Data_Eigenvector.Integral())/double(Hist_Dark_Eigenvector.Integral());
-        func->SetParameter(0,0.);
-        for (int mode=1;mode<=n_fourier_modes;mode++)
-        {
-            func->SetParameter(2*mode-1,1.);
-            func->SetParameter(2*mode,1.);
-        }
-        Hist_Dark_Eigenvector.Fit("func","","",MSCL_plot_lower,MSCL_plot_upper);
+        scale = double(Hist_Data_Eigenvector.Integral());
         first_index = (4*NthEigenvector-3)*(1+2*n_fourier_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",scale*func->GetParameter(0),0.01);
-        Chi2Minimizer->SetVariableLimits(first_index,scale*func->GetParameter(0)*0.8,scale*func->GetParameter(0)*1.2);
+        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",0.,0.001);
+        Chi2Minimizer->SetVariableLimits(first_index,-0.1*scale,0.1*scale);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
-            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]", scale*func->GetParameter(2*mode-1), 0.01);
-            Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,scale*func->GetParameter(2*mode-1)*0.8,scale*func->GetParameter(2*mode-1)*1.2);
-            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]", scale*func->GetParameter(2*mode), 0.01);
-            Chi2Minimizer->SetVariableLimits(first_index+2*mode,scale*func->GetParameter(2*mode)*0.8,scale*func->GetParameter(2*mode)*1.2);
+            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]",0., 0.001);
+            Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,-0.1*scale,0.1*scale);
+            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]",0., 0.001);
+            Chi2Minimizer->SetVariableLimits(first_index+2*mode,-0.1*scale,0.1*scale);
         }
 
-        fill1DHistogram(&Hist_Dark_Eigenvector,eigensolver_dark.eigenvectors().inverse().row(mtx_dark.cols()-NthEigenvector).real());
         fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().inverse().row(mtx_dark.cols()-NthEigenvector).real());
-        scale = double(Hist_Data_Eigenvector.Integral())/double(Hist_Dark_Eigenvector.Integral());
-        func->SetParameter(0,0.);
-        for (int mode=1;mode<=n_fourier_modes;mode++)
-        {
-            func->SetParameter(2*mode-1,1.);
-            func->SetParameter(2*mode,1.);
-        }
-        Hist_Dark_Eigenvector.Fit("func","","",MSCL_plot_lower,MSCL_plot_upper);
+        scale = double(Hist_Data_Eigenvector.Integral());
         first_index = (4*NthEigenvector-2)*(1+2*n_fourier_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",scale*func->GetParameter(0),0.01);
-        Chi2Minimizer->SetVariableLimits(first_index,scale*func->GetParameter(0)*0.8,scale*func->GetParameter(0)*1.2);
+        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",0.,0.01);
+        Chi2Minimizer->SetVariableLimits(first_index,-0.1*scale,0.1*scale);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
-            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]", scale*func->GetParameter(2*mode-1), 0.01);
-            Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,scale*func->GetParameter(2*mode-1)*0.8,scale*func->GetParameter(2*mode-1)*1.2);
-            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]", scale*func->GetParameter(2*mode), 0.01);
-            Chi2Minimizer->SetVariableLimits(first_index+2*mode,scale*func->GetParameter(2*mode)*0.8,scale*func->GetParameter(2*mode)*1.2);
+            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]",0., 0.01);
+            Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,-0.1*scale,0.1*scale);
+            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]",0., 0.01);
+            Chi2Minimizer->SetVariableLimits(first_index+2*mode,-0.1*scale,0.1*scale);
         }
 
-        fill1DHistogram(&Hist_Dark_Eigenvector,eigensolver_dark.eigenvectors().inverse().row(mtx_dark.cols()-NthEigenvector).imag());
         fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().inverse().row(mtx_dark.cols()-NthEigenvector).imag());
-        scale = double(Hist_Data_Eigenvector.Integral())/double(Hist_Dark_Eigenvector.Integral());
-        func->SetParameter(0,0.);
-        for (int mode=1;mode<=n_fourier_modes;mode++)
-        {
-            func->SetParameter(2*mode-1,1.);
-            func->SetParameter(2*mode,1.);
-        }
-        Hist_Dark_Eigenvector.Fit("func","","",MSCL_plot_lower,MSCL_plot_upper);
+        scale = double(Hist_Data_Eigenvector.Integral());
         first_index = (4*NthEigenvector-1)*(1+2*n_fourier_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",scale*func->GetParameter(0),0.01);
-        Chi2Minimizer->SetVariableLimits(first_index,scale*func->GetParameter(0)*0.8,scale*func->GetParameter(0)*1.2);
+        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",0,0.01);
+        Chi2Minimizer->SetVariableLimits(first_index,-0.1*scale,0.1*scale);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
-            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]", scale*func->GetParameter(2*mode-1), 0.01);
-            Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,scale*func->GetParameter(2*mode-1)*0.8,scale*func->GetParameter(2*mode-1)*1.2);
-            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]", scale*func->GetParameter(2*mode), 0.01);
-            Chi2Minimizer->SetVariableLimits(first_index+2*mode,scale*func->GetParameter(2*mode)*0.8,scale*func->GetParameter(2*mode)*1.2);
+            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]",0., 0.01);
+            Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,-0.1*scale,0.1*scale);
+            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]",0., 0.01);
+            Chi2Minimizer->SetVariableLimits(first_index+2*mode,-0.1*scale,0.1*scale);
         }
 
         // eigenvalues
@@ -952,8 +953,10 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         Hist_Fit_InvEigenvectorImag_2.push_back(TH1D("Hist_Fit_InvEigenvectorImag_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
         Hist_Dark_InvEigenvectorImag_2.push_back(TH1D("Hist_Dark_InvEigenvectorImag_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
 
-        if (energy_bins[e]<237) continue;
-        if (energy_bins[e]>=282) continue;
+        //if (energy_bins[e]<237) continue;
+        //if (energy_bins[e]>=282) continue;
+        if (energy_bins[e]<335) continue;
+        if (energy_bins[e]>=398) continue;
 
         MatrixXcd mtx_data_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         MatrixXcd mtx_dark_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
@@ -970,20 +973,20 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
 
         n_fourier_modes = 6;
         n_taylor_modes = 6;
-        ComplexEigenSolver<MatrixXcd> eigensolver_data(mtx_data);
-        ComplexEigenSolver<MatrixXcd> eigensolver_dark(mtx_dark);
+        eigensolver_data = ComplexEigenSolver<MatrixXcd>(mtx_data);
+        eigensolver_dark = ComplexEigenSolver<MatrixXcd>(mtx_dark);
         fill1DHistogram(&Hist_Data_EigenvectorReal_0.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-1).real());
         fill1DHistogram(&Hist_Data_EigenvectorReal_1.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-2).real());
         fill1DHistogram(&Hist_Data_EigenvectorReal_2.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-3).real());
         fill1DHistogram(&Hist_Data_InvEigenvectorReal_0.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-1).real());
         fill1DHistogram(&Hist_Data_InvEigenvectorReal_1.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-2).real());
         fill1DHistogram(&Hist_Data_InvEigenvectorReal_2.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-3).real());
-        FourierFitEigenvector(&Hist_Data_EigenvectorReal_0.at(e),&Hist_Fit_EigenvectorReal_0.at(e));
-        FourierFitEigenvector(&Hist_Data_EigenvectorReal_1.at(e),&Hist_Fit_EigenvectorReal_1.at(e));
-        FourierFitEigenvector(&Hist_Data_EigenvectorReal_2.at(e),&Hist_Fit_EigenvectorReal_2.at(e));
-        FourierFitEigenvector(&Hist_Data_InvEigenvectorReal_0.at(e),&Hist_Fit_InvEigenvectorReal_0.at(e));
-        FourierFitEigenvector(&Hist_Data_InvEigenvectorReal_1.at(e),&Hist_Fit_InvEigenvectorReal_1.at(e));
-        FourierFitEigenvector(&Hist_Data_InvEigenvectorReal_2.at(e),&Hist_Fit_InvEigenvectorReal_2.at(e));
+        //FourierFitEigenvector(&Hist_Data_EigenvectorReal_0.at(e),&Hist_Fit_EigenvectorReal_0.at(e));
+        //FourierFitEigenvector(&Hist_Data_EigenvectorReal_1.at(e),&Hist_Fit_EigenvectorReal_1.at(e));
+        //FourierFitEigenvector(&Hist_Data_EigenvectorReal_2.at(e),&Hist_Fit_EigenvectorReal_2.at(e));
+        //FourierFitEigenvector(&Hist_Data_InvEigenvectorReal_0.at(e),&Hist_Fit_InvEigenvectorReal_0.at(e));
+        //FourierFitEigenvector(&Hist_Data_InvEigenvectorReal_1.at(e),&Hist_Fit_InvEigenvectorReal_1.at(e));
+        //FourierFitEigenvector(&Hist_Data_InvEigenvectorReal_2.at(e),&Hist_Fit_InvEigenvectorReal_2.at(e));
         //TaylorFitEigenvector(&Hist_Data_EigenvectorReal_0.at(e),&Hist_Fit_EigenvectorReal_0.at(e));
         //TaylorFitEigenvector(&Hist_Data_EigenvectorReal_1.at(e),&Hist_Fit_EigenvectorReal_1.at(e));
         //TaylorFitEigenvector(&Hist_Data_EigenvectorReal_2.at(e),&Hist_Fit_EigenvectorReal_2.at(e));
@@ -1002,12 +1005,12 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         fill1DHistogram(&Hist_Data_InvEigenvectorImag_0.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-1).imag());
         fill1DHistogram(&Hist_Data_InvEigenvectorImag_1.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-2).imag());
         fill1DHistogram(&Hist_Data_InvEigenvectorImag_2.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-3).imag());
-        FourierFitEigenvector(&Hist_Data_EigenvectorImag_0.at(e),&Hist_Fit_EigenvectorImag_0.at(e));
-        FourierFitEigenvector(&Hist_Data_EigenvectorImag_1.at(e),&Hist_Fit_EigenvectorImag_1.at(e));
-        FourierFitEigenvector(&Hist_Data_EigenvectorImag_2.at(e),&Hist_Fit_EigenvectorImag_2.at(e));
-        FourierFitEigenvector(&Hist_Data_InvEigenvectorImag_0.at(e),&Hist_Fit_InvEigenvectorImag_0.at(e));
-        FourierFitEigenvector(&Hist_Data_InvEigenvectorImag_1.at(e),&Hist_Fit_InvEigenvectorImag_1.at(e));
-        FourierFitEigenvector(&Hist_Data_InvEigenvectorImag_2.at(e),&Hist_Fit_InvEigenvectorImag_2.at(e));
+        //FourierFitEigenvector(&Hist_Data_EigenvectorImag_0.at(e),&Hist_Fit_EigenvectorImag_0.at(e));
+        //FourierFitEigenvector(&Hist_Data_EigenvectorImag_1.at(e),&Hist_Fit_EigenvectorImag_1.at(e));
+        //FourierFitEigenvector(&Hist_Data_EigenvectorImag_2.at(e),&Hist_Fit_EigenvectorImag_2.at(e));
+        //FourierFitEigenvector(&Hist_Data_InvEigenvectorImag_0.at(e),&Hist_Fit_InvEigenvectorImag_0.at(e));
+        //FourierFitEigenvector(&Hist_Data_InvEigenvectorImag_1.at(e),&Hist_Fit_InvEigenvectorImag_1.at(e));
+        //FourierFitEigenvector(&Hist_Data_InvEigenvectorImag_2.at(e),&Hist_Fit_InvEigenvectorImag_2.at(e));
         //TaylorFitEigenvector(&Hist_Data_EigenvectorImag_0.at(e),&Hist_Fit_EigenvectorImag_0.at(e));
         //TaylorFitEigenvector(&Hist_Data_EigenvectorImag_1.at(e),&Hist_Fit_EigenvectorImag_1.at(e));
         //TaylorFitEigenvector(&Hist_Data_EigenvectorImag_2.at(e),&Hist_Fit_EigenvectorImag_2.at(e));
@@ -1051,9 +1054,9 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         // kConjugateFR, kConjugatePR, kVectorBFGS,
         // kVectorBFGS2, kSteepestDescent
 
-        std::cout << "++++++++++++++++++++ Searching for 1st eigenvector... ++++++++++++++++++++" << std::endl;
         NumberOfEigenvectors = 3;
-        ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
+        ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kVectorBFGS );
+        //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
         //ROOT::Minuit2::Minuit2Minimizer Chi2Minimizer_1st( ROOT::Minuit2::kMigrad );
         //Chi2Minimizer_1st.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
         //Chi2Minimizer_1st.SetMaxIterations(100000); // for GSL
@@ -1062,19 +1065,21 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         Chi2Minimizer_1st.SetMaxIterations(200); // for GSL
         Chi2Minimizer_1st.SetTolerance(0.001);
 
-        ROOT::Math::Functor Chi2Func_1st(&Chi2Function,4*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors);        
-        Chi2Minimizer_1st.SetFunction(Chi2Func_1st);
-        SetInitialVariables(&Chi2Minimizer_1st, mtx_dark, mtx_data);
-        Chi2Minimizer_1st.Minimize();
-        const double *par = Chi2Minimizer_1st.X();
-        ParametrizeEigenvectors(par);
-
-        //n_fourier_modes = 20;
-        //ROOT::Math::Functor Chi2Func_1st(&FourierChi2Function,4*NumberOfEigenvectors*(1+2*n_fourier_modes)+NumberOfEigenvectors);        Chi2Minimizer_1st.SetFunction(Chi2Func_1st);
-        //FourierSetInitialVariables(&Chi2Minimizer_1st, mtx_dark, mtx_data);
+        //ROOT::Math::Functor Chi2Func_1st(&Chi2Function,4*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors);        
+        //Chi2Minimizer_1st.SetFunction(Chi2Func_1st);
+        //SetInitialVariables(&Chi2Minimizer_1st, mtx_dark, mtx_data);
         ////Chi2Minimizer_1st.Minimize();
         //const double *par = Chi2Minimizer_1st.X();
-        //FourierParametrizeEigenvectors(par);
+        //ParametrizeEigenvectors(par);
+        //mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
+
+        n_fourier_modes = 6;
+        ROOT::Math::Functor Chi2Func_1st(&FourierChi2Function,4*NumberOfEigenvectors*(1+2*n_fourier_modes)+NumberOfEigenvectors);        Chi2Minimizer_1st.SetFunction(Chi2Func_1st);
+        FourierSetInitialVariables(&Chi2Minimizer_1st, mtx_dark, mtx_data);
+        Chi2Minimizer_1st.Minimize();
+        const double *par = Chi2Minimizer_1st.X();
+        FourierParametrizeEigenvectors(par);
+        mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
 
         //n_taylor_modes = 8;
         //ROOT::Math::Functor Chi2Func_1st(&TaylorChi2Function,4*NumberOfEigenvectors*(1+2*n_taylor_modes)+NumberOfEigenvectors);        
@@ -1160,7 +1165,6 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         //        }
         //    }
         //}
-        mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
         fill2DHistogram(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
         //NormalizeHist2D(Hist_Data,&Hist_Bkgd_MSCLW.at(e));
         std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral() << std::endl;
