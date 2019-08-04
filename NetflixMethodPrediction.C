@@ -621,6 +621,11 @@ void SetInitialEigenvectors()
         std::cout << "scale_inv_real = " << scale_inv_real << std::endl;
         std::cout << "scale_inv_imag = " << scale_inv_imag << std::endl;
 
+        scale_real = 1.;
+        scale_imag = 1.;
+        scale_inv_real = 1.;
+        scale_inv_imag = 1.;
+
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = scale_real*eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row).real();
@@ -732,7 +737,7 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixX
 {
     eigensolver_dark = ComplexEigenSolver<MatrixXcd>(mtx_dark);
     eigensolver_data = ComplexEigenSolver<MatrixXcd>(mtx_data);
-    TH1D Hist_Data_Eigenvector = TH1D("Hist_Data_Eigenvector","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
+    TH1D Hist_Dark_Eigenvector = TH1D("Hist_Dark_Eigenvector","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
 
     int col_fix = 0;
     int row_fix = 0;
@@ -744,56 +749,56 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixX
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
     {
 
-        fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector).real());
-        scale = double(Hist_Data_Eigenvector.Integral());
+        fill1DHistogram(&Hist_Dark_Eigenvector,eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector).real());
+        scale = double(Hist_Dark_Eigenvector.Integral());
         first_index = (4*NthEigenvector-4)*(1+2*n_fourier_modes)+(NthEigenvector-1);
         Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",0.,0.001);
-        Chi2Minimizer->SetVariableLimits(first_index,-0.1*scale,0.1*scale);
+        Chi2Minimizer->SetVariableLimits(first_index,-0.01*scale,0.01*scale);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
             Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]",0.,0.001);
-            Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,-0.1*scale,0.1*scale);
+            Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,-0.01*scale,0.01*scale);
             Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]",0.,0.001);
-            Chi2Minimizer->SetVariableLimits(first_index+2*mode,-0.1*scale,0.1*scale);
+            Chi2Minimizer->SetVariableLimits(first_index+2*mode,-0.01*scale,0.01*scale);
         }
 
-        fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector).imag());
-        scale = double(Hist_Data_Eigenvector.Integral());
+        fill1DHistogram(&Hist_Dark_Eigenvector,eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector).imag());
+        scale = double(Hist_Dark_Eigenvector.Integral());
         first_index = (4*NthEigenvector-3)*(1+2*n_fourier_modes)+(NthEigenvector-1);
         Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",0.,0.001);
-        Chi2Minimizer->SetVariableLimits(first_index,-0.1*scale,0.1*scale);
+        Chi2Minimizer->SetVariableLimits(first_index,-0.01*scale,0.01*scale);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
             Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]",0., 0.001);
-            Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,-0.1*scale,0.1*scale);
+            Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,-0.01*scale,0.01*scale);
             Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]",0., 0.001);
-            Chi2Minimizer->SetVariableLimits(first_index+2*mode,-0.1*scale,0.1*scale);
+            Chi2Minimizer->SetVariableLimits(first_index+2*mode,-0.01*scale,0.01*scale);
         }
 
-        fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().inverse().row(mtx_dark.cols()-NthEigenvector).real());
-        scale = double(Hist_Data_Eigenvector.Integral());
+        fill1DHistogram(&Hist_Dark_Eigenvector,eigensolver_dark.eigenvectors().inverse().row(mtx_dark.cols()-NthEigenvector).real());
+        scale = double(Hist_Dark_Eigenvector.Integral());
         first_index = (4*NthEigenvector-2)*(1+2*n_fourier_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",0.,0.01);
-        Chi2Minimizer->SetVariableLimits(first_index,-0.1*scale,0.1*scale);
+        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",0.,0.001);
+        Chi2Minimizer->SetVariableLimits(first_index,-0.01*scale,0.01*scale);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
-            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]",0., 0.01);
-            Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,-0.1*scale,0.1*scale);
-            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]",0., 0.01);
-            Chi2Minimizer->SetVariableLimits(first_index+2*mode,-0.1*scale,0.1*scale);
+            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]",0., 0.001);
+            Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,-0.01*scale,0.01*scale);
+            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]",0., 0.001);
+            Chi2Minimizer->SetVariableLimits(first_index+2*mode,-0.01*scale,0.01*scale);
         }
 
-        fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().inverse().row(mtx_dark.cols()-NthEigenvector).imag());
-        scale = double(Hist_Data_Eigenvector.Integral());
+        fill1DHistogram(&Hist_Dark_Eigenvector,eigensolver_dark.eigenvectors().inverse().row(mtx_dark.cols()-NthEigenvector).imag());
+        scale = double(Hist_Dark_Eigenvector.Integral());
         first_index = (4*NthEigenvector-1)*(1+2*n_fourier_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",0,0.01);
-        Chi2Minimizer->SetVariableLimits(first_index,-0.1*scale,0.1*scale);
+        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",0,0.001);
+        Chi2Minimizer->SetVariableLimits(first_index,-0.01*scale,0.01*scale);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
-            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]",0., 0.01);
-            Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,-0.1*scale,0.1*scale);
-            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]",0., 0.01);
-            Chi2Minimizer->SetVariableLimits(first_index+2*mode,-0.1*scale,0.1*scale);
+            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]",0., 0.001);
+            Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,-0.01*scale,0.01*scale);
+            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]",0., 0.001);
+            Chi2Minimizer->SetVariableLimits(first_index+2*mode,-0.01*scale,0.01*scale);
         }
 
         // eigenvalues
@@ -1106,7 +1111,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         // kConjugateFR, kConjugatePR, kVectorBFGS,
         // kVectorBFGS2, kSteepestDescent
 
-        NumberOfEigenvectors = 3;
+        NumberOfEigenvectors = 4;
         ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kVectorBFGS );
         //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
         //ROOT::Minuit2::Minuit2Minimizer Chi2Minimizer_1st( ROOT::Minuit2::kMigrad );
@@ -1127,7 +1132,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         //ParametrizeEigenvectors(par);
         //mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
 
-        n_fourier_modes = 10;
+        n_fourier_modes = 4;
         ROOT::Math::Functor Chi2Func_1st(&FourierChi2Function,4*NumberOfEigenvectors*(1+2*n_fourier_modes)+NumberOfEigenvectors);        Chi2Minimizer_1st.SetFunction(Chi2Func_1st);
         FourierSetInitialVariables(&Chi2Minimizer_1st, mtx_dark, mtx_data);
         Chi2Minimizer_1st.Minimize();
