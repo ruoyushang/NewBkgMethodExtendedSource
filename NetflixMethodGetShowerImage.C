@@ -57,9 +57,9 @@ bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,fa
 
 int N_bins_for_deconv = 50;
 double MSCW_plot_lower = -1.;
-double MSCW_plot_upper = 9.;
+double MSCW_plot_upper = 4.;
 double MSCL_plot_lower = -1.;
-double MSCL_plot_upper = 9.;
+double MSCL_plot_upper = 4.;
 double Theta2_cut_lower = 0;
 double Theta2_cut_upper = 0;
 double Theta2_upper_limit = 10;

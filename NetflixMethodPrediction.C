@@ -171,7 +171,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_model)
             double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(-0.5);
             double dy = hist_data->GetYaxis()->GetBinCenter(by)-(-0.5);
             double width = 1.0;
-            weight = exp(-0.5*dx*dx/(width*width))*exp(-0.5*dy*dy/(width*width));
+            weight = exp(-0.5*dx*dx/(1.0*width*1.0*width))*exp(-0.5*dy*dy/(1.0*width*1.0*width));
             if (bx>=binx_blind || by>=biny_blind)
             {
                 double data = hist_data->GetBinContent(bx,by);
