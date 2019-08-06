@@ -55,11 +55,11 @@ const int N_energy_bins = 12;
 double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,1585,2239,4467,8913};
 bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,false,false,false,false,false,false};
 
-int N_bins_for_deconv = 50;
+int N_bins_for_deconv = 40;
 double MSCW_plot_lower = -1.;
-double MSCW_plot_upper = 4.;
+double MSCW_plot_upper = 3.;
 double MSCL_plot_lower = -1.;
-double MSCL_plot_upper = 4.;
+double MSCL_plot_upper = 3.;
 double Theta2_cut_lower = 0;
 double Theta2_cut_upper = 0;
 double Theta2_upper_limit = 10;
@@ -221,6 +221,13 @@ std::pair <double,double> GetMcGillElectronFlux(double energy)
     //TGraph *func = new TGraph(&Hist_Flux);
     //return std::make_pair(1.*func->Eval(energy),1.*func->Eval(energy));
 }
+bool DarkFoV() {
+    //if (R2off<Theta2_cut_lower) return false;
+    //if (R2off>Theta2_cut_upper) return false;
+    if (theta2<0.1) return false;
+    if (theta2>Theta2_cut_upper) return false;
+    return true;
+}
 bool FoV() {
     //if (R2off<Theta2_cut_lower) return false;
     //if (R2off>Theta2_cut_upper) return false;
@@ -295,8 +302,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Dark_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
-        //if (!PointingSelection(filename,int(Dark_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
-        if (!PointingSelection(filename,int(Dark_runlist[run].second),70,85,0,360)) continue;
+        if (!PointingSelection(filename,int(Dark_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
+        //if (!PointingSelection(filename,int(Dark_runlist[run].second),70,85,0,360)) continue;
 
         TFile*  input_file = TFile::Open(filename.c_str());
 	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Dark_runlist[run].second);
@@ -329,11 +336,11 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (energy>=N_energy_bins) continue;
             int e = energy;
             if (!SelectNImages(3,4)) continue;
-            //if (FoV())
-            //{
+            if (DarkFoV())
+            {
                 Hist_Dark_MSCLW.at(e).Fill(MSCL,MSCW);
                 Hist_Dark_Syst_MSCLW.at(e).Fill(MSCL,MSCW);
-            //}
+            }
         }
         input_file->Close();
     }
