@@ -102,29 +102,22 @@ VectorXd fillVector(TH1D* hist)
     }
     return vtr;
 }
-MatrixXcd RestoreEdge(MatrixXcd mtx_origin, MatrixXcd mtx_modify, double edge_x, double edge_y)
+void RestoreEdge(TH2D* Hist_Origin, TH2D* Hist_Modify, double edge_x, double edge_y)
 {
-    MatrixXcd mtx_final(N_bins_for_deconv,N_bins_for_deconv);
-    TH1D Hist_Data = TH1D("Hist_Data","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
-    int edge_binx = Hist_Data.FindBin(edge_x)-1;
-    int edge_biny = Hist_Data.FindBin(edge_y)-1;
+    int edge_binx = Hist_Origin->GetXaxis()->FindBin(edge_x);
+    int edge_biny = Hist_Origin->GetYaxis()->FindBin(edge_y);
     std::cout << "edge_binx = " << edge_binx <<std::endl;
     std::cout << "edge_biny = " << edge_biny <<std::endl;
-    for (int binx=0;binx<Hist_Data.GetNbinsX();binx++)
+    for (int binx=1;binx<=Hist_Origin->GetNbinsX();binx++)
     {
-        for (int biny=0;biny<Hist_Data.GetNbinsY();biny++)
+        for (int biny=1;biny<=Hist_Origin->GetNbinsY();biny++)
         {
-            if (binx>edge_binx && biny>edge_biny)
+            if (binx<edge_binx || biny<edge_biny)
             {
-                mtx_final(binx,biny) = mtx_modify(binx,biny);
-            }
-            else
-            {
-                mtx_final(binx,biny) = mtx_origin(binx,biny);
+                Hist_Modify->SetBinContent(binx,biny,Hist_Origin->GetBinContent(binx,biny));
             }
         }
     }
-    return mtx_final;
 }
 MatrixXcd fillMatrix(TH2D* hist)
 {
@@ -1044,8 +1037,8 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
 
         //if (energy_bins[e]<237) continue;
         //if (energy_bins[e]>=282) continue;
-        if (energy_bins[e]<335) continue;
-        if (energy_bins[e]>=398) continue;
+        //if (energy_bins[e]<335) continue;
+        //if (energy_bins[e]>=398) continue;
 
         MatrixXcd mtx_data_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         MatrixXcd mtx_dark_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
@@ -1173,7 +1166,6 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         const double *par = Chi2Minimizer_1st.X();
         FourierParametrizeEigenvectors(par);
         mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
-        //mtx_data_bkgd = RestoreEdge(mtx_dark,mtx_data_bkgd,-0.5,-0.5);
 
         //n_taylor_modes = 8;
         //ROOT::Math::Functor Chi2Func_1st(&TaylorChi2Function,4*NumberOfEigenvectors*(1+2*n_taylor_modes)+NumberOfEigenvectors);        
@@ -1260,6 +1252,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         //    }
         //}
         fill2DHistogram(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
+        RestoreEdge(Hist_Dark,&Hist_Bkgd_MSCLW.at(e),-0.5,-0.5);
         //NormalizeHist2D(Hist_Data,&Hist_Bkgd_MSCLW.at(e));
         std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral() << std::endl;
         std::cout << "eigensolver_data.eigenvalues()(mtx_data.cols()-1):" << std::endl;
