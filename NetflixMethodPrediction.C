@@ -102,6 +102,30 @@ VectorXd fillVector(TH1D* hist)
     }
     return vtr;
 }
+MatrixXcd RestoreEdge(MatrixXcd mtx_origin, MatrixXcd mtx_modify, double edge_x, double edge_y)
+{
+    MatrixXcd mtx_final(N_bins_for_deconv,N_bins_for_deconv);
+    TH1D Hist_Data = TH1D("Hist_Data","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
+    int edge_binx = Hist_Data.FindBin(edge_x)-1;
+    int edge_biny = Hist_Data.FindBin(edge_y)-1;
+    std::cout << "edge_binx = " << edge_binx <<std::endl;
+    std::cout << "edge_biny = " << edge_biny <<std::endl;
+    for (int binx=0;binx<Hist_Data.GetNbinsX();binx++)
+    {
+        for (int biny=0;biny<Hist_Data.GetNbinsY();biny++)
+        {
+            if (binx>edge_binx && biny>edge_biny)
+            {
+                mtx_final(binx,biny) = mtx_modify(binx,biny);
+            }
+            else
+            {
+                mtx_final(binx,biny) = mtx_origin(binx,biny);
+            }
+        }
+    }
+    return mtx_final;
+}
 MatrixXcd fillMatrix(TH2D* hist)
 {
     MatrixXcd matrix(hist->GetNbinsX(),hist->GetNbinsY());
@@ -136,6 +160,26 @@ void SmoothEigenvectors(MatrixXcd mtx, MatrixXcd mtx_inv)
         spline_eigenvec_inv_imag.push_back(TSpline3(&hist_eigenvec_inv_imag));
     }
 }
+double CalculateSignificance(double s,double b,double err)
+{
+    if ((b*b+(s+b)*err*err)==0.) return 0.;
+    if ((s+b)*(b+err*err)==0.) return 0.;
+    double first_term = (s+b)*log((s+b)*(b+err*err)/(b*b+(s+b)*err*err));
+    double second_term = 0.;
+    if (err>0. && b>0)
+    {
+        second_term = b*b/(err*err)*log(1.+err*err*s/(b*(b+err*err)));
+    }
+    else 
+    {
+        second_term = 0.;
+    }
+    double result = 0.;
+    if (first_term>second_term) result = pow(2*(first_term-second_term),0.5);
+    else result = pow(2*(-first_term+second_term),0.5);
+    if (s>0) return result;
+    else return -1.*result;
+}
 double BlindedChi2(TH2D* hist_data, TH2D* hist_model)
 {
     int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
@@ -157,6 +201,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_model)
                 double data = hist_data->GetBinContent(bx,by);
                 double model = hist_model->GetBinContent(bx,by);
                 chi2 += weight*pow(data-model,2);
+                //chi2 += weight*pow(CalculateSignificance(data,model,pow(model,0.5)),2);
                 //if (data*data+model*model>0)
                 //{
                 //    chi2 += weight*pow(data-model,2)/(data*data+model*model);
@@ -791,7 +836,7 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixX
         // eigenvalues
         first_index = (4*NthEigenvector-0)*(1+2*n_fourier_modes)+(NthEigenvector-1);
         Chi2Minimizer->SetVariable(first_index, "par["+std::to_string(int(first_index))+"]", eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvector).real(), 0.01);
-        Chi2Minimizer->SetVariableLimits(first_index,eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvector).real()*1.0,eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvector).real()*1.0);
+        Chi2Minimizer->SetVariableLimits(first_index,eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvector).real()*0.8,eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvector).real()*1.2);
         //Chi2Minimizer->FixVariable(first_index);
     }
 
@@ -1098,7 +1143,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         // kConjugateFR, kConjugatePR, kVectorBFGS,
         // kVectorBFGS2, kSteepestDescent
 
-        NumberOfEigenvectors = 4;
+        NumberOfEigenvectors = 3;
         ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kVectorBFGS );
         //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
         //ROOT::Minuit2::Minuit2Minimizer Chi2Minimizer_1st( ROOT::Minuit2::kMigrad );
@@ -1128,6 +1173,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         const double *par = Chi2Minimizer_1st.X();
         FourierParametrizeEigenvectors(par);
         mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
+        //mtx_data_bkgd = RestoreEdge(mtx_dark,mtx_data_bkgd,-0.5,-0.5);
 
         //n_taylor_modes = 8;
         //ROOT::Math::Functor Chi2Func_1st(&TaylorChi2Function,4*NumberOfEigenvectors*(1+2*n_taylor_modes)+NumberOfEigenvectors);        
