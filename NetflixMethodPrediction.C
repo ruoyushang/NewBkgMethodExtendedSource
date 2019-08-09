@@ -499,8 +499,8 @@ double FourierChi2Function(const double *par)
     fill2DHistogram(&hist_dark,mtx_dark);
     fill2DHistogram(&hist_model,mtx_model);
 
-    //double chi2 = BlindedChi2(&hist_data,&hist_dark,&hist_model);
-    double chi2 = UnblindedChi2(&hist_data,&hist_dark,&hist_model);
+    double chi2 = BlindedChi2(&hist_data,&hist_dark,&hist_model);
+    //double chi2 = UnblindedChi2(&hist_data,&hist_dark,&hist_model);
 
     return chi2;
 
@@ -815,8 +815,7 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixX
         Chi2Minimizer->SetVariableLimits(first_index,0,0);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
-            if (mode<NthEigenvector) limit = 0.;
-            else limit = 0.5*scale;
+            limit = 0.;
             Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]",0., 0.001);
             Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,-limit,limit);
             Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]",0., 0.001);
@@ -845,8 +844,7 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixX
         Chi2Minimizer->SetVariableLimits(first_index,0,0);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
-            if (mode<NthEigenvector) limit = 0.;
-            else limit = 0.5*scale;
+            limit = 0.;
             Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]",0., 0.001);
             Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,-limit,limit);
             Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]",0., 0.001);
@@ -856,7 +854,7 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixX
         // eigenvalues
         first_index = (4*NthEigenvector-0)*(1+2*n_fourier_modes)+(NthEigenvector-1);
         Chi2Minimizer->SetVariable(first_index, "par["+std::to_string(int(first_index))+"]", eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvector).real(), 0.01);
-        Chi2Minimizer->SetVariableLimits(first_index,eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvector).real()*1.0,eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvector).real()*1.0);
+        //Chi2Minimizer->SetVariableLimits(first_index,eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvector).real()*1.0,eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvector).real()*1.0);
         //Chi2Minimizer->FixVariable(first_index);
     }
 
