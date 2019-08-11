@@ -401,8 +401,7 @@ void FourierParametrizeEigenvectors(const double *par)
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             double x = double(row+1)*(MSCW_plot_upper-MSCW_plot_lower)/double(N_bins_for_deconv)+MSCW_plot_lower;
-            double x_norm = 2.0*M_PI*(x-MSCW_plot_lower)/(MSCW_plot_upper-MSCW_plot_lower);
-            mtx_eigenvector(row,col_fix) += par[first_index]/2.;
+            double x_norm = par[first_index]*2.0*M_PI*(x-MSCW_plot_lower)/(MSCW_plot_upper-MSCW_plot_lower);
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
                 mtx_eigenvector(row,col_fix) += par[first_index+2*mode-1]*cos(double(mode)*x_norm);
@@ -413,8 +412,7 @@ void FourierParametrizeEigenvectors(const double *par)
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             double x = double(row+1)*(MSCW_plot_upper-MSCW_plot_lower)/double(N_bins_for_deconv)+MSCW_plot_lower;
-            double x_norm = 2.0*M_PI*(x-MSCW_plot_lower)/(MSCW_plot_upper-MSCW_plot_lower);
-            mtx_eigenvector(row,col_fix) += If*par[first_index]/2.;
+            double x_norm = par[first_index]*2.0*M_PI*(x-MSCW_plot_lower)/(MSCW_plot_upper-MSCW_plot_lower);
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
                 mtx_eigenvector(row,col_fix) += If*par[first_index+2*mode-1]*cos(double(mode)*x_norm);
@@ -426,8 +424,7 @@ void FourierParametrizeEigenvectors(const double *par)
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             double x = double(col+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
-            double x_norm = 2.0*M_PI*(x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
-            mtx_eigenvector_inv(row_fix,col) += par[first_index]/2.;
+            double x_norm = par[first_index]*2.0*M_PI*(x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
                 mtx_eigenvector_inv(row_fix,col) += par[first_index+2*mode-1]*cos(double(mode)*x_norm);
@@ -438,8 +435,7 @@ void FourierParametrizeEigenvectors(const double *par)
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             double x = double(col+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
-            double x_norm = 2.0*M_PI*(x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
-            mtx_eigenvector_inv(row_fix,col) += If*par[first_index]/2.;
+            double x_norm = par[first_index]*2.0*M_PI*(x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
                 mtx_eigenvector_inv(row_fix,col) += If*par[first_index+2*mode-1]*cos(double(mode)*x_norm);
@@ -796,8 +792,8 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixX
         fill1DHistogram(&Hist_Dark_Eigenvector,eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector).real());
         scale = double(Hist_Dark_Eigenvector.Integral());
         first_index = (4*NthEigenvector-4)*(1+2*n_fourier_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",0.,0.001);
-        Chi2Minimizer->SetVariableLimits(first_index,0,0);
+        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",1.,0.001);
+        Chi2Minimizer->SetVariableLimits(first_index,0.5,2.0);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
             if (mode<NthEigenvector) limit = 0.;
@@ -811,8 +807,8 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixX
         fill1DHistogram(&Hist_Dark_Eigenvector,eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector).imag());
         scale = double(Hist_Dark_Eigenvector.Integral());
         first_index = (4*NthEigenvector-3)*(1+2*n_fourier_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",0.,0.001);
-        Chi2Minimizer->SetVariableLimits(first_index,0,0);
+        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",1.,0.001);
+        Chi2Minimizer->SetVariableLimits(first_index,0.5,2.0);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
             limit = 0.;
@@ -825,8 +821,8 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixX
         fill1DHistogram(&Hist_Dark_Eigenvector,eigensolver_dark.eigenvectors().inverse().row(mtx_dark.cols()-NthEigenvector).real());
         scale = double(Hist_Dark_Eigenvector.Integral());
         first_index = (4*NthEigenvector-2)*(1+2*n_fourier_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",0.,0.001);
-        Chi2Minimizer->SetVariableLimits(first_index,0,0);
+        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",1.,0.001);
+        Chi2Minimizer->SetVariableLimits(first_index,0.5,2.0);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
             if (mode<NthEigenvector) limit = 0.;
@@ -840,8 +836,8 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixX
         fill1DHistogram(&Hist_Dark_Eigenvector,eigensolver_dark.eigenvectors().inverse().row(mtx_dark.cols()-NthEigenvector).imag());
         scale = double(Hist_Dark_Eigenvector.Integral());
         first_index = (4*NthEigenvector-1)*(1+2*n_fourier_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",0,0.001);
-        Chi2Minimizer->SetVariableLimits(first_index,0,0);
+        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",1.,0.001);
+        Chi2Minimizer->SetVariableLimits(first_index,0.5,2.0);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
             limit = 0.;
