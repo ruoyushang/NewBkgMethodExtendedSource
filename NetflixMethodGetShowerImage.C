@@ -88,6 +88,24 @@ double ra_sky = 0;
 double dec_sky = 0;
 double exposure_hours = 0.;
 
+pair<double,double> GetRunElevAzim(string file_name, int run)
+{
+    char run_number[50];
+    sprintf(run_number, "%i", int(run));
+    TFile*  input_file = TFile::Open(file_name.c_str());
+    TTree* pointing_tree = nullptr;
+    pointing_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/pointingDataReduced");
+    pointing_tree->SetBranchAddress("TelElevation",&TelElevation);
+    pointing_tree->SetBranchAddress("TelAzimuth",&TelAzimuth);
+    pointing_tree->SetBranchAddress("TelRAJ2000",&TelRAJ2000);
+    pointing_tree->SetBranchAddress("TelDecJ2000",&TelDecJ2000);
+    double total_entries = (double)pointing_tree->GetEntries();
+    pointing_tree->GetEntry(int(total_entries/2.));
+    double TelElevation_tmp = TelElevation;
+    double TelAzimuth_tmp = TelAzimuth;
+    input_file->Close();
+    return std::make_pair(TelElevation_tmp,TelAzimuth_tmp);
+}
 bool PointingSelection(string file_name,int run, double Elev_cut_lower, double Elev_cut_upper, double Azim_cut_lower, double Azim_cut_upper)
 {
     if (run>100000) return true;
@@ -125,6 +143,90 @@ bool PointingSelection(string file_name,int run, double Elev_cut_lower, double E
     input_file->Close();
     return true;
 }
+
+vector<pair<string,int>> SelectONRunList(vector<pair<string,int>> Data_runlist, double Elev_cut_lower, double Elev_cut_upper, double Azim_cut_lower, double Azim_cut_upper)
+{
+    vector<pair<string,int>> new_list;
+    for (int run=0;run<Data_runlist.size();run++)
+    {
+        char run_number[50];
+        char Data_observation[50];
+        sprintf(run_number, "%i", int(Data_runlist[run].second));
+        sprintf(Data_observation, "%s", Data_runlist[run].first.c_str());
+        string filename;
+        filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
+
+        if (!PointingSelection(filename,int(Data_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
+        new_list.push_back(std::make_pair(Data_runlist[run].first,Data_runlist[run].second));
+    }
+    return new_list;
+}
+
+vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, vector<pair<string,int>> OFF_runlist)
+{
+
+    vector<pair<double,double>> ON_pointing;
+    for (int on_run=0;on_run<ON_runlist.size();on_run++)
+    {
+        char ON_runnumber[50];
+        char ON_observation[50];
+        sprintf(ON_runnumber, "%i", int(ON_runlist[on_run].second));
+        sprintf(ON_observation, "%s", ON_runlist[on_run].first.c_str());
+        string ON_filename;
+        ON_filename = TString("$VERITAS_USER_DATA_DIR/"+TString(ON_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(ON_runnumber)+".root");
+        ON_pointing.push_back(GetRunElevAzim(ON_filename,int(ON_runlist[on_run].second)));
+    }
+
+    vector<pair<double,double>> OFF_pointing;
+    for (int off_run=0;off_run<OFF_runlist.size();off_run++)
+    {
+        char OFF_runnumber[50];
+        char OFF_observation[50];
+        sprintf(OFF_runnumber, "%i", int(OFF_runlist[off_run].second));
+        sprintf(OFF_observation, "%s", OFF_runlist[off_run].first.c_str());
+        string OFF_filename;
+        OFF_filename = TString("$VERITAS_USER_DATA_DIR/"+TString(OFF_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(OFF_runnumber)+".root");
+        OFF_pointing.push_back(GetRunElevAzim(OFF_filename,int(OFF_runlist[off_run].second)));
+    }
+
+    vector<pair<string,int>> new_list;
+    for (int n=0;n<2;n++)
+    {
+        for (int on_run=0;on_run<ON_runlist.size();on_run++)
+        {
+
+            pair<string,int> best_match;
+            pair<double,double> best_pointing;
+            double best_chi2 = 400.;
+            for (int off_run=0;off_run<OFF_runlist.size();off_run++)
+            {
+                if (ON_runlist[on_run].first.compare(OFF_runlist[off_run].first) == 0) continue;
+                bool already_used_run = false;
+                for (int new_run=0;new_run<new_list.size();new_run++)
+                {
+                    if (int(new_list[new_run].second)==int(OFF_runlist[off_run].second)) already_used_run = true;
+                }
+                if (already_used_run) continue;
+                double chi2 = 4.*pow(ON_pointing[on_run].first-OFF_pointing[off_run].first,2)+pow(ON_pointing[on_run].second-OFF_pointing[off_run].second,2);
+                if (best_chi2>chi2)
+                {
+                    best_chi2 = chi2;
+                    best_match = OFF_runlist[off_run];
+                    best_pointing = OFF_pointing[off_run];
+                }
+            }
+            if (best_chi2<100.) 
+            {
+                new_list.push_back(best_match);
+                std::cout << "add run:" << std::endl;
+                std::cout << best_match.first << " " << best_match.second << std::endl;
+                std::cout << best_pointing.first << " " << best_pointing.second << std::endl;
+            }
+        }
+    }
+    return new_list;
+}
+
 TObject* getEffAreaHistogram( TFile* fAnasumDataFile, int runnumber)
 {
         double iSlizeY = -9999;
@@ -290,8 +392,16 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         Hist_Dark_Syst_MSCLW.push_back(TH2D("Hist_Dark_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
     }
 
+    // Get a list of target observation runs
+    vector<pair<string,int>> Data_runlist = GetRunList(target);
+    Data_runlist = SelectONRunList(Data_runlist,TelElev_lower,TelElev_upper,0,360);
+    std::cout << "Data_runlist size = " << Data_runlist.size() << std::endl;
+
     // Get a list of dark observation runs
-    vector<pair<string,int>> Dark_runlist = GetRunList("Segue1V6");
+    vector<pair<string,int>> Dark_runlist = GetRunList("Everything");
+    std::cout << "initial Dark_runlist size = " << Dark_runlist.size() << std::endl;
+    Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist);
+    std::cout << "final Dark_runlist size = " << Dark_runlist.size() << std::endl;
 
     for (int run=0;run<Dark_runlist.size();run++)
     {
@@ -302,8 +412,6 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Dark_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
-        if (!PointingSelection(filename,int(Dark_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
-        //if (!PointingSelection(filename,int(Dark_runlist[run].second),70,85,0,360)) continue;
 
         TFile*  input_file = TFile::Open(filename.c_str());
 	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Dark_runlist[run].second);
@@ -346,8 +454,6 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     }
 
 
-    // Get a list of target observation runs
-    vector<pair<string,int>> Data_runlist = GetRunList(target);
 
     for (int run=0;run<Data_runlist.size();run++)
     {
@@ -358,8 +464,6 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
-        if (!PointingSelection(filename,int(Data_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
-        //if (!PointingSelection(filename,int(Data_runlist[run].second),55,70,0,360)) continue;
 
         TFile*  input_file = TFile::Open(filename.c_str());
 	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Data_runlist[run].second);
