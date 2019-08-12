@@ -219,12 +219,12 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
             double dark = hist_dark->GetBinContent(bx,by);
             double model = hist_model->GetBinContent(bx,by);
             double weight = 1.;
-            double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(0.);
-            double dy = hist_data->GetYaxis()->GetBinCenter(by)-(0.);
+            double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(-1.);
+            double dy = hist_data->GetYaxis()->GetBinCenter(by)-(-1.);
             double width = 1.0;
-            //weight = exp(-0.5*dx*dx/(1.0*width*1.0*width))*exp(-0.5*dy*dy/(1.0*width*1.0*width));
+            weight = exp(-0.5*dx*dx/(1.0*width*1.0*width))*exp(-0.5*dy*dy/(1.0*width*1.0*width));
             //weight = exp(-0.5*dx*dx/(1.0*width*1.0*width))+exp(-0.5*dy*dy/(1.0*width*1.0*width));
-            weight = exp(-0.5*dy*dy/(1.0*width*1.0*width));
+            //weight = exp(-0.5*dy*dy/(1.0*width*1.0*width));
             if (bx>=binx_blind || by>=biny_blind)
             {
                 chi2 += weight*pow(data-model,2);
@@ -1207,9 +1207,10 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         // kConjugateFR, kConjugatePR, kVectorBFGS,
         // kVectorBFGS2, kSteepestDescent
 
-        NumberOfEigenvectors = 3;
-        //if (CurrentEnergy>1500.) NumberOfEigenvectors = 2;
-        //if (CurrentEnergy>4000.) NumberOfEigenvectors = 1;
+        NumberOfEigenvectors = 4;
+        if (CurrentEnergy>700.) NumberOfEigenvectors = 3;
+        if (CurrentEnergy>1500.) NumberOfEigenvectors = 2;
+        if (CurrentEnergy>4000.) NumberOfEigenvectors = 1;
         ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kVectorBFGS );
         //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
         //ROOT::Minuit2::Minuit2Minimizer Chi2Minimizer_1st( ROOT::Minuit2::kMigrad );

@@ -75,8 +75,13 @@ double ErecS = 0;
 double EChi2S = 0;
 double MSCW = 0;
 int NImages = 0;
+double Xcore = 0.;
+double Ycore = 0.;
+double SizeSecondMax = 0;
 double MSCL = 0;
 double Time = 0;
+double Shower_Ze = 0;
+double Shower_Az = 0;
 double SlantDepth = 0;
 float EmissionHeight = 0;
 float EmissionHeightChi2 = 0;
@@ -190,14 +195,14 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
     }
 
     vector<pair<string,int>> new_list;
-    for (int n=0;n<2;n++)
+    for (int n=0;n<1;n++)
     {
         for (int on_run=0;on_run<ON_runlist.size();on_run++)
         {
 
             pair<string,int> best_match;
             pair<double,double> best_pointing;
-            double best_chi2 = 900.;
+            double best_chi2 = 10000.;
             for (int off_run=0;off_run<OFF_runlist.size();off_run++)
             {
                 if (ON_runlist[on_run].first.compare(OFF_runlist[off_run].first) == 0) continue;
@@ -207,7 +212,8 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
                     if (int(new_list[new_run].second)==int(OFF_runlist[off_run].second)) already_used_run = true;
                 }
                 if (already_used_run) continue;
-                double chi2 = 4.*pow(ON_pointing[on_run].first-OFF_pointing[off_run].first,2)+pow(ON_pointing[on_run].second-OFF_pointing[off_run].second,2);
+                double chi2 = 100.*pow(ON_pointing[on_run].first-OFF_pointing[off_run].first,2);
+                chi2 += pow(ON_pointing[on_run].second-OFF_pointing[off_run].second,2);
                 if (best_chi2>chi2)
                 {
                     best_chi2 = chi2;
@@ -215,7 +221,7 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
                     best_pointing = OFF_pointing[off_run];
                 }
             }
-            if (best_chi2<900.) 
+            if (best_chi2<10000.) 
             {
                 new_list.push_back(best_match);
                 std::cout << "add run:" << std::endl;
@@ -374,6 +380,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     TelElev_upper = tel_elev_upper_input;
 
     TH1D Hist_ErecS = TH1D("Hist_ErecS","",N_energy_bins,energy_bins);
+    TH2D Hist_Dark_ShowerDirection = TH2D("Hist_Dark_ShowerDirection","",180,0,360,90,0,90);
+    TH2D Hist_Data_ShowerDirection = TH2D("Hist_Data_ShowerDirection","",180,0,360,90,0,90);
     vector<TH2D> Hist_Data_MSCLW;
     vector<TH2D> Hist_Ring_MSCLW;
     vector<TH2D> Hist_Ring_Syst_MSCLW;
@@ -409,6 +417,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     vector<pair<string,int>> Data_runlist;
     Data_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
     std::cout << "Data_runlist size = " << Data_runlist.size() << std::endl;
+    if (Data_runlist.size()==0) return;
 
     // Get a list of dark observation runs
     vector<pair<string,int>> Dark_runlist_init = GetRunList("Everything");
@@ -441,13 +450,21 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         Dark_tree->SetBranchAddress("MSCW",&MSCW);
         Dark_tree->SetBranchAddress("MSCL",&MSCL);
         Dark_tree->SetBranchAddress("NImages",&NImages);
+        Dark_tree->SetBranchAddress("Xcore",&Xcore);
+        Dark_tree->SetBranchAddress("Ycore",&Ycore);
+        Dark_tree->SetBranchAddress("SizeSecondMax",&SizeSecondMax);
         Dark_tree->SetBranchAddress("Time",&Time);
+        Dark_tree->SetBranchAddress("Shower_Ze",&Shower_Ze);
+        Dark_tree->SetBranchAddress("Shower_Az",&Shower_Az);
 
         for (int entry=0;entry<Dark_tree->GetEntries();entry++) 
         {
             ErecS = 0;
             EChi2S = 0;
             NImages = 0;
+            Xcore = 0;
+            Ycore = 0;
+            SizeSecondMax = 0;
             MSCW = 0;
             MSCL = 0;
             R2off = 0;
@@ -457,7 +474,10 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
             int e = energy;
-            if (!SelectNImages(3,4)) continue;
+            if (!SelectNImages(2,4)) continue;
+            if (SizeSecondMax<600.) continue;
+            if (pow(Xcore*Xcore+Ycore*Ycore,0.5)>350) continue;
+            Hist_Dark_ShowerDirection.Fill(Shower_Az,Shower_Ze);
             if (DarkFoV())
             {
                 Hist_Dark_MSCLW.at(e).Fill(MSCL,MSCW);
@@ -501,7 +521,12 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         Data_tree->SetBranchAddress("MSCW",&MSCW);
         Data_tree->SetBranchAddress("MSCL",&MSCL);
         Data_tree->SetBranchAddress("NImages",&NImages);
+        Data_tree->SetBranchAddress("Xcore",&Xcore);
+        Data_tree->SetBranchAddress("Ycore",&Ycore);
+        Data_tree->SetBranchAddress("SizeSecondMax",&SizeSecondMax);
         Data_tree->SetBranchAddress("Time",&Time);
+        Data_tree->SetBranchAddress("Shower_Ze",&Shower_Ze);
+        Data_tree->SetBranchAddress("Shower_Az",&Shower_Az);
 
         // Get effective area and livetime and determine the cosmic electron counts for this run.
         Data_tree->GetEntry(0);
@@ -515,6 +540,9 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             ErecS = 0;
             EChi2S = 0;
             NImages = 0;
+            Xcore = 0;
+            Ycore = 0;
+            SizeSecondMax = 0;
             MSCW = 0;
             MSCL = 0;
             R2off = 0;
@@ -524,7 +552,10 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
             int e = energy;
-            if (!SelectNImages(3,4)) continue;
+            if (!SelectNImages(2,4)) continue;
+            if (SizeSecondMax<600.) continue;
+            if (pow(Xcore*Xcore+Ycore*Ycore,0.5)>350) continue;
+            Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze);
             if (FoV())
             {
                 Hist_Data_MSCLW.at(e).Fill(MSCL,MSCW);
@@ -604,6 +635,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
     InfoTree.Fill();
     InfoTree.Write();
+    Hist_Dark_ShowerDirection.Write();
+    Hist_Data_ShowerDirection.Write();
     for (int e=0;e<N_energy_bins;e++)
     {
         Hist_Data_MSCLW.at(e).Write();
