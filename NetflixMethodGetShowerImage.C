@@ -408,8 +408,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         Hist_Data_CR_SelectFoV_Theta2.push_back(TH1D("Hist_Data_CR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
         Hist_Data_SR_Skymap.push_back(TH2D("Hist_Data_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
         Hist_Data_CR_Skymap.push_back(TH2D("Hist_Data_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
-        Hist_Dark_SR_Skymap.push_back(TH2D("Hist_Dark_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
-        Hist_Dark_CR_Skymap.push_back(TH2D("Hist_Dark_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
+        Hist_Dark_SR_Skymap.push_back(TH2D("Hist_Dark_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",30,-3,3,30,-3,3));
+        Hist_Dark_CR_Skymap.push_back(TH2D("Hist_Dark_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",30,-3,3,30,-3,3));
     }
 
     // Get a list of target observation runs
@@ -477,6 +477,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (!SelectNImages(2,4)) continue;
             if (SizeSecondMax<600.) continue;
             if (pow(Xcore*Xcore+Ycore*Ycore,0.5)>350) continue;
+            if (R2off>4.) continue;
             Hist_Dark_ShowerDirection.Fill(Shower_Az,Shower_Ze);
             if (DarkFoV())
             {
@@ -555,6 +556,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (!SelectNImages(2,4)) continue;
             if (SizeSecondMax<600.) continue;
             if (pow(Xcore*Xcore+Ycore*Ycore,0.5)>350) continue;
+            if (R2off>4.) continue;
             Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze);
             if (FoV())
             {
