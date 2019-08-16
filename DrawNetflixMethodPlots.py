@@ -4,6 +4,8 @@ import array
 import math
 from array import *
 from ROOT import *
+from astropy import units as u
+from astropy.coordinates import SkyCoord
 
 ROOT.gStyle.SetOptStat(0)
 ROOT.TH1.SetDefaultSumw2()
@@ -17,7 +19,7 @@ UseRDBM = False
 UseDark = False
 UseRing = False
 
-theta2_lower = 0.0
+theta2_lower = 0.2
 theta2_upper = 10.0
 
 #file_elev_lower = 55
@@ -30,24 +32,23 @@ file_elev_upper = 85
 elev_range = []
 elev_range += [[75,85]]
 elev_range += [[65,75]]
-#elev_range += [[55,65]]
-#elev_range += [[45,55]]
+elev_range += [[55,65]]
+elev_range += [[45,55]]
 
 #tag = "Small"
 #file_theta2_lower = 0.0
 #file_theta2_upper = 0.2
 #UseRing = True
-#UseRDBM = True
 tag = "Large"
 file_theta2_lower = 0.2
 file_theta2_upper = 10.0
 UseRDBM = True
 UseDark = True
 
-FileFolder = 'output_Jul16'
-tag += '_New'
-#FileFolder = 'output_Netflix'
-#tag += '_Old'
+#FileFolder = 'output_Jul16'
+#tag += '_New'
+FileFolder = 'output_Netflix'
+tag += '_Old'
 
 target = ""
 source = []
@@ -55,11 +56,11 @@ source = []
 #source += ['IC443HotSpot']
 #source += ['Segue1V6']
 source += ['Crab']
-source += ['Mrk421']
-source += ['H1426']
-source += ['1ES0229']
-source += ['PKS1424']
-source += ['3C264']
+#source += ['Mrk421']
+#source += ['H1426']
+#source += ['1ES0229']
+#source += ['PKS1424']
+#source += ['3C264']
 #source += ['G079']
 #source += ['RGBJ0710']
 #source += ['CasA']
@@ -950,7 +951,92 @@ def Make2DSignificancePlotShowerShape(Hist_SR,Hist_Bkg,xtitle,ytitle,theta2_low,
     MakeGaussComparisonPlot(Hist_list,legend_list,color_list,'significance','ShowerShapeSigDist_%s'%(name))
     return Hist_Sig
 
-def MakeComparisonPlotNoRatio(Hists,legends,colors,title,name,minheight,maxheight,logx,logy):
+def MakeComparisonPlotTwoColumn(Hists,legends,colors,title,name,minheight,maxheight,logx,logy):
+    
+    c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
+    pad3 = ROOT.TPad("pad3","pad3",0,0.7,1,1)
+    pad3.SetBottomMargin(0.0)
+    pad3.SetTopMargin(0.03)
+    pad3.SetBorderMode(1)
+    pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.7)
+    pad1.SetBottomMargin(0.2)
+    pad1.SetTopMargin(0.0)
+    pad1.SetLeftMargin(0.2)
+    pad1.SetBorderMode(0)
+    if logy: pad1.SetGrid()
+    pad1.Draw()
+    pad3.Draw()
+
+    pad1.cd()
+    if logy: pad1.SetLogy()
+
+    max_heigh = 0
+    max_hist = 0
+    mean = []
+    rms = []
+    amp = []
+    for h in range(0,len(Hists)):
+        mean += [0]
+        rms += [0]
+        amp += [0]
+        if Hists[h]!=0:
+            Hists[h].GetXaxis().SetTitle(title)
+            if max_heigh < Hists[h].GetMaximum(): 
+                max_heigh = Hists[h].GetMaximum()
+                max_hist = h
+
+    if 'MSCW' in name:
+        low_end = Hists[0].GetMean()-3.*Hists[0].GetRMS()
+        high_end = Hists[0].GetMean()+3.*Hists[0].GetRMS()
+        for h in range(0,len(Hists)):
+            Hists[h].GetXaxis().SetRangeUser(low_end,high_end)
+
+    if not logy: Hists[max_hist].SetMinimum(0)
+    if not maxheight==0: Hists[max_hist].SetMaximum(maxheight)
+    Hists[max_hist].SetMinimum(minheight)
+    Hists[max_hist].GetXaxis().SetTitle(title)
+    Hists[max_hist].GetXaxis().SetTitleOffset(0.6)
+    Hists[max_hist].GetXaxis().SetTitleSize(0.06)
+    Hists[max_hist].GetXaxis().SetLabelSize(0.06)
+    Hists[max_hist].GetYaxis().SetLabelSize(0.06)
+    Hists[max_hist].GetYaxis().SetTitleOffset(1.0)
+    Hists[max_hist].GetYaxis().SetTitle("R = data / bkg")
+    Hists[max_hist].GetYaxis().SetTitleSize(0.06)
+    Hists[max_hist].Draw("E")
+
+    line1 = ROOT.TLine(Hists[max_hist].GetBinLowEdge(1),1,Hists[max_hist].GetBinLowEdge(Hists[max_hist].GetNbinsX()+1),1)
+    line1.SetLineStyle(1)
+    line1.SetLineColor(2)
+    line1.SetLineWidth(2)
+    line1.Draw("same")
+
+    for h in range(0,len(Hists)):
+        if Hists[h]!=0:
+            Hists[h].SetLineColor(colors[h])
+            Hists[h].SetMarkerStyle(22)
+            Hists[h].Draw("E same")
+
+    pad3.cd()
+    legend = ROOT.TLegend(0.1,0.1,0.9,0.9)
+    legend.SetNColumns(2)
+    legend.SetTextFont(42)
+    legend.SetBorderSize(0)
+    legend.SetTextSize(0.1)
+    legend.SetFillColor(0)
+    legend.SetFillStyle(0)
+    legend.SetLineColor(0)
+    legend.Clear()
+    for h in range(0,len(Hists)):
+        if Hists[h]!=0:
+            legend.AddEntry(Hists[h],legends[h],"pl")
+    legend.Draw("SAME")
+
+    if logx: 
+        pad1.SetLogx()
+
+    c_both.SaveAs('output_plots/%s_%s.png'%(name,tag))
+
+def MakeComparisonPlotSigDist(Hists,legends,colors,title,name,minheight,maxheight,logx,logy):
     
     c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
     pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
@@ -1076,10 +1162,12 @@ for s in range(0,len(source)):
     Hist2D_Dark_SumE = ROOT.TH2D("Hist2D_Dark_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
     Hist2D_Bkgd_SumE = ROOT.TH2D("Hist2D_Bkgd_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
     Hist_Data_MSCW_SumE = ROOT.TH1D("Hist_Data_MSCW_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+    Hist_Redu_MSCW_SumE = ROOT.TH1D("Hist_Redu_MSCW_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
     Hist_Ring_MSCW_SumE = ROOT.TH1D("Hist_Ring_MSCW_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
     Hist_Bkgd_MSCW_SumE = ROOT.TH1D("Hist_Bkgd_MSCW_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
     Hist_Dark_MSCW_SumE = ROOT.TH1D("Hist_Dark_MSCW_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
     Hist_Data_MSCL_SumE = ROOT.TH1D("Hist_Data_MSCL_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper)
+    Hist_Redu_MSCL_SumE = ROOT.TH1D("Hist_Redu_MSCL_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper)
     Hist_Ring_MSCL_SumE = ROOT.TH1D("Hist_Ring_MSCL_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper)
     Hist_Bkgd_MSCL_SumE = ROOT.TH1D("Hist_Bkgd_MSCL_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper)
     Hist_Dark_MSCL_SumE = ROOT.TH1D("Hist_Dark_MSCL_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper)
@@ -1093,14 +1181,16 @@ for s in range(0,len(source)):
     Hist_Dark_Skymap = ROOT.TH2D("Hist_Dark_Skymap","",150,-3,3,150,-3,3)
     Hist_Dark_Syst_Theta2 = ROOT.TH1D("Hist_Dark_Syst_Theta2","",1024,0,10)
     Hist_Dark_Syst_Skymap = ROOT.TH2D("Hist_Dark_Syst_Skymap","",150,-3,3,150,-3,3)
+    Hist_Ring_Theta2 = ROOT.TH1D("Hist_Ring_Theta2","",1024,0,10)
+    Hist_Ring_Skymap = ROOT.TH2D("Hist_Ring_Skymap","",150,-3,3,150,-3,3)
+    Hist_Ring_Syst_Theta2 = ROOT.TH1D("Hist_Ring_Syst_Theta2","",1024,0,10)
+    Hist_Ring_Syst_Skymap = ROOT.TH2D("Hist_Ring_Syst_Skymap","",150,-3,3,150,-3,3)
     exposure_hours = 0.
 
     Hist_SumE_S2B += [ROOT.TH1D("Hist_SumE_S2B_%s"%(target),"",2,0,2)]
     Hist_RDBM_S2B += [ROOT.TH1D("Hist_RDBM_S2B_%s"%(target),"",len(energy_list)-1,array('d',energy_list))]
     Hist_Dark_S2B += [ROOT.TH1D("Hist_Dark_S2B_%s"%(target),"",len(energy_list)-1,array('d',energy_list))]
     Hist_Ring_S2B += [ROOT.TH1D("Hist_Ring_S2B_%s"%(target),"",len(energy_list)-1,array('d',energy_list))]
-    legend_S2B += ['%s (%0.1f hrs)'%(target,exposure_hours)]
-    color_S2B += [s+1]
 
     for elev in range(0,len(elev_range)):
 
@@ -1222,6 +1312,8 @@ for s in range(0,len(source)):
             Hist_Fit_InvEigenvectorImag_2 = InputFile.Get(HistName)
             HistName = "Hist_Data_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
             Hist2D_Data = InputFile.Get(HistName)
+            HistName = "Hist_Redu_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+            Hist2D_Redu = InputFile.Get(HistName)
             HistName = "Hist_Ring_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
             Hist2D_Ring = InputFile.Get(HistName)
             HistName = "Hist_Dark_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
@@ -1240,12 +1332,14 @@ for s in range(0,len(source)):
             bin_lower = Hist2D_Data.GetXaxis().FindBin(MSCL_lower_cut)
             bin_upper = Hist2D_Data.GetXaxis().FindBin(MSCL_blind_cut)-1
             Hist1D_Data_MSCW_SumSRs = Hist2D_Data.ProjectionY("Hist1D_Data_MSCW_SumSRs",bin_lower,bin_upper)
+            Hist1D_Redu_MSCW_SumSRs = Hist2D_Redu.ProjectionY("Hist1D_Redu_MSCW_SumSRs",bin_lower,bin_upper)
             Hist1D_Ring_MSCW_SumSRs = Hist2D_Ring.ProjectionY("Hist1D_Ring_MSCW_SumSRs",bin_lower,bin_upper)
             Hist1D_Bkgd_MSCW_SumSRs = Hist2D_Bkgd.ProjectionY("Hist1D_Bkgd_MSCW_SumSRs",bin_lower,bin_upper)
             Hist1D_Dark_MSCW_SumSRs = Hist2D_Dark.ProjectionY("Hist1D_Dark_MSCW_SumSRs",bin_lower,bin_upper)
             bin_lower = Hist2D_Data.GetYaxis().FindBin(MSCW_lower_cut)
             bin_upper = Hist2D_Data.GetYaxis().FindBin(MSCW_blind_cut)-1
             Hist1D_Data_MSCL_SumSRs = Hist2D_Data.ProjectionX("Hist1D_Data_MSCL_SumSRs",bin_lower,bin_upper)
+            Hist1D_Redu_MSCL_SumSRs = Hist2D_Redu.ProjectionX("Hist1D_Redu_MSCL_SumSRs",bin_lower,bin_upper)
             Hist1D_Ring_MSCL_SumSRs = Hist2D_Ring.ProjectionX("Hist1D_Ring_MSCL_SumSRs",bin_lower,bin_upper)
             Hist1D_Bkgd_MSCL_SumSRs = Hist2D_Bkgd.ProjectionX("Hist1D_Bkgd_MSCL_SumSRs",bin_lower,bin_upper)
             Hist1D_Dark_MSCL_SumSRs = Hist2D_Dark.ProjectionX("Hist1D_Dark_MSCL_SumSRs",bin_lower,bin_upper)
@@ -1254,10 +1348,12 @@ for s in range(0,len(source)):
             Hist2D_Dark_SumE.Add(Hist2D_Dark)
             Hist2D_Bkgd_SumE.Add(Hist2D_Bkgd)
             Hist_Data_MSCW_SumE.Add(Hist1D_Data_MSCW_SumSRs)
+            Hist_Redu_MSCW_SumE.Add(Hist1D_Redu_MSCW_SumSRs)
             Hist_Ring_MSCW_SumE.Add(Hist1D_Ring_MSCW_SumSRs)
             Hist_Bkgd_MSCW_SumE.Add(Hist1D_Bkgd_MSCW_SumSRs)
             Hist_Dark_MSCW_SumE.Add(Hist1D_Dark_MSCW_SumSRs)
             Hist_Data_MSCL_SumE.Add(Hist1D_Data_MSCL_SumSRs)
+            Hist_Redu_MSCL_SumE.Add(Hist1D_Redu_MSCL_SumSRs)
             Hist_Ring_MSCL_SumE.Add(Hist1D_Ring_MSCL_SumSRs)
             Hist_Bkgd_MSCL_SumE.Add(Hist1D_Bkgd_MSCL_SumSRs)
             Hist_Dark_MSCL_SumE.Add(Hist1D_Dark_MSCL_SumSRs)
@@ -1365,6 +1461,53 @@ for s in range(0,len(source)):
                 Hist_Dark_Skymap_Tmp.Scale(0)
             Hist_Dark_Skymap.Add(Hist_Dark_Skymap_Tmp)
             Hist_Dark_Syst_Skymap.Add(Hist_Dark_Syst_Skymap_Tmp)
+
+            bkg_total, bkg_err = IntegralAndError(Hist1D_Ring_MSCW_SumSRs,bin_lower,bin_upper)
+            HistName = "Hist_Data_CR_SelectFoV_Theta2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+            Hist_Ring_Theta2_Tmp = InputFile.Get(HistName)
+            Hist_Ring_Syst_Theta2_Tmp = InputFile.Get(HistName)
+            old_integral = Hist_Ring_Theta2_Tmp.Integral()
+            Ring_scale = 0
+            Ring_scale_err = 0
+            if not bkg_total==0 and not old_integral==0:
+                Ring_scale = bkg_total/old_integral
+                Ring_scale_err = Ring_scale*(bkg_err/bkg_total)
+            else:
+                Ring_scale = 0
+                Ring_scale_err = 0
+            print 'Ring_scale = %s, Ring_scale_err = %s'%(Ring_scale,Ring_scale_err)
+            if not bkg_total==0:
+                Theta2HistScale(Hist_Ring_Theta2_Tmp,Hist_Ring_Syst_Theta2_Tmp,Ring_scale,Ring_scale_err)
+            else:
+                Hist_Ring_Theta2_Tmp.Scale(0)
+            Hist_Ring_Theta2.Add(Hist_Ring_Theta2_Tmp)
+            Hist_Ring_Syst_Theta2.Add(Hist_Ring_Syst_Theta2_Tmp)
+
+            Ring_syst = 0
+            if Ring_scale>0: Ring_syst = Ring_scale_err/Ring_scale
+            s2b, s2b_err = Variation_ratio(Hist_Data_Theta2_Tmp,Hist_Ring_Theta2_Tmp,theta2_lower,theta2_upper,Ring_syst)
+            Hist_Ring_S2B[len(Hist_Ring_S2B)-1].SetBinContent(e+1,s2b)
+            Hist_Ring_S2B[len(Hist_Ring_S2B)-1].SetBinError(e+1,s2b_err)
+
+            HistName = "Hist_Data_CR_Skymap_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+            Hist_Ring_Skymap_Tmp = InputFile.Get(HistName)
+            old_integral = Hist_Ring_Skymap_Tmp.Integral()
+            scale = 0
+            scale_err = 0
+            Hist_Ring_Syst_Skymap_Tmp = InputFile.Get(HistName)
+            Hist_Ring_Syst_Skymap_Tmp.Reset()
+            if not bkg_total==0 and not old_integral==0:
+                scale = bkg_total/old_integral
+                scale_err = scale*(bkg_err/bkg_total)
+            else:
+                scale = 0
+                scale_err = 0
+            if not bkg_total==0:
+                RaDecHistScale(Hist_Ring_Skymap_Tmp,Hist_Ring_Syst_Skymap_Tmp,scale,scale_err)
+            else:
+                Hist_Ring_Skymap_Tmp.Scale(0)
+            Hist_Ring_Skymap.Add(Hist_Ring_Skymap_Tmp)
+            Hist_Ring_Syst_Skymap.Add(Hist_Ring_Syst_Skymap_Tmp)
 
 
             if PlotAllEnergies:
@@ -1547,6 +1690,18 @@ for s in range(0,len(source)):
         Hists = []
         legends = []
         colors = []
+        Hists += [Hist_Data_MSCW_SumE]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_Redu_MSCW_SumE]
+        legends += ['Reduced']
+        colors += [4]
+        plotname = 'Target_W_SumSRs_SumE_Redu'
+        title = 'MSCW'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,-1)
+        Hists = []
+        legends = []
+        colors = []
         Hists += [Hist_Data_MSCL_SumE]
         legends += ['%s'%(target)]
         colors += [1]
@@ -1554,6 +1709,18 @@ for s in range(0,len(source)):
         legends += ['bkg']
         colors += [4]
         plotname = 'Target_L_SumSRs_SumE_RDBM'
+        title = 'MSCL'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCL_lower_cut,MSCL_blind_cut,-1)
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_Data_MSCL_SumE]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_Redu_MSCL_SumE]
+        legends += ['Reduced']
+        colors += [4]
+        plotname = 'Target_L_SumSRs_SumE_Redu'
         title = 'MSCL'
         MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCL_lower_cut,MSCL_blind_cut,-1)
         Hist_Sig = Make2DSignificancePlotShowerShape(Hist2D_Data_SumE,Hist2D_Bkgd_SumE,'MSCL','MSCW',0,0,'RDBM_Sig2D')
@@ -1614,6 +1781,10 @@ for s in range(0,len(source)):
     if theta2_upper>1.00: n_rebin = 16
     Hist_Bkgd_Theta2.Rebin(n_rebin)
     Hist_Bkgd_Syst_Theta2.Rebin(n_rebin)
+    Hist_Dark_Theta2.Rebin(n_rebin)
+    Hist_Dark_Syst_Theta2.Rebin(n_rebin)
+    Hist_Ring_Theta2.Rebin(n_rebin)
+    Hist_Ring_Syst_Theta2.Rebin(n_rebin)
     Hist_Data_Theta2.Rebin(n_rebin)
     
     if UseRDBM:
@@ -1632,30 +1803,99 @@ for s in range(0,len(source)):
         plotname = 'Target_SRall_RDBM_ZoomInTheta2_E%s'%(ErecS_lower_cut)
         title = '#theta^{2}'
         MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,theta2_lower,theta2_upper,-1)
+    if UseDark:
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_Data_Theta2]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_Dark_Theta2]
+        legends += ['dark']
+        colors += [4]
+        Hists += [Hist_Dark_Syst_Theta2]
+        legends += ['syst.']
+        colors += [0]
+        plotname = 'Target_SRall_Dark_ZoomInTheta2_E%s'%(ErecS_lower_cut)
+        title = '#theta^{2}'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,theta2_lower,theta2_upper,-1)
+    if UseRing:
+        Hists = []
+        legends = []
+        colors = []
+        Hists += [Hist_Data_Theta2]
+        legends += ['%s'%(target)]
+        colors += [1]
+        Hists += [Hist_Ring_Theta2]
+        legends += ['ring']
+        colors += [4]
+        Hists += [Hist_Ring_Syst_Theta2]
+        legends += ['syst.']
+        colors += [0]
+        plotname = 'Target_SRall_Ring_ZoomInTheta2_E%s'%(ErecS_lower_cut)
+        title = '#theta^{2}'
+        MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,theta2_lower,theta2_upper,-1)
     
-    if DoSkymap and UseRDBM:
-        
-        plotname = 'Target_SRall_RDBM_Skymap_E%s'%(ErecS_lower_cut)
-        n_rebin = 1
-        Hist_Data_Skymap.Rebin2D(n_rebin,n_rebin)
-        Hist_Bkgd_Skymap.Rebin2D(n_rebin,n_rebin)
-        Hist_Bkgd_Syst_Skymap.Rebin2D(n_rebin,n_rebin)
-        Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap,Hist_Bkgd_Skymap,'RA','Dec',theta2_lower,theta2_upper,plotname)
-        
-        smooth_size = 0.05
-        Hist_Data_Skymap_smooth = Smooth2DMap(Hist_Data_Skymap,smooth_size,False)
-        Hist_Bkgd_Skymap_smooth = Smooth2DMap(Hist_Bkgd_Skymap,smooth_size,False)
-        Hist_Bkgd_Syst_Skymap_smooth = Smooth2DMap(Hist_Bkgd_Syst_Skymap,smooth_size,True)
-        Hist_Bkgd_Skymap_smooth.Add(Hist_Bkgd_Syst_Skymap_smooth)
-        plotname = 'Target_SRall_RDBM_Skymap_Smooth_E%s'%(ErecS_lower_cut)
-        Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap_smooth,Hist_Bkgd_Skymap_smooth,'RA','Dec',theta2_lower,theta2_upper,plotname)
+    if DoSkymap:
+        if UseRDBM:
+            plotname = 'Target_SRall_RDBM_Skymap_E%s'%(ErecS_lower_cut)
+            n_rebin = 1
+            Hist_Data_Skymap.Rebin2D(n_rebin,n_rebin)
+            Hist_Bkgd_Skymap.Rebin2D(n_rebin,n_rebin)
+            Hist_Bkgd_Syst_Skymap.Rebin2D(n_rebin,n_rebin)
+            Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap,Hist_Bkgd_Skymap,'RA','Dec',theta2_lower,theta2_upper,plotname)
+            smooth_size = 0.05
+            Hist_Data_Skymap_smooth = Smooth2DMap(Hist_Data_Skymap,smooth_size,False)
+            Hist_Bkgd_Skymap_smooth = Smooth2DMap(Hist_Bkgd_Skymap,smooth_size,False)
+            Hist_Bkgd_Syst_Skymap_smooth = Smooth2DMap(Hist_Bkgd_Syst_Skymap,smooth_size,True)
+            Hist_Bkgd_Skymap_smooth.Add(Hist_Bkgd_Syst_Skymap_smooth)
+            plotname = 'Target_SRall_RDBM_Skymap_Smooth_E%s'%(ErecS_lower_cut)
+            Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap_smooth,Hist_Bkgd_Skymap_smooth,'RA','Dec',theta2_lower,theta2_upper,plotname)
+        if UseDark:
+            plotname = 'Target_SRall_Dark_Skymap_E%s'%(ErecS_lower_cut)
+            n_rebin = 1
+            Hist_Data_Skymap.Rebin2D(n_rebin,n_rebin)
+            Hist_Dark_Skymap.Rebin2D(n_rebin,n_rebin)
+            Hist_Dark_Syst_Skymap.Rebin2D(n_rebin,n_rebin)
+            Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap,Hist_Dark_Skymap,'RA','Dec',theta2_lower,theta2_upper,plotname)
+            smooth_size = 0.05
+            Hist_Data_Skymap_smooth = Smooth2DMap(Hist_Data_Skymap,smooth_size,False)
+            Hist_Dark_Skymap_smooth = Smooth2DMap(Hist_Dark_Skymap,smooth_size,False)
+            Hist_Dark_Syst_Skymap_smooth = Smooth2DMap(Hist_Dark_Syst_Skymap,smooth_size,True)
+            Hist_Dark_Skymap_smooth.Add(Hist_Dark_Syst_Skymap_smooth)
+            plotname = 'Target_SRall_Dark_Skymap_Smooth_E%s'%(ErecS_lower_cut)
+            Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap_smooth,Hist_Dark_Skymap_smooth,'RA','Dec',theta2_lower,theta2_upper,plotname)
+        if UseRing:
+            plotname = 'Target_SRall_Ring_Skymap_E%s'%(ErecS_lower_cut)
+            n_rebin = 1
+            Hist_Data_Skymap.Rebin2D(n_rebin,n_rebin)
+            Hist_Ring_Skymap.Rebin2D(n_rebin,n_rebin)
+            Hist_Ring_Syst_Skymap.Rebin2D(n_rebin,n_rebin)
+            Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap,Hist_Ring_Skymap,'RA','Dec',theta2_lower,theta2_upper,plotname)
+            smooth_size = 0.05
+            Hist_Data_Skymap_smooth = Smooth2DMap(Hist_Data_Skymap,smooth_size,False)
+            Hist_Ring_Skymap_smooth = Smooth2DMap(Hist_Ring_Skymap,smooth_size,False)
+            Hist_Ring_Syst_Skymap_smooth = Smooth2DMap(Hist_Ring_Syst_Skymap,smooth_size,True)
+            Hist_Ring_Skymap_smooth.Add(Hist_Ring_Syst_Skymap_smooth)
+            plotname = 'Target_SRall_Ring_Skymap_Smooth_E%s'%(ErecS_lower_cut)
+            Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap_smooth,Hist_Ring_Skymap_smooth,'RA','Dec',theta2_lower,theta2_upper,plotname)
+
+    legend_S2B += ['%s (%0.1f hrs)'%(target,exposure_hours)]
+    color_S2B += [s+1]
 
     InputFile.Close()
     Make2DProjectionPlot(Hist_Dark_ShowerDirection_Sum,'Azimuth','Zenith','Dark_ShowerDirection',False)
     Make2DProjectionPlot(Hist_Data_ShowerDirection_Sum,'Azimuth','Zenith','Data_ShowerDirection',False)
 
+for s in range(0,len(source)):
+    Hist_SumE_S2B[s].GetXaxis().SetBinLabel(1,'Scaling')
+    Hist_SumE_S2B[s].GetXaxis().SetBinLabel(2,'Eigen')
 if UseRDBM:
-    MakeComparisonPlotNoRatio(Hist_RDBM_S2B,legend_S2B,color_S2B,'E [GeV]','Mismodeling_RDBM_systematics',0.6,1.4,True,False)
-    MakeComparisonPlotNoRatio(Hist_SumE_S2B,legend_S2B,color_S2B,'methods','Mismodeling_systematics',0.6,1.4,False,False)
+    MakeComparisonPlotSigDist(Hist_RDBM_S2B,legend_S2B,color_S2B,'E [GeV]','Mismodeling_RDBM_systematics',0.6,1.4,True,False)
+    MakeComparisonPlotTwoColumn(Hist_SumE_S2B,legend_S2B,color_S2B,'methods','Mismodeling_systematics',0.6,1.4,False,False)
 if UseDark:
-    MakeComparisonPlotNoRatio(Hist_Dark_S2B,legend_S2B,color_S2B,'E [GeV]','Mismodeling_Dark_systematics',0.6,1.4,True,False)
+    MakeComparisonPlotSigDist(Hist_Dark_S2B,legend_S2B,color_S2B,'E [GeV]','Mismodeling_Dark_systematics',0.6,1.4,True,False)
+
+#c = SkyCoord(ra=308.119, dec=40.3282, unit=(u.degree, u.degree))
+c = SkyCoord(ra=83.6333, dec=22.0145, unit=(u.degree, u.degree))
+print c.galactic
