@@ -1207,10 +1207,9 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         // kConjugateFR, kConjugatePR, kVectorBFGS,
         // kVectorBFGS2, kSteepestDescent
 
-        NumberOfEigenvectors = 4;
-        if (CurrentEnergy>700.) NumberOfEigenvectors = 3;
-        if (CurrentEnergy>1500.) NumberOfEigenvectors = 2;
-        if (CurrentEnergy>4000.) NumberOfEigenvectors = 1;
+        NumberOfEigenvectors = 3;
+        if (CurrentEnergy>1000.) NumberOfEigenvectors = 2;
+        if (CurrentEnergy>2000.) NumberOfEigenvectors = 1;
         ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kVectorBFGS );
         //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
         //ROOT::Minuit2::Minuit2Minimizer Chi2Minimizer_1st( ROOT::Minuit2::kMigrad );
