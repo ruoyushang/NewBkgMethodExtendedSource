@@ -12,14 +12,14 @@ ROOT.TH1.SetDefaultSumw2()
 ROOT.TH1.AddDirectory(False) # without this, the histograms returned from a function will be non-type
 ROOT.gStyle.SetPaintTextFormat("0.3f")
 
-PlotAllEnergies = False
+PlotAllEnergies = True
 PlotAllSRs = False
 DoSkymap = False
 UseRDBM = False
 UseDark = False
 UseRing = False
 
-theta2_lower = 0.2
+theta2_lower = 0.0
 theta2_upper = 10.0
 
 #file_elev_lower = 55
@@ -30,32 +30,37 @@ file_elev_lower = 75
 file_elev_upper = 85
 
 elev_range = []
-elev_range += [[75,85]]
+#elev_range += [[75,85]]
 elev_range += [[65,75]]
-elev_range += [[55,65]]
-elev_range += [[45,55]]
+#elev_range += [[55,65]]
+#elev_range += [[45,55]]
 
-#tag = "Small"
+#tag = "SmallON"
 #file_theta2_lower = 0.0
 #file_theta2_upper = 0.2
 #UseRing = True
-tag = "Large"
+#tag = "LargeON"
+#file_theta2_lower = 0.0
+#file_theta2_upper = 10.0
+#UseRDBM = True
+#UseDark = True
+tag = "LargeOFF"
 file_theta2_lower = 0.2
 file_theta2_upper = 10.0
 UseRDBM = True
 UseDark = True
 
-#FileFolder = 'output_Jul16'
-#tag += '_New'
-FileFolder = 'output_Netflix'
-tag += '_Old'
+FileFolder = 'output_Jul16'
+tag += '_New'
+#FileFolder = 'output_Netflix'
+#tag += '_Old'
 
 target = ""
 source = []
 #source += ['Everything']
 #source += ['IC443HotSpot']
 #source += ['Segue1V6']
-source += ['Crab']
+#source += ['Crab']
 #source += ['Mrk421']
 #source += ['H1426']
 #source += ['1ES0229']
@@ -65,6 +70,9 @@ source += ['Crab']
 #source += ['RGBJ0710']
 #source += ['CasA']
 #source += ['M82']
+#source += ['OJ287V6']
+#source += ['1ES1011V6']
+source += ['NGC1275V6']
 #source += ['WComaeV6']
 #source += ['1ES1218V6']
 
@@ -175,9 +183,9 @@ def AddSyst2D(Hist_Data,Hist_Dark,Hist_Bkgd):
     for bx in range(1,Hist_Bkgd.GetNbinsX()+1):
         for by in range(1,Hist_Bkgd.GetNbinsY()+1):
             data_cr_x = Hist_Data.Integral(bx,bx,bin_upper_y,Hist_Bkgd.GetNbinsY())
-            bkgd_cr_x = Hist_Bkgd.Integral(bx,bx,bin_upper_y,Hist_Bkgd.GetNbinsY())
+            bkgd_cr_x = Hist_Dark.Integral(bx,bx,bin_upper_y,Hist_Bkgd.GetNbinsY())
             data_cr_y = Hist_Data.Integral(bin_upper_x,Hist_Bkgd.GetNbinsX(),by,by)
-            bkgd_cr_y = Hist_Bkgd.Integral(bin_upper_x,Hist_Bkgd.GetNbinsX(),by,by)
+            bkgd_cr_y = Hist_Dark.Integral(bin_upper_x,Hist_Bkgd.GetNbinsX(),by,by)
             syst_cr = 0.
             if not (abs(data_cr_x)+abs(data_cr_y)+abs(bkgd_cr_x)+abs(bkgd_cr_y))==0:
                 syst_cr = 2.*(abs(data_cr_x-bkgd_cr_x)+abs(data_cr_y-bkgd_cr_y))/(abs(data_cr_x)+abs(data_cr_y)+abs(bkgd_cr_x)+abs(bkgd_cr_y))
@@ -1159,6 +1167,7 @@ for s in range(0,len(source)):
     Hist_Dark_ShowerDirection_Sum = ROOT.TH2D("Hist_Dark_ShowerDirection_Sum","",180,0,360,90,0,90)
     Hist_Data_ShowerDirection_Sum = ROOT.TH2D("Hist_Data_ShowerDirection_Sum","",180,0,360,90,0,90)
     Hist2D_Data_SumE = ROOT.TH2D("Hist2D_Data_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+    Hist2D_Redu_SumE = ROOT.TH2D("Hist2D_Redu_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
     Hist2D_Dark_SumE = ROOT.TH2D("Hist2D_Dark_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
     Hist2D_Bkgd_SumE = ROOT.TH2D("Hist2D_Bkgd_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
     Hist_Data_MSCW_SumE = ROOT.TH1D("Hist_Data_MSCW_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
@@ -1186,6 +1195,20 @@ for s in range(0,len(source)):
     Hist_Ring_Syst_Theta2 = ROOT.TH1D("Hist_Ring_Syst_Theta2","",1024,0,10)
     Hist_Ring_Syst_Skymap = ROOT.TH2D("Hist_Ring_Syst_Skymap","",150,-3,3,150,-3,3)
     exposure_hours = 0.
+
+    Hist_Data_Theta2_SumElev = []
+    Hist_Bkgd_Theta2_SumElev = []
+    Hist_Dark_Theta2_SumElev = []
+    Hist_Bkgd_Syst_Theta2_SumElev = []
+    Hist_Dark_Syst_Theta2_SumElev = []
+    for e in range(0,len(energy_list)-1):
+        ErecS_lower_cut = energy_list[e]
+        ErecS_upper_cut = energy_list[e+1]
+        Hist_Data_Theta2_SumElev += [ROOT.TH1D("Hist_Data_Theta2_SumElev_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut),"",1024,0,10)]
+        Hist_Bkgd_Theta2_SumElev += [ROOT.TH1D("Hist_Bkgd_Theta2_SumElev_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut),"",1024,0,10)]
+        Hist_Dark_Theta2_SumElev += [ROOT.TH1D("Hist_Dark_Theta2_SumElev_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut),"",1024,0,10)]
+        Hist_Bkgd_Syst_Theta2_SumElev += [ROOT.TH1D("Hist_Bkgd_Syst_Theta2_SumElev_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut),"",1024,0,10)]
+        Hist_Dark_Syst_Theta2_SumElev += [ROOT.TH1D("Hist_Dark_Syst_Theta2_SumElev_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut),"",1024,0,10)]
 
     Hist_SumE_S2B += [ROOT.TH1D("Hist_SumE_S2B_%s"%(target),"",2,0,2)]
     Hist_RDBM_S2B += [ROOT.TH1D("Hist_RDBM_S2B_%s"%(target),"",len(energy_list)-1,array('d',energy_list))]
@@ -1314,6 +1337,7 @@ for s in range(0,len(source)):
             Hist2D_Data = InputFile.Get(HistName)
             HistName = "Hist_Redu_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
             Hist2D_Redu = InputFile.Get(HistName)
+            Hist2D_Redu = AddStat2D(Hist2D_Data,Hist2D_Redu)
             HistName = "Hist_Ring_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
             Hist2D_Ring = InputFile.Get(HistName)
             HistName = "Hist_Dark_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
@@ -1345,6 +1369,7 @@ for s in range(0,len(source)):
             Hist1D_Dark_MSCL_SumSRs = Hist2D_Dark.ProjectionX("Hist1D_Dark_MSCL_SumSRs",bin_lower,bin_upper)
 
             Hist2D_Data_SumE.Add(Hist2D_Data)
+            Hist2D_Redu_SumE.Add(Hist2D_Redu)
             Hist2D_Dark_SumE.Add(Hist2D_Dark)
             Hist2D_Bkgd_SumE.Add(Hist2D_Bkgd)
             Hist_Data_MSCW_SumE.Add(Hist1D_Data_MSCW_SumSRs)
@@ -1364,6 +1389,7 @@ for s in range(0,len(source)):
             HistName = "Hist_Data_SR_SelectFoV_Theta2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
             Hist_Data_Theta2_Tmp = InputFile.Get(HistName)
             Hist_Data_Theta2.Add(Hist_Data_Theta2_Tmp)
+            Hist_Data_Theta2_SumElev[e].Add(Hist_Data_Theta2_Tmp)
             HistName = "Hist_Data_SR_Skymap_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
             Hist_Data_Skymap.Add(InputFile.Get(HistName))
 
@@ -1386,14 +1412,9 @@ for s in range(0,len(source)):
             else:
                 Hist_Bkgd_Theta2_Tmp.Scale(0)
             Hist_Bkgd_Theta2.Add(Hist_Bkgd_Theta2_Tmp)
+            Hist_Bkgd_Theta2_SumElev[e].Add(Hist_Bkgd_Theta2_Tmp)
             Hist_Bkgd_Syst_Theta2.Add(Hist_Bkgd_Syst_Theta2_Tmp)
-
-            bkgd_syst = 0
-            if bkgd_scale>0: bkgd_syst = bkgd_scale_err/bkgd_scale
-            print 'bkgd_syst = %s'%(bkgd_syst)
-            s2b, s2b_err = Variation_ratio(Hist_Data_Theta2_Tmp,Hist_Bkgd_Theta2_Tmp,theta2_lower,theta2_upper,bkgd_syst)
-            Hist_RDBM_S2B[len(Hist_RDBM_S2B)-1].SetBinContent(e+1,s2b)
-            Hist_RDBM_S2B[len(Hist_RDBM_S2B)-1].SetBinError(e+1,s2b_err)
+            Hist_Bkgd_Syst_Theta2_SumElev[e].Add(Hist_Bkgd_Syst_Theta2_Tmp)
 
             HistName = "Hist_Data_CR_Skymap_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
             Hist_Bkgd_Skymap_Tmp = InputFile.Get(HistName)
@@ -1434,13 +1455,9 @@ for s in range(0,len(source)):
             else:
                 Hist_Dark_Theta2_Tmp.Scale(0)
             Hist_Dark_Theta2.Add(Hist_Dark_Theta2_Tmp)
+            Hist_Dark_Theta2_SumElev[e].Add(Hist_Dark_Theta2_Tmp)
             Hist_Dark_Syst_Theta2.Add(Hist_Dark_Syst_Theta2_Tmp)
-
-            dark_syst = 0
-            if dark_scale>0: dark_syst = dark_scale_err/dark_scale
-            s2b, s2b_err = Variation_ratio(Hist_Data_Theta2_Tmp,Hist_Dark_Theta2_Tmp,theta2_lower,theta2_upper,dark_syst)
-            Hist_Dark_S2B[len(Hist_Dark_S2B)-1].SetBinContent(e+1,s2b)
-            Hist_Dark_S2B[len(Hist_Dark_S2B)-1].SetBinError(e+1,s2b_err)
+            Hist_Dark_Syst_Theta2_SumElev[e].Add(Hist_Dark_Syst_Theta2_Tmp)
 
             HistName = "Hist_Data_CR_Skymap_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
             Hist_Dark_Skymap_Tmp = InputFile.Get(HistName)
@@ -1512,73 +1529,82 @@ for s in range(0,len(source)):
 
             if PlotAllEnergies:
                 if UseRDBM:
-                    Hists = []
-                    legends = []
-                    colors = []
-                    Hists += [Hist_FourierCoeff_Eigenvector_0_Real]
-                    legends += ['1st eigenvec sin']
-                    colors += [1]
-                    Hists += [Hist_FourierCoeff_Eigenvector_0_Imag]
-                    legends += ['1st eigenvec cos']
-                    colors += [2]
-                    Hists += [Hist_FourierCoeff_InvEigenvector_0_Real]
-                    legends += ['1st inverse eigenvec sin']
-                    colors += [3]
-                    Hists += [Hist_FourierCoeff_InvEigenvector_0_Imag]
-                    legends += ['1st inverse eigenvec cos']
-                    colors += [4]
-                    plotname = 'FourierCoeff_Eignvec_0_E%s'%(ErecS_lower_cut)
-                    title = 'Fourier mode'
-                    MakeComparisonPlot(Hists,legends,colors,title,plotname,False,False)
-                    Hists = []
-                    legends = []
-                    colors = []
-                    Hists += [Hist_FourierCoeff_Eigenvector_1_Real]
-                    legends += ['2nd eigenvec sin']
-                    colors += [1]
-                    Hists += [Hist_FourierCoeff_Eigenvector_1_Imag]
-                    legends += ['2nd eigenvec cos']
-                    colors += [2]
-                    Hists += [Hist_FourierCoeff_InvEigenvector_1_Real]
-                    legends += ['2nd inverse eigenvec sin']
-                    colors += [3]
-                    Hists += [Hist_FourierCoeff_InvEigenvector_1_Imag]
-                    legends += ['2nd inverse eigenvec cos']
-                    colors += [4]
-                    plotname = 'FourierCoeff_Eignvec_1_E%s'%(ErecS_lower_cut)
-                    title = 'Fourier mode'
-                    MakeComparisonPlot(Hists,legends,colors,title,plotname,False,False)
-                    Hists = []
-                    legends = []
-                    colors = []
-                    Hists += [Hist_FourierCoeff_Eigenvector_2_Real]
-                    legends += ['3rd eigenvec sin']
-                    colors += [1]
-                    Hists += [Hist_FourierCoeff_Eigenvector_2_Imag]
-                    legends += ['3rd eigenvec cos']
-                    colors += [2]
-                    Hists += [Hist_FourierCoeff_InvEigenvector_2_Real]
-                    legends += ['3rd inverse eigenvec sin']
-                    colors += [3]
-                    Hists += [Hist_FourierCoeff_InvEigenvector_2_Imag]
-                    legends += ['3rd inverse eigenvec cos']
-                    colors += [4]
-                    plotname = 'FourierCoeff_Eignvec_2_E%s'%(ErecS_lower_cut)
-                    title = 'Fourier mode'
-                    MakeComparisonPlot(Hists,legends,colors,title,plotname,False,False)
+                    #Hists = []
+                    #legends = []
+                    #colors = []
+                    #Hists += [Hist_FourierCoeff_Eigenvector_0_Real]
+                    #legends += ['1st eigenvec sin']
+                    #colors += [1]
+                    #Hists += [Hist_FourierCoeff_Eigenvector_0_Imag]
+                    #legends += ['1st eigenvec cos']
+                    #colors += [2]
+                    #Hists += [Hist_FourierCoeff_InvEigenvector_0_Real]
+                    #legends += ['1st inverse eigenvec sin']
+                    #colors += [3]
+                    #Hists += [Hist_FourierCoeff_InvEigenvector_0_Imag]
+                    #legends += ['1st inverse eigenvec cos']
+                    #colors += [4]
+                    #plotname = 'FourierCoeff_Eignvec_0_E%s'%(ErecS_lower_cut)
+                    #title = 'Fourier mode'
+                    #MakeComparisonPlot(Hists,legends,colors,title,plotname,False,False)
+                    #Hists = []
+                    #legends = []
+                    #colors = []
+                    #Hists += [Hist_FourierCoeff_Eigenvector_1_Real]
+                    #legends += ['2nd eigenvec sin']
+                    #colors += [1]
+                    #Hists += [Hist_FourierCoeff_Eigenvector_1_Imag]
+                    #legends += ['2nd eigenvec cos']
+                    #colors += [2]
+                    #Hists += [Hist_FourierCoeff_InvEigenvector_1_Real]
+                    #legends += ['2nd inverse eigenvec sin']
+                    #colors += [3]
+                    #Hists += [Hist_FourierCoeff_InvEigenvector_1_Imag]
+                    #legends += ['2nd inverse eigenvec cos']
+                    #colors += [4]
+                    #plotname = 'FourierCoeff_Eignvec_1_E%s'%(ErecS_lower_cut)
+                    #title = 'Fourier mode'
+                    #MakeComparisonPlot(Hists,legends,colors,title,plotname,False,False)
+                    #Hists = []
+                    #legends = []
+                    #colors = []
+                    #Hists += [Hist_FourierCoeff_Eigenvector_2_Real]
+                    #legends += ['3rd eigenvec sin']
+                    #colors += [1]
+                    #Hists += [Hist_FourierCoeff_Eigenvector_2_Imag]
+                    #legends += ['3rd eigenvec cos']
+                    #colors += [2]
+                    #Hists += [Hist_FourierCoeff_InvEigenvector_2_Real]
+                    #legends += ['3rd inverse eigenvec sin']
+                    #colors += [3]
+                    #Hists += [Hist_FourierCoeff_InvEigenvector_2_Imag]
+                    #legends += ['3rd inverse eigenvec cos']
+                    #colors += [4]
+                    #plotname = 'FourierCoeff_Eignvec_2_E%s'%(ErecS_lower_cut)
+                    #title = 'Fourier mode'
+                    #MakeComparisonPlot(Hists,legends,colors,title,plotname,False,False)
                     Hists = []
                     legends = []
                     colors = []
                     Hists += [Hist_Data_EigenvectorReal_0]
-                    legends += ['1st']
+                    legends += ['A']
                     colors += [1]
-                    Hists += [Hist_Data_EigenvectorReal_1]
-                    legends += ['2nd']
+                    Hists += [Hist_Data_InvEigenvectorReal_0]
+                    legends += ['C']
                     colors += [2]
-                    Hists += [Hist_Data_EigenvectorReal_2]
-                    legends += ['3rd']
-                    colors += [3]
-                    plotname = 'Target_Eigenvector_E%s'%(ErecS_lower_cut)
+                    plotname = 'Target_Eigenvector_0_E%s'%(ErecS_lower_cut)
+                    title = 'eigenvector'
+                    MakeComparisonPlot(Hists,legends,colors,title,plotname,False,False)
+                    Hists = []
+                    legends = []
+                    colors = []
+                    Hists += [Hist_Data_EigenvectorReal_1]
+                    legends += ['A']
+                    colors += [1]
+                    Hists += [Hist_Data_InvEigenvectorReal_1]
+                    legends += ['C']
+                    colors += [2]
+                    plotname = 'Target_Eigenvector_1_E%s'%(ErecS_lower_cut)
                     title = 'eigenvector'
                     MakeComparisonPlot(Hists,legends,colors,title,plotname,False,False)
                     Hists = []
@@ -1602,9 +1628,6 @@ for s in range(0,len(source)):
                     Hists += [Hist1D_Bkgd_MSCL_SumSRs]
                     legends += ['bkg']
                     colors += [4]
-                    Hists += [Hist1D_Bkgd_Syst_MSCL_SumSRs]
-                    legends += ['syst.']
-                    colors += [0]
                     plotname = 'Target_L_SumSRs_RDBM_E%s'%(ErecS_lower_cut)
                     title = 'MSCL'
                     MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCL_lower_cut,MSCL_blind_cut,-1)
@@ -1724,6 +1747,7 @@ for s in range(0,len(source)):
         title = 'MSCL'
         MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCL_lower_cut,MSCL_blind_cut,-1)
         Hist_Sig = Make2DSignificancePlotShowerShape(Hist2D_Data_SumE,Hist2D_Bkgd_SumE,'MSCL','MSCW',0,0,'RDBM_Sig2D')
+        Hist_Sig = Make2DSignificancePlotShowerShape(Hist2D_Data_SumE,Hist2D_Redu_SumE,'MSCL','MSCW',0,0,'Redu_Sig2D')
     if UseRing:
         Hists = []
         legends = []
@@ -1879,6 +1903,17 @@ for s in range(0,len(source)):
             Hist_Ring_Skymap_smooth.Add(Hist_Ring_Syst_Skymap_smooth)
             plotname = 'Target_SRall_Ring_Skymap_Smooth_E%s'%(ErecS_lower_cut)
             Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap_smooth,Hist_Ring_Skymap_smooth,'RA','Dec',theta2_lower,theta2_upper,plotname)
+
+    for e in range(0,len(energy_list)-1):
+        bkgd_syst = Hist_Bkgd_Syst_Theta2_SumElev[e].Integral()/Hist_Bkgd_Theta2_SumElev[e].Integral()
+        print 'bkgd_syst = %s'%(bkgd_syst)
+        s2b, s2b_err = Variation_ratio(Hist_Data_Theta2_SumElev[e],Hist_Bkgd_Theta2_SumElev[e],theta2_lower,theta2_upper,bkgd_syst)
+        Hist_RDBM_S2B[len(Hist_RDBM_S2B)-1].SetBinContent(e+1,s2b)
+        Hist_RDBM_S2B[len(Hist_RDBM_S2B)-1].SetBinError(e+1,s2b_err)
+        dark_syst = Hist_Dark_Syst_Theta2_SumElev[e].Integral()/Hist_Dark_Theta2_SumElev[e].Integral()
+        s2b, s2b_err = Variation_ratio(Hist_Data_Theta2_SumElev[e],Hist_Dark_Theta2_SumElev[e],theta2_lower,theta2_upper,dark_syst)
+        Hist_Dark_S2B[len(Hist_Dark_S2B)-1].SetBinContent(e+1,s2b)
+        Hist_Dark_S2B[len(Hist_Dark_S2B)-1].SetBinError(e+1,s2b_err)
 
     legend_S2B += ['%s (%0.1f hrs)'%(target,exposure_hours)]
     color_S2B += [s+1]

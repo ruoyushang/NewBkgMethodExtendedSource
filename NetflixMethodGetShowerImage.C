@@ -212,7 +212,7 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
                     if (int(new_list[new_run].second)==int(OFF_runlist[off_run].second)) already_used_run = true;
                 }
                 if (already_used_run) continue;
-                double chi2 = 100.*pow(ON_pointing[on_run].first-OFF_pointing[off_run].first,2);
+                double chi2 = 4.*pow(ON_pointing[on_run].first-OFF_pointing[off_run].first,2);
                 chi2 += pow(ON_pointing[on_run].second-OFF_pointing[off_run].second,2);
                 if (best_chi2>chi2)
                 {
@@ -613,10 +613,10 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     {
         int binx_lower = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_lower);
         int binx_blind = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_blind)-1;
-        int binx_upper = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_blind*3)-1;
+        int binx_upper = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_blind*2)-1;
         int biny_lower = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_lower);
         int biny_blind = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind)-1;
-        int biny_upper = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
+        int biny_upper = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*2)-1;
         double Dark_SR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
         double Data_SR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
         double Dark_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
