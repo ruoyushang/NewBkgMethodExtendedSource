@@ -209,8 +209,8 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_data_redu, TH2D* hist_dark, TH2D*
     int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
     int binx_upper = hist_data->GetXaxis()->FindBin(MSCL_cut_blind*2);
     int biny_upper = hist_data->GetYaxis()->FindBin(MSCW_cut_blind*2);
-    int binx_lower = hist_data->GetXaxis()->FindBin(-0.5);
-    int biny_lower = hist_data->GetYaxis()->FindBin(-0.5);
+    int binx_lower = hist_data->GetXaxis()->FindBin(-0.9);
+    int biny_lower = hist_data->GetYaxis()->FindBin(-0.9);
     double chi2 = 0.;
     for (int bx=1;bx<=hist_data->GetNbinsX();bx++)
     {
@@ -224,15 +224,17 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_data_redu, TH2D* hist_dark, TH2D*
             double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(-1.);
             double dy = hist_data->GetYaxis()->GetBinCenter(by)-(-1.);
             double width = 1.0;
-            weight = exp(-0.5*dx*dx/(1.0*width*1.0*width))*exp(-0.5*dy*dy/(1.0*width*1.0*width));
-            if (abs(data-data_redu)/(data+1.)>10.) weight = 0.;
+            double data_err = max(1.,pow(data,0.5));
+            //weight = exp(-0.5*dx*dx/(1.0*width*1.0*width))*exp(-0.5*dy*dy/(1.0*width*1.0*width));
+            weight = 1./(data_err*data_err);
+            if (abs(data-data_redu)/(data+1.)>100.) weight = 0.;
             if (bx>=binx_blind || by>=biny_blind)
             {
                 chi2 += weight*pow(data_redu-model,2);
             }
             else if (bx<binx_lower || by<biny_lower)
             {
-                chi2 += weight*pow(dark-model,2);
+                chi2 += weight*pow(data_redu-model,2);
             }
             //else
             //{
@@ -403,7 +405,7 @@ void FourierParametrizeEigenvectors(const double *par)
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             double x = double(row+1)*(MSCW_plot_upper-MSCW_plot_lower)/double(N_bins_for_deconv)+MSCW_plot_lower;
-            double x_norm = par[first_index]*2.0*M_PI*(x-MSCW_plot_lower)/(MSCW_plot_upper-MSCW_plot_lower);
+            double x_norm = par[first_index]*4.0*M_PI*(x-MSCW_plot_lower)/(MSCW_plot_upper-MSCW_plot_lower);
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
                 mtx_eigenvector(row,col_fix) += par[first_index+2*mode-1]*cos(double(mode)*x_norm);
@@ -414,7 +416,7 @@ void FourierParametrizeEigenvectors(const double *par)
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             double x = double(row+1)*(MSCW_plot_upper-MSCW_plot_lower)/double(N_bins_for_deconv)+MSCW_plot_lower;
-            double x_norm = par[first_index]*2.0*M_PI*(x-MSCW_plot_lower)/(MSCW_plot_upper-MSCW_plot_lower);
+            double x_norm = par[first_index]*4.0*M_PI*(x-MSCW_plot_lower)/(MSCW_plot_upper-MSCW_plot_lower);
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
                 mtx_eigenvector(row,col_fix) += If*par[first_index+2*mode-1]*cos(double(mode)*x_norm);
@@ -426,7 +428,7 @@ void FourierParametrizeEigenvectors(const double *par)
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             double x = double(col+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
-            double x_norm = par[first_index]*2.0*M_PI*(x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
+            double x_norm = par[first_index]*4.0*M_PI*(x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
                 mtx_eigenvector_inv(row_fix,col) += par[first_index+2*mode-1]*cos(double(mode)*x_norm);
@@ -437,7 +439,7 @@ void FourierParametrizeEigenvectors(const double *par)
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             double x = double(col+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
-            double x_norm = par[first_index]*2.0*M_PI*(x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
+            double x_norm = par[first_index]*4.0*M_PI*(x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
             for (int mode=1;mode<=n_fourier_modes;mode++)
             {
                 mtx_eigenvector_inv(row_fix,col) += If*par[first_index+2*mode-1]*cos(double(mode)*x_norm);
@@ -800,8 +802,9 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixX
         Chi2Minimizer->SetVariableLimits(first_index,0.5,2.0);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
-            if (mode<NthEigenvector) limit = 0.;
-            else limit = 0.5*scale;
+            limit = 0.5*scale;
+            //if (mode<NthEigenvector) limit = 0.;
+            //else limit = 0.5*scale;
             Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]",0.,0.001);
             Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,-limit,limit);
             Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]",0.,0.001);
@@ -829,8 +832,9 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixX
         Chi2Minimizer->SetVariableLimits(first_index,0.5,2.0);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
-            if (mode<NthEigenvector) limit = 0.;
-            else limit = 0.5*scale;
+            limit = 0.5*scale;
+            //if (mode<NthEigenvector) limit = 0.;
+            //else limit = 0.5*scale;
             Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]",0., 0.001);
             Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,-limit,limit);
             Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]",0., 0.001);
