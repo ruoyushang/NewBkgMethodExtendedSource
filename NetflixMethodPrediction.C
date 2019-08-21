@@ -63,6 +63,7 @@ int n_fourier_modes = 6;
 int n_taylor_modes = 6;
 double CurrentEnergy = 0.;
 MatrixXcd mtx_data(N_bins_for_deconv,N_bins_for_deconv);
+MatrixXcd mtx_data_redu(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_dark(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvector_init(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvector_inv_init(N_bins_for_deconv,N_bins_for_deconv);
@@ -202,7 +203,7 @@ double UnblindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
     return chi2;
 }
 
-double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
+double BlindedChi2(TH2D* hist_data, TH2D* hist_data_redu, TH2D* hist_dark, TH2D* hist_model)
 {
     int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
     int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
@@ -216,6 +217,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
         for (int by=1;by<=hist_data->GetNbinsY();by++)
         {
             double data = hist_data->GetBinContent(bx,by);
+            double data_redu = hist_data_redu->GetBinContent(bx,by);
             double dark = hist_dark->GetBinContent(bx,by);
             double model = hist_model->GetBinContent(bx,by);
             double weight = 1.;
@@ -223,11 +225,10 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
             double dy = hist_data->GetYaxis()->GetBinCenter(by)-(-1.);
             double width = 1.0;
             weight = exp(-0.5*dx*dx/(1.0*width*1.0*width))*exp(-0.5*dy*dy/(1.0*width*1.0*width));
-            //weight = exp(-0.5*dx*dx/(1.0*width*1.0*width))+exp(-0.5*dy*dy/(1.0*width*1.0*width));
-            //weight = exp(-0.5*dy*dy/(1.0*width*1.0*width));
+            if (abs(data-data_redu)/(data+1.)>10.) weight = 0.;
             if (bx>=binx_blind || by>=biny_blind)
             {
-                chi2 += weight*pow(data-model,2);
+                chi2 += weight*pow(data_redu-model,2);
             }
             else if (bx<binx_lower || by<biny_lower)
             {
@@ -489,14 +490,16 @@ double FourierChi2Function(const double *par)
     mtx_model = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
 
     TH2D hist_data = TH2D("hist_data","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
+    TH2D hist_data_redu = TH2D("hist_data_redu","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_dark = TH2D("hist_dark","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_model = TH2D("hist_model","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
 
     fill2DHistogram(&hist_data,mtx_data);
+    fill2DHistogram(&hist_data_redu,mtx_data_redu);
     fill2DHistogram(&hist_dark,mtx_dark);
     fill2DHistogram(&hist_model,mtx_model);
 
-    double chi2 = BlindedChi2(&hist_data,&hist_dark,&hist_model);
+    double chi2 = BlindedChi2(&hist_data,&hist_data_redu,&hist_dark,&hist_model);
     //double chi2 = UnblindedChi2(&hist_data,&hist_dark,&hist_model);
 
     return chi2;
@@ -1094,7 +1097,6 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         MatrixXcd mtx_data_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         MatrixXcd mtx_dark_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         MatrixXcd mtx_data_bkgd(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
-        MatrixXcd mtx_data_redu(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         MatrixXcd mtx_dark_bkgd(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         mtx_data = fillMatrix(Hist_Data);
         mtx_dark = fillMatrix(Hist_Dark);
