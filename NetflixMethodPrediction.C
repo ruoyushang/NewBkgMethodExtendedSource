@@ -788,6 +788,7 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
     {
 
+        std::cout << NthEigenvector << "-th eigenvector" << std::endl;
         vtr_data = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector);
         ROOT::Math::Functor Chi2Func_0(&FourierChi2Function1D,(1+2*n_fourier_modes));        
         Chi2Minimizer1D.SetFunction(Chi2Func_0);
@@ -801,22 +802,26 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
         Chi2Minimizer1D.Minimize();
         par_1D = Chi2Minimizer1D.X();
         first_index = (2*NthEigenvector-2)*(1+2*n_fourier_modes)+(NthEigenvector-1);
+        std::cout << "coeff " << 0 << " = " << par_1D[0] << std::endl;
         limit_lower = scale_lower*par_1D[0];
         limit_upper = scale_upper*par_1D[0];
         Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",par_1D[0],0.001);
         Chi2Minimizer->SetVariableLimits(first_index,limit_lower,limit_upper);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
+            std::cout << "coeff " << 0+2*mode-1 << " = " << par_1D[0+2*mode-1] << std::endl;
             limit_lower = scale_lower*par_1D[0+2*mode-1];
             limit_upper = scale_upper*par_1D[0+2*mode-1];
             Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]",par_1D[0+2*mode-1],0.001);
             Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,limit_lower,limit_upper);
+            std::cout << "coeff " << 0+2*mode << " = " << par_1D[0+2*mode] << std::endl;
             limit_lower = scale_lower*par_1D[0+2*mode];
             limit_upper = scale_upper*par_1D[0+2*mode];
             Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]",par_1D[0+2*mode],0.001);
             Chi2Minimizer->SetVariableLimits(first_index+2*mode,limit_lower,limit_upper);
         }
 
+        std::cout << NthEigenvector << "-th inverse eigenvector" << std::endl;
         vtr_data = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.cols()-NthEigenvector);
         ROOT::Math::Functor Chi2Func_1(&FourierChi2Function1D,(1+2*n_fourier_modes));        
         Chi2Minimizer1D.SetFunction(Chi2Func_1);
@@ -830,16 +835,19 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
         Chi2Minimizer1D.Minimize();
         par_1D = Chi2Minimizer1D.X();
         first_index = (2*NthEigenvector-1)*(1+2*n_fourier_modes)+(NthEigenvector-1);
+        std::cout << "coeff " << 0 << " = " << par_1D[0] << std::endl;
         limit_lower = scale_lower*par_1D[0];
         limit_upper = scale_upper*par_1D[0];
         Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",par_1D[0],0.001);
         Chi2Minimizer->SetVariableLimits(first_index,limit_lower,limit_upper);
         for (int mode=1;mode<=n_fourier_modes;mode++)
         {
+            std::cout << "coeff " << 0+2*mode-1 << " = " << par_1D[0+2*mode-1] << std::endl;
             limit_lower = scale_lower*par_1D[0+2*mode-1];
             limit_upper = scale_upper*par_1D[0+2*mode-1];
             Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]",par_1D[0+2*mode-1],0.001);
             Chi2Minimizer->SetVariableLimits(first_index+2*mode-1,limit_lower,limit_upper);
+            std::cout << "coeff " << 0+2*mode << " = " << par_1D[0+2*mode] << std::endl;
             limit_lower = scale_lower*par_1D[0+2*mode];
             limit_upper = scale_upper*par_1D[0+2*mode];
             Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]",par_1D[0+2*mode],0.001);
@@ -1228,7 +1236,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         //ParametrizeEigenvectors(par);
         //mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
 
-        n_fourier_modes = 8*NumberOfEigenvectors;
+        n_fourier_modes = 5;
         ROOT::Math::Functor Chi2Func_1st(&FourierChi2Function2D,2*NumberOfEigenvectors*(1+2*n_fourier_modes)+NumberOfEigenvectors);        
         Chi2Minimizer_1st.SetFunction(Chi2Func_1st);
         FourierSetInitialVariables(&Chi2Minimizer_1st);
