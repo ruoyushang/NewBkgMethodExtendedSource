@@ -132,6 +132,7 @@ void SmoothEigenvectors(MatrixXcd* mtx, MatrixXcd* mtx_inv)
 {
     TH1D hist_ref = TH1D("hist_ref","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
     const std::complex<double> If(0.0, 1.0);
+    int n_rebin = 4;
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
     {
         TH1D eigenvec_real = TH1D("eigenvec_real","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
@@ -142,17 +143,22 @@ void SmoothEigenvectors(MatrixXcd* mtx, MatrixXcd* mtx_inv)
         fill1DHistogram(&eigenvec_imag,mtx->col(N_bins_for_deconv-NthEigenvector).imag());
         fill1DHistogram(&eigenvec_inv_real,mtx_inv->row(N_bins_for_deconv-NthEigenvector).real());
         fill1DHistogram(&eigenvec_inv_imag,mtx_inv->row(N_bins_for_deconv-NthEigenvector).imag());
-        eigenvec_real.Rebin(2);
-        eigenvec_imag.Rebin(2);
-        eigenvec_inv_real.Rebin(2);
-        eigenvec_inv_imag.Rebin(2);
+        eigenvec_real.Rebin(n_rebin);
+        eigenvec_imag.Rebin(n_rebin);
+        eigenvec_inv_real.Rebin(n_rebin);
+        eigenvec_inv_imag.Rebin(n_rebin);
         TSpline3 spline_eigenvec_real(&eigenvec_real);
         TSpline3 spline_eigenvec_imag(&eigenvec_imag);
         int col_fix = N_bins_for_deconv-NthEigenvector;
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             double xx = hist_ref.GetBinCenter(row+1);
-            mtx->operator()(row,col_fix) = spline_eigenvec_real.Eval(xx)/2. + If*spline_eigenvec_imag.Eval(xx)/2.;
+            mtx->operator()(row,col_fix) = spline_eigenvec_real.Eval(xx)/double(n_rebin); 
+            mtx->operator()(row,col_fix) += If*spline_eigenvec_imag.Eval(xx)/double(n_rebin);
+            if (xx<-0.7)
+            {
+                mtx->operator()(row,col_fix) = 0.;
+            }
         }
         TSpline3 spline_eigenvec_inv_real(&eigenvec_inv_real);
         TSpline3 spline_eigenvec_inv_imag(&eigenvec_inv_imag);
@@ -160,7 +166,12 @@ void SmoothEigenvectors(MatrixXcd* mtx, MatrixXcd* mtx_inv)
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             double xx = hist_ref.GetBinCenter(col+1);
-            mtx_inv->operator()(row_fix,col) = spline_eigenvec_inv_real.Eval(xx)/2. + If*spline_eigenvec_inv_imag.Eval(xx)/2.;
+            mtx_inv->operator()(row_fix,col) = spline_eigenvec_inv_real.Eval(xx)/double(n_rebin); 
+            mtx_inv->operator()(row_fix,col) += If*spline_eigenvec_inv_imag.Eval(xx)/double(n_rebin);
+            if (xx<-0.7)
+            {
+                mtx_inv->operator()(row_fix,col) = 0.;
+            }
         }
     }
 }
@@ -229,12 +240,12 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
             double dark = hist_dark->GetBinContent(bx,by);
             double model = hist_model->GetBinContent(bx,by);
             double weight = 1.;
-            double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
-            double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
+            double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(0.);
+            double dy = hist_data->GetYaxis()->GetBinCenter(by)-(0.);
             double width = 1.0;
             double data_err = max(1.,pow(data,0.5));
             //weight = 1./(data_err*data_err);
-            //weight = weight*exp(-0.5*dx*dx/(1.0*width*1.0*width))*exp(-0.5*dy*dy/(1.0*width*1.0*width));
+            weight = exp(-0.5*dx*dx/(1.0*width*1.0*width))*exp(-0.5*dy*dy/(1.0*width*1.0*width));
             if (bx>=binx_blind || by>=biny_blind)
             {
                 chi2 += weight*pow(data-model,2);
@@ -1012,8 +1023,8 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         n_taylor_modes = 6;
 
         NumberOfEigenvectors = 3;
-        //if (CurrentEnergy>1000.) NumberOfEigenvectors = 2;
-        //if (CurrentEnergy>2000.) NumberOfEigenvectors = 1;
+        if (CurrentEnergy>1000.) NumberOfEigenvectors = 2;
+        if (CurrentEnergy>2000.) NumberOfEigenvectors = 1;
 
         eigensolver_data = ComplexEigenSolver<MatrixXcd>(mtx_data);
         eigensolver_dark = ComplexEigenSolver<MatrixXcd>(mtx_dark);
