@@ -329,6 +329,24 @@ std::pair <double,double> GetMcGillElectronFlux(double energy)
     //TGraph *func = new TGraph(&Hist_Flux);
     //return std::make_pair(1.*func->Eval(energy),1.*func->Eval(energy));
 }
+bool GammaFoV() {
+    if (dec_sky>0)
+    {
+        if (theta2<1.4) return false;
+        if (theta2>1.6) return false;
+        if (ra_sky>1.0+0.1) return false;
+        if (ra_sky<-1.0-0.1) return false;
+        if (ra_sky<1.0-0.1 && ra_sky>-1.0+0.1) return false;
+    }
+    else
+    {
+        if (theta2<1.9) return false;
+        if (theta2>2.1) return false;
+        if (ra_sky>1.0) return false;
+        if (ra_sky<-1.0) return false;
+    }
+    return true;
+}
 bool DarkFoV() {
     //if (R2off<Theta2_cut_lower) return false;
     //if (R2off>Theta2_cut_upper) return false;
@@ -412,6 +430,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         Hist_Dark_CR_Skymap.push_back(TH2D("Hist_Dark_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",30,-3,3,30,-3,3));
     }
 
+    vector<pair<string,int>> Photon_runlist = GetRunList("Photon");
+
     // Get a list of target observation runs
     vector<pair<string,int>> Data_runlist_init = GetRunList(target);
     vector<pair<string,int>> Data_runlist;
@@ -424,6 +444,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     vector<pair<string,int>> Dark_runlist;
     std::cout << "initial Dark_runlist size = " << Dark_runlist_init.size() << std::endl;
     Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
+    //Dark_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
     std::cout << "final Dark_runlist size = " << Dark_runlist.size() << std::endl;
 
     for (int run=0;run<Dark_runlist.size();run++)
@@ -592,6 +613,130 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         }
         input_file->Close();
     }
+
+
+    double n_proton = 0.;
+    double n_photon = 0.;
+    for (int run=0;run<Data_runlist.size();run++)
+    {
+        char run_number[50];
+        char Data_observation[50];
+        sprintf(run_number, "%i", int(Data_runlist[run].second));
+        sprintf(Data_observation, "%s", Data_runlist[run].first.c_str());
+        string filename;
+        filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
+        TFile*  input_file = TFile::Open(filename.c_str());
+        TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
+        TTree* Data_tree = (TTree*) input_file->Get(root_file);
+        n_proton += Data_tree->GetEntries();
+    }
+    for (int run=0;run<Photon_runlist.size();run++)
+    {
+        char run_number[50];
+        char Data_observation[50];
+        sprintf(run_number, "%i", int(Photon_runlist[run].second));
+        sprintf(Data_observation, "%s", Photon_runlist[run].first.c_str());
+        string filename;
+        filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
+        TFile*  input_file = TFile::Open(filename.c_str());
+        TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
+        TTree* Data_tree = (TTree*) input_file->Get(root_file);
+        n_photon += Data_tree->GetEntries();
+    }
+    //double photon_weight = 1.0*n_proton/n_photon;
+    double photon_weight = 0.0*n_proton/n_photon;
+    std::cout << "photon_weight = " << photon_weight << std::endl;
+    for (int run=0;run<Photon_runlist.size();run++)
+    {
+        char run_number[50];
+        char Data_observation[50];
+        sprintf(run_number, "%i", int(Photon_runlist[run].second));
+        sprintf(Data_observation, "%s", Photon_runlist[run].first.c_str());
+        string filename;
+        filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
+
+
+        TFile*  input_file = TFile::Open(filename.c_str());
+	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Photon_runlist[run].second);
+        TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
+        TTree* Data_tree = (TTree*) input_file->Get(root_file);
+        Data_tree->SetBranchAddress("Xoff",&Xoff);
+        Data_tree->SetBranchAddress("Yoff",&Yoff);
+        Data_tree->SetBranchAddress("theta2",&theta2);
+        Data_tree->SetBranchAddress("ra",&ra_sky);
+        Data_tree->SetBranchAddress("dec",&dec_sky);
+        Data_tree->SetBranchAddress("ErecS",&ErecS);
+        Data_tree->SetBranchAddress("EChi2S",&EChi2S);
+        Data_tree->SetBranchAddress("MSCW",&MSCW);
+        Data_tree->SetBranchAddress("MSCL",&MSCL);
+        Data_tree->SetBranchAddress("NImages",&NImages);
+        Data_tree->SetBranchAddress("Xcore",&Xcore);
+        Data_tree->SetBranchAddress("Ycore",&Ycore);
+        Data_tree->SetBranchAddress("SizeSecondMax",&SizeSecondMax);
+        Data_tree->SetBranchAddress("Time",&Time);
+        Data_tree->SetBranchAddress("Shower_Ze",&Shower_Ze);
+        Data_tree->SetBranchAddress("Shower_Az",&Shower_Az);
+
+        // Get effective area and livetime and determine the cosmic electron counts for this run.
+        Data_tree->GetEntry(0);
+        double time_0 = Time;
+        Data_tree->GetEntry(Data_tree->GetEntries()-1);
+        double time_1 = Time;
+
+        for (int entry=0;entry<Data_tree->GetEntries();entry++) 
+        {
+            ErecS = 0;
+            EChi2S = 0;
+            NImages = 0;
+            Xcore = 0;
+            Ycore = 0;
+            SizeSecondMax = 0;
+            MSCW = 0;
+            MSCL = 0;
+            R2off = 0;
+            Data_tree->GetEntry(entry);
+            R2off = Xoff*Xoff+Yoff*Yoff;
+            int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
+            if (energy<0) continue;
+            if (energy>=N_energy_bins) continue;
+            int e = energy;
+            if (!SelectNImages(2,4)) continue;
+            Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze,photon_weight);
+            if (FoV() && GammaFoV())
+            {
+                Hist_Data_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
+            }
+            if (RingFoV() && GammaFoV())
+            {
+                Hist_Ring_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
+                Hist_Ring_Syst_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
+            }
+            if (SignalSelectionTheta2())
+            {
+                if (FoV() && GammaFoV())
+                {
+                    Hist_Data_SR_SelectFoV_Theta2.at(e).Fill(theta2,photon_weight);
+                    Hist_Data_SR_Skymap.at(e).Fill(-1.*ra_sky,dec_sky,photon_weight);
+                }
+            }
+            if (ControlSelectionTheta2())
+            {
+                if (FoV() && GammaFoV())
+                {
+                    int binx = Hist_Dark_SR_Skymap.at(e).GetXaxis()->FindBin(Xoff);
+                    int biny = Hist_Dark_SR_Skymap.at(e).GetYaxis()->FindBin(Yoff);
+                    double dark_cr_content = Hist_Dark_CR_Skymap.at(e).GetBinContent(binx,biny);
+                    double dark_sr_content = Hist_Dark_SR_Skymap.at(e).GetBinContent(binx,biny);
+                    double weight = 0.;
+                    if (dark_cr_content>0.) weight = dark_sr_content/dark_cr_content;
+                    Hist_Data_CR_SelectFoV_Theta2.at(e).Fill(theta2,weight*photon_weight);
+                    Hist_Data_CR_Skymap.at(e).Fill(-1.*ra_sky,dec_sky,weight*photon_weight);
+                }
+            }
+        }
+        input_file->Close();
+    }
+
 
 
     for (int e=0;e<N_energy_bins;e++) 
