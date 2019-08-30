@@ -418,9 +418,12 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         char e_up[50];
         sprintf(e_up, "%i", int(energy_bins[e+1]));
         Hist_Data_MSCLW.push_back(TH2D("Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_Data_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
         Hist_Ring_MSCLW.push_back(TH2D("Hist_Ring_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_Ring_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
         Hist_Ring_Syst_MSCLW.push_back(TH2D("Hist_Ring_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Dark_MSCLW.push_back(TH2D("Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_Dark_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
         Hist_Dark_Syst_MSCLW.push_back(TH2D("Hist_Dark_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Data_SR_SelectFoV_Theta2.push_back(TH1D("Hist_Data_SR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
         Hist_Data_CR_SelectFoV_Theta2.push_back(TH1D("Hist_Data_CR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
@@ -443,8 +446,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     vector<pair<string,int>> Dark_runlist_init = GetRunList("Everything");
     vector<pair<string,int>> Dark_runlist;
     std::cout << "initial Dark_runlist size = " << Dark_runlist_init.size() << std::endl;
-    Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
-    //Dark_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
+    if (TString(target)!="Proton") Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
+    else Dark_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
     std::cout << "final Dark_runlist size = " << Dark_runlist.size() << std::endl;
 
     for (int run=0;run<Dark_runlist.size();run++)
@@ -643,8 +646,9 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         TTree* Data_tree = (TTree*) input_file->Get(root_file);
         n_photon += Data_tree->GetEntries();
     }
-    //double photon_weight = 1.0*n_proton/n_photon;
-    double photon_weight = 0.0*n_proton/n_photon;
+    double photon_weight = 0.1*n_proton/n_photon;
+    if (TString(target)!="Proton") photon_weight = 0.;
+    //photon_weight = 0.;
     std::cout << "photon_weight = " << photon_weight << std::endl;
     for (int run=0;run<Photon_runlist.size();run++)
     {
