@@ -287,6 +287,7 @@ double BlindedLogLikelihood(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
                 {
                     std::cout << "log_likelihood = nan (or inf) !!!" << std::endl;
                     std::cout << "model = " << model << std::endl;
+                    std::cout << "data = " << data << std::endl;
                     std::cout << "probability = " << probability << std::endl;
                 }
             }
@@ -611,7 +612,7 @@ double FourierChi2Function(const double *par)
 {
 
     FourierParametrizeEigenvectors(par);
-    double deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
+    //double deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
     //if (0.8*init_deriv_at_zero>deriv_at_zero) return 1e10;
     //if (1.2*init_deriv_at_zero<deriv_at_zero) return 1e10;
     
@@ -983,32 +984,44 @@ void FourierSet2ndIterationVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, co
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
     {
 
-        first_index = (2*NthEigenvector-2)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
-        limit = 0.1;
+        limit = 0.2;
         if (type!=2) limit = 0.;
+        first_index = (4*NthEigenvector-4)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int row=0;row<N_bins_for_deconv;row++)
         {
-            Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",par[first_index+row],0.001);
+            Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",par[first_index+row],0.01*limit);
+            Chi2Minimizer->SetVariableLimits(first_index+row,-limit,limit);
+        }
+        first_index = (4*NthEigenvector-3)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
+        for (int row=0;row<N_bins_for_deconv;row++)
+        {
+            Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",par[first_index+row],0.01*limit);
             Chi2Minimizer->SetVariableLimits(first_index+row,-limit,limit);
         }
 
-        first_index = (2*NthEigenvector-1)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
-        limit = 0.1;
+        limit = 0.2;
         if (type!=1) limit = 0.;
+        first_index = (4*NthEigenvector-2)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int col=0;col<N_bins_for_deconv;col++)
         {
-            Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",par[first_index+col],0.001);
+            Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",par[first_index+col],0.01*limit);
+            Chi2Minimizer->SetVariableLimits(first_index+col,-limit,limit);
+        }
+        first_index = (4*NthEigenvector-1)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
+        for (int col=0;col<N_bins_for_deconv;col++)
+        {
+            Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",par[first_index+col],0.01*limit);
             Chi2Minimizer->SetVariableLimits(first_index+col,-limit,limit);
         }
 
         // eigenvalues
         double input_value = 0;
-        first_index = (2*NthEigenvector-0)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
+        first_index = (4*NthEigenvector-0)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int NthEigenvalue=1;NthEigenvalue<=NumberOfEigenvectors;NthEigenvalue++)
         {
             input_value = par[first_index+NthEigenvalue-1];
-            limit = 0.02*eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvector).real();
-            //limit = 0.;
+            //limit = 0.02*eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvector).real();
+            limit = 0.;
             Chi2Minimizer->SetVariable(first_index+NthEigenvalue-1, "par["+std::to_string(int(first_index+NthEigenvalue-1))+"]", input_value, 0.001*limit);
             Chi2Minimizer->SetVariableLimits(first_index+NthEigenvalue-1,input_value-limit,input_value+limit);
         }
@@ -1408,10 +1421,12 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         Hist_Fit_InvEigenvectorImag_2.push_back(TH1D("Hist_Fit_InvEigenvectorImag_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
         Hist_Dark_InvEigenvectorImag_2.push_back(TH1D("Hist_Dark_InvEigenvectorImag_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
 
-        if (energy_bins[e]<237) continue;
-        if (energy_bins[e]>=282) continue;
+        //if (energy_bins[e]<237) continue;
+        //if (energy_bins[e]>=282) continue;
         //if (energy_bins[e]<335) continue;
         //if (energy_bins[e]>=398) continue;
+        if (energy_bins[e]<473) continue;
+        if (energy_bins[e]>=562) continue;
         //if (energy_bins[e]<562) continue;
         //if (energy_bins[e]>=794) continue;
 
@@ -1536,7 +1551,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         // kVectorBFGS2, kSteepestDescent
 
         SetInitialEigenvectors();
-        init_deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector_init, &mtx_eigenvector_inv_init);
+        //init_deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector_init, &mtx_eigenvector_inv_init);
         //std::cout << "initial deriv_at_zero = " << init_deriv_at_zero << std::endl;
 
         n_fourier_modes = 6;
@@ -1555,7 +1570,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         par_0th = Chi2Minimizer_0th.X();
         std::cout << "final chi2 = " << FourierChi2Function(par_0th) << std::endl;
         FourierParametrizeEigenvectors(par_0th);
-        double final_deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
+        //double final_deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
         //std::cout << "final deriv_at_zero = " << final_deriv_at_zero << std::endl;
 
         //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kVectorBFGS );
