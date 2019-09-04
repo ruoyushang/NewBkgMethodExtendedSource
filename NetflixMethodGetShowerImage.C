@@ -443,12 +443,13 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     if (Data_runlist.size()==0) return;
 
     // Get a list of dark observation runs
-    vector<pair<string,int>> Dark_runlist_init = GetRunList("Everything");
-    vector<pair<string,int>> Dark_runlist;
-    std::cout << "initial Dark_runlist size = " << Dark_runlist_init.size() << std::endl;
-    if (TString(target)!="Proton") Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
-    else Dark_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
-    std::cout << "final Dark_runlist size = " << Dark_runlist.size() << std::endl;
+    //vector<pair<string,int>> Dark_runlist_init = GetRunList("Everything");
+    //vector<pair<string,int>> Dark_runlist;
+    //std::cout << "initial Dark_runlist size = " << Dark_runlist_init.size() << std::endl;
+    //if (TString(target)!="Proton") Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
+    //else Dark_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
+    //std::cout << "final Dark_runlist size = " << Dark_runlist.size() << std::endl;
+    vector<pair<string,int>> Dark_runlist = GetRunList("Proton");
 
     for (int run=0;run<Dark_runlist.size();run++)
     {
@@ -503,7 +504,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (pow(Xcore*Xcore+Ycore*Ycore,0.5)>350) continue;
             if (R2off>4.) continue;
             Hist_Dark_ShowerDirection.Fill(Shower_Az,Shower_Ze);
-            if (DarkFoV())
+            if (DarkFoV() || Dark_runlist[run].first=="Proton")
             {
                 Hist_Dark_MSCLW.at(e).Fill(MSCL,MSCW);
                 Hist_Dark_Syst_MSCLW.at(e).Fill(MSCL,MSCW);
@@ -781,7 +782,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     }
 
 
-    TFile OutputFile("output_Jul16/Netflix_"+TString(target)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","recreate");
+    TFile OutputFile("../Netflix_"+TString(target)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","recreate");
     TTree InfoTree("InfoTree","info tree");
     InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
     InfoTree.Fill();

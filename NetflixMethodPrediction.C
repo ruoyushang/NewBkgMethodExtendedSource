@@ -169,7 +169,8 @@ double SmoothEigenvectors(MatrixXcd* mtx, MatrixXcd* mtx_inv)
 {
     TH1D hist_ref = TH1D("hist_ref","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
     const std::complex<double> If(0.0, 1.0);
-    int n_rebin = 2;
+    int n_rebin = 5;
+    double extension = (MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)*double(n_rebin);
     double deriv_at_zero = 0.;
     double deriv_at_zero_norm = 0.;
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
@@ -182,46 +183,53 @@ double SmoothEigenvectors(MatrixXcd* mtx, MatrixXcd* mtx_inv)
         fill1DHistogram(&eigenvec_imag,mtx->col(N_bins_for_deconv-NthEigenvector).imag());
         fill1DHistogram(&eigenvec_inv_real,mtx_inv->row(N_bins_for_deconv-NthEigenvector).real());
         fill1DHistogram(&eigenvec_inv_imag,mtx_inv->row(N_bins_for_deconv-NthEigenvector).imag());
-        eigenvec_real.Rebin(n_rebin);
-        eigenvec_imag.Rebin(n_rebin);
-        TSpline3 spline_eigenvec_real(&eigenvec_real);
-        TSpline3 spline_eigenvec_imag(&eigenvec_imag);
+        TH1D eigenvec_real_ext = TH1D("eigenvec_real_ext","",N_bins_for_deconv+n_rebin,MSCL_plot_lower-extension,MSCL_plot_upper);
+        TH1D eigenvec_imag_ext = TH1D("eigenvec_imag_ext","",N_bins_for_deconv+n_rebin,MSCL_plot_lower-extension,MSCL_plot_upper);
+        TH1D eigenvec_inv_real_ext = TH1D("eigenvec_inv_real_ext","",N_bins_for_deconv+n_rebin,MSCL_plot_lower-extension,MSCL_plot_upper);
+        TH1D eigenvec_inv_imag_ext = TH1D("eigenvec_inv_imag_ext","",N_bins_for_deconv+n_rebin,MSCL_plot_lower-extension,MSCL_plot_upper);
+        for (int row=0;row<N_bins_for_deconv;row++)
+        {
+            eigenvec_real_ext.SetBinContent(row+1+n_rebin,eigenvec_real.GetBinContent(row+1));
+            eigenvec_real_ext.SetBinError(row+1+n_rebin,eigenvec_real.GetBinError(row+1));
+            eigenvec_imag_ext.SetBinContent(row+1+n_rebin,eigenvec_imag.GetBinContent(row+1));
+            eigenvec_imag_ext.SetBinError(row+1+n_rebin,eigenvec_imag.GetBinError(row+1));
+            eigenvec_inv_real_ext.SetBinContent(row+1+n_rebin,eigenvec_inv_real.GetBinContent(row+1));
+            eigenvec_inv_real_ext.SetBinError(row+1+n_rebin,eigenvec_inv_real.GetBinError(row+1));
+            eigenvec_inv_imag_ext.SetBinContent(row+1+n_rebin,eigenvec_inv_imag.GetBinContent(row+1));
+            eigenvec_inv_imag_ext.SetBinError(row+1+n_rebin,eigenvec_inv_imag.GetBinError(row+1));
+        }
+        eigenvec_real_ext.Rebin(n_rebin);
+        eigenvec_imag_ext.Rebin(n_rebin);
+        TSpline3 spline_eigenvec_real(&eigenvec_real_ext);
+        TSpline3 spline_eigenvec_imag(&eigenvec_imag_ext);
         int col_fix = N_bins_for_deconv-NthEigenvector;
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             double xx = hist_ref.GetBinCenter(row+1);
             mtx->operator()(row,col_fix) = spline_eigenvec_real.Eval(xx)/double(n_rebin); 
             mtx->operator()(row,col_fix) += If*spline_eigenvec_imag.Eval(xx)/double(n_rebin);
-            if (xx<-0.7)
-            {
-                mtx->operator()(row,col_fix) = 0.;
-            }
         }
-        eigenvec_inv_real.Rebin(n_rebin);
-        eigenvec_inv_imag.Rebin(n_rebin);
-        TSpline3 spline_eigenvec_inv_real(&eigenvec_inv_real);
-        TSpline3 spline_eigenvec_inv_imag(&eigenvec_inv_imag);
+        eigenvec_inv_real_ext.Rebin(n_rebin);
+        eigenvec_inv_imag_ext.Rebin(n_rebin);
+        TSpline3 spline_eigenvec_inv_real(&eigenvec_inv_real_ext);
+        TSpline3 spline_eigenvec_inv_imag(&eigenvec_inv_imag_ext);
         int row_fix = N_bins_for_deconv-NthEigenvector;
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             double xx = hist_ref.GetBinCenter(col+1);
             mtx_inv->operator()(row_fix,col) = spline_eigenvec_inv_real.Eval(xx)/double(n_rebin); 
             mtx_inv->operator()(row_fix,col) += If*spline_eigenvec_inv_imag.Eval(xx)/double(n_rebin);
-            //if (xx<-0.7)
-            //{
-            //    mtx_inv->operator()(row_fix,col) = 0.;
-            //}
         }
-        deriv_at_zero += pow(spline_eigenvec_real.Eval(0)*spline_eigenvec_real.Derivative(0),2);
-        deriv_at_zero += pow(spline_eigenvec_imag.Eval(0)*spline_eigenvec_imag.Derivative(0),2);
-        deriv_at_zero += pow(spline_eigenvec_inv_real.Eval(0)*spline_eigenvec_inv_real.Derivative(0),2);
-        deriv_at_zero += pow(spline_eigenvec_inv_imag.Eval(0)*spline_eigenvec_inv_imag.Derivative(0),2);
-        deriv_at_zero_norm += pow(spline_eigenvec_real.Eval(0),2);
-        deriv_at_zero_norm += pow(spline_eigenvec_imag.Eval(0),2);
-        deriv_at_zero_norm += pow(spline_eigenvec_inv_real.Eval(0),2);
-        deriv_at_zero_norm += pow(spline_eigenvec_inv_imag.Eval(0),2);
+        //deriv_at_zero += pow(spline_eigenvec_real.Eval(0)*spline_eigenvec_real.Derivative(0),2);
+        //deriv_at_zero += pow(spline_eigenvec_imag.Eval(0)*spline_eigenvec_imag.Derivative(0),2);
+        //deriv_at_zero += pow(spline_eigenvec_inv_real.Eval(0)*spline_eigenvec_inv_real.Derivative(0),2);
+        //deriv_at_zero += pow(spline_eigenvec_inv_imag.Eval(0)*spline_eigenvec_inv_imag.Derivative(0),2);
+        //deriv_at_zero_norm += pow(spline_eigenvec_real.Eval(0),2);
+        //deriv_at_zero_norm += pow(spline_eigenvec_imag.Eval(0),2);
+        //deriv_at_zero_norm += pow(spline_eigenvec_inv_real.Eval(0),2);
+        //deriv_at_zero_norm += pow(spline_eigenvec_inv_imag.Eval(0),2);
     }
-    return pow(deriv_at_zero/deriv_at_zero_norm,0.5);
+    return 0.;
 }
 double CalculateSignificance(double s,double b,double err)
 {
@@ -261,9 +269,9 @@ double BlindedLogLikelihood(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
             double data = hist_data->GetBinContent(bx,by);
             double dark = hist_dark->GetBinContent(bx,by);
             double model = hist_model->GetBinContent(bx,by);
-            double weight = 1.;
             double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
             double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
+            double weight = exp(-0.5*dx*dx-0.5*dy*dy);
             model = max(0.001,model);
             if (bx>=binx_blind || by>=biny_blind)
             {
@@ -276,7 +284,7 @@ double BlindedLogLikelihood(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
                     std::cout << "model = " << model << std::endl;
                     std::cout << "data = " << data << std::endl;
                 }
-                log_likelihood += log_likelihood_this;
+                log_likelihood += weight*log_likelihood_this;
             }
         }
     }
@@ -418,8 +426,8 @@ void FourierParametrizeEigenvectors(const double *par)
         }
     }
 
-    //for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
-    for (int NthEigenvector=1;NthEigenvector<=N_bins_for_deconv;NthEigenvector++)
+    for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
+    //for (int NthEigenvector=1;NthEigenvector<=N_bins_for_deconv;NthEigenvector++)
     {
         mtx_eigenvector.col(mtx_dark.cols()-NthEigenvector) = mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector);
         mtx_eigenvector_inv.row(mtx_dark.cols()-NthEigenvector) = mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector);
@@ -509,7 +517,7 @@ double FourierChi2Function(const double *par)
 {
 
     FourierParametrizeEigenvectors(par);
-    //double deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
+    double deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
     //if (0.8*init_deriv_at_zero>deriv_at_zero) return 1e10;
     //if (1.2*init_deriv_at_zero<deriv_at_zero) return 1e10;
     
@@ -525,8 +533,8 @@ double FourierChi2Function(const double *par)
     fill2DHistogramAbs(&hist_dark,mtx_dark);
     fill2DHistogramAbs(&hist_model,mtx_model);
 
-    double chi2 = BlindedChi2(&hist_data,&hist_dark,&hist_model);
-    //double chi2 = BlindedLogLikelihood(&hist_data,&hist_dark,&hist_model);
+    //double chi2 = BlindedChi2(&hist_data,&hist_dark,&hist_model);
+    double chi2 = BlindedLogLikelihood(&hist_data,&hist_dark,&hist_model);
 
     return chi2;
 
@@ -1252,7 +1260,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
     vector<TH1D> Hist_Data_InvEigenvectorImag_2;
     vector<TH1D> Hist_Fit_InvEigenvectorImag_2;
     vector<TH1D> Hist_Dark_InvEigenvectorImag_2;
-    TFile InputDataFile("output_Jul16/Netflix_"+TString(target_data)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root");
+    TFile InputDataFile("../Netflix_"+TString(target_data)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root");
     for (int e=0;e<N_energy_bins;e++) 
     {
         std::cout << "++++++++++++++++++++++++++++++++++++++" << std::endl;
@@ -1307,8 +1315,10 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
 
         //if (energy_bins[e]<237) continue;
         //if (energy_bins[e]>=282) continue;
-        if (energy_bins[e]<335) continue;
-        if (energy_bins[e]>=398) continue;
+        //if (energy_bins[e]<335) continue;
+        //if (energy_bins[e]>=398) continue;
+        //if (energy_bins[e]<398) continue;
+        //if (energy_bins[e]>=473) continue;
         //if (energy_bins[e]<473) continue;
         //if (energy_bins[e]>=562) continue;
         //if (energy_bins[e]<562) continue;
@@ -1435,14 +1445,14 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         // kVectorBFGS2, kSteepestDescent
 
         SetInitialEigenvectors();
-        //init_deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector_init, &mtx_eigenvector_inv_init);
+        init_deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector_init, &mtx_eigenvector_inv_init);
         //std::cout << "initial deriv_at_zero = " << init_deriv_at_zero << std::endl;
 
         n_fourier_modes = 6;
         ROOT::Math::Functor Chi2Func(&FourierChi2Function,4*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors*NumberOfEigenvectors); 
         std::cout << "total n paramters = " << 4*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors << std::endl;
 
-        ROOT::Math::GSLMinimizer Chi2Minimizer_0th( ROOT::Math::kVectorBFGS );
+        ROOT::Math::GSLMinimizer Chi2Minimizer_0th( ROOT::Math::kVectorBFGS2 );
         Chi2Minimizer_0th.SetMaxFunctionCalls(200); // for Minuit/Minuit2
         Chi2Minimizer_0th.SetMaxIterations(200); // for GSL
         Chi2Minimizer_0th.SetTolerance(0.001);
@@ -1454,7 +1464,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         par_0th = Chi2Minimizer_0th.X();
         std::cout << "final chi2 = " << FourierChi2Function(par_0th) << std::endl;
         FourierParametrizeEigenvectors(par_0th);
-        //double final_deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
+        double final_deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
         //std::cout << "final deriv_at_zero = " << final_deriv_at_zero << std::endl;
 
         //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kVectorBFGS );
@@ -1587,7 +1597,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
     InputDataFile.Close();
 
 
-    TFile OutputFile("output_Jul16/Netflix_"+TString(target_data)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","update");
+    TFile OutputFile("../Netflix_"+TString(target_data)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","update");
     for (int e=0;e<N_energy_bins;e++)
     {
         Hist_Bkgd_MSCLW.at(e).Write();
