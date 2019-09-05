@@ -58,6 +58,7 @@ using namespace Eigen;
 
 #include "NetflixMethodGetShowerImage.C"
 
+int NthIteration = 0;
 int NumberOfEigenvectors = 0;
 int n_fourier_modes = 6;
 int n_taylor_modes = 6;
@@ -169,8 +170,10 @@ double SmoothEigenvectors(MatrixXcd* mtx, MatrixXcd* mtx_inv)
 {
     TH1D hist_ref = TH1D("hist_ref","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
     const std::complex<double> If(0.0, 1.0);
-    int n_rebin = 5;
+    int n_rebin = 4;
+    int n_rebin_inv = 4;
     double extension = (MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)*double(n_rebin);
+    double extension_inv = (MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)*double(n_rebin_inv);
     double deriv_at_zero = 0.;
     double deriv_at_zero_norm = 0.;
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
@@ -185,18 +188,18 @@ double SmoothEigenvectors(MatrixXcd* mtx, MatrixXcd* mtx_inv)
         fill1DHistogram(&eigenvec_inv_imag,mtx_inv->row(N_bins_for_deconv-NthEigenvector).imag());
         TH1D eigenvec_real_ext = TH1D("eigenvec_real_ext","",N_bins_for_deconv+n_rebin,MSCL_plot_lower-extension,MSCL_plot_upper);
         TH1D eigenvec_imag_ext = TH1D("eigenvec_imag_ext","",N_bins_for_deconv+n_rebin,MSCL_plot_lower-extension,MSCL_plot_upper);
-        TH1D eigenvec_inv_real_ext = TH1D("eigenvec_inv_real_ext","",N_bins_for_deconv+n_rebin,MSCL_plot_lower-extension,MSCL_plot_upper);
-        TH1D eigenvec_inv_imag_ext = TH1D("eigenvec_inv_imag_ext","",N_bins_for_deconv+n_rebin,MSCL_plot_lower-extension,MSCL_plot_upper);
+        TH1D eigenvec_inv_real_ext = TH1D("eigenvec_inv_real_ext","",N_bins_for_deconv+n_rebin_inv,MSCL_plot_lower-extension_inv,MSCL_plot_upper);
+        TH1D eigenvec_inv_imag_ext = TH1D("eigenvec_inv_imag_ext","",N_bins_for_deconv+n_rebin_inv,MSCL_plot_lower-extension_inv,MSCL_plot_upper);
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             eigenvec_real_ext.SetBinContent(row+1+n_rebin,eigenvec_real.GetBinContent(row+1));
             eigenvec_real_ext.SetBinError(row+1+n_rebin,eigenvec_real.GetBinError(row+1));
             eigenvec_imag_ext.SetBinContent(row+1+n_rebin,eigenvec_imag.GetBinContent(row+1));
             eigenvec_imag_ext.SetBinError(row+1+n_rebin,eigenvec_imag.GetBinError(row+1));
-            eigenvec_inv_real_ext.SetBinContent(row+1+n_rebin,eigenvec_inv_real.GetBinContent(row+1));
-            eigenvec_inv_real_ext.SetBinError(row+1+n_rebin,eigenvec_inv_real.GetBinError(row+1));
-            eigenvec_inv_imag_ext.SetBinContent(row+1+n_rebin,eigenvec_inv_imag.GetBinContent(row+1));
-            eigenvec_inv_imag_ext.SetBinError(row+1+n_rebin,eigenvec_inv_imag.GetBinError(row+1));
+            eigenvec_inv_real_ext.SetBinContent(row+1+n_rebin_inv,eigenvec_inv_real.GetBinContent(row+1));
+            eigenvec_inv_real_ext.SetBinError(row+1+n_rebin_inv,eigenvec_inv_real.GetBinError(row+1));
+            eigenvec_inv_imag_ext.SetBinContent(row+1+n_rebin_inv,eigenvec_inv_imag.GetBinContent(row+1));
+            eigenvec_inv_imag_ext.SetBinError(row+1+n_rebin_inv,eigenvec_inv_imag.GetBinError(row+1));
         }
         eigenvec_real_ext.Rebin(n_rebin);
         eigenvec_imag_ext.Rebin(n_rebin);
@@ -209,25 +212,17 @@ double SmoothEigenvectors(MatrixXcd* mtx, MatrixXcd* mtx_inv)
             mtx->operator()(row,col_fix) = spline_eigenvec_real.Eval(xx)/double(n_rebin); 
             mtx->operator()(row,col_fix) += If*spline_eigenvec_imag.Eval(xx)/double(n_rebin);
         }
-        eigenvec_inv_real_ext.Rebin(n_rebin);
-        eigenvec_inv_imag_ext.Rebin(n_rebin);
+        eigenvec_inv_real_ext.Rebin(n_rebin_inv);
+        eigenvec_inv_imag_ext.Rebin(n_rebin_inv);
         TSpline3 spline_eigenvec_inv_real(&eigenvec_inv_real_ext);
         TSpline3 spline_eigenvec_inv_imag(&eigenvec_inv_imag_ext);
         int row_fix = N_bins_for_deconv-NthEigenvector;
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             double xx = hist_ref.GetBinCenter(col+1);
-            mtx_inv->operator()(row_fix,col) = spline_eigenvec_inv_real.Eval(xx)/double(n_rebin); 
-            mtx_inv->operator()(row_fix,col) += If*spline_eigenvec_inv_imag.Eval(xx)/double(n_rebin);
+            mtx_inv->operator()(row_fix,col) = spline_eigenvec_inv_real.Eval(xx)/double(n_rebin_inv); 
+            mtx_inv->operator()(row_fix,col) += If*spline_eigenvec_inv_imag.Eval(xx)/double(n_rebin_inv);
         }
-        //deriv_at_zero += pow(spline_eigenvec_real.Eval(0)*spline_eigenvec_real.Derivative(0),2);
-        //deriv_at_zero += pow(spline_eigenvec_imag.Eval(0)*spline_eigenvec_imag.Derivative(0),2);
-        //deriv_at_zero += pow(spline_eigenvec_inv_real.Eval(0)*spline_eigenvec_inv_real.Derivative(0),2);
-        //deriv_at_zero += pow(spline_eigenvec_inv_imag.Eval(0)*spline_eigenvec_inv_imag.Derivative(0),2);
-        //deriv_at_zero_norm += pow(spline_eigenvec_real.Eval(0),2);
-        //deriv_at_zero_norm += pow(spline_eigenvec_imag.Eval(0),2);
-        //deriv_at_zero_norm += pow(spline_eigenvec_inv_real.Eval(0),2);
-        //deriv_at_zero_norm += pow(spline_eigenvec_inv_imag.Eval(0),2);
     }
     return 0.;
 }
@@ -271,7 +266,8 @@ double BlindedLogLikelihood(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
             double model = hist_model->GetBinContent(bx,by);
             double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
             double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
-            double weight = exp(-0.5*dx*dx-0.5*dy*dy);
+            //double weight = exp(-0.5*dx*dx-0.5*dy*dy);
+            double weight = 1.;
             model = max(0.001,model);
             if (bx>=binx_blind || by>=biny_blind)
             {
@@ -310,8 +306,8 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
             double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
             double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
             double width = 0.1;
-            double data_err = max(1.0,pow(data,0.5));
-            double model_err = max(1.0,pow(model,0.5));
+            double data_err = max(0.8,pow(data,0.5));
+            double model_err = max(0.8,pow(model,0.5));
             weight = 1./(data_err*data_err+model_err*model_err);
             double chi2_this = weight*pow(data-model,2);
             if (isnan(chi2_this))
@@ -480,31 +476,21 @@ void FourierParametrizeEigenvectors(const double *par)
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
     {
         col_fix = N_bins_for_deconv-NthEigenvector;
-        first_index = (4*NthEigenvector-4)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
+        first_index = (2*NthEigenvector-2)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             mtx_eigenvector(row,col_fix) += par[first_index+row];
         }
-        first_index = (4*NthEigenvector-3)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
-        for (int row=0;row<N_bins_for_deconv;row++)
-        {
-            mtx_eigenvector(row,col_fix) += If*par[first_index+row];
-        }
 
         row_fix = N_bins_for_deconv-NthEigenvector;
-        first_index = (4*NthEigenvector-2)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
+        first_index = (2*NthEigenvector-1)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             mtx_eigenvector_inv(row_fix,col) += par[first_index+col];
         }
-        first_index = (4*NthEigenvector-1)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
-        for (int col=0;col<N_bins_for_deconv;col++)
-        {
-            mtx_eigenvector_inv(row_fix,col) += If*par[first_index+col];
-        }
 
         // build eigenvalue matrix
-        first_index = (4*NthEigenvector-0)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
+        first_index = (2*NthEigenvector-0)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int NthEigenvalue=1;NthEigenvalue<=NumberOfEigenvectors;NthEigenvalue++)
         {
             mtx_eigenvalue(N_bins_for_deconv-NthEigenvector,N_bins_for_deconv-NthEigenvalue) += par[first_index+NthEigenvalue-1];
@@ -517,7 +503,7 @@ double FourierChi2Function(const double *par)
 {
 
     FourierParametrizeEigenvectors(par);
-    double deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
+    //double deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
     //if (0.8*init_deriv_at_zero>deriv_at_zero) return 1e10;
     //if (1.2*init_deriv_at_zero<deriv_at_zero) return 1e10;
     
@@ -533,8 +519,10 @@ double FourierChi2Function(const double *par)
     fill2DHistogramAbs(&hist_dark,mtx_dark);
     fill2DHistogramAbs(&hist_model,mtx_model);
 
-    //double chi2 = BlindedChi2(&hist_data,&hist_dark,&hist_model);
-    double chi2 = BlindedLogLikelihood(&hist_data,&hist_dark,&hist_model);
+    double chi2 = BlindedChi2(&hist_data,&hist_dark,&hist_model);
+    //double chi2 = BlindedLogLikelihood(&hist_data,&hist_dark,&hist_model);
+    //std::cout << NthIteration << "-th iteration, chi2 = " << chi2 << std::endl; 
+    //NthIteration += 1;
 
     return chi2;
 
@@ -1061,36 +1049,24 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
     {
 
         limit = 0.2;
-        first_index = (4*NthEigenvector-4)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
+        first_index = (2*NthEigenvector-2)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.01*limit);
-            Chi2Minimizer->SetVariableLimits(first_index+row,-limit,limit);
-        }
-        first_index = (4*NthEigenvector-3)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
-        for (int row=0;row<N_bins_for_deconv;row++)
-        {
-            Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.01*limit);
-            Chi2Minimizer->SetVariableLimits(first_index+row,-limit,limit);
+            //Chi2Minimizer->SetVariableLimits(first_index+row,-limit,limit);
         }
 
         limit = 0.2;
-        first_index = (4*NthEigenvector-2)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
+        first_index = (2*NthEigenvector-1)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.01*limit);
-            Chi2Minimizer->SetVariableLimits(first_index+col,-limit,limit);
-        }
-        first_index = (4*NthEigenvector-1)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
-        for (int col=0;col<N_bins_for_deconv;col++)
-        {
-            Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.01*limit);
-            Chi2Minimizer->SetVariableLimits(first_index+col,-limit,limit);
+            //Chi2Minimizer->SetVariableLimits(first_index+col,-limit,limit);
         }
 
         // eigenvalues
         double input_value = 0.;
-        first_index = (4*NthEigenvector-0)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
+        first_index = (2*NthEigenvector-0)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int NthEigenvalue=1;NthEigenvalue<=NumberOfEigenvectors;NthEigenvalue++)
         {
             input_value = 0.;
@@ -1104,7 +1080,7 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
                 if (NthEigenvalue>NthEigenvector) limit = 0.;
             }
             Chi2Minimizer->SetVariable(first_index+NthEigenvalue-1, "par["+std::to_string(int(first_index+NthEigenvalue-1))+"]", input_value, 0.01*limit);
-            Chi2Minimizer->SetVariableLimits(first_index+NthEigenvalue-1,input_value-limit,input_value+limit);
+            //Chi2Minimizer->SetVariableLimits(first_index+NthEigenvalue-1,input_value-limit,input_value+limit);
         }
     }
 
@@ -1323,6 +1299,8 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         //if (energy_bins[e]>=562) continue;
         //if (energy_bins[e]<562) continue;
         //if (energy_bins[e]>=794) continue;
+        //if (energy_bins[e]<1585) continue;
+        //if (energy_bins[e]>=2239) continue;
 
         MatrixXcd mtx_data_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         MatrixXcd mtx_dark_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
@@ -1445,26 +1423,32 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         // kVectorBFGS2, kSteepestDescent
 
         SetInitialEigenvectors();
-        init_deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector_init, &mtx_eigenvector_inv_init);
+        //init_deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector_init, &mtx_eigenvector_inv_init);
         //std::cout << "initial deriv_at_zero = " << init_deriv_at_zero << std::endl;
 
         n_fourier_modes = 6;
-        ROOT::Math::Functor Chi2Func(&FourierChi2Function,4*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors*NumberOfEigenvectors); 
-        std::cout << "total n paramters = " << 4*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors << std::endl;
+        ROOT::Math::Functor Chi2Func(&FourierChi2Function,2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors*NumberOfEigenvectors); 
+        std::cout << "total n paramters = " << 2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors << std::endl;
 
-        ROOT::Math::GSLMinimizer Chi2Minimizer_0th( ROOT::Math::kVectorBFGS2 );
-        Chi2Minimizer_0th.SetMaxFunctionCalls(200); // for Minuit/Minuit2
-        Chi2Minimizer_0th.SetMaxIterations(200); // for GSL
+        ROOT::Math::GSLMinimizer Chi2Minimizer_0th( ROOT::Math::kSteepestDescent );
+        Chi2Minimizer_0th.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
+        //Chi2Minimizer_0th.SetMaxIterations(10000); // for GSL
+        Chi2Minimizer_0th.SetMaxIterations(40); // for GSL
         Chi2Minimizer_0th.SetTolerance(0.001);
+        Chi2Minimizer_0th.SetPrintLevel(2);
         Chi2Minimizer_0th.SetFunction(Chi2Func);
         FourierSetInitialVariables(&Chi2Minimizer_0th);
         const double *par_0th = Chi2Minimizer_0th.X();
-        std::cout << "initial chi2 = " << FourierChi2Function(par_0th) << std::endl;
+        NthIteration = 0;
+        double init_chi2 = FourierChi2Function(par_0th);
+        std::cout << "initial chi2 = " << init_chi2 << std::endl;
+        //Chi2Minimizer_0th.SetTolerance(0.05*init_chi2);
+        Chi2Minimizer_0th.SetTolerance(0.5*0.75*double(N_bins_for_deconv*N_bins_for_deconv));
         Chi2Minimizer_0th.Minimize();
         par_0th = Chi2Minimizer_0th.X();
         std::cout << "final chi2 = " << FourierChi2Function(par_0th) << std::endl;
         FourierParametrizeEigenvectors(par_0th);
-        double final_deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
+        //double final_deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
         //std::cout << "final deriv_at_zero = " << final_deriv_at_zero << std::endl;
 
         //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kVectorBFGS );
