@@ -1072,12 +1072,14 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
             input_value = 0.;
             if (NthEigenvalue==NthEigenvector)
             {
-                limit = 0.2*eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvector).real();
+                //limit = 0.2*eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvector).real();
+                limit = 0.;
             }
             else
             {
-                limit = 0.05*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
+                limit = 0.1*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
                 if (NthEigenvalue>NthEigenvector) limit = 0.;
+                //limit = 0.;
             }
             Chi2Minimizer->SetVariable(first_index+NthEigenvalue-1, "par["+std::to_string(int(first_index+NthEigenvalue-1))+"]", input_value, 0.01*limit);
             //Chi2Minimizer->SetVariableLimits(first_index+NthEigenvalue-1,input_value-limit,input_value+limit);
@@ -1423,7 +1425,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         // kVectorBFGS2, kSteepestDescent
 
         SetInitialEigenvectors();
-        //init_deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector_init, &mtx_eigenvector_inv_init);
+        init_deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector_init, &mtx_eigenvector_inv_init);
         //std::cout << "initial deriv_at_zero = " << init_deriv_at_zero << std::endl;
 
         n_fourier_modes = 6;
@@ -1443,7 +1445,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         double init_chi2 = FourierChi2Function(par_0th);
         std::cout << "initial chi2 = " << init_chi2 << std::endl;
         //Chi2Minimizer_0th.SetTolerance(0.05*init_chi2);
-        Chi2Minimizer_0th.SetTolerance(0.5*0.75*double(N_bins_for_deconv*N_bins_for_deconv));
+        Chi2Minimizer_0th.SetTolerance(0.1*0.75*double(N_bins_for_deconv*N_bins_for_deconv));
         Chi2Minimizer_0th.Minimize();
         par_0th = Chi2Minimizer_0th.X();
         std::cout << "final chi2 = " << FourierChi2Function(par_0th) << std::endl;
