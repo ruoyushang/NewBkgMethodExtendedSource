@@ -51,9 +51,8 @@ double MSCL_cut_lower = -1.0;
 double MSCL_cut_blind = 1.0;
 double MSCL_cut_upper = 1.0;
 
-const int N_energy_bins = 12;
-double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,1585,2239,4467,8913};
-bool use_this_energy_bin[N_energy_bins] = {false,false,false,false,true,false,false,false,false,false,false,false};
+const int N_energy_bins = 10;
+double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,2239,8913};
 
 int N_bins_for_deconv = 40;
 double MSCW_plot_lower = -1.;
@@ -195,7 +194,7 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
     }
 
     vector<pair<string,int>> new_list;
-    for (int n=0;n<1;n++)
+    for (int n=0;n<2;n++)
     {
         for (int on_run=0;on_run<ON_runlist.size();on_run++)
         {
@@ -443,13 +442,13 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     if (Data_runlist.size()==0) return;
 
     // Get a list of dark observation runs
-    //vector<pair<string,int>> Dark_runlist_init = GetRunList("Everything");
-    //vector<pair<string,int>> Dark_runlist;
-    //std::cout << "initial Dark_runlist size = " << Dark_runlist_init.size() << std::endl;
-    //if (TString(target)!="Proton") Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
-    //else Dark_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
-    //std::cout << "final Dark_runlist size = " << Dark_runlist.size() << std::endl;
-    vector<pair<string,int>> Dark_runlist = GetRunList("Proton");
+    vector<pair<string,int>> Dark_runlist_init = GetRunList("Everything");
+    vector<pair<string,int>> Dark_runlist;
+    std::cout << "initial Dark_runlist size = " << Dark_runlist_init.size() << std::endl;
+    if (TString(target)!="Proton") Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
+    else Dark_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
+    std::cout << "final Dark_runlist size = " << Dark_runlist.size() << std::endl;
+    //vector<pair<string,int>> Dark_runlist = GetRunList("Proton");
 
     for (int run=0;run<Dark_runlist.size();run++)
     {
