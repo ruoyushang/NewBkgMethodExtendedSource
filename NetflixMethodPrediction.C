@@ -1323,7 +1323,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         n_fourier_modes = 6;
         n_taylor_modes = 6;
 
-        NumberOfEigenvectors = 3;
+        NumberOfEigenvectors = 4;
         //if (CurrentEnergy>1000.) NumberOfEigenvectors = 2;
         //if (CurrentEnergy>2000.) NumberOfEigenvectors = 1;
 
@@ -1435,7 +1435,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         ROOT::Math::GSLMinimizer Chi2Minimizer_0th( ROOT::Math::kSteepestDescent );
         Chi2Minimizer_0th.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
         //Chi2Minimizer_0th.SetMaxIterations(10000); // for GSL
-        Chi2Minimizer_0th.SetMaxIterations(40); // for GSL
+        Chi2Minimizer_0th.SetMaxIterations(100); // for GSL
         Chi2Minimizer_0th.SetTolerance(0.001);
         Chi2Minimizer_0th.SetPrintLevel(2);
         Chi2Minimizer_0th.SetFunction(Chi2Func);
