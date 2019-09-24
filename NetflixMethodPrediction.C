@@ -286,6 +286,57 @@ double BlindedLogLikelihood(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
     }
     return log_likelihood;
 }
+
+double ActivationFunction(double x, double ref)
+{
+    return exp((x-ref)/ref);
+}
+
+double FirstDerivative(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
+{
+    int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
+    int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
+    int binx_upper = hist_data->GetXaxis()->FindBin(MSCL_cut_blind*2);
+    int biny_upper = hist_data->GetYaxis()->FindBin(MSCW_cut_blind*2);
+    int binx_lower = hist_data->GetXaxis()->FindBin(-0.5);
+    int biny_lower = hist_data->GetYaxis()->FindBin(-0.5);
+    double deriv_model = 0.;
+    double deriv_dark = 0.;
+    double n_bins = 0.;
+    for (int bx=1+1;bx<=hist_data->GetNbinsX()-1;bx++)
+    {
+        for (int by=1+1;by<=hist_data->GetNbinsY()-1;by++)
+        {
+            double data = 0.;
+            data += pow(hist_data->GetBinContent(bx+1,by)-hist_data->GetBinContent(bx,by),2);
+            data += pow(hist_data->GetBinContent(bx,by)-hist_data->GetBinContent(bx-1,by),2);
+            data += pow(hist_data->GetBinContent(bx,by+1)-hist_data->GetBinContent(bx,by),2);
+            data += pow(hist_data->GetBinContent(bx,by)-hist_data->GetBinContent(bx,by-1),2);
+            double dark = 0.;
+            dark += pow(hist_dark->GetBinContent(bx+1,by)-hist_dark->GetBinContent(bx,by),2);
+            dark += pow(hist_dark->GetBinContent(bx,by)-hist_dark->GetBinContent(bx-1,by),2);
+            dark += pow(hist_dark->GetBinContent(bx,by+1)-hist_dark->GetBinContent(bx,by),2);
+            dark += pow(hist_dark->GetBinContent(bx,by)-hist_dark->GetBinContent(bx,by-1),2);
+            double model = 0.;
+            model += pow(hist_model->GetBinContent(bx+1,by)-hist_model->GetBinContent(bx,by),2);
+            model += pow(hist_model->GetBinContent(bx,by)-hist_model->GetBinContent(bx-1,by),2);
+            model += pow(hist_model->GetBinContent(bx,by+1)-hist_model->GetBinContent(bx,by),2);
+            model += pow(hist_model->GetBinContent(bx,by)-hist_model->GetBinContent(bx,by-1),2);
+            double weight = 1.;
+            double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
+            double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
+            double width = 0.1;
+            if (bx<binx_blind && by<biny_blind)
+            {
+                deriv_model += model;
+                deriv_dark += dark;
+                n_bins += 1.;
+            }
+        }
+    }
+    return n_bins*ActivationFunction(deriv_model, deriv_dark);
+}
+
 double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
 {
     int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
@@ -520,6 +571,7 @@ double FourierChi2Function(const double *par)
     fill2DHistogramAbs(&hist_model,mtx_model);
 
     double chi2 = BlindedChi2(&hist_data,&hist_dark,&hist_model);
+    chi2 += FirstDerivative(&hist_data,&hist_dark,&hist_model);
     //double chi2 = BlindedLogLikelihood(&hist_data,&hist_dark,&hist_model);
     //std::cout << NthIteration << "-th iteration, chi2 = " << chi2 << std::endl; 
     //NthIteration += 1;
@@ -1293,8 +1345,8 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
 
         //if (energy_bins[e]<237) continue;
         //if (energy_bins[e]>=282) continue;
-        //if (energy_bins[e]<335) continue;
-        //if (energy_bins[e]>=398) continue;
+        if (energy_bins[e]<335) continue;
+        if (energy_bins[e]>=398) continue;
         //if (energy_bins[e]<398) continue;
         //if (energy_bins[e]>=473) continue;
         //if (energy_bins[e]<473) continue;
