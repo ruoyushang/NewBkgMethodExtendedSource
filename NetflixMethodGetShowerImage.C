@@ -399,6 +399,10 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     TH1D Hist_ErecS = TH1D("Hist_ErecS","",N_energy_bins,energy_bins);
     TH2D Hist_Dark_ShowerDirection = TH2D("Hist_Dark_ShowerDirection","",180,0,360,90,0,90);
     TH2D Hist_Data_ShowerDirection = TH2D("Hist_Data_ShowerDirection","",180,0,360,90,0,90);
+    vector<TH2D> Hist_GammaMC_MSCLW;
+    vector<TH2D> Hist_GammaData_MSCLW;
+    vector<TH2D> Hist_GammaDataON_MSCLW;
+    vector<TH2D> Hist_GammaDataOFF_MSCLW;
     vector<TH2D> Hist_Data_MSCLW;
     vector<TH2D> Hist_Ring_MSCLW;
     vector<TH2D> Hist_Ring_Syst_MSCLW;
@@ -416,6 +420,14 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         sprintf(e_low, "%i", int(energy_bins[e]));
         char e_up[50];
         sprintf(e_up, "%i", int(energy_bins[e+1]));
+        Hist_GammaMC_MSCLW.push_back(TH2D("Hist_GammaMC_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_GammaMC_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
+        Hist_GammaData_MSCLW.push_back(TH2D("Hist_GammaData_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_GammaData_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
+        Hist_GammaDataON_MSCLW.push_back(TH2D("Hist_GammaDataON_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_GammaDataON_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
+        Hist_GammaDataOFF_MSCLW.push_back(TH2D("Hist_GammaDataOFF_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_GammaDataOFF_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
         Hist_Data_MSCLW.push_back(TH2D("Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Data_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
         Hist_Ring_MSCLW.push_back(TH2D("Hist_Ring_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
@@ -432,7 +444,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         Hist_Dark_CR_Skymap.push_back(TH2D("Hist_Dark_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",30,-3,3,30,-3,3));
     }
 
-    vector<pair<string,int>> Photon_runlist = GetRunList("Photon");
+    vector<pair<string,int>> PhotonMC_runlist = GetRunList("Photon");
+    vector<pair<string,int>> PhotonData_runlist = GetRunList("Crab");
 
     // Get a list of target observation runs
     vector<pair<string,int>> Data_runlist_init = GetRunList(target);
@@ -633,12 +646,12 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         TTree* Data_tree = (TTree*) input_file->Get(root_file);
         n_proton += Data_tree->GetEntries();
     }
-    for (int run=0;run<Photon_runlist.size();run++)
+    for (int run=0;run<PhotonMC_runlist.size();run++)
     {
         char run_number[50];
         char Data_observation[50];
-        sprintf(run_number, "%i", int(Photon_runlist[run].second));
-        sprintf(Data_observation, "%s", Photon_runlist[run].first.c_str());
+        sprintf(run_number, "%i", int(PhotonMC_runlist[run].second));
+        sprintf(Data_observation, "%s", PhotonMC_runlist[run].first.c_str());
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
         TFile*  input_file = TFile::Open(filename.c_str());
@@ -650,18 +663,18 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     if (TString(target)!="Proton") photon_weight = 0.;
     //photon_weight = 0.;
     std::cout << "photon_weight = " << photon_weight << std::endl;
-    for (int run=0;run<Photon_runlist.size();run++)
+    for (int run=0;run<PhotonMC_runlist.size();run++)
     {
         char run_number[50];
         char Data_observation[50];
-        sprintf(run_number, "%i", int(Photon_runlist[run].second));
-        sprintf(Data_observation, "%s", Photon_runlist[run].first.c_str());
+        sprintf(run_number, "%i", int(PhotonMC_runlist[run].second));
+        sprintf(Data_observation, "%s", PhotonMC_runlist[run].first.c_str());
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
 
         TFile*  input_file = TFile::Open(filename.c_str());
-	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Photon_runlist[run].second);
+	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,PhotonMC_runlist[run].second);
         TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
         TTree* Data_tree = (TTree*) input_file->Get(root_file);
         Data_tree->SetBranchAddress("Xoff",&Xoff);
@@ -708,6 +721,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze,photon_weight);
             if (FoV() && GammaFoV())
             {
+                Hist_GammaMC_MSCLW.at(e).Fill(MSCL,MSCW);
                 Hist_Data_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
             }
             if (RingFoV() && GammaFoV())
@@ -741,6 +755,100 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         input_file->Close();
     }
 
+    // Get Gamma ray data template
+    for (int run=0;run<PhotonData_runlist.size();run++)
+    {
+        char run_number[50];
+        char Data_observation[50];
+        sprintf(run_number, "%i", int(PhotonData_runlist[run].second));
+        sprintf(Data_observation, "%s", PhotonData_runlist[run].first.c_str());
+        string filename;
+        filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
+
+
+        TFile*  input_file = TFile::Open(filename.c_str());
+	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,PhotonData_runlist[run].second);
+        TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
+        TTree* Data_tree = (TTree*) input_file->Get(root_file);
+        Data_tree->SetBranchAddress("Xoff",&Xoff);
+        Data_tree->SetBranchAddress("Yoff",&Yoff);
+        Data_tree->SetBranchAddress("theta2",&theta2);
+        Data_tree->SetBranchAddress("ra",&ra_sky);
+        Data_tree->SetBranchAddress("dec",&dec_sky);
+        Data_tree->SetBranchAddress("ErecS",&ErecS);
+        Data_tree->SetBranchAddress("EChi2S",&EChi2S);
+        Data_tree->SetBranchAddress("MSCW",&MSCW);
+        Data_tree->SetBranchAddress("MSCL",&MSCL);
+        Data_tree->SetBranchAddress("NImages",&NImages);
+        Data_tree->SetBranchAddress("Xcore",&Xcore);
+        Data_tree->SetBranchAddress("Ycore",&Ycore);
+        Data_tree->SetBranchAddress("SizeSecondMax",&SizeSecondMax);
+        Data_tree->SetBranchAddress("Time",&Time);
+        Data_tree->SetBranchAddress("Shower_Ze",&Shower_Ze);
+        Data_tree->SetBranchAddress("Shower_Az",&Shower_Az);
+
+        // Get effective area and livetime and determine the cosmic electron counts for this run.
+        Data_tree->GetEntry(0);
+        double time_0 = Time;
+        Data_tree->GetEntry(Data_tree->GetEntries()-1);
+        double time_1 = Time;
+
+        for (int entry=0;entry<Data_tree->GetEntries();entry++) 
+        {
+            ErecS = 0;
+            EChi2S = 0;
+            NImages = 0;
+            Xcore = 0;
+            Ycore = 0;
+            SizeSecondMax = 0;
+            MSCW = 0;
+            MSCL = 0;
+            R2off = 0;
+            Data_tree->GetEntry(entry);
+            R2off = Xoff*Xoff+Yoff*Yoff;
+            int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
+            if (energy<0) continue;
+            if (energy>=N_energy_bins) continue;
+            int e = energy;
+            if (!SelectNImages(2,4)) continue;
+            Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze,photon_weight);
+            if (theta2<0.2)
+            {
+                Hist_GammaDataON_MSCLW.at(e).Fill(MSCL,MSCW);
+            }
+            else if (theta2>0.2 && theta2<0.4)
+            {
+                Hist_GammaDataOFF_MSCLW.at(e).Fill(MSCL,MSCW);
+            }
+        }
+        input_file->Close();
+    }
+    for (int e=0;e<N_energy_bins;e++) 
+    {
+        int binx_blind = Hist_GammaDataON_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_lower);
+        int binx_upper = Hist_GammaDataON_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_blind)-1;
+        int biny_blind = Hist_GammaDataON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
+        int biny_upper = Hist_GammaDataON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
+        double GammaDataON_CR_Integral = Hist_GammaDataON_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
+        double GammaDataOFF_CR_Integral = Hist_GammaDataOFF_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
+        double scale = GammaDataON_CR_Integral/GammaDataOFF_CR_Integral;
+        Hist_GammaDataOFF_MSCLW.at(e).Scale(scale);
+        Hist_GammaData_MSCLW.at(e).Add(&Hist_GammaDataON_MSCLW.at(e));
+        Hist_GammaData_MSCLW.at(e).Add(&Hist_GammaDataOFF_MSCLW.at(e),-1.);
+        for (int binx=0;binx<Hist_GammaData_MSCLW.at(e).GetNbinsX();binx++)
+        {
+            for (int biny=0;biny<Hist_GammaData_MSCLW.at(e).GetNbinsY();biny++)
+            {
+                double old_content = Hist_GammaData_MSCLW.at(e).GetBinContent(binx+1,biny+1);
+                double old_error = Hist_GammaData_MSCLW.at(e).GetBinError(binx+1,biny+1);
+                if (old_content<0)
+                {
+                    Hist_GammaData_MSCLW.at(e).SetBinContent(binx+1,biny+1,0);
+                    Hist_GammaData_MSCLW.at(e).SetBinError(binx+1,biny+1,0);
+                }
+            }
+        }
+    }
 
 
     for (int e=0;e<N_energy_bins;e++) 
@@ -790,6 +898,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     Hist_Data_ShowerDirection.Write();
     for (int e=0;e<N_energy_bins;e++)
     {
+        Hist_GammaMC_MSCLW.at(e).Write();
+        Hist_GammaData_MSCLW.at(e).Write();
         Hist_Data_MSCLW.at(e).Write();
         Hist_Ring_MSCLW.at(e).Write();
         Hist_Ring_Syst_MSCLW.at(e).Write();
