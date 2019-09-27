@@ -13,7 +13,7 @@ ROOT.TH1.SetDefaultSumw2()
 ROOT.TH1.AddDirectory(False) # without this, the histograms returned from a function will be non-type
 ROOT.gStyle.SetPaintTextFormat("0.3f")
 
-PlotAllEnergies = True
+PlotAllEnergies = False
 PlotAllSRs = False
 DoSkymap = False
 UseRDBM = False
@@ -32,7 +32,7 @@ file_elev_upper = 85
 
 elev_range = []
 elev_range += [[75,85]]
-#elev_range += [[65,75]]
+elev_range += [[65,75]]
 #elev_range += [[55,65]]
 #elev_range += [[45,55]]
 
@@ -59,24 +59,24 @@ if tag == "LargeOFF":
     UseRDBM = True
     UseDark = True
 
-#FileFolder = 'output_thinbin'
-#tag += '_thinbin'
-#FileFolder = 'output_chi2'
+FileFolder = 'output_gamma'
+tag += '_gamma'
+#FileFolder = 'output_chi2_new'
 #tag += '_chi2'
 #FileFolder = 'output_llh'
 #tag += '_llh'
 #FileFolder = 'output_eigen'
 #tag += '_eigen'
-FileFolder = 'output_test'
-tag += '_test'
+#FileFolder = 'output_test'
+#tag += '_test'
 
 target = ""
 source = []
 sky_coord = []
-#source += ['Segue1V6']
+#source += ['Proton']
 #sky_coord += ['10 07 04 +16 04 55']
-#source += ['Crab']
-#sky_coord += ['05 34 31.97 +22 00 52.1']
+source += ['Crab']
+sky_coord += ['05 34 31.97 +22 00 52.1']
 source += ['Mrk421']
 sky_coord += ['11 04 19 +38 11 41']
 #source += ['H1426']
@@ -89,28 +89,32 @@ sky_coord += ['11 04 19 +38 11 41']
 #sky_coord += ['11 45 5.009 +19 36 22.74']
 #source += ['OJ287V6']
 #sky_coord += ['08 54 49.1 +20 05 58.89']
+#source += ['Segue1V6']
+#sky_coord += ['10 07 04 +16 04 55']
 #source += ['1ES1011V6']
 #sky_coord += ['10 15 4.139 +49 26 0.71']
 #source += ['NGC1275V6']
 #sky_coord += ['03 19 48.1 +41 30 42']
 #source += ['1ES0647V6']
 #sky_coord += ['06 50 46.490 +25 02 59.62']
-#source += ['RGBJ0710']
-#sky_coord += ['07 10 26.4 +59 09 00']
 #source += ['1ES1440V6']
 #sky_coord += ['14 42 48.277 +12 00 40.37']
+#source += ['1ES1741V6']
+#sky_coord += ['17 44 01.2 +19 32 47']
 #source += ['IC443HotSpot']
 #sky_coord += ['06 18 2.700 +22 39 36.00']
+#source += ['RGBJ0710']
+#sky_coord += ['07 10 26.4 +59 09 00']
 #source += ['CasA']
 #sky_coord += ['23 23 13.8 +58 48 26']
 #source += ['G079']
 #sky_coord += ['20 32 28.56 +40 19 41.52']
-#source += ['M82']
-#sky_coord += ['09 55 52.7 +69 40 46']
 #source += ['WComaeV6']
 #sky_coord += ['12 21 31.7 +28 13 59']
 #source += ['1ES1218V6']
 #sky_coord += ['12 21 26.3 +30 11 29']
+#source += ['M82']
+#sky_coord += ['09 55 52.7 +69 40 46']
 #source += ['MGRO_J1908_V5']
 #sky_coord += ['19 07 54 +06 16 07']
 #source += ['Segue1V5']
@@ -123,17 +127,17 @@ MSCL_plot_lower = -1.
 MSCL_plot_upper = 3.
 
 energy_list = []
-#energy_list += [200]
-#energy_list += [237]
-#energy_list += [282]
+energy_list += [200]
+energy_list += [237]
+energy_list += [282]
 energy_list += [335]
 energy_list += [398] # works from here
-#energy_list += [473]
-#energy_list += [562]
-#energy_list += [794]
-#energy_list += [1122]
-#energy_list += [2239]
-#energy_list += [8913]
+energy_list += [473]
+energy_list += [562]
+energy_list += [794]
+energy_list += [1122]
+energy_list += [2239]
+energy_list += [8913]
 
 MSCW_lower_cut = -1.0
 MSCW_upper_cut = 1.0
@@ -144,14 +148,14 @@ MSCL_blind_cut = 1.0
 exposure_hours = 0.
 total_exposure_hours = 0.
 
-NRGBs = 5
-NCont = 512
-stops = [0.00,0.45,0.50,0.55,1.00]
-red =   [0.00,1.00,1.00,1.00,1.00]
-green = [0.00,1.00,1.00,1.00,0.00]
-blue =  [1.00,1.00,1.00,1.00,0.00]
-ROOT.TColor.CreateGradientColorTable(NRGBs,array('d',stops),array('d',red),array('d',green),array('d',blue),NCont)
-ROOT.gStyle.SetNumberContours(NCont)
+#NRGBs = 5
+#NCont = 512
+#stops = [0.00,0.45,0.50,0.55,1.00]
+#red =   [0.00,1.00,1.00,1.00,1.00]
+#green = [0.00,1.00,1.00,1.00,0.00]
+#blue =  [1.00,1.00,1.00,1.00,0.00]
+#ROOT.TColor.CreateGradientColorTable(NRGBs,array('d',stops),array('d',red),array('d',green),array('d',blue),NCont)
+#ROOT.gStyle.SetNumberContours(NCont)
 
 def IntegralAndError(Hist,bin1,bin2):
     
@@ -396,8 +400,8 @@ def MakeComparisonPlot(Hists,legends,colors,title,name,logx,logy):
         for h in range(0,len(Hists)):
             Hists[h].GetXaxis().SetRangeUser(low_end,high_end)
 
-    Hists[max_hist].SetMaximum(max_heigh)
-    Hists[max_hist].SetMinimum(min_heigh)
+    #Hists[max_hist].SetMaximum(max_heigh)
+    #Hists[max_hist].SetMinimum(min_heigh)
     Hists[max_hist].Draw("E")
     #Hists[0].Draw("E")
 
@@ -1984,7 +1988,11 @@ if UseDark:
 
 #c = SkyCoord(frame=ICRS, ra=308.119, dec=40.3282, unit=(u.degree, u.degree))
 #print c.to_string('hmsdms')
+Hists = []
+legends = []
+colors = []
 Hist_SkyCoord = ROOT.TH2D("Hist_SkyCoord","",180,-180,180,90,-90,90)
+Prof_GalExcess = ROOT.TProfile("Prof_GalExcess","",9,0,90,-100,100)
 c = SkyCoord(sky_coord[:], unit=(u.hourangle, u.deg))
 for s in range(0,len(source)):
     print c.galactic.l.degree[s]
@@ -1993,4 +2001,9 @@ for s in range(0,len(source)):
     if x>180.: x = x-360.
     y = c.galactic.b.degree[s]
     Hist_SkyCoord.Fill(x,y,100.*(Hist_SumE_S2B[s].GetBinContent(2)-1.))
+    Prof_GalExcess.Fill(pow(y*y,0.5),100.*(Hist_SumE_S2B[s].GetBinContent(2)-1.))
 Make2DSkyCoordPlot(Hist_SkyCoord,'x','y','SkyCoord',False)
+Hists += [Prof_GalExcess]
+legends += ["VERITAS"]
+colors += [2]
+MakeComparisonPlot(Hists,legends,colors,"Gal. lat.","GalExcess",False,False)
