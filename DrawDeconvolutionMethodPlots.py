@@ -16,28 +16,40 @@ UseRDBM = False
 UseDark = False
 UseRing = False
 
-theta2_lower = 0.0
-theta2_upper = 0.5
+theta2_lower = 0.2
+theta2_upper = 10.0
 
-file_elev_lower = 55
-file_elev_upper = 85
-
-#tag = "Small"
+#tag = "SmallON"
 #file_theta2_lower = 0.0
 #file_theta2_upper = 0.2
 #UseRing = True
-tag = "Large"
-file_theta2_lower = 0.0
+#tag = "LargeON"
+#file_theta2_lower = 0.0
+#file_theta2_upper = 10.0
+#UseRDBM = True
+#UseDark = True
+tag = "LargeOFF"
+file_theta2_lower = 0.2
 file_theta2_upper = 10.0
 UseRDBM = True
 UseDark = True
+
+tag += "_SZA"
+file_elev_lower = 70
+file_elev_upper = 85
+#tag += "_MZA"
+#file_elev_lower = 55
+#file_elev_upper = 70
+#tag += "_LZA"
+#file_elev_lower = 40
+#file_elev_upper = 55
 
 target = ""
 source = []
 #source += ['Everything']
 #source += ['Segue1V6']
-source += ['IC443HotSpot']
-#source += ['Crab']
+#source += ['IC443HotSpot']
+source += ['Crab']
 #source += ['Mrk421']
 #source += ['H1426']
 #source += ['1ES0229']
@@ -86,6 +98,7 @@ energy_list += [1122]
 energy_list += [1585]
 energy_list += [2239]
 energy_list += [4467]
+energy_list += [8913]
 
 MSCW_lower_cut = -1.0
 MSCW_upper_cut = 1.0
@@ -535,6 +548,14 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     lumilab4.SetNDC()
     lumilab4.SetTextSize(0.15)
     lumilab4.Draw()
+    if 'Theta2' in name:
+        print '+++++++++++++++++++++++++++++'
+        print '%s, %0.1f hrs'%(target,exposure_hours)
+        print 'Total = %0.1f'%(data_SR)
+        print 'Bkg = %0.1f#pm%0.1f'%(predict_bkg,err_bkg)
+        print 'Excess = %0.1f#pm%0.1f (%0.1f#sigma)'%(data_SR-predict_bkg,pow(err_SR*err_SR+err_bkg*err_bkg,0.5),Sig)
+        print '$%0.0f$& $%0.0f$& $\pm%0.0f$& $%0.1f$'%(data_SR,predict_bkg,err_bkg,Sig)
+        print '+++++++++++++++++++++++++++++'
 
     pad2.cd()
     Hist_Band = Hist_Sum.Clone()
@@ -736,9 +757,11 @@ def MakeComparisonPlotNoRatio(Hists,legends,colors,title,name,minheight,maxheigh
 
     pad2.cd()
     Hist_Sig = ROOT.TH1D("Hist_Sig","",32,-8,8)
+    Hist_Dif = ROOT.TH1D("Hist_Dif","",32,-8,8)
     for h in range(0,len(Hists)):
         for b in range(0,Hists[h].GetNbinsX()):
             if not Hists[h].GetBinError(b+1)==0:
+                Hist_Dif.Fill((Hists[h].GetBinContent(b+1)-1.))
                 Hist_Sig.Fill((Hists[h].GetBinContent(b+1)-1.)/Hists[h].GetBinError(b+1))
     Hist_Sig.GetXaxis().SetLabelSize(0.06)
     Hist_Sig.GetYaxis().SetLabelSize(0.06)
@@ -747,7 +770,7 @@ def MakeComparisonPlotNoRatio(Hists,legends,colors,title,name,minheight,maxheigh
     Hist_Sig.GetXaxis().SetTitleOffset(1.0)
     Hist_Sig.Draw("E")
 
-    lumilab1 = ROOT.TLatex(0.15,0.80,'mean = %0.1f, RMS = %0.1f'%(Hist_Sig.GetMean(),Hist_Sig.GetRMS()) )
+    lumilab1 = ROOT.TLatex(0.15,0.80,'mean = %0.3f, RMS = %0.3f (%0.1f#sigma)'%(Hist_Dif.GetMean(),Hist_Dif.GetRMS(),Hist_Sig.GetRMS()) )
     lumilab1.SetNDC()
     lumilab1.SetTextSize(0.10)
     lumilab1.Draw()
@@ -868,6 +891,18 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,xtitle,ytitle,theta2_low,theta2_up,n
     canvas.SaveAs('output_plots/SkymapSig_%s_%s_%s.png'%(name,target,tag))
 
     Hist_Excess = Hist_SR.Clone()
+    Hist_Excess.GetYaxis().SetTitle(ytitle)
+    Hist_Excess.GetXaxis().SetTitle(xtitle)
+    Hist_Excess.Draw("COL4Z")
+    canvas.SaveAs('output_plots/SkymapTotal_%s_%s_%s.png'%(name,target,tag))
+
+    Hist_Excess = Hist_Bkg.Clone()
+    Hist_Excess.GetYaxis().SetTitle(ytitle)
+    Hist_Excess.GetXaxis().SetTitle(xtitle)
+    Hist_Excess.Draw("COL4Z")
+    canvas.SaveAs('output_plots/SkymapBkg_%s_%s_%s.png'%(name,target,tag))
+
+    Hist_Excess = Hist_SR.Clone()
     Hist_Excess.Add(Hist_Bkg,-1.)
     Hist_Excess.GetYaxis().SetTitle(ytitle)
     Hist_Excess.GetXaxis().SetTitle(xtitle)
@@ -952,9 +987,9 @@ for s in range(0,len(source)):
     exposure_hours = 0.
 
     #FilePath = "output_backup/Deconvolution_"+target+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_Theta2%sto%s"%(int(file_theta2_lower*10.),int(file_theta2_upper*10.))+".root";
-    #FilePath = "output_Segue1/Deconvolution_"+target+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_Theta2%sto%s"%(int(file_theta2_lower*10.),int(file_theta2_upper*10.))+".root";
+    FilePath = "output_Segue1/Deconvolution_"+target+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_Theta2%sto%s"%(int(file_theta2_lower*10.),int(file_theta2_upper*10.))+".root";
     #FilePath = "output_Mrk421/Deconvolution_"+target+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_Theta2%sto%s"%(int(file_theta2_lower*10.),int(file_theta2_upper*10.))+".root";
-    FilePath = "output_Jul16/Deconvolution_"+target+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_Theta2%sto%s"%(int(file_theta2_lower*10.),int(file_theta2_upper*10.))+".root";
+    #FilePath = "output_Jul16/Deconvolution_"+target+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_Theta2%sto%s"%(int(file_theta2_lower*10.),int(file_theta2_upper*10.))+".root";
     InputFile = ROOT.TFile(FilePath)
     InfoTree = InputFile.Get("InfoTree")
     InfoTree.GetEntry(0)
@@ -1611,15 +1646,19 @@ for s in range(0,len(source)):
         Hist_Bkg_Skymap.Add(Hist_Elec_Skymap)
         Hist_Bkg_Syst_Skymap = Hist_Hadr_Syst_Skymap.Clone()
         Hist_Bkg_Syst_Skymap.Add(Hist_Elec_Syst_Skymap)
+        n_rebin = 2
+        Hist_Data_Skymap.Rebin2D(n_rebin,n_rebin)
+        Hist_Bkg_Skymap.Rebin2D(n_rebin,n_rebin)
+        Hist_Bkg_Syst_Skymap.Rebin2D(n_rebin,n_rebin)
         Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap,Hist_Bkg_Skymap,'RA','Dec',theta2_lower,theta2_upper,plotname)
         
-        smooth_size = 0.05
-        Hist_Data_Skymap_smooth = Smooth2DMap(Hist_Data_Skymap,smooth_size,False)
-        Hist_Bkg_Skymap_smooth = Smooth2DMap(Hist_Bkg_Skymap,smooth_size,False)
-        Hist_Bkg_Syst_Skymap_smooth = Smooth2DMap(Hist_Bkg_Syst_Skymap,smooth_size,True)
-        Hist_Bkg_Skymap_smooth.Add(Hist_Bkg_Syst_Skymap_smooth)
-        plotname = 'Target_SRall_RDBM_Skymap_Smooth_E%s'%(ErecS_lower_cut)
-        Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap_smooth,Hist_Bkg_Skymap_smooth,'RA','Dec',theta2_lower,theta2_upper,plotname)
+        #smooth_size = 0.05
+        #Hist_Data_Skymap_smooth = Smooth2DMap(Hist_Data_Skymap,smooth_size,False)
+        #Hist_Bkg_Skymap_smooth = Smooth2DMap(Hist_Bkg_Skymap,smooth_size,False)
+        #Hist_Bkg_Syst_Skymap_smooth = Smooth2DMap(Hist_Bkg_Syst_Skymap,smooth_size,True)
+        #Hist_Bkg_Skymap_smooth.Add(Hist_Bkg_Syst_Skymap_smooth)
+        #plotname = 'Target_SRall_RDBM_Skymap_Smooth_E%s'%(ErecS_lower_cut)
+        #Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap_smooth,Hist_Bkg_Skymap_smooth,'RA','Dec',theta2_lower,theta2_upper,plotname)
 
 if UseRDBM:
     MakeComparisonPlotNoRatio(Hist_RDBM_S2B,legend_S2B,color_S2B,'E [GeV]','Mismodeling_RDBM_systematics',0.6,1.4,True,False)
