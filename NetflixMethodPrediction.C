@@ -63,7 +63,7 @@ int NumberOfEigenvectors = 0;
 int n_fourier_modes = 6;
 int n_taylor_modes = 6;
 double CurrentEnergy = 0.;
-MatrixXcd mtx_gama(N_bins_for_deconv,N_bins_for_deconv);
+MatrixXcd mtx_gamma(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_data(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_dark(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_data_redu(N_bins_for_deconv,N_bins_for_deconv);
@@ -251,7 +251,7 @@ double CalculateSignificance(double s,double b,double err)
 }
 
 
-double SignalLogLikelihood(TH2D* hist_data, TH2D* hist_gama, TH2D* hist_model)
+double SignalLogLikelihood(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
 {
     int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
     int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
@@ -265,13 +265,13 @@ double SignalLogLikelihood(TH2D* hist_data, TH2D* hist_gama, TH2D* hist_model)
         for (int by=1;by<=hist_data->GetNbinsY();by++)
         {
             double data = hist_data->GetBinContent(bx,by);
-            double gama = hist_gama->GetBinContent(bx,by);
+            double gamma = hist_gamma->GetBinContent(bx,by);
             double model = hist_model->GetBinContent(bx,by);
             double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
             double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
             //double weight = exp(-0.5*dx*dx-0.5*dy*dy);
             double weight = 1.;
-            model = max(0.001,model+gama);
+            model = max(0.001,model+gamma);
             if (bx<binx_blind && by<biny_blind)
             {
                 double log_factorial = 0.;
@@ -380,7 +380,7 @@ double FirstDerivative(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
     return n_bins*ActivationFunction(deriv_model, deriv_dark);
 }
 
-double SignalChi2(TH2D* hist_data, TH2D* hist_gama, TH2D* hist_model)
+double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
 {
     int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
     int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
@@ -394,7 +394,7 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gama, TH2D* hist_model)
         for (int by=1;by<=hist_data->GetNbinsY();by++)
         {
             double data = hist_data->GetBinContent(bx,by);
-            double gama = hist_gama->GetBinContent(bx,by);
+            double gamma = hist_gamma->GetBinContent(bx,by);
             double model = hist_model->GetBinContent(bx,by);
             double weight = 1.;
             double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
@@ -402,8 +402,9 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gama, TH2D* hist_model)
             double width = 0.1;
             double data_err = max(0.8,pow(data,0.5));
             double model_err = max(0.8,pow(model,0.5));
-            weight = 1./(data_err*data_err+model_err*model_err);
-            double chi2_this = weight*pow(data-model-gama,2);
+            double gamma_err = 0.2*gamma;
+            weight = 1./(data_err*data_err+model_err*model_err+gamma_err*gamma_err);
+            double chi2_this = weight*pow(data-model-gamma,2);
             if (isnan(chi2_this))
             {
                 if (isnan(weight)) std::cout << "weight==nan!!!" << std::endl;
@@ -647,14 +648,14 @@ double FourierChi2Function(const double *par)
     MatrixXcd mtx_model(N_bins_for_deconv,N_bins_for_deconv);
     mtx_model = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
 
-    TH2D hist_gama = TH2D("hist_gama","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
+    TH2D hist_gamma = TH2D("hist_gamma","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_diff = TH2D("hist_diff","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_data = TH2D("hist_data","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_dark = TH2D("hist_dark","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_dark_redu = TH2D("hist_dark_redu","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_model = TH2D("hist_model","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
 
-    fill2DHistogramAbs(&hist_gama,mtx_gama);
+    fill2DHistogramAbs(&hist_gamma,mtx_gamma);
     fill2DHistogramAbs(&hist_data,mtx_data);
     fill2DHistogramAbs(&hist_dark,mtx_dark);
     fill2DHistogramAbs(&hist_dark_redu,mtx_dark_redu);
@@ -662,13 +663,13 @@ double FourierChi2Function(const double *par)
     hist_dark.Divide(&hist_dark_redu);
     hist_diff.Add(&hist_data);
     hist_diff.Add(&hist_model,-1.);
-    double scale = double(hist_diff.Integral())/double(hist_gama.Integral());
-    hist_gama.Scale(scale);
+    double scale = double(hist_diff.Integral())/double(hist_gamma.Integral());
+    hist_gamma.Scale(scale);
 
-    //double chi2 = BlindedChi2(&hist_data,&hist_dark,&hist_model);
-    //chi2 += 1.*SignalChi2(&hist_data,&hist_gama,&hist_model);
-    double chi2 = BlindedLogLikelihood(&hist_data,&hist_dark,&hist_model);
-    //chi2 += SignalLogLikelihood(&hist_data,&hist_gama,&hist_model);
+    double chi2 = BlindedChi2(&hist_data,&hist_dark,&hist_model);
+    chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
+    //double chi2 = BlindedLogLikelihood(&hist_data,&hist_dark,&hist_model);
+    //chi2 += SignalLogLikelihood(&hist_data,&hist_gamma,&hist_model);
     //std::cout << NthIteration << "-th iteration, chi2 = " << chi2 << std::endl; 
     //NthIteration += 1;
 
@@ -1227,7 +1228,8 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
             {
                 //limit = 0.1*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
                 //if (NthEigenvalue>NthEigenvector) limit = 0.;
-                limit = 0.;
+                //limit = 0.;
+                limit = 0.1*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
             }
             Chi2Minimizer->SetVariable(first_index+NthEigenvalue-1, "par["+std::to_string(int(first_index+NthEigenvalue-1))+"]", input_value, 0.01*limit);
             Chi2Minimizer->SetVariableLimits(first_index+NthEigenvalue-1,input_value-limit,input_value+limit);
@@ -1396,10 +1398,10 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         sprintf(e_low, "%i", int(energy_bins[e]));
         char e_up[50];
         sprintf(e_up, "%i", int(energy_bins[e+1]));
-        TString filename_gama  = "Hist_Gama_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
+        TString filename_gamma  = "Hist_GammaData_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TString filename_data  = "Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TString filename_dark  = "Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
-        TH2D* Hist_Gama = (TH2D*)InputDataFile.Get(filename_gama);
+        TH2D* Hist_GammaMC = (TH2D*)InputDataFile.Get(filename_gamma);
         TH2D* Hist_Data = (TH2D*)InputDataFile.Get(filename_data);
         TH2D* Hist_Dark = (TH2D*)InputDataFile.Get(filename_dark);
         Hist_Bkgd_MSCLW.push_back(TH2D("Hist_Bkgd_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
@@ -1441,8 +1443,8 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         Hist_Fit_InvEigenvectorImag_2.push_back(TH1D("Hist_Fit_InvEigenvectorImag_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
         Hist_Dark_InvEigenvectorImag_2.push_back(TH1D("Hist_Dark_InvEigenvectorImag_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
 
-        if (energy_bins[e]<237) continue;
-        if (energy_bins[e]>=282) continue;
+        //if (energy_bins[e]<237) continue;
+        //if (energy_bins[e]>=282) continue;
         //if (energy_bins[e]<335) continue;
         //if (energy_bins[e]>=398) continue;
         //if (energy_bins[e]<398) continue;
@@ -1457,7 +1459,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         MatrixXcd mtx_data_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         MatrixXcd mtx_dark_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         MatrixXcd mtx_data_bkgd(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
-        mtx_gama = fillMatrix(Hist_Gama);
+        mtx_gamma = fillMatrix(Hist_GammaMC);
         mtx_data = fillMatrix(Hist_Data);
         mtx_dark = fillMatrix(Hist_Dark);
         mtx_data_err = fillMatrixError(Hist_Data);
