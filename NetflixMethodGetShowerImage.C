@@ -659,8 +659,9 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         TTree* Data_tree = (TTree*) input_file->Get(root_file);
         n_photon += Data_tree->GetEntries();
     }
-    double photon_weight = 0.1*n_proton/n_photon;
-    if (TString(target)!="Proton") photon_weight = 0.;
+    double photon_weight = 0.5*n_proton/n_photon;
+    //if (TString(target)!="Proton") photon_weight = 0.;
+    if (Theta2_cut_lower==0.) photon_weight = 0.;
     //photon_weight = 0.;
     std::cout << "photon_weight = " << photon_weight << std::endl;
     for (int run=0;run<PhotonMC_runlist.size();run++)
@@ -721,7 +722,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze,photon_weight);
             if (FoV() && GammaFoV())
             {
-                Hist_GammaMC_MSCLW.at(e).Fill(MSCL,MSCW);
+                Hist_GammaMC_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
                 Hist_Data_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
             }
             if (RingFoV() && GammaFoV())

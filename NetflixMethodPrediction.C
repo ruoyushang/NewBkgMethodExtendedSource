@@ -1399,6 +1399,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         char e_up[50];
         sprintf(e_up, "%i", int(energy_bins[e+1]));
         TString filename_gamma  = "Hist_GammaData_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
+        if (Theta2_cut_lower!=0.) filename_gamma  = "Hist_GammaMC_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TString filename_data  = "Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TString filename_dark  = "Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TH2D* Hist_GammaMC = (TH2D*)InputDataFile.Get(filename_gamma);
