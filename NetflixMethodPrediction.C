@@ -250,7 +250,6 @@ double CalculateSignificance(double s,double b,double err)
     else return -1.*result;
 }
 
-
 double SignalLogLikelihood(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
 {
     int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
@@ -264,16 +263,17 @@ double SignalLogLikelihood(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
     {
         for (int by=1;by<=hist_data->GetNbinsY();by++)
         {
-            double data = hist_data->GetBinContent(bx,by);
-            double gamma = hist_gamma->GetBinContent(bx,by);
-            double model = hist_model->GetBinContent(bx,by);
-            double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
-            double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
-            //double weight = exp(-0.5*dx*dx-0.5*dy*dy);
-            double weight = 1.;
-            model = max(0.001,model+gamma);
             if (bx<binx_blind && by<biny_blind)
             {
+                double data = hist_data->GetBinContent(bx,by);
+                double gamma = hist_gamma->GetBinContent(bx,by);
+                double model = hist_model->GetBinContent(bx,by);
+                model += gamma;
+                double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
+                double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
+                //double weight = exp(-0.5*dx*dx-0.5*dy*dy);
+                double weight = 1.;
+                model = max(0.001,model);
                 double log_factorial = 0.;
                 if (data>0) log_factorial = data*(log(data)-1.) + 0.5*log(2*M_PI*data);
                 double log_likelihood_this = -2.*(data*log(model)-log_factorial-model);
@@ -303,18 +303,17 @@ double BlindedLogLikelihood(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
     {
         for (int by=1;by<=hist_data->GetNbinsY();by++)
         {
-            double data = hist_data->GetBinContent(bx,by);
-            double dark = hist_dark->GetBinContent(bx,by);
-            double model = hist_model->GetBinContent(bx,by);
-            //model = model*dark;
-            double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
-            double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
-            //double weight = exp(-0.5*dx*dx-0.5*dy*dy);
-            double weight = 1.;
-            model = max(0.001,model);
             if (bx>=binx_blind || by>=biny_blind)
             {
-                if (bx>=binx_blind && by>=biny_blind) continue;
+                double data = hist_data->GetBinContent(bx,by);
+                double dark = hist_dark->GetBinContent(bx,by);
+                double model = hist_model->GetBinContent(bx,by);
+                //model = model*dark;
+                double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
+                double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
+                //double weight = exp(-0.5*dx*dx-0.5*dy*dy);
+                double weight = 1.;
+                model = max(0.001,model);
                 double log_factorial = 0.;
                 if (data>0) log_factorial = data*(log(data)-1.) + 0.5*log(2*M_PI*data);
                 double log_likelihood_this = -2.*(data*log(model)-log_factorial-model);
@@ -394,28 +393,28 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
     {
         for (int by=1;by<=hist_data->GetNbinsY();by++)
         {
-            double data = hist_data->GetBinContent(bx,by);
-            double gamma = hist_gamma->GetBinContent(bx,by);
-            double model = hist_model->GetBinContent(bx,by);
-            double weight = 1.;
-            double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
-            double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
-            double width = 0.1;
-            double data_err = max(0.8,pow(data,0.5));
-            double model_err = max(0.8,pow(model,0.5));
-            double gamma_err = 0.2*gamma;
-            weight = 1./(data_err*data_err+model_err*model_err+gamma_err*gamma_err);
-            double chi2_this = weight*pow(data-model-gamma,2);
-            if (isnan(chi2_this))
-            {
-                if (isnan(weight)) std::cout << "weight==nan!!!" << std::endl;
-                if (isnan(pow(data-model,2))) std::cout << "pow(data-model,2)==nan!!!" << std::endl;
-                std::cout << "model = " << model << std::endl;
-                std::cout << "data = " << data << std::endl;
-                continue;
-            }
             if (bx<binx_blind && by<biny_blind)
             {
+                double data = hist_data->GetBinContent(bx,by);
+                double gamma = hist_gamma->GetBinContent(bx,by);
+                double model = hist_model->GetBinContent(bx,by);
+                double weight = 1.;
+                double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
+                double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
+                double width = 0.1;
+                double data_err = max(0.8,pow(data,0.5));
+                double model_err = max(0.8,pow(model,0.5));
+                double gamma_err = 0.2*gamma;
+                weight = 1./(data_err*data_err+model_err*model_err+gamma_err*gamma_err);
+                double chi2_this = weight*pow(data-model-gamma,2);
+                if (isnan(chi2_this))
+                {
+                    if (isnan(weight)) std::cout << "weight==nan!!!" << std::endl;
+                    if (isnan(pow(data-model,2))) std::cout << "pow(data-model,2)==nan!!!" << std::endl;
+                    std::cout << "model = " << model << std::endl;
+                    std::cout << "data = " << data << std::endl;
+                    continue;
+                }
                 chi2 += chi2_this;
             }
         }
@@ -436,28 +435,28 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
     {
         for (int by=1;by<=hist_data->GetNbinsY();by++)
         {
-            double data = hist_data->GetBinContent(bx,by);
-            double dark = hist_dark->GetBinContent(bx,by);
-            double model = hist_model->GetBinContent(bx,by);
-            //model = model*dark;
-            double weight = 1.;
-            double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
-            double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
-            double width = 0.1;
-            double data_err = max(0.8,pow(data,0.5));
-            double model_err = max(0.8,pow(model,0.5));
-            weight = 1./(data_err*data_err+model_err*model_err);
-            double chi2_this = weight*pow(data-model,2);
-            if (isnan(chi2_this))
-            {
-                if (isnan(weight)) std::cout << "weight==nan!!!" << std::endl;
-                if (isnan(pow(data-model,2))) std::cout << "pow(data-model,2)==nan!!!" << std::endl;
-                std::cout << "model = " << model << std::endl;
-                std::cout << "data = " << data << std::endl;
-                continue;
-            }
             if (bx>=binx_blind || by>=biny_blind)
             {
+                double data = hist_data->GetBinContent(bx,by);
+                double dark = hist_dark->GetBinContent(bx,by);
+                double model = hist_model->GetBinContent(bx,by);
+                //model = model*dark;
+                double weight = 1.;
+                double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
+                double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
+                double width = 0.1;
+                double data_err = max(0.8,pow(data,0.5));
+                double model_err = max(0.8,pow(model,0.5));
+                weight = 1./(data_err*data_err+model_err*model_err);
+                double chi2_this = weight*pow(data-model,2);
+                if (isnan(chi2_this))
+                {
+                    if (isnan(weight)) std::cout << "weight==nan!!!" << std::endl;
+                    if (isnan(pow(data-model,2))) std::cout << "pow(data-model,2)==nan!!!" << std::endl;
+                    std::cout << "model = " << model << std::endl;
+                    std::cout << "data = " << data << std::endl;
+                    continue;
+                }
                 if (bx>=binx_blind && by>=biny_blind)
                 {
                     //continue;
@@ -1220,7 +1219,7 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
         for (int NthEigenvalue=1;NthEigenvalue<=NumberOfEigenvectors;NthEigenvalue++)
         {
             input_value = 0.;
-            if (NthEigenvalue==NthEigenvector)
+            if (NthEigenvalue==NthEigenvector && NthEigenvalue==1)
             {
                 //limit = 0.2*eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvector).real();
                 limit = 0.;

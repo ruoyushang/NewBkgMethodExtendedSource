@@ -663,7 +663,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         TTree* Data_tree = (TTree*) input_file->Get(root_file);
         n_photon += Data_tree->GetEntries();
     }
-    double photon_weight = 0.5*n_proton/n_photon;
+    double photon_weight = 1.0*n_proton/n_photon;
     //if (TString(target)!="Proton") photon_weight = 0.;
     if (Theta2_cut_lower==0.) photon_weight = 0.;
     //photon_weight = 0.;
