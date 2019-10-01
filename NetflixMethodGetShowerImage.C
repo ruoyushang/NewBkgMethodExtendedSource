@@ -404,6 +404,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     vector<TH2D> Hist_GammaDataON_MSCLW;
     vector<TH2D> Hist_GammaDataOFF_MSCLW;
     vector<TH2D> Hist_Data_MSCLW;
+    vector<TH2D> Hist_TrueBkgd_MSCLW;
     vector<TH2D> Hist_Ring_MSCLW;
     vector<TH2D> Hist_Ring_Syst_MSCLW;
     vector<TH2D> Hist_Dark_MSCLW;
@@ -430,6 +431,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         Hist_GammaDataOFF_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
         Hist_Data_MSCLW.push_back(TH2D("Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Data_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
+        Hist_TrueBkgd_MSCLW.push_back(TH2D("Hist_TrueBkgd_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_TrueBkgd_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
         Hist_Ring_MSCLW.push_back(TH2D("Hist_Ring_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Ring_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
         Hist_Ring_Syst_MSCLW.push_back(TH2D("Hist_Ring_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
@@ -598,6 +601,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (FoV())
             {
                 Hist_Data_MSCLW.at(e).Fill(MSCL,MSCW);
+                Hist_TrueBkgd_MSCLW.at(e).Fill(MSCL,MSCW);
             }
             if (RingFoV())
             {
@@ -719,37 +723,43 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (energy>=N_energy_bins) continue;
             int e = energy;
             if (!SelectNImages(2,4)) continue;
-            Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze,photon_weight);
-            if (FoV() && GammaFoV())
+            if (2*entry>Data_tree->GetEntries())
             {
-                Hist_GammaMC_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
-                Hist_Data_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
+                Hist_GammaMC_MSCLW.at(e).Fill(MSCL,MSCW,1.);
             }
-            if (RingFoV() && GammaFoV())
+            else
             {
-                Hist_Ring_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
-                Hist_Ring_Syst_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
-            }
-            if (SignalSelectionTheta2())
-            {
+                Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze,photon_weight);
                 if (FoV() && GammaFoV())
                 {
-                    Hist_Data_SR_SelectFoV_Theta2.at(e).Fill(theta2,photon_weight);
-                    Hist_Data_SR_Skymap.at(e).Fill(-1.*ra_sky,dec_sky,photon_weight);
+                    Hist_Data_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
                 }
-            }
-            if (ControlSelectionTheta2())
-            {
-                if (FoV() && GammaFoV())
+                if (RingFoV() && GammaFoV())
                 {
-                    int binx = Hist_Dark_SR_Skymap.at(e).GetXaxis()->FindBin(Xoff);
-                    int biny = Hist_Dark_SR_Skymap.at(e).GetYaxis()->FindBin(Yoff);
-                    double dark_cr_content = Hist_Dark_CR_Skymap.at(e).GetBinContent(binx,biny);
-                    double dark_sr_content = Hist_Dark_SR_Skymap.at(e).GetBinContent(binx,biny);
-                    double weight = 0.;
-                    if (dark_cr_content>0.) weight = dark_sr_content/dark_cr_content;
-                    Hist_Data_CR_SelectFoV_Theta2.at(e).Fill(theta2,weight*photon_weight);
-                    Hist_Data_CR_Skymap.at(e).Fill(-1.*ra_sky,dec_sky,weight*photon_weight);
+                    Hist_Ring_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
+                    Hist_Ring_Syst_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
+                }
+                if (SignalSelectionTheta2())
+                {
+                    if (FoV() && GammaFoV())
+                    {
+                        Hist_Data_SR_SelectFoV_Theta2.at(e).Fill(theta2,photon_weight);
+                        Hist_Data_SR_Skymap.at(e).Fill(-1.*ra_sky,dec_sky,photon_weight);
+                    }
+                }
+                if (ControlSelectionTheta2())
+                {
+                    if (FoV() && GammaFoV())
+                    {
+                        int binx = Hist_Dark_SR_Skymap.at(e).GetXaxis()->FindBin(Xoff);
+                        int biny = Hist_Dark_SR_Skymap.at(e).GetYaxis()->FindBin(Yoff);
+                        double dark_cr_content = Hist_Dark_CR_Skymap.at(e).GetBinContent(binx,biny);
+                        double dark_sr_content = Hist_Dark_SR_Skymap.at(e).GetBinContent(binx,biny);
+                        double weight = 0.;
+                        if (dark_cr_content>0.) weight = dark_sr_content/dark_cr_content;
+                        Hist_Data_CR_SelectFoV_Theta2.at(e).Fill(theta2,weight*photon_weight);
+                        Hist_Data_CR_Skymap.at(e).Fill(-1.*ra_sky,dec_sky,weight*photon_weight);
+                    }
                 }
             }
         }
@@ -902,6 +912,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         Hist_GammaMC_MSCLW.at(e).Write();
         Hist_GammaData_MSCLW.at(e).Write();
         Hist_Data_MSCLW.at(e).Write();
+        Hist_TrueBkgd_MSCLW.at(e).Write();
         Hist_Ring_MSCLW.at(e).Write();
         Hist_Ring_Syst_MSCLW.at(e).Write();
         Hist_Dark_MSCLW.at(e).Write();

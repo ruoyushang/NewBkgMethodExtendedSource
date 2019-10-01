@@ -314,6 +314,7 @@ double BlindedLogLikelihood(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
             model = max(0.001,model);
             if (bx>=binx_blind || by>=biny_blind)
             {
+                if (bx>=binx_blind && by>=biny_blind) continue;
                 double log_factorial = 0.;
                 if (data>0) log_factorial = data*(log(data)-1.) + 0.5*log(2*M_PI*data);
                 double log_likelihood_this = -2.*(data*log(model)-log_factorial-model);
@@ -1475,7 +1476,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         n_fourier_modes = 6;
         n_taylor_modes = 6;
 
-        NumberOfEigenvectors = 4;
+        NumberOfEigenvectors = 3;
         //if (CurrentEnergy>1000.) NumberOfEigenvectors = 2;
         //if (CurrentEnergy>2000.) NumberOfEigenvectors = 1;
 
