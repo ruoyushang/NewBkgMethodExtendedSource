@@ -404,7 +404,8 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
                 double width = 0.1;
                 double data_err = max(0.8,pow(data,0.5));
                 double model_err = max(0.8,pow(model,0.5));
-                double gamma_err = 0.2*gamma;
+                //double gamma_err = 1.0*gamma;
+                double gamma_err = max(0.8,pow(gamma,0.5));
                 weight = 1./(data_err*data_err+model_err*model_err+gamma_err*gamma_err);
                 double chi2_this = weight*pow(data-model-gamma,2);
                 if (isnan(chi2_this))
@@ -1475,7 +1476,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         n_fourier_modes = 6;
         n_taylor_modes = 6;
 
-        NumberOfEigenvectors = 3;
+        NumberOfEigenvectors = 4;
         //if (CurrentEnergy>1000.) NumberOfEigenvectors = 2;
         //if (CurrentEnergy>2000.) NumberOfEigenvectors = 1;
 
