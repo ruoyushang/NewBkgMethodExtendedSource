@@ -1394,6 +1394,9 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
     {
         std::cout << "++++++++++++++++++++++++++++++++++++++" << std::endl;
         std::cout << "energy = " << energy_bins[e] << std::endl;
+
+        N_bins_for_deconv = N_bins_for_deconv_at_E[e];
+
         CurrentEnergy = energy_bins[e];
         char e_low[50];
         sprintf(e_low, "%i", int(energy_bins[e]));
@@ -1457,6 +1460,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         //if (energy_bins[e]>=794) continue;
         //if (energy_bins[e]<1585) continue;
         //if (energy_bins[e]>=2239) continue;
+        //if (energy_bins[e]<2239) continue;
 
         MatrixXcd mtx_data_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         MatrixXcd mtx_dark_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());

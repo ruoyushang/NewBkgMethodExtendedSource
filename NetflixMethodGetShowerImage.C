@@ -51,11 +51,12 @@ double MSCL_cut_lower = -1.0;
 double MSCL_cut_blind = 1.0;
 double MSCL_cut_upper = 1.0;
 
-const int N_energy_bins = 10;
-double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,2239,8913};
-double gamma_flux[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-double gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-double raw_gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
+const int N_energy_bins = 11;
+double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,2239,4467,8913};
+double gamma_flux[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
+double gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
+double raw_gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
+int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,20,20};
 
 int N_bins_for_deconv = 40;
 double MSCW_plot_lower = -1.;
@@ -425,6 +426,9 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     vector<TH2D> Hist_Dark_CR_Skymap;
     for (int e=0;e<N_energy_bins;e++) 
     {
+
+        N_bins_for_deconv = N_bins_for_deconv_at_E[e];
+
         char e_low[50];
         sprintf(e_low, "%i", int(energy_bins[e]));
         char e_up[50];
@@ -590,7 +594,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             double eff_area = i_hEffAreaP->GetBinContent( i_hEffAreaP->FindBin( log10(0.5*(energy_bins[e]+energy_bins[e+1])/1000.)));
             //std::pair <double,double> mcgillflux = GetMcGillElectronFlux((energy_bins[e+1]+energy_bins[e])/2.);
             //gamma_flux[e] = mcgillflux.first;
-            gamma_flux[e] = GetCrabFlux((energy_bins[e+1]+energy_bins[e])/2.);
+            gamma_flux[e] = 5.*GetCrabFlux((energy_bins[e+1]+energy_bins[e])/2.);
             std::cout << "energy = " << (energy_bins[e+1]+energy_bins[e])/2. << std::endl;
             std::cout << "gamma_flux[e] = " << gamma_flux[e] << std::endl;
             double expected_electrons = gamma_flux[e]*eff_area*(time_1-time_0)*(energy_bins[e+1]-energy_bins[e])/1000.;
