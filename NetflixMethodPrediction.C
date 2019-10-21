@@ -403,9 +403,9 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
                 double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
                 double width = 0.1;
                 double data_err = max(0.8,pow(data,0.5));
-                double model_err = max(0.8,pow(model,0.5));
+                double model_err = max(0.8,pow(abs(model),0.5));
                 //double gamma_err = 1.0*gamma;
-                double gamma_err = max(0.8,pow(gamma,0.5));
+                double gamma_err = max(0.8,pow(abs(gamma),0.5));
                 weight = 1./(data_err*data_err+model_err*model_err+gamma_err*gamma_err);
                 double chi2_this = weight*pow(data-model-gamma,2);
                 if (isnan(chi2_this))
@@ -414,6 +414,7 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
                     if (isnan(pow(data-model,2))) std::cout << "pow(data-model,2)==nan!!!" << std::endl;
                     std::cout << "model = " << model << std::endl;
                     std::cout << "data = " << data << std::endl;
+                    std::cout << "gamma = " << gamma << std::endl;
                     continue;
                 }
                 chi2 += chi2_this;
@@ -447,7 +448,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
                 double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
                 double width = 0.1;
                 double data_err = max(0.8,pow(data,0.5));
-                double model_err = max(0.8,pow(model,0.5));
+                double model_err = max(0.8,pow(abs(model),0.5));
                 weight = 1./(data_err*data_err+model_err*model_err);
                 double chi2_this = weight*pow(data-model,2);
                 if (isnan(chi2_this))
@@ -662,9 +663,25 @@ double FourierChi2Function(const double *par)
     fill2DHistogramAbs(&hist_dark_redu,mtx_dark_redu);
     fill2DHistogramAbs(&hist_model,mtx_model);
     hist_dark.Divide(&hist_dark_redu);
+
+    int binx_lower = hist_diff.GetXaxis()->FindBin(MSCL_cut_lower);
+    int binx_blind = hist_diff.GetXaxis()->FindBin(MSCL_cut_blind)-1;
+    int binx_upper = hist_diff.GetXaxis()->FindBin(MSCL_cut_blind*2)-1;
+    int biny_lower = hist_diff.GetYaxis()->FindBin(MSCW_cut_lower);
+    int biny_blind = hist_diff.GetYaxis()->FindBin(MSCW_cut_blind)-1;
+    int biny_upper = hist_diff.GetYaxis()->FindBin(MSCW_cut_blind*2)-1;
     hist_diff.Add(&hist_data);
     hist_diff.Add(&hist_model,-1.);
-    double scale = double(hist_diff.Integral())/double(hist_gamma.Integral());
+    double gamma_total = hist_diff.Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+    gamma_total = max(0.,gamma_total);
+    double scale = gamma_total/double(hist_gamma.Integral(binx_lower,binx_blind,biny_lower,biny_blind));
+    //std::cout << "binx_lower " << binx_lower << std::endl;
+    //std::cout << "binx_blind " << binx_blind << std::endl;
+    //std::cout << "biny_lower " << biny_lower << std::endl;
+    //std::cout << "biny_blind " << biny_blind << std::endl;
+    //std::cout << "hist_gamma.Integral() " << hist_gamma.Integral() << std::endl;
+    //std::cout << "hist_gamma.Integral(binx_lower,binx_blind,biny_lower,biny_blind) " << hist_gamma.Integral(binx_lower,binx_blind,biny_lower,biny_blind) << std::endl;
+    //std::cout << "gamma_total = " << gamma_total << std::endl;
     hist_gamma.Scale(scale);
 
     double chi2 = BlindedChi2(&hist_data,&hist_dark,&hist_model);
@@ -1352,6 +1369,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
     TelElev_upper = tel_elev_upper_input;
 
     vector<TH2D> Hist_Bkgd_MSCLW;
+    vector<TH2D> Hist_GammaRDBM_MSCLW;
     vector<TH2D> Hist_Redu_MSCLW;
     vector<TH1D> Hist_Data_EigenvectorReal_0;
     vector<TH1D> Hist_Fit_EigenvectorReal_0;
@@ -1410,6 +1428,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         TH2D* Hist_Data = (TH2D*)InputDataFile.Get(filename_data);
         TH2D* Hist_Dark = (TH2D*)InputDataFile.Get(filename_dark);
         Hist_Bkgd_MSCLW.push_back(TH2D("Hist_Bkgd_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_GammaRDBM_MSCLW.push_back(TH2D("Hist_GammaRDBM_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Redu_MSCLW.push_back(TH2D("Hist_Redu_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Data_EigenvectorReal_0.push_back(TH1D("Hist_Data_EigenvectorReal_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
         Hist_Fit_EigenvectorReal_0.push_back(TH1D("Hist_Fit_EigenvectorReal_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
@@ -1471,9 +1490,11 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         mtx_data_err = fillMatrixError(Hist_Data);
         mtx_dark_err = fillMatrixError(Hist_Dark);
         int binx_lower = Hist_Data->GetXaxis()->FindBin(MSCL_cut_lower);
-        int biny_lower = Hist_Data->GetYaxis()->FindBin(MSCW_cut_lower);
         int binx_blind = Hist_Data->GetXaxis()->FindBin(MSCL_cut_blind)-1;
+        int binx_upper = Hist_Data->GetXaxis()->FindBin(MSCL_cut_blind*2)-1;
+        int biny_lower = Hist_Data->GetYaxis()->FindBin(MSCW_cut_lower);
         int biny_blind = Hist_Data->GetYaxis()->FindBin(MSCW_cut_blind)-1;
+        int biny_upper = Hist_Data->GetYaxis()->FindBin(MSCW_cut_blind*2)-1;
         mtx_data_blind = MatrixBlind(mtx_data, binx_lower, biny_lower, binx_blind, biny_blind);
         mtx_dark_blind = MatrixBlind(mtx_dark, binx_lower, biny_lower, binx_blind, biny_blind);
 
@@ -1720,6 +1741,13 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         //    }
         //}
         fill2DHistogramAbs(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
+        fill2DHistogramAbs(&Hist_GammaRDBM_MSCLW.at(e),mtx_gamma);
+
+        double gamma_total = Hist_Data->Integral(binx_lower,binx_blind,biny_lower,biny_blind)-Hist_Bkgd_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        gamma_total = max(0.,gamma_total);
+        double scale_gamma = double(gamma_total)/double(Hist_GammaRDBM_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind));
+        Hist_GammaRDBM_MSCLW.at(e).Scale(scale_gamma);
+
         fill2DHistogramAbs(&Hist_Redu_MSCLW.at(e),mtx_data_redu);
         //RestoreEdge(Hist_Dark,&Hist_Bkgd_MSCLW.at(e),-0.5,-0.5);
         //NormalizeHist2D(Hist_Data,&Hist_Bkgd_MSCLW.at(e));
@@ -1747,6 +1775,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
     TFile OutputFile("../Netflix_"+TString(target_data)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","update");
     for (int e=0;e<N_energy_bins;e++)
     {
+        Hist_GammaRDBM_MSCLW.at(e).Write();
         Hist_Bkgd_MSCLW.at(e).Write();
         Hist_Redu_MSCLW.at(e).Write();
         Hist_Data_EigenvectorReal_0.at(e).Write();

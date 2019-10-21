@@ -36,6 +36,8 @@
 #include "TChain.h"
 #include "TBranch.h"
 
+#include "/home/rshang/EventDisplay/EVNDISP-480e/inc/VEvndispRunParameter.h"
+
 #include "GetRunList.h"
 
 #include <complex>
@@ -120,6 +122,11 @@ bool PointingSelection(string file_name,int run, double Elev_cut_lower, double E
     char run_number[50];
     sprintf(run_number, "%i", int(run));
     TFile*  input_file = TFile::Open(file_name.c_str());
+
+    //VEvndispRunParameter* fPar = 0;
+    //fPar = ( VEvndispRunParameter* )input_file->Get( "run_"+TString(run_number)+"/stereo/runparameterV2" );
+    //std::cout << "NSB scale = " << fPar->fNSBscale << std::endl;
+
     TTree* pointing_tree = nullptr;
     pointing_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/pointingDataReduced");
     pointing_tree->SetBranchAddress("TelElevation",&TelElevation);
@@ -166,6 +173,7 @@ vector<pair<string,int>> SelectONRunList(vector<pair<string,int>> Data_runlist, 
 
         if (!PointingSelection(filename,int(Data_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
         new_list.push_back(std::make_pair(Data_runlist[run].first,Data_runlist[run].second));
+
     }
     return new_list;
 }
@@ -408,6 +416,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     TH1D Hist_ErecS = TH1D("Hist_ErecS","",N_energy_bins,energy_bins);
     TH2D Hist_Dark_ShowerDirection = TH2D("Hist_Dark_ShowerDirection","",180,0,360,90,0,90);
     TH2D Hist_Data_ShowerDirection = TH2D("Hist_Data_ShowerDirection","",180,0,360,90,0,90);
+    vector<TH2D> Hist_GammaDark_MSCLW;
     vector<TH2D> Hist_GammaMC_MSCLW;
     vector<TH2D> Hist_GammaData_MSCLW;
     vector<TH2D> Hist_GammaDataON_MSCLW;
@@ -433,6 +442,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         sprintf(e_low, "%i", int(energy_bins[e]));
         char e_up[50];
         sprintf(e_up, "%i", int(energy_bins[e+1]));
+        Hist_GammaDark_MSCLW.push_back(TH2D("Hist_GammaDark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_GammaDark_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
         Hist_GammaMC_MSCLW.push_back(TH2D("Hist_GammaMC_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_GammaMC_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
         Hist_GammaData_MSCLW.push_back(TH2D("Hist_GammaData_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
@@ -527,7 +538,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
             int e = energy;
-            if (!SelectNImages(2,4)) continue;
+            if (!SelectNImages(3,4)) continue;
             if (SizeSecondMax<600.) continue;
             if (pow(Xcore*Xcore+Ycore*Ycore,0.5)>350) continue;
             if (R2off>4.) continue;
@@ -594,7 +605,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             double eff_area = i_hEffAreaP->GetBinContent( i_hEffAreaP->FindBin( log10(0.5*(energy_bins[e]+energy_bins[e+1])/1000.)));
             //std::pair <double,double> mcgillflux = GetMcGillElectronFlux((energy_bins[e+1]+energy_bins[e])/2.);
             //gamma_flux[e] = mcgillflux.first;
-            gamma_flux[e] = 5.*GetCrabFlux((energy_bins[e+1]+energy_bins[e])/2.);
+            gamma_flux[e] = 2.*GetCrabFlux((energy_bins[e+1]+energy_bins[e])/2.);
             std::cout << "energy = " << (energy_bins[e+1]+energy_bins[e])/2. << std::endl;
             std::cout << "gamma_flux[e] = " << gamma_flux[e] << std::endl;
             double expected_electrons = gamma_flux[e]*eff_area*(time_1-time_0)*(energy_bins[e+1]-energy_bins[e])/1000.;
@@ -620,7 +631,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
             int e = energy;
-            if (!SelectNImages(2,4)) continue;
+            if (!SelectNImages(3,4)) continue;
             if (SizeSecondMax<600.) continue;
             if (pow(Xcore*Xcore+Ycore*Ycore,0.5)>350) continue;
             if (R2off>4.) continue;
@@ -708,7 +719,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
             int e = energy;
-            if (!SelectNImages(2,4)) continue;
+            if (!SelectNImages(3,4)) continue;
             raw_gamma_count[energy] += 1.;
         }
 
@@ -771,7 +782,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
             int e = energy;
-            if (!SelectNImages(2,4)) continue;
+            if (!SelectNImages(3,4)) continue;
             if (2*entry>Data_tree->GetEntries())
             {
                 Hist_GammaMC_MSCLW.at(e).Fill(MSCL,MSCW,1.);
@@ -871,7 +882,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
             int e = energy;
-            if (!SelectNImages(2,4)) continue;
+            if (!SelectNImages(3,4)) continue;
             Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze,photon_weight);
             if (theta2<0.2)
             {
@@ -947,6 +958,22 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         double scale_err = scale*pow(pow(Dark_CR_Error/Dark_CR_Integral,2)+pow(Data_CR_Error/Data_CR_Integral,2),0.5);
         Hist_Dark_MSCLW.at(e).Scale(scale);
         Hist_Dark_Syst_MSCLW.at(e).Scale(scale_err);
+        double gamma_total = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind)-Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        gamma_total = max(0.,gamma_total);
+        if (Theta2_cut_lower!=0.)
+        {
+            Hist_GammaDark_MSCLW.at(e).Reset();
+            Hist_GammaDark_MSCLW.at(e).Add(&Hist_GammaMC_MSCLW.at(e));
+            double scale_gamma = double(gamma_total)/double(Hist_GammaDark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind));
+            Hist_GammaDark_MSCLW.at(e).Scale(scale_gamma);
+        }
+        else
+        {
+            Hist_GammaDark_MSCLW.at(e).Reset();
+            Hist_GammaDark_MSCLW.at(e).Add(&Hist_GammaData_MSCLW.at(e));
+            double scale_gamma = double(gamma_total)/double(Hist_GammaDark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind));
+            Hist_GammaDark_MSCLW.at(e).Scale(scale_gamma);
+        }
     }
 
 
@@ -959,6 +986,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     Hist_Data_ShowerDirection.Write();
     for (int e=0;e<N_energy_bins;e++)
     {
+        Hist_GammaDark_MSCLW.at(e).Write();
         Hist_GammaMC_MSCLW.at(e).Write();
         Hist_GammaData_MSCLW.at(e).Write();
         Hist_Data_MSCLW.at(e).Write();
