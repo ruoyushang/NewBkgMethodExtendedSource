@@ -97,7 +97,163 @@ double theta2 = 0;
 double ra_sky = 0;
 double dec_sky = 0;
 double exposure_hours = 0.;
+double mean_tele_point_ra = 0.;
+double mean_tele_point_dec = 0.;
 
+pair<double,double> GetSourceRaDec(TString source_name)
+{
+    double Source_RA = 0.;
+    double Source_Dec = 0.;
+    if (source_name=="Crab")
+    {
+            Source_RA = 83.633;
+                Source_Dec = 22.014;
+    }
+    if (source_name=="Mrk421")
+    {
+            Source_RA = 166.079;
+                Source_Dec = 38.195;
+    }
+    if (source_name=="H1426")
+    {
+            Source_RA = 217.136;
+                Source_Dec = 42.673;
+    }
+    if (source_name=="1ES0229")
+    {
+            Source_RA = 38.222;
+                Source_Dec = 20.273;
+    }
+    if (source_name=="PKS1424")
+    {
+            Source_RA = 216.750;
+                Source_Dec = 23.783;
+    }
+    if (source_name=="3C264")
+    {
+            Source_RA = 176.271;
+                Source_Dec = 19.606;
+    }
+    if (source_name=="OJ287V6")
+    {
+            Source_RA = 133.705;
+                Source_Dec = 20.100;
+    }
+    if (source_name=="RBS0413V6")
+    {
+            Source_RA = 49.946;
+                Source_Dec = 18.762;
+    }
+    if (source_name=="PG1553V6")
+    {
+            Source_RA = 238.936;
+                Source_Dec = 11.195;
+    }
+    if (source_name=="Segue1V6")
+    {
+            Source_RA = 151.767;
+                Source_Dec = 16.082;
+    }
+    if (source_name=="1ES1011V6")
+    {
+            Source_RA = 153.767;
+                Source_Dec = 49.434;
+    }
+    if (source_name=="NGC1275V6")
+    {
+            Source_RA = 49.950;
+                Source_Dec = 41.512;
+    }
+    if (source_name=="1ES0647V6")
+    {
+            Source_RA = 102.694;
+                Source_Dec = 25.050;
+    }
+    if (source_name=="1ES1440V6")
+    {
+            Source_RA = 220.701;
+                Source_Dec = 12.011;
+    }
+    if (source_name=="1ES1741V6")
+    {
+            Source_RA = 266.005;
+                Source_Dec = 19.546;
+    }
+    if (source_name=="IC443HotSpot")
+    {
+            Source_RA = 94.511;
+                Source_Dec = 22.660;
+    }
+    if (source_name=="RGBJ0710")
+    {
+            Source_RA = 107.610;
+                Source_Dec = 59.150;
+    }
+    if (source_name=="CasA")
+    {
+            Source_RA = 350.808;
+                Source_Dec = 58.807;
+    }
+    if (source_name=="M82")
+    {
+            Source_RA = 148.970;
+                Source_Dec = 69.679;
+    }
+    if (source_name=="G079")
+    {
+            Source_RA = 308.119;
+                Source_Dec = 40.328;
+    }
+    if (source_name=="WComaeV6")
+    {
+            Source_RA = 185.382;
+                Source_Dec = 28.233;
+    }
+    if (source_name=="1ES1218V6")
+    {
+            Source_RA = 185.360;
+                Source_Dec = 30.191;
+    }
+    if (source_name=="MGRO_J1908_V6")
+    {
+            Source_RA = 286.975;
+                Source_Dec = 6.269;
+    }
+    if (source_name=="MGRO_J1908_V5")
+    {
+            Source_RA = 286.975;
+                Source_Dec = 6.269;
+    }
+    if (source_name=="Segue1V5")
+    {
+            Source_RA = 151.767;
+                Source_Dec = 16.082;
+    }
+    if (source_name=="IC443HotSpotV5")
+    {
+            Source_RA = 94.511;
+                Source_Dec = 22.660;
+    }
+    return std::make_pair(Source_RA,Source_Dec);
+}
+pair<double,double> GetRunRaDec(string file_name, int run)
+{
+    char run_number[50];
+    sprintf(run_number, "%i", int(run));
+    TFile*  input_file = TFile::Open(file_name.c_str());
+    TTree* pointing_tree = nullptr;
+    pointing_tree = (TTree*) input_file->Get("run_"+TString(run_number)+"/stereo/pointingDataReduced");
+    pointing_tree->SetBranchAddress("TelElevation",&TelElevation);
+    pointing_tree->SetBranchAddress("TelAzimuth",&TelAzimuth);
+    pointing_tree->SetBranchAddress("TelRAJ2000",&TelRAJ2000);
+    pointing_tree->SetBranchAddress("TelDecJ2000",&TelDecJ2000);
+    double total_entries = (double)pointing_tree->GetEntries();
+    pointing_tree->GetEntry(int(total_entries/2.));
+    double TelRAJ2000_tmp = TelRAJ2000*180./M_PI;
+    double TelDecJ2000_tmp = TelDecJ2000*180./M_PI;
+    input_file->Close();
+    return std::make_pair(TelRAJ2000_tmp,TelDecJ2000_tmp);
+}
 pair<double,double> GetRunElevAzim(string file_name, int run)
 {
     char run_number[50];
@@ -346,21 +502,14 @@ std::pair <double,double> GetMcGillElectronFlux(double energy)
     //return std::make_pair(1.*func->Eval(energy),1.*func->Eval(energy));
 }
 bool GammaFoV() {
-    //if (dec_sky>0)
-    //{
-    //    if (theta2<1.4) return false;
-    //    if (theta2>1.6) return false;
-    //    if (ra_sky>1.0+0.1) return false;
-    //    if (ra_sky<-1.0-0.1) return false;
-    //    if (ra_sky<1.0-0.1 && ra_sky>-1.0+0.1) return false;
-    //}
-    //else
-    //{
-    //    if (theta2<1.9) return false;
-    //    if (theta2>2.1) return false;
-    //    if (ra_sky>1.0) return false;
-    //    if (ra_sky<-1.0) return false;
-    //}
+    double x = ra_sky-mean_tele_point_ra;
+    double y = dec_sky-mean_tele_point_dec;
+    double size1 = 0.5;
+    double diff1 = pow(x*x+y*y-size1,3)-2.*(x*x*y*y*y);
+    double size2 = 0.8;
+    double diff2 = pow(x*x+y*y-size2,3)-2.*(x*x*y*y*y);
+    if (diff1<0) return false;
+    if (diff2>0) return false;
     return true;
 }
 bool DarkFoV() {
@@ -413,6 +562,32 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     TelElev_lower = tel_elev_lower_input;
     TelElev_upper = tel_elev_upper_input;
 
+    vector<pair<string,int>> PhotonMC_runlist = GetRunList("Photon");
+    vector<pair<string,int>> PhotonData_runlist = GetRunList("Crab");
+
+    // Get a list of target observation runs
+    vector<pair<string,int>> Data_runlist_init = GetRunList(target);
+    vector<pair<string,int>> Data_runlist;
+    Data_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
+    std::cout << "Data_runlist size = " << Data_runlist.size() << std::endl;
+    if (Data_runlist.size()==0) return;
+
+    // Get a list of dark observation runs
+    vector<pair<string,int>> Dark_runlist_init = GetRunList("Everything");
+    if (TString(target).Contains("V5")) Dark_runlist_init = GetRunList("EverythingV5");
+    vector<pair<string,int>> Dark_runlist;
+    std::cout << "initial Dark_runlist size = " << Dark_runlist_init.size() << std::endl;
+    if (TString(target)!="Proton") Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
+    else Dark_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
+    std::cout << "final Dark_runlist size = " << Dark_runlist.size() << std::endl;
+    //vector<pair<string,int>> Dark_runlist = GetRunList("Proton");
+
+    mean_tele_point_ra = 0.;
+    mean_tele_point_dec = 0.;
+    pair<double,double> source_ra_dec = GetSourceRaDec(TString(target));
+    mean_tele_point_ra = source_ra_dec.first;
+    mean_tele_point_dec = source_ra_dec.second;
+
     TH1D Hist_ErecS = TH1D("Hist_ErecS","",N_energy_bins,energy_bins);
     TH2D Hist_Dark_ShowerDirection = TH2D("Hist_Dark_ShowerDirection","",180,0,360,90,0,90);
     TH2D Hist_Data_ShowerDirection = TH2D("Hist_Data_ShowerDirection","",180,0,360,90,0,90);
@@ -464,31 +639,11 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         Hist_Dark_Syst_MSCLW.push_back(TH2D("Hist_Dark_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Data_SR_SelectFoV_Theta2.push_back(TH1D("Hist_Data_SR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
         Hist_Data_CR_SelectFoV_Theta2.push_back(TH1D("Hist_Data_CR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
-        Hist_Data_SR_Skymap.push_back(TH2D("Hist_Data_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
-        Hist_Data_CR_Skymap.push_back(TH2D("Hist_Data_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
+        Hist_Data_SR_Skymap.push_back(TH2D("Hist_Data_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
+        Hist_Data_CR_Skymap.push_back(TH2D("Hist_Data_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
         Hist_Dark_SR_Skymap.push_back(TH2D("Hist_Dark_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",30,-3,3,30,-3,3));
         Hist_Dark_CR_Skymap.push_back(TH2D("Hist_Dark_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",30,-3,3,30,-3,3));
     }
-
-    vector<pair<string,int>> PhotonMC_runlist = GetRunList("Photon");
-    vector<pair<string,int>> PhotonData_runlist = GetRunList("Crab");
-
-    // Get a list of target observation runs
-    vector<pair<string,int>> Data_runlist_init = GetRunList(target);
-    vector<pair<string,int>> Data_runlist;
-    Data_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
-    std::cout << "Data_runlist size = " << Data_runlist.size() << std::endl;
-    if (Data_runlist.size()==0) return;
-
-    // Get a list of dark observation runs
-    vector<pair<string,int>> Dark_runlist_init = GetRunList("Everything");
-    if (TString(target).Contains("V5")) Dark_runlist_init = GetRunList("EverythingV5");
-    vector<pair<string,int>> Dark_runlist;
-    std::cout << "initial Dark_runlist size = " << Dark_runlist_init.size() << std::endl;
-    if (TString(target)!="Proton") Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
-    else Dark_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
-    std::cout << "final Dark_runlist size = " << Dark_runlist.size() << std::endl;
-    //vector<pair<string,int>> Dark_runlist = GetRunList("Proton");
 
     for (int run=0;run<Dark_runlist.size();run++)
     {
@@ -571,6 +726,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
+        pair<double,double> tele_point_ra_dec = GetRunRaDec(filename,int(Data_runlist[run].second));
 
         TFile*  input_file = TFile::Open(filename.c_str());
 	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Data_runlist[run].second);
@@ -579,8 +735,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         Data_tree->SetBranchAddress("Xoff",&Xoff);
         Data_tree->SetBranchAddress("Yoff",&Yoff);
         Data_tree->SetBranchAddress("theta2",&theta2);
-        Data_tree->SetBranchAddress("ra",&ra_sky);
-        Data_tree->SetBranchAddress("dec",&dec_sky);
+        Data_tree->SetBranchAddress("Xoff_derot",&ra_sky);
+        Data_tree->SetBranchAddress("Yoff_derot",&dec_sky);
         Data_tree->SetBranchAddress("ErecS",&ErecS);
         Data_tree->SetBranchAddress("EChi2S",&EChi2S);
         Data_tree->SetBranchAddress("MSCW",&MSCW);
@@ -605,7 +761,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             double eff_area = i_hEffAreaP->GetBinContent( i_hEffAreaP->FindBin( log10(0.5*(energy_bins[e]+energy_bins[e+1])/1000.)));
             //std::pair <double,double> mcgillflux = GetMcGillElectronFlux((energy_bins[e+1]+energy_bins[e])/2.);
             //gamma_flux[e] = mcgillflux.first;
-            gamma_flux[e] = 2.*GetCrabFlux((energy_bins[e+1]+energy_bins[e])/2.);
+            gamma_flux[e] = 0.5*GetCrabFlux((energy_bins[e+1]+energy_bins[e])/2.);
             std::cout << "energy = " << (energy_bins[e+1]+energy_bins[e])/2. << std::endl;
             std::cout << "gamma_flux[e] = " << gamma_flux[e] << std::endl;
             double expected_electrons = gamma_flux[e]*eff_area*(time_1-time_0)*(energy_bins[e+1]-energy_bins[e])/1000.;
@@ -627,6 +783,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             R2off = 0;
             Data_tree->GetEntry(entry);
             R2off = Xoff*Xoff+Yoff*Yoff;
+            ra_sky = tele_point_ra_dec.first+ra_sky;
+            dec_sky = tele_point_ra_dec.second+dec_sky;
             int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
@@ -651,7 +809,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
                 if (FoV())
                 {
                     Hist_Data_SR_SelectFoV_Theta2.at(e).Fill(theta2);
-                    Hist_Data_SR_Skymap.at(e).Fill(-1.*ra_sky,dec_sky);
+                    Hist_Data_SR_Skymap.at(e).Fill(ra_sky,dec_sky);
                 }
             }
             if (ControlSelectionTheta2())
@@ -665,7 +823,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
                     double weight = 0.;
                     if (dark_cr_content>0.) weight = dark_sr_content/dark_cr_content;
                     Hist_Data_CR_SelectFoV_Theta2.at(e).Fill(theta2,weight);
-                    Hist_Data_CR_Skymap.at(e).Fill(-1.*ra_sky,dec_sky,weight);
+                    Hist_Data_CR_Skymap.at(e).Fill(ra_sky,dec_sky,weight);
                 }
             }
         }
@@ -715,12 +873,14 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             R2off = 0;
             Data_tree->GetEntry(entry);
             R2off = Xoff*Xoff+Yoff*Yoff;
+            ra_sky = mean_tele_point_ra+ra_sky;
+            dec_sky = mean_tele_point_dec+dec_sky;
             int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
             int e = energy;
             if (!SelectNImages(3,4)) continue;
-            raw_gamma_count[energy] += 1.;
+            if (FoV() && GammaFoV()) raw_gamma_count[energy] += 1.;
         }
 
     }
@@ -776,6 +936,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             R2off = 0;
             Data_tree->GetEntry(entry);
             R2off = Xoff*Xoff+Yoff*Yoff;
+            ra_sky = mean_tele_point_ra+ra_sky;
+            dec_sky = mean_tele_point_dec+dec_sky;
             int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
             photon_weight = gamma_count[energy]/raw_gamma_count[energy];
             if (Theta2_cut_lower==0.) photon_weight = 0.;
@@ -783,44 +945,37 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (energy>=N_energy_bins) continue;
             int e = energy;
             if (!SelectNImages(3,4)) continue;
-            if (2*entry>Data_tree->GetEntries())
+            if (theta2<0.2) Hist_GammaMC_MSCLW.at(e).Fill(MSCL,MSCW,1.);
+            Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze,photon_weight);
+            if (FoV() && GammaFoV())
             {
-                Hist_GammaMC_MSCLW.at(e).Fill(MSCL,MSCW,1.);
+                Hist_Data_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
             }
-            else
+            if (RingFoV() && GammaFoV())
             {
-                photon_weight = photon_weight*2.;
-                Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze,photon_weight);
+                Hist_Ring_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
+                Hist_Ring_Syst_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
+            }
+            if (SignalSelectionTheta2())
+            {
                 if (FoV() && GammaFoV())
                 {
-                    Hist_Data_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
+                    Hist_Data_SR_SelectFoV_Theta2.at(e).Fill(theta2,photon_weight);
+                    Hist_Data_SR_Skymap.at(e).Fill(ra_sky,dec_sky,photon_weight);
                 }
-                if (RingFoV() && GammaFoV())
+            }
+            if (ControlSelectionTheta2())
+            {
+                if (FoV() && GammaFoV())
                 {
-                    Hist_Ring_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
-                    Hist_Ring_Syst_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
-                }
-                if (SignalSelectionTheta2())
-                {
-                    if (FoV() && GammaFoV())
-                    {
-                        Hist_Data_SR_SelectFoV_Theta2.at(e).Fill(theta2,photon_weight);
-                        Hist_Data_SR_Skymap.at(e).Fill(-1.*ra_sky,dec_sky,photon_weight);
-                    }
-                }
-                if (ControlSelectionTheta2())
-                {
-                    if (FoV() && GammaFoV())
-                    {
-                        int binx = Hist_Dark_SR_Skymap.at(e).GetXaxis()->FindBin(Xoff);
-                        int biny = Hist_Dark_SR_Skymap.at(e).GetYaxis()->FindBin(Yoff);
-                        double dark_cr_content = Hist_Dark_CR_Skymap.at(e).GetBinContent(binx,biny);
-                        double dark_sr_content = Hist_Dark_SR_Skymap.at(e).GetBinContent(binx,biny);
-                        double weight = 0.;
-                        if (dark_cr_content>0.) weight = dark_sr_content/dark_cr_content;
-                        Hist_Data_CR_SelectFoV_Theta2.at(e).Fill(theta2,weight*photon_weight);
-                        Hist_Data_CR_Skymap.at(e).Fill(-1.*ra_sky,dec_sky,weight*photon_weight);
-                    }
+                    int binx = Hist_Dark_SR_Skymap.at(e).GetXaxis()->FindBin(Xoff);
+                    int biny = Hist_Dark_SR_Skymap.at(e).GetYaxis()->FindBin(Yoff);
+                    double dark_cr_content = Hist_Dark_CR_Skymap.at(e).GetBinContent(binx,biny);
+                    double dark_sr_content = Hist_Dark_SR_Skymap.at(e).GetBinContent(binx,biny);
+                    double weight = 0.;
+                    if (dark_cr_content>0.) weight = dark_sr_content/dark_cr_content;
+                    Hist_Data_CR_SelectFoV_Theta2.at(e).Fill(theta2,weight*photon_weight);
+                    Hist_Data_CR_Skymap.at(e).Fill(ra_sky,dec_sky,weight*photon_weight);
                 }
             }
         }
