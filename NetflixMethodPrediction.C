@@ -80,6 +80,7 @@ VectorXcd vtr_data(N_bins_for_deconv);
 ComplexEigenSolver<MatrixXcd> eigensolver_dark;
 ComplexEigenSolver<MatrixXcd> eigensolver_data;
 double init_deriv_at_zero;
+bool signalfree_model;
 
 void fill2DHistogram(TH2D* hist,MatrixXcd mtx)
 {
@@ -667,6 +668,7 @@ double FourierChi2Function(const double *par)
     //std::cout << "hist_gamma.Integral(binx_lower,binx_blind,biny_lower,biny_blind) " << hist_gamma.Integral(binx_lower,binx_blind,biny_lower,biny_blind) << std::endl;
     //std::cout << "gamma_total = " << gamma_total << std::endl;
     hist_gamma.Scale(scale);
+    if (signalfree_model) hist_gamma.Scale(0);
 
     double chi2 = BlindedChi2(&hist_data,&hist_dark,&hist_model);
     chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
@@ -1345,6 +1347,9 @@ MatrixXcd MakeSmoothSplineFunction(MatrixXcd mtx_origin)
 void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, double tel_elev_upper_input, double theta2_cut_lower_input, double theta2_cut_upper_input)
 {
 
+    signalfree_model = false;
+    if (target_data=="Proton") signalfree_model = true;
+
     TH1::SetDefaultSumw2();
     sprintf(target, "%s", target_data.c_str());
     Theta2_cut_lower = theta2_cut_lower_input;
@@ -1731,6 +1736,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         gamma_total = max(0.,gamma_total);
         double scale_gamma = double(gamma_total)/double(Hist_GammaRDBM_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind));
         Hist_GammaRDBM_MSCLW.at(e).Scale(scale_gamma);
+        if (signalfree_model) Hist_GammaRDBM_MSCLW.at(e).Scale(0);
 
         fill2DHistogramAbs(&Hist_Redu_MSCLW.at(e),mtx_data_redu);
         //RestoreEdge(Hist_Dark,&Hist_Bkgd_MSCLW.at(e),-0.5,-0.5);

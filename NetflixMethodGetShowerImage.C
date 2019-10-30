@@ -104,6 +104,11 @@ pair<double,double> GetSourceRaDec(TString source_name)
 {
     double Source_RA = 0.;
     double Source_Dec = 0.;
+    if (source_name=="S3_1227_V6")
+    {
+            Source_RA = 187.559;
+                Source_Dec = 25.302;
+    }
     if (source_name=="Crab")
     {
             Source_RA = 83.633;
@@ -234,6 +239,11 @@ pair<double,double> GetSourceRaDec(TString source_name)
             Source_RA = 94.511;
                 Source_Dec = 22.660;
     }
+    if (source_name=="Proton")
+    {
+            Source_RA = 0.;
+                Source_Dec = 0.;
+    }
     return std::make_pair(Source_RA,Source_Dec);
 }
 pair<double,double> GetRunRaDec(string file_name, int run)
@@ -327,7 +337,7 @@ vector<pair<string,int>> SelectONRunList(vector<pair<string,int>> Data_runlist, 
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
-        if (!PointingSelection(filename,int(Data_runlist[run].second),TelElev_lower,TelElev_upper,0,360)) continue;
+        if (!PointingSelection(filename,int(Data_runlist[run].second),Elev_cut_lower,Elev_cut_upper,Azim_cut_lower,Azim_cut_upper)) continue;
         new_list.push_back(std::make_pair(Data_runlist[run].first,Data_runlist[run].second));
 
     }
@@ -568,7 +578,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     // Get a list of target observation runs
     vector<pair<string,int>> Data_runlist_init = GetRunList(target);
     vector<pair<string,int>> Data_runlist;
-    Data_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
+    if (TString(target)!="Proton") Data_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
+    else Data_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,180);
     std::cout << "Data_runlist size = " << Data_runlist.size() << std::endl;
     if (Data_runlist.size()==0) return;
 
@@ -578,7 +589,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     vector<pair<string,int>> Dark_runlist;
     std::cout << "initial Dark_runlist size = " << Dark_runlist_init.size() << std::endl;
     if (TString(target)!="Proton") Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
-    else Dark_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
+    else Dark_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,180,360);
     std::cout << "final Dark_runlist size = " << Dark_runlist.size() << std::endl;
     //vector<pair<string,int>> Dark_runlist = GetRunList("Proton");
 
@@ -602,8 +613,10 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     vector<TH2D> Hist_Ring_Syst_MSCLW;
     vector<TH2D> Hist_Dark_MSCLW;
     vector<TH2D> Hist_Dark_Syst_MSCLW;
+    vector<TH1D> Hist_TrueBkgd_SR_SelectFoV_Theta2;
     vector<TH1D> Hist_Data_SR_SelectFoV_Theta2;
     vector<TH1D> Hist_Data_CR_SelectFoV_Theta2;
+    vector<TH1D> Hist_Data_CR_SelectFoV_Theta2_Raw;
     vector<TH2D> Hist_Data_SR_Skymap;
     vector<TH2D> Hist_Data_CR_Skymap;
     vector<TH2D> Hist_Dark_SR_Skymap;
@@ -637,14 +650,17 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         Hist_Dark_MSCLW.push_back(TH2D("Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Dark_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
         Hist_Dark_Syst_MSCLW.push_back(TH2D("Hist_Dark_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_TrueBkgd_SR_SelectFoV_Theta2.push_back(TH1D("Hist_TrueBkgd_SR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
         Hist_Data_SR_SelectFoV_Theta2.push_back(TH1D("Hist_Data_SR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
         Hist_Data_CR_SelectFoV_Theta2.push_back(TH1D("Hist_Data_CR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
+        Hist_Data_CR_SelectFoV_Theta2_Raw.push_back(TH1D("Hist_Data_CR_SelectFoV_Theta2_Raw_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
         Hist_Data_SR_Skymap.push_back(TH2D("Hist_Data_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
         Hist_Data_CR_Skymap.push_back(TH2D("Hist_Data_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
         Hist_Dark_SR_Skymap.push_back(TH2D("Hist_Dark_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",30,-3,3,30,-3,3));
         Hist_Dark_CR_Skymap.push_back(TH2D("Hist_Dark_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",30,-3,3,30,-3,3));
     }
 
+    std::cout << "Prepare dark run samples..." << std::endl;
     for (int run=0;run<Dark_runlist.size();run++)
     {
         char run_number[50];
@@ -717,6 +733,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
 
 
 
+    std::cout << "Prepare ON run samples..." << std::endl;
     for (int run=0;run<Data_runlist.size();run++)
     {
         char run_number[50];
@@ -726,10 +743,11 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
-        pair<double,double> tele_point_ra_dec = GetRunRaDec(filename,int(Data_runlist[run].second));
+        //std::cout << "Get telescope pointing RA and Dec..." << std::endl;
+        pair<double,double> tele_point_ra_dec = std::make_pair(0,0);
+        if (TString(target)!="Proton") tele_point_ra_dec = GetRunRaDec(filename,int(Data_runlist[run].second));
 
         TFile*  input_file = TFile::Open(filename.c_str());
-	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Data_runlist[run].second);
         TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
         TTree* Data_tree = (TTree*) input_file->Get(root_file);
         Data_tree->SetBranchAddress("Xoff",&Xoff);
@@ -750,6 +768,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         Data_tree->SetBranchAddress("Shower_Az",&Shower_Az);
 
         // Get effective area and livetime and determine the cosmic electron counts for this run.
+        //std::cout << "Get effective area and livetime..." << std::endl;
+	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Dark_runlist[run].second);
         Data_tree->GetEntry(0);
         double time_0 = Time;
         Data_tree->GetEntry(Data_tree->GetEntries()-1);
@@ -762,12 +782,14 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             //std::pair <double,double> mcgillflux = GetMcGillElectronFlux((energy_bins[e+1]+energy_bins[e])/2.);
             //gamma_flux[e] = mcgillflux.first;
             gamma_flux[e] = 0.5*GetCrabFlux((energy_bins[e+1]+energy_bins[e])/2.);
-            std::cout << "energy = " << (energy_bins[e+1]+energy_bins[e])/2. << std::endl;
-            std::cout << "gamma_flux[e] = " << gamma_flux[e] << std::endl;
+            if (TString(target)=="Proton") gamma_flux[e] = 2.0*GetCrabFlux((energy_bins[e+1]+energy_bins[e])/2.);
+            //std::cout << "energy = " << (energy_bins[e+1]+energy_bins[e])/2. << std::endl;
+            //std::cout << "gamma_flux[e] = " << gamma_flux[e] << std::endl;
             double expected_electrons = gamma_flux[e]*eff_area*(time_1-time_0)*(energy_bins[e+1]-energy_bins[e])/1000.;
-            std::cout << "expected_electrons = " << expected_electrons << std::endl;
+            //std::cout << "expected_electrons = " << expected_electrons << std::endl;
             gamma_count[e] += expected_electrons; // this is used to normalize MC electron template.
         }
+        //std::cout << "Finished getting effective area and livetime..." << std::endl;
 
 
         for (int entry=0;entry<Data_tree->GetEntries();entry++) 
@@ -794,7 +816,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (pow(Xcore*Xcore+Ycore*Ycore,0.5)>350) continue;
             if (R2off>4.) continue;
             Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze);
-            if (FoV())
+            if (FoV() || Data_runlist[run].first=="Proton")
             {
                 Hist_Data_MSCLW.at(e).Fill(MSCL,MSCW);
                 Hist_TrueBkgd_MSCLW.at(e).Fill(MSCL,MSCW);
@@ -808,6 +830,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             {
                 if (FoV())
                 {
+                    Hist_TrueBkgd_SR_SelectFoV_Theta2.at(e).Fill(theta2);
                     Hist_Data_SR_SelectFoV_Theta2.at(e).Fill(theta2);
                     Hist_Data_SR_Skymap.at(e).Fill(ra_sky,dec_sky);
                 }
@@ -823,6 +846,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
                     double weight = 0.;
                     if (dark_cr_content>0.) weight = dark_sr_content/dark_cr_content;
                     Hist_Data_CR_SelectFoV_Theta2.at(e).Fill(theta2,weight);
+                    Hist_Data_CR_SelectFoV_Theta2_Raw.at(e).Fill(theta2,1.);
                     Hist_Data_CR_Skymap.at(e).Fill(ra_sky,dec_sky,weight);
                 }
             }
@@ -831,6 +855,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     }
 
 
+    std::cout << "Prepare photon MC samples..." << std::endl;
     double n_photon = 0.;
     for (int run=0;run<PhotonMC_runlist.size();run++)
     {
@@ -975,6 +1000,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
                     double weight = 0.;
                     if (dark_cr_content>0.) weight = dark_sr_content/dark_cr_content;
                     Hist_Data_CR_SelectFoV_Theta2.at(e).Fill(theta2,weight*photon_weight);
+                    Hist_Data_CR_SelectFoV_Theta2_Raw.at(e).Fill(theta2,photon_weight);
                     Hist_Data_CR_Skymap.at(e).Fill(ra_sky,dec_sky,weight*photon_weight);
                 }
             }
@@ -1150,8 +1176,10 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         Hist_Ring_Syst_MSCLW.at(e).Write();
         Hist_Dark_MSCLW.at(e).Write();
         Hist_Dark_Syst_MSCLW.at(e).Write();
+        Hist_TrueBkgd_SR_SelectFoV_Theta2.at(e).Write();
         Hist_Data_SR_SelectFoV_Theta2.at(e).Write();
         Hist_Data_CR_SelectFoV_Theta2.at(e).Write();
+        Hist_Data_CR_SelectFoV_Theta2_Raw.at(e).Write();
         Hist_Data_SR_Skymap.at(e).Write();
         Hist_Data_CR_Skymap.at(e).Write();
     }
