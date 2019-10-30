@@ -579,7 +579,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     vector<pair<string,int>> Data_runlist_init = GetRunList(target);
     vector<pair<string,int>> Data_runlist;
     if (TString(target)!="Proton") Data_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
-    else Data_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,180);
+    else Data_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
     std::cout << "Data_runlist size = " << Data_runlist.size() << std::endl;
     if (Data_runlist.size()==0) return;
 
@@ -589,7 +589,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     vector<pair<string,int>> Dark_runlist;
     std::cout << "initial Dark_runlist size = " << Dark_runlist_init.size() << std::endl;
     if (TString(target)!="Proton") Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
-    else Dark_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,180,360);
+    else Dark_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
     std::cout << "final Dark_runlist size = " << Dark_runlist.size() << std::endl;
     //vector<pair<string,int>> Dark_runlist = GetRunList("Proton");
 
@@ -713,6 +713,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (SizeSecondMax<600.) continue;
             if (pow(Xcore*Xcore+Ycore*Ycore,0.5)>350) continue;
             if (R2off>4.) continue;
+            if (Dark_runlist[run].first=="Proton" && abs(Shower_Az-180.)>90.) continue;
             Hist_Dark_ShowerDirection.Fill(Shower_Az,Shower_Ze);
             if (DarkFoV() || Dark_runlist[run].first=="Proton")
             {
@@ -743,7 +744,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
-        //std::cout << "Get telescope pointing RA and Dec..." << std::endl;
+        std::cout << "Get telescope pointing RA and Dec..." << std::endl;
         pair<double,double> tele_point_ra_dec = std::make_pair(0,0);
         if (TString(target)!="Proton") tele_point_ra_dec = GetRunRaDec(filename,int(Data_runlist[run].second));
 
@@ -768,8 +769,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         Data_tree->SetBranchAddress("Shower_Az",&Shower_Az);
 
         // Get effective area and livetime and determine the cosmic electron counts for this run.
-        //std::cout << "Get effective area and livetime..." << std::endl;
-	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Dark_runlist[run].second);
+        std::cout << "Get effective area and livetime..." << std::endl;
+	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Data_runlist[run].second);
         Data_tree->GetEntry(0);
         double time_0 = Time;
         Data_tree->GetEntry(Data_tree->GetEntries()-1);
@@ -789,7 +790,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             //std::cout << "expected_electrons = " << expected_electrons << std::endl;
             gamma_count[e] += expected_electrons; // this is used to normalize MC electron template.
         }
-        //std::cout << "Finished getting effective area and livetime..." << std::endl;
+        std::cout << "Finished getting effective area and livetime..." << std::endl;
 
 
         for (int entry=0;entry<Data_tree->GetEntries();entry++) 
@@ -815,6 +816,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             if (SizeSecondMax<600.) continue;
             if (pow(Xcore*Xcore+Ycore*Ycore,0.5)>350) continue;
             if (R2off>4.) continue;
+            if (Data_runlist[run].first=="Proton" && abs(Shower_Az-180.)<90.) continue;
             Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze);
             if (FoV() || Data_runlist[run].first=="Proton")
             {
