@@ -650,11 +650,11 @@ double FourierChi2Function(const double *par)
     hist_dark.Divide(&hist_dark_redu);
 
     int binx_lower = hist_diff.GetXaxis()->FindBin(MSCL_cut_lower);
-    int binx_blind = hist_diff.GetXaxis()->FindBin(MSCL_cut_blind)-1;
-    int binx_upper = hist_diff.GetXaxis()->FindBin(MSCL_cut_blind*2)-1;
+    int binx_blind = hist_diff.GetXaxis()->FindBin(MSCL_cut_upper)-1;
+    int binx_upper = hist_diff.GetXaxis()->FindBin(MSCL_cut_upper*2)-1;
     int biny_lower = hist_diff.GetYaxis()->FindBin(MSCW_cut_lower);
-    int biny_blind = hist_diff.GetYaxis()->FindBin(MSCW_cut_blind)-1;
-    int biny_upper = hist_diff.GetYaxis()->FindBin(MSCW_cut_blind*2)-1;
+    int biny_blind = hist_diff.GetYaxis()->FindBin(MSCW_cut_upper)-1;
+    int biny_upper = hist_diff.GetYaxis()->FindBin(MSCW_cut_upper*2)-1;
     hist_diff.Add(&hist_data);
     hist_diff.Add(&hist_model,-1.);
     double gamma_total = hist_diff.Integral(binx_lower,binx_blind,biny_lower,biny_blind);
@@ -1244,9 +1244,9 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
 void NormalizeHist2D(TH2D* hist_ref, TH2D* hist_sub)
 {
     int binx_lower = hist_ref->GetXaxis()->FindBin(MSCW_cut_lower);
-    int binx_upper = hist_ref->GetXaxis()->FindBin(MSCW_cut_blind)-1;
-    int biny_lower = hist_ref->GetYaxis()->FindBin(MSCW_cut_blind);
-    int biny_upper = hist_ref->GetYaxis()->FindBin(3.*MSCW_cut_blind)-1;
+    int binx_upper = hist_ref->GetXaxis()->FindBin(MSCW_cut_upper)-1;
+    int biny_lower = hist_ref->GetYaxis()->FindBin(MSCW_cut_upper);
+    int biny_upper = hist_ref->GetYaxis()->FindBin(3.*MSCW_cut_upper)-1;
     double integral_ref = double(hist_ref->Integral(binx_lower,binx_upper,biny_lower,biny_upper));
     double integral_sub = double(hist_sub->Integral(binx_lower,binx_upper,biny_lower,biny_upper));
     double scale = 0.;
@@ -1344,7 +1344,7 @@ MatrixXcd MakeSmoothSplineFunction(MatrixXcd mtx_origin)
     //std::cout << "matrix.col(0) = " << matrix.col(0) << std::endl;
     return matrix;
 }
-void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, double tel_elev_upper_input, double theta2_cut_lower_input, double theta2_cut_upper_input)
+void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, double tel_elev_upper_input, double theta2_cut_lower_input, double theta2_cut_upper_input, double MSCW_cut_input, double MSCL_cut_input, int rank)
 {
 
     signalfree_model = false;
@@ -1354,6 +1354,8 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
     sprintf(target, "%s", target_data.c_str());
     Theta2_cut_lower = theta2_cut_lower_input;
     Theta2_cut_upper = theta2_cut_upper_input;
+    MSCW_cut_blind = MSCW_cut_input;
+    MSCL_cut_blind = MSCL_cut_input;
     TelElev_lower = tel_elev_lower_input;
     TelElev_upper = tel_elev_upper_input;
 
@@ -1490,7 +1492,7 @@ void NetflixMethodPrediction(string target_data, double tel_elev_lower_input, do
         n_fourier_modes = 6;
         n_taylor_modes = 6;
 
-        NumberOfEigenvectors = 4;
+        NumberOfEigenvectors = rank;
         //if (CurrentEnergy>1000.) NumberOfEigenvectors = 2;
         //if (CurrentEnergy>2000.) NumberOfEigenvectors = 1;
 

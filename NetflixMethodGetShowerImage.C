@@ -562,13 +562,15 @@ bool ControlSelectionTheta2()
     if (MSCW>MSCW_cut_blind*3.0) return false;
     return true;
 }
-void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input, double tel_elev_upper_input, double theta2_cut_lower_input, double theta2_cut_upper_input)
+void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input, double tel_elev_upper_input, double theta2_cut_lower_input, double theta2_cut_upper_input, double MSCW_cut_input, double MSCL_cut_input)
 {
 
     TH1::SetDefaultSumw2();
     sprintf(target, "%s", target_data.c_str());
     Theta2_cut_lower = theta2_cut_lower_input;
     Theta2_cut_upper = theta2_cut_upper_input;
+    MSCW_cut_blind = MSCW_cut_input;
+    MSCL_cut_blind = MSCL_cut_input;
     TelElev_lower = tel_elev_lower_input;
     TelElev_upper = tel_elev_upper_input;
 
@@ -1081,9 +1083,9 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     for (int e=0;e<N_energy_bins;e++) 
     {
         int binx_blind = Hist_GammaDataON_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_lower);
-        int binx_upper = Hist_GammaDataON_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_blind)-1;
-        int biny_blind = Hist_GammaDataON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
-        int biny_upper = Hist_GammaDataON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
+        int binx_upper = Hist_GammaDataON_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_upper)-1;
+        int biny_blind = Hist_GammaDataON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_upper);
+        int biny_upper = Hist_GammaDataON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_upper*3)-1;
         double GammaDataON_CR_Integral = Hist_GammaDataON_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double GammaDataOFF_CR_Integral = Hist_GammaDataOFF_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double scale = GammaDataON_CR_Integral/GammaDataOFF_CR_Integral;
@@ -1163,6 +1165,8 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     TFile OutputFile("../Netflix_"+TString(target)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","recreate");
     TTree InfoTree("InfoTree","info tree");
     InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
+    InfoTree.Branch("MSCW_cut_blind",&MSCW_cut_blind,"MSCW_cut_blind/D");
+    InfoTree.Branch("MSCL_cut_blind",&MSCL_cut_blind,"MSCL_cut_blind/D");
     InfoTree.Fill();
     InfoTree.Write();
     Hist_Dark_ShowerDirection.Write();
