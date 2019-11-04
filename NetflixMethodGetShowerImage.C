@@ -58,7 +58,8 @@ double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,2239
 double gamma_flux[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
 double gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
 double raw_gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,20,20};
+//int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,20,20};
+int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,40,40};
 
 int N_bins_for_deconv = 40;
 double MSCW_plot_lower = -1.;
@@ -104,6 +105,16 @@ pair<double,double> GetSourceRaDec(TString source_name)
 {
     double Source_RA = 0.;
     double Source_Dec = 0.;
+    if (source_name=="PKS1441V6")
+    {
+            Source_RA = 220.987;
+                Source_Dec = 25.029;
+    }
+    if (source_name=="MS1221V6")
+    {
+            Source_RA = 186.101;
+                Source_Dec = 24.607;
+    }
     if (source_name=="S3_1227_V6")
     {
             Source_RA = 187.559;
@@ -562,17 +573,22 @@ bool ControlSelectionTheta2()
     if (MSCW>MSCW_cut_blind*3.0) return false;
     return true;
 }
-void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input, double tel_elev_upper_input, double theta2_cut_lower_input, double theta2_cut_upper_input, double MSCW_cut_input, double MSCL_cut_input)
+void NetflixMethodGetShowerImage(string target_data, bool addPhoton, double tel_elev_lower_input, double tel_elev_upper_input, bool isON, double MSCW_cut_input, double MSCL_cut_input)
 {
 
     TH1::SetDefaultSumw2();
     sprintf(target, "%s", target_data.c_str());
-    Theta2_cut_lower = theta2_cut_lower_input;
-    Theta2_cut_upper = theta2_cut_upper_input;
     MSCW_cut_blind = MSCW_cut_input;
     MSCL_cut_blind = MSCL_cut_input;
     TelElev_lower = tel_elev_lower_input;
     TelElev_upper = tel_elev_upper_input;
+    Theta2_cut_lower = 0.2;
+    Theta2_cut_upper = 10.;
+    if (isON) Theta2_cut_lower = 0.;
+    TString file_tag;
+    if (isON) file_tag = "ON";
+    if (!isON && !addPhoton) file_tag = "OFFwoPhoton";
+    if (!isON && addPhoton) file_tag = "OFFwPhoton";
 
     vector<pair<string,int>> PhotonMC_runlist = GetRunList("Photon");
     vector<pair<string,int>> PhotonData_runlist = GetRunList("Crab");
@@ -581,7 +597,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     vector<pair<string,int>> Data_runlist_init = GetRunList(target);
     vector<pair<string,int>> Data_runlist;
     if (TString(target)!="Proton") Data_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
-    else Data_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
+    else Data_runlist = Data_runlist_init;
     std::cout << "Data_runlist size = " << Data_runlist.size() << std::endl;
     if (Data_runlist.size()==0) return;
 
@@ -591,7 +607,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     vector<pair<string,int>> Dark_runlist;
     std::cout << "initial Dark_runlist size = " << Dark_runlist_init.size() << std::endl;
     if (TString(target)!="Proton") Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
-    else Dark_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
+    else Dark_runlist = Data_runlist_init;
     std::cout << "final Dark_runlist size = " << Dark_runlist.size() << std::endl;
     //vector<pair<string,int>> Dark_runlist = GetRunList("Proton");
 
@@ -785,7 +801,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             //std::pair <double,double> mcgillflux = GetMcGillElectronFlux((energy_bins[e+1]+energy_bins[e])/2.);
             //gamma_flux[e] = mcgillflux.first;
             gamma_flux[e] = 0.5*GetCrabFlux((energy_bins[e+1]+energy_bins[e])/2.);
-            if (TString(target)=="Proton") gamma_flux[e] = 2.0*GetCrabFlux((energy_bins[e+1]+energy_bins[e])/2.);
+            if (TString(target)=="Proton") gamma_flux[e] = 5.0*GetCrabFlux((energy_bins[e+1]+energy_bins[e])/2.);
             //std::cout << "energy = " << (energy_bins[e+1]+energy_bins[e])/2. << std::endl;
             //std::cout << "gamma_flux[e] = " << gamma_flux[e] << std::endl;
             double expected_electrons = gamma_flux[e]*eff_area*(time_1-time_0)*(energy_bins[e+1]-energy_bins[e])/1000.;
@@ -832,7 +848,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             }
             if (SignalSelectionTheta2())
             {
-                if (FoV())
+                if (FoV() || Data_runlist[run].first=="Proton")
                 {
                     Hist_TrueBkgd_SR_SelectFoV_Theta2.at(e).Fill(theta2);
                     Hist_Data_SR_SelectFoV_Theta2.at(e).Fill(theta2);
@@ -841,7 +857,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             }
             if (ControlSelectionTheta2())
             {
-                if (FoV())
+                if (FoV() || Data_runlist[run].first=="Proton")
                 {
                     int binx = Hist_Dark_SR_Skymap.at(e).GetXaxis()->FindBin(Xoff);
                     int biny = Hist_Dark_SR_Skymap.at(e).GetYaxis()->FindBin(Yoff);
@@ -969,7 +985,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             dec_sky = mean_tele_point_dec+dec_sky;
             int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
             photon_weight = gamma_count[energy]/raw_gamma_count[energy];
-            if (Theta2_cut_lower==0.) photon_weight = 0.;
+            if (!addPhoton) photon_weight = 0.;
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
             int e = energy;
@@ -1069,11 +1085,11 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
             int e = energy;
             if (!SelectNImages(3,4)) continue;
             Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze,photon_weight);
-            if (theta2<0.2)
+            if (theta2<0.05)
             {
                 Hist_GammaDataON_MSCLW.at(e).Fill(MSCL,MSCW);
             }
-            else if (theta2>0.2 && theta2<0.4)
+            else if (theta2>0.05 && theta2<0.1)
             {
                 Hist_GammaDataOFF_MSCLW.at(e).Fill(MSCL,MSCW);
             }
@@ -1145,7 +1161,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
         Hist_Dark_Syst_MSCLW.at(e).Scale(scale_err);
         double gamma_total = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind)-Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
         gamma_total = max(0.,gamma_total);
-        if (Theta2_cut_lower!=0.)
+        if (addPhoton)
         {
             Hist_GammaDark_MSCLW.at(e).Reset();
             Hist_GammaDark_MSCLW.at(e).Add(&Hist_GammaMC_MSCLW.at(e));
@@ -1162,7 +1178,7 @@ void NetflixMethodGetShowerImage(string target_data, double tel_elev_lower_input
     }
 
 
-    TFile OutputFile("../Netflix_"+TString(target)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_Theta2"+std::to_string(int(10.*Theta2_cut_lower))+"to"+std::to_string(int(10.*Theta2_cut_upper))+".root","recreate");
+    TFile OutputFile("../Netflix_"+TString(target)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_"+file_tag+".root","recreate");
     TTree InfoTree("InfoTree","info tree");
     InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
     InfoTree.Branch("MSCW_cut_blind",&MSCW_cut_blind,"MSCW_cut_blind/D");
