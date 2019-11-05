@@ -1251,7 +1251,7 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
                 //limit = 0.1*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
                 //if (NthEigenvalue>NthEigenvector) limit = 0.;
                 //limit = 0.;
-                limit = 0.1*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
+                limit = 0.05*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
             }
             Chi2Minimizer->SetVariable(first_index+NthEigenvalue-1, "par["+std::to_string(int(first_index+NthEigenvalue-1))+"]", input_value, 0.01*limit);
             Chi2Minimizer->SetVariableLimits(first_index+NthEigenvalue-1,input_value-limit,input_value+limit);
@@ -1387,6 +1387,8 @@ void NetflixMethodPrediction(string target_data, bool addPhoton, double tel_elev
     vector<TH2D> Hist_Redu_MSCLW;
     vector<TH1D> Hist_Data_Eigenvalues_real;
     vector<TH1D> Hist_Dark_Eigenvalues_real;
+    vector<TH1D> Hist_Data_Eigenvalues_imag;
+    vector<TH1D> Hist_Dark_Eigenvalues_imag;
     vector<TH1D> Hist_Data_EigenvectorReal_0;
     vector<TH1D> Hist_Fit_EigenvectorReal_0;
     vector<TH1D> Hist_Dark_EigenvectorReal_0;
