@@ -801,7 +801,15 @@ void NetflixMethodGetShowerImage(string target_data, bool addPhoton, double tel_
             //std::pair <double,double> mcgillflux = GetMcGillElectronFlux((energy_bins[e+1]+energy_bins[e])/2.);
             //gamma_flux[e] = mcgillflux.first;
             gamma_flux[e] = 0.5*GetCrabFlux((energy_bins[e+1]+energy_bins[e])/2.);
-            if (TString(target)=="Proton") gamma_flux[e] = 5.0*GetCrabFlux((energy_bins[e+1]+energy_bins[e])/2.);
+            if (TString(target)=="Proton" && file_tag=="OFFwPhoton") 
+            {
+                gamma_flux[e] = 1.0*GetCrabFlux((energy_bins[e+1]+energy_bins[e])/2.);
+            }
+            if (TString(target)=="Proton" && file_tag=="ON") 
+            {
+                addPhoton = true;
+                gamma_flux[e] = 2.0*GetCrabFlux((energy_bins[e+1]+energy_bins[e])/2.);
+            }
             //std::cout << "energy = " << (energy_bins[e+1]+energy_bins[e])/2. << std::endl;
             //std::cout << "gamma_flux[e] = " << gamma_flux[e] << std::endl;
             double expected_electrons = gamma_flux[e]*eff_area*(time_1-time_0)*(energy_bins[e+1]-energy_bins[e])/1000.;
