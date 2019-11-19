@@ -1362,7 +1362,7 @@ MatrixXcd MakeSmoothSplineFunction(MatrixXcd mtx_origin)
     //std::cout << "matrix.col(0) = " << matrix.col(0) << std::endl;
     return matrix;
 }
-void NetflixMethodPrediction(string target_data, bool addPhoton, double tel_elev_lower_input, double tel_elev_upper_input, bool isON, double MSCW_cut_input, double MSCL_cut_input, int rank)
+void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_elev_lower_input, double tel_elev_upper_input, bool isON, double MSCW_cut_input, double MSCL_cut_input, int rank)
 {
 
     signalfree_model = false;
@@ -1379,8 +1379,7 @@ void NetflixMethodPrediction(string target_data, bool addPhoton, double tel_elev
     if (isON) Theta2_cut_lower = 0.;
     TString file_tag;
     if (isON) file_tag = "ON";
-    if (!isON && !addPhoton) file_tag = "OFFwoPhoton";
-    if (!isON && addPhoton) file_tag = "OFFwPhoton";
+    else file_tag = "OFF";
 
     vector<TH2D> Hist_Bkgd_MSCLW;
     vector<TH2D> Hist_GammaRDBM_MSCLW;
@@ -1425,7 +1424,7 @@ void NetflixMethodPrediction(string target_data, bool addPhoton, double tel_elev
     vector<TH1D> Hist_Data_InvEigenvectorImag_2;
     vector<TH1D> Hist_Fit_InvEigenvectorImag_2;
     vector<TH1D> Hist_Dark_InvEigenvectorImag_2;
-    TFile InputDataFile("../Netflix_"+TString(target_data)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_"+file_tag+".root");
+    TFile InputDataFile("../Netflix_"+TString(target_data)+"_Crab"+std::to_string(int(PercentCrab))+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_"+file_tag+".root");
     for (int e=0;e<N_energy_bins;e++) 
     {
         std::cout << "++++++++++++++++++++++++++++++++++++++" << std::endl;
@@ -1439,7 +1438,7 @@ void NetflixMethodPrediction(string target_data, bool addPhoton, double tel_elev
         char e_up[50];
         sprintf(e_up, "%i", int(energy_bins[e+1]));
         TString filename_gamma  = "Hist_GammaData_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
-        if (addPhoton) filename_gamma  = "Hist_GammaMC_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
+        if (PercentCrab>0.) filename_gamma  = "Hist_GammaMC_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TString filename_data  = "Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TString filename_dark  = "Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TH2D* Hist_GammaMC = (TH2D*)InputDataFile.Get(filename_gamma);
@@ -1804,7 +1803,7 @@ void NetflixMethodPrediction(string target_data, bool addPhoton, double tel_elev
     InputDataFile.Close();
 
 
-    TFile OutputFile("../Netflix_"+TString(target_data)+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_"+file_tag+".root","update");
+    TFile OutputFile("../Netflix_"+TString(target_data)+"_Crab"+std::to_string(int(PercentCrab))+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_"+file_tag+".root","update");
     for (int e=0;e<N_energy_bins;e++)
     {
         Hist_GammaRDBM_MSCLW.at(e).Write();
