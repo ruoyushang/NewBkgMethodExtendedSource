@@ -41,19 +41,11 @@ elev_range += [[45,55]]
 #elev_range += [[35,45]]
 #elev_range += [[25,35]]
 
-#elev_range += [[45,85]]
-#elev_range += [[80,85]]
-#elev_range += [[75,80]]
-#elev_range += [[70,75]]
-#elev_range += [[65,70]]
-#elev_range += [[60,65]]
-#elev_range += [[55,60]]
-#elev_range += [[50,55]]
-#elev_range += [[45,50]]
-
-file_tag = "OFFwoPhoton"
-#file_tag = "OFFwPhoton"
+PercentCrab = ""
+#PercentCrab = "_Crab0"
+#PercentCrab = "_Crab50"
 #file_tag = "ON"
+file_tag = "OFF"
 
 file_theta2_lower = 0.0
 file_theta2_upper = 0.2
@@ -71,12 +63,12 @@ if "OFF" in file_tag:
 
 tag = file_tag
 
-#FileFolder = 'output_unblind_4x4_3tel_tight'
-#tag += '_unblind_4x4_3tel_tight'
+FileFolder = 'output_unblind_4x4_3tel_tight'
+tag += '_unblind_4x4_3tel_tight'
 #FileFolder = 'output_unblind_4x4_3tel_medium'
 #tag += '_unblind_4x4_3tel_medium'
-FileFolder = 'output_unblind_4x4_3tel_loose'
-tag += '_unblind_4x4_3tel_loose'
+#FileFolder = 'output_unblind_4x4_3tel_loose'
+#tag += '_unblind_4x4_3tel_loose'
 #FileFolder = 'output_unblind_4x4_3tel'
 #tag += '_unblind_4x4_3tel'
 #FileFolder = 'output_unblind_5x5_3tel_tight'
@@ -90,57 +82,68 @@ tag += '_unblind_4x4_3tel_loose'
 #FileFolder = 'output_test'
 #tag += '_test'
 
+#tag += "_Data"
+tag += "_MC"
+
 target = ""
 source = []
 sky_coord = []
-#source += ['Proton']
-#sky_coord += ['10 07 04 +16 04 55']
-source += ['Crab']
-sky_coord += ['05 34 31.97 +22 00 52.1']
-source += ['Mrk421']
-sky_coord += ['11 04 19 +38 11 41']
-source += ['H1426']
-sky_coord += ['14 28 32.609 +42 40 21.05']
-source += ['1ES0229']
-sky_coord += ['02 32 53.2 +20 16 21']
-source += ['PKS1424']
-sky_coord += ['14 27 00 +23 47 00']
-source += ['3C264']
-sky_coord += ['11 45 5.009 +19 36 22.74']
-source += ['OJ287V6']
-sky_coord += ['08 54 49.1 +20 05 58.89']
-source += ['S3_1227_V6']
-sky_coord += ['12 30 14.1 +25 18 07']
-source += ['MS1221V6']
-sky_coord += ['12 24 24.2 +24 36 24']
-source += ['PKS1441V6']
-sky_coord += ['14 43 56.9 +25 01 44']
-source += ['RBS0413V6']
-sky_coord += ['03 19 47 +18 45 42']
-source += ['PG1553V6']
-sky_coord += ['15 55 44.7 +11 11 41']
-source += ['Segue1V6']
+source += ['Proton_Crab0']
 sky_coord += ['10 07 04 +16 04 55']
-source += ['1ES1011V6']
-sky_coord += ['10 15 4.139 +49 26 0.71']
-source += ['NGC1275V6']
-sky_coord += ['03 19 48.1 +41 30 42']
-source += ['1ES0647V6']
-sky_coord += ['06 50 46.490 +25 02 59.62']
-source += ['1ES1440V6']
-sky_coord += ['14 42 48.277 +12 00 40.37']
-source += ['1ES1741V6']
-sky_coord += ['17 44 01.2 +19 32 47']
-source += ['IC443HotSpot']
-sky_coord += ['06 18 2.700 +22 39 36.00']
-source += ['RGBJ0710']
-sky_coord += ['07 10 26.4 +59 09 00']
-source += ['CasA']
-sky_coord += ['23 23 13.8 +58 48 26']
-source += ['WComaeV6']
-sky_coord += ['12 21 31.7 +28 13 59']
-source += ['M82']
-sky_coord += ['09 55 52.7 +69 40 46']
+#source += ['Proton_Crab50']
+#sky_coord += ['10 07 04 +16 04 55']
+#source += ['Proton_Crab100']
+#sky_coord += ['10 07 04 +16 04 55']
+#source += ['Proton_Crab200']
+#sky_coord += ['10 07 04 +16 04 55']
+#source += ['Proton_Crab400']
+#sky_coord += ['10 07 04 +16 04 55']
+#source += ['Crab']
+#sky_coord += ['05 34 31.97 +22 00 52.1']
+#source += ['Mrk421']
+#sky_coord += ['11 04 19 +38 11 41']
+#source += ['H1426']
+#sky_coord += ['14 28 32.609 +42 40 21.05']
+#source += ['1ES0229']
+#sky_coord += ['02 32 53.2 +20 16 21']
+#source += ['PKS1424']
+#sky_coord += ['14 27 00 +23 47 00']
+#source += ['3C264']
+#sky_coord += ['11 45 5.009 +19 36 22.74']
+#source += ['OJ287V6']
+#sky_coord += ['08 54 49.1 +20 05 58.89']
+#source += ['S3_1227_V6']
+#sky_coord += ['12 30 14.1 +25 18 07']
+#source += ['MS1221V6']
+#sky_coord += ['12 24 24.2 +24 36 24']
+#source += ['PKS1441V6']
+#sky_coord += ['14 43 56.9 +25 01 44']
+#source += ['RBS0413V6']
+#sky_coord += ['03 19 47 +18 45 42']
+#source += ['PG1553V6']
+#sky_coord += ['15 55 44.7 +11 11 41']
+#source += ['Segue1V6']
+#sky_coord += ['10 07 04 +16 04 55']
+#source += ['1ES1011V6']
+#sky_coord += ['10 15 4.139 +49 26 0.71']
+#source += ['NGC1275V6']
+#sky_coord += ['03 19 48.1 +41 30 42']
+#source += ['1ES0647V6']
+#sky_coord += ['06 50 46.490 +25 02 59.62']
+#source += ['1ES1440V6']
+#sky_coord += ['14 42 48.277 +12 00 40.37']
+#source += ['1ES1741V6']
+#sky_coord += ['17 44 01.2 +19 32 47']
+#source += ['IC443HotSpot']
+#sky_coord += ['06 18 2.700 +22 39 36.00']
+#source += ['RGBJ0710']
+#sky_coord += ['07 10 26.4 +59 09 00']
+#source += ['CasA']
+#sky_coord += ['23 23 13.8 +58 48 26']
+#source += ['WComaeV6']
+#sky_coord += ['12 21 31.7 +28 13 59']
+#source += ['M82']
+#sky_coord += ['09 55 52.7 +69 40 46']
 #source += ['G079']
 #sky_coord += ['20 32 28.56 +40 19 41.52']
 #source += ['1ES1218V6']
@@ -391,15 +394,11 @@ def Theta2HistScale(Hist,Hist_Syst,scale,scale_err):
         Hist_Syst.SetBinContent(b,new_error)
         Hist_Syst.SetBinError(b,0)
 
-def Event_rate(Hist_SR,range_lower,range_upper,time):
+def Event_rate(Hist_SR,time):
 
-    range_lower = 0.4
-
-    norm_bin_low_target = Hist_SR.FindBin(range_lower)
-    norm_bin_up_target = Hist_SR.FindBin(range_upper)-1
     err_SR = 0
-    data_SR = 0
-    data_SR, err_SR = IntegralAndError(Hist_SR,norm_bin_low_target,norm_bin_up_target)
+    data_SR = Hist_SR.Integral()
+    err_SR = pow(data_SR,0.5)
     return data_SR/time, err_SR/time
 
 def Variation_ratio(Hist_SR, Hist_Bkg,range_lower,range_upper,syst):
@@ -640,7 +639,7 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     data_SR, err_SR = IntegralAndError(Hists[0],norm_bin_low_target,norm_bin_up_target)
     err_bkg = 0
     predict_bkg = 0
-    predict_bkg, err_bkg = IntegralAndError(Hist_Sum,norm_bin_low_target,norm_bin_up_target)
+    predict_bkg, err_bkg = IntegralAndError(Hists[1],norm_bin_low_target,norm_bin_up_target)
     predict_sys, err_sys = IntegralAndSystError(Hist_Err,norm_bin_low_target,norm_bin_up_target,-1)
     err_bkg = pow(err_bkg*err_bkg+err_sys*err_sys,0.5)
     Sig = 1.*CalculateSignificance(data_SR-predict_bkg,predict_bkg,err_bkg)
@@ -1378,12 +1377,18 @@ Hist_SumE_S2B = []
 Hist_RDBM_S2B = []
 Hist_Dark_S2B = []
 Hist_Ring_S2B = []
-Hist_Bkg_Rate = []
 Hist_MSCW = []
 Hist_Eigenvalue_Rank = []
 Hist_RDBM_S2B_GalLat = []
 legend_S2B = []
 color_S2B = []
+
+Hist_Bkg_Rate = []
+Hist_Sig_Rate = []
+Hist_NormSig_Rate = []
+Hist_S2B_Rate = []
+legend2_S2B = []
+color2_S2B = []
 
 c = SkyCoord(sky_coord[:], unit=(u.hourangle, u.deg))
 for s in range(0,len(source)):
@@ -1393,7 +1398,7 @@ for s in range(0,len(source)):
 
     target = source[s]
     target_label = target
-    if 'wPhoton' in tag:
+    if not PercentCrab=="_Crab0":
         target_label += " + MC #gamma"
 
     Hist_Dark_ShowerDirection_Sum = ROOT.TH2D("Hist_Dark_ShowerDirection_Sum","",180,0,360,90,0,90)
@@ -1431,6 +1436,7 @@ for s in range(0,len(source)):
     Hist_Bkgd_Theta2 = ROOT.TH1D("Hist_Bkgd_Theta2","",1024,0,10)
     Hist_Bkgd_Theta2_Raw = ROOT.TH1D("Hist_Bkgd_Theta2_Raw","",1024,0,10)
     Hist_Bkgd_Skymap = ROOT.TH2D("Hist_Bkgd_Skymap","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
+    Hist_Bkgd_Skymap_Raw = ROOT.TH2D("Hist_Bkgd_Skymap_Raw","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
     Hist_Bkgd_Syst_Theta2 = ROOT.TH1D("Hist_Bkgd_Syst_Theta2","",1024,0,10)
     Hist_Bkgd_Syst_Skymap = ROOT.TH2D("Hist_Bkgd_Syst_Skymap","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
     Hist_Dark_Theta2 = ROOT.TH1D("Hist_Dark_Theta2","",1024,0,10)
@@ -1448,7 +1454,6 @@ for s in range(0,len(source)):
     Hist_RDBM_S2B += [ROOT.TH1D("Hist_RDBM_S2B_%s"%(target),"",len(energy_list)-1,array('d',energy_list))]
     Hist_Dark_S2B += [ROOT.TH1D("Hist_Dark_S2B_%s"%(target),"",len(energy_list)-1,array('d',energy_list))]
     Hist_Ring_S2B += [ROOT.TH1D("Hist_Ring_S2B_%s"%(target),"",len(energy_list)-1,array('d',energy_list))]
-    Hist_Bkg_Rate += [ROOT.TH1D("Hist_Bkg_Rate_%s"%(target),"",len(energy_list)-1,array('d',energy_list))]
     Hist_Eigenvalue_Rank += [ROOT.TH1D("Hist_Eigenvalue_Rank_%s"%(target),"",N_bins_for_deconv,0,N_bins_for_deconv)]
     Hist_MSCW += [ROOT.TH1D("Hist_MSCW_%s"%(target),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
 
@@ -1473,7 +1478,14 @@ for s in range(0,len(source)):
         file_elev_lower = elev_range[elev][0]
         file_elev_upper = elev_range[elev][1]
 
-        FilePath = "%s/Netflix_"%(FileFolder)+target+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_%s"%(file_tag)+".root";
+        Hist_Bkg_Rate += [ROOT.TH1D("Hist_Bkg_Rate_%s_%s"%(target,file_elev_lower),"",len(energy_list)-1,array('d',energy_list))]
+        Hist_Sig_Rate += [ROOT.TH1D("Hist_Sig_Rate_%s_%s"%(target,file_elev_lower),"",len(energy_list)-1,array('d',energy_list))]
+        Hist_NormSig_Rate += [ROOT.TH1D("Hist_NormSig_Rate_%s_%s"%(target,file_elev_lower),"",len(energy_list)-1,array('d',energy_list))]
+        Hist_S2B_Rate += [ROOT.TH1D("Hist_S2B_Rate_%s_%s"%(target,file_elev_lower),"",len(energy_list)-1,array('d',energy_list))]
+        legend2_S2B += ['%s (%0.1f hrs, elev %s-%s)'%(target,exposure_hours,file_elev_lower,file_elev_upper)]
+        color2_S2B += [elev+1]
+
+        FilePath = "%s/Netflix_"%(FileFolder)+target+PercentCrab+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_%s"%(file_tag)+".root";
         if not os.path.isfile(FilePath):continue
         InputFile = ROOT.TFile(FilePath)
         InfoTree = InputFile.Get("InfoTree")
@@ -1618,6 +1630,7 @@ for s in range(0,len(source)):
             Hist1D_TrueBkgd_MSCL_SumSRs = Hist2D_TrueBkgd.ProjectionX("Hist1D_TrueBkgd_MSCL_SumSRs",bin_lower,bin_upper)
             Hist1D_Dark_MSCL_SumSRs = Hist2D_Dark.ProjectionX("Hist1D_Dark_MSCL_SumSRs",bin_lower,bin_upper)
 
+
             Hist2D_Data_SumE.Add(Hist2D_Data)
             Hist2D_Dark_SumE.Add(Hist2D_Dark)
             Hist2D_Bkgd_SumE.Add(Hist2D_Bkgd)
@@ -1689,24 +1702,52 @@ for s in range(0,len(source)):
             Hist_Bkgd_Syst_Theta2.Add(Hist_Bkgd_Syst_Theta2_Tmp)
             Hist_Bkgd_Syst_Theta2_SumElev[e].Add(Hist_Bkgd_Syst_Theta2_Tmp)
 
+            data_rate, data_rate_err = Event_rate(Hist2D_Data,exposure_hours)
+            bkg_rate, bkg_rate_err = Event_rate(Hist2D_Bkgd,exposure_hours)
+            sig_rate = data_rate-bkg_rate
+            sig_rate_err = pow(data_rate_err*data_rate_err+bkg_rate_err*bkg_rate_err,0.5)
+            Hist_Bkg_Rate[len(Hist_Bkg_Rate)-1].SetBinContent(e+1,bkg_rate)
+            Hist_Bkg_Rate[len(Hist_Bkg_Rate)-1].SetBinError(e+1,bkg_rate_err)
+            Hist_Sig_Rate[len(Hist_Sig_Rate)-1].SetBinContent(e+1,sig_rate)
+            Hist_Sig_Rate[len(Hist_Sig_Rate)-1].SetBinError(e+1,sig_rate_err)
+            Hist_S2B_Rate[len(Hist_Sig_Rate)-1].SetBinContent(e+1,sig_rate/bkg_rate)
+            ratio_err = pow(sig_rate_err/sig_rate,2)+pow(bkg_rate_err/bkg_rate,2)
+            ratio_err = sig_rate/bkg_rate*pow(ratio_err,0.5)
+            Hist_S2B_Rate[len(Hist_Sig_Rate)-1].SetBinError(e+1,ratio_err)
+            norm_sig_rate = sig_rate/bkg_rate*Hist_Bkg_Rate[0].GetBinContent(e+1)
+            Hist_NormSig_Rate[len(Hist_NormSig_Rate)-1].SetBinContent(e+1,norm_sig_rate)
+            Hist_NormSig_Rate[len(Hist_NormSig_Rate)-1].SetBinError(e+1,sig_rate_err)
+
             HistName = "Hist_Data_CR_Skymap_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
             Hist_Bkgd_Skymap_Tmp = InputFile.Get(HistName)
+            HistName = "Hist_Data_CR_Skymap_Raw_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+            Hist_Bkgd_Skymap_Raw_Tmp = InputFile.Get(HistName)
             old_integral = Hist_Bkgd_Skymap_Tmp.Integral()
+            old_integral_raw = Hist_Bkgd_Skymap_Raw_Tmp.Integral()
             scale = 0
             scale_err = 0
+            scale_raw = 0
+            scale_raw_err = 0
             Hist_Bkgd_Syst_Skymap_Tmp = InputFile.Get(HistName)
             Hist_Bkgd_Syst_Skymap_Tmp.Reset()
             if not bkg_total==0 and not old_integral==0:
                 scale = bkg_total/old_integral
                 scale_err = scale*(bkg_err/bkg_total)
+                scale_raw = bkg_total/old_integral_raw
+                scale_raw_err = scale_raw*(bkg_err/bkg_total)
             else:
                 scale = 0
                 scale_err = 0
+                scale_raw = 0
+                scale_raw_err = 0
             if not bkg_total==0:
                 RaDecHistScale(Hist_Bkgd_Skymap_Tmp,Hist_Bkgd_Syst_Skymap_Tmp,scale,scale_err)
+                RaDecHistScale(Hist_Bkgd_Skymap_Raw_Tmp,Hist_Bkgd_Syst_Skymap_Tmp,scale_raw,scale_raw_err)
             else:
                 Hist_Bkgd_Skymap_Tmp.Scale(0)
+                Hist_Bkgd_Skymap_Raw_Tmp.Scale(0)
             Hist_Bkgd_Skymap.Add(Hist_Bkgd_Skymap_Tmp)
+            Hist_Bkgd_Skymap_Raw.Add(Hist_Bkgd_Skymap_Raw_Tmp)
             Hist_Bkgd_Syst_Skymap.Add(Hist_Bkgd_Syst_Skymap_Tmp)
 
             bkg_total, bkg_err = IntegralAndError(Hist1D_Dark_MSCW_SumSRs,bin_lower,bin_upper)
@@ -1866,7 +1907,7 @@ for s in range(0,len(source)):
         print 'bkgd_syst = %s'%(bkgd_syst)
         s2b = 0
         s2b_err = 0
-        if "wPhoton" in tag:
+        if not PercentCrab=="_Crab0":
             s2b, s2b_err = Variation_ratio(Hist_TrueBkgd_Theta2,Hist_Bkgd_Theta2,theta2_lower,theta2_upper,bkgd_syst)
         else:
             s2b, s2b_err = Variation_ratio(Hist_Data_Theta2,Hist_Bkgd_Theta2,0.2,theta2_upper,bkgd_syst)
@@ -1880,7 +1921,7 @@ for s in range(0,len(source)):
         print 'dark_syst = %s'%(bkgd_syst)
         s2b = 0
         s2b_err = 0
-        if "wPhoton" in tag:
+        if not PercentCrab=="_Crab0":
             s2b, s2b_err = Variation_ratio(Hist_TrueBkgd_Theta2,Hist_Dark_Theta2,theta2_lower,theta2_upper,dark_syst)
         else:
             s2b, s2b_err = Variation_ratio(Hist_Data_Theta2,Hist_Dark_Theta2,0.2,theta2_upper,dark_syst)
@@ -1895,7 +1936,7 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_MSCW_SumE]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if 'wPhoton' in tag:
+        if not PercentCrab=="_Crab0":
             Hists += [Hist_TrueBkgd_MSCW_SumE]
             legends += ['true bkg.']
             colors += [2]
@@ -1914,7 +1955,7 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_MSCL_SumE]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if 'wPhoton' in tag:
+        if not PercentCrab=="_Crab0":
             Hists += [Hist_TrueBkgd_MSCL_SumE]
             legends += ['true bkg.']
             colors += [2]
@@ -1935,7 +1976,7 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_MSCW_SumE]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if 'wPhoton' in tag:
+        if not PercentCrab=="_Crab0":
             Hists += [Hist_TrueBkgd_MSCW_SumE]
             legends += ['true bkg.']
             colors += [2]
@@ -1951,7 +1992,7 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_MSCL_SumE]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if 'wPhoton' in tag:
+        if not PercentCrab=="_Crab0":
             Hists += [Hist_TrueBkgd_MSCL_SumE]
             legends += ['true bkg.']
             colors += [2]
@@ -1968,7 +2009,7 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_MSCW_SumE]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if 'wPhoton' in tag:
+        if not PercentCrab=="_Crab0":
             Hists += [Hist_TrueBkgd_MSCW_SumE]
             legends += ['true bkg.']
             colors += [2]
@@ -1987,7 +2028,7 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_MSCL_SumE]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if 'wPhoton' in tag:
+        if not PercentCrab=="_Crab0":
             Hists += [Hist_TrueBkgd_MSCL_SumE]
             legends += ['true bkg.']
             colors += [2]
@@ -2022,7 +2063,7 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_Theta2]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if 'wPhoton' in tag:
+        if not PercentCrab=="_Crab0":
             Hists += [Hist_TrueBkgd_Theta2]
             legends += ['true bkg']
             colors += [2]
@@ -2041,7 +2082,7 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_Theta2]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if 'wPhoton' in tag:
+        if not PercentCrab=="_Crab0":
             Hists += [Hist_TrueBkgd_Theta2]
             legends += ['true bkg']
             colors += [2]
@@ -2061,7 +2102,7 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_Theta2]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if 'wPhoton' in tag:
+        if not PercentCrab=="_Crab0":
             Hists += [Hist_TrueBkgd_Theta2]
             legends += ['true bkg']
             colors += [2]
@@ -2096,8 +2137,11 @@ for s in range(0,len(source)):
         if UseRDBM:
             Hist_Data_Skymap_smooth = Smooth2DMap(Hist_Data_Skymap,smooth_size,False)
             Hist_Bkgd_Skymap_smooth = Smooth2DMap(Hist_Bkgd_Skymap,smooth_size,False)
+            Hist_Bkgd_Skymap_Raw_smooth = Smooth2DMap(Hist_Bkgd_Skymap_Raw,smooth_size,False)
             plotname = 'Target_SRall_RDBM_Skymap_Smooth_E%s'%(ErecS_lower_cut)
             Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap_smooth,Hist_Bkgd_Skymap_smooth,'RA','Dec',plotname)
+            plotname = 'Target_SRall_RDBM_Skymap_Raw_Smooth_E%s'%(ErecS_lower_cut)
+            Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap_smooth,Hist_Bkgd_Skymap_Raw_smooth,'RA','Dec',plotname)
         if UseDark:
             Hist_Data_Skymap_smooth = Smooth2DMap(Hist_Data_Skymap,smooth_size,False)
             Hist_Dark_Skymap_smooth = Smooth2DMap(Hist_Dark_Skymap,smooth_size,False)
@@ -2108,10 +2152,13 @@ for s in range(0,len(source)):
         n_rebin = 4
         Hist_Data_Skymap.Rebin2D(n_rebin,n_rebin)
         if UseRDBM:
-            plotname = 'Target_SRall_RDBM_Skymap_E%s'%(ErecS_lower_cut)
             Hist_Bkgd_Skymap.Rebin2D(n_rebin,n_rebin)
+            Hist_Bkgd_Skymap_Raw.Rebin2D(n_rebin,n_rebin)
             Hist_Bkgd_Syst_Skymap.Rebin2D(n_rebin,n_rebin)
+            plotname = 'Target_SRall_RDBM_Skymap_E%s'%(ErecS_lower_cut)
             Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap,Hist_Bkgd_Skymap,'RA','Dec',plotname)
+            plotname = 'Target_SRall_RDBM_Skymap_Raw_E%s'%(ErecS_lower_cut)
+            Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap,Hist_Bkgd_Skymap_Raw,'RA','Dec',plotname)
         if UseDark:
             plotname = 'Target_SRall_Dark_Skymap_E%s'%(ErecS_lower_cut)
             Hist_Dark_Skymap.Rebin2D(n_rebin,n_rebin)
@@ -2129,7 +2176,7 @@ for s in range(0,len(source)):
         print 'bkgd_syst = %s'%(bkgd_syst)
         s2b = 0.
         s2b_err = 0.
-        if "wPhoton" in tag:
+        if not PercentCrab=="_Crab0":
             s2b, s2b_err = Variation_ratio(Hist_TrueBkgd_Theta2_SumElev[e],Hist_Bkgd_Theta2_SumElev[e],theta2_lower,theta2_upper,bkgd_syst)
         else:
             s2b, s2b_err = Variation_ratio(Hist_Data_Theta2_SumElev[e],Hist_Bkgd_Theta2_SumElev[e],0.2,theta2_upper,bkgd_syst)
@@ -2138,7 +2185,7 @@ for s in range(0,len(source)):
         Hist_RDBM_S2B[len(Hist_RDBM_S2B)-1].SetBinError(e+1,s2b_err)
         dark_syst = 0.
         if Hist_Dark_Theta2_SumElev[e].Integral()!=0.: dark_syst = Hist_Dark_Syst_Theta2_SumElev[e].Integral()/Hist_Dark_Theta2_SumElev[e].Integral()
-        if "wPhoton" in tag:
+        if not PercentCrab=="_Crab0":
             s2b, s2b_err = Variation_ratio(Hist_TrueBkgd_Theta2_SumElev[e],Hist_Dark_Theta2_SumElev[e],theta2_lower,theta2_upper,dark_syst)
         else:
             s2b, s2b_err = Variation_ratio(Hist_Data_Theta2_SumElev[e],Hist_Dark_Theta2_SumElev[e],0.2,theta2_upper,dark_syst)
@@ -2146,15 +2193,8 @@ for s in range(0,len(source)):
         Hist_Dark_S2B[len(Hist_Dark_S2B)-1].SetBinContent(e+1,s2b)
         Hist_Dark_S2B[len(Hist_Dark_S2B)-1].SetBinError(e+1,s2b_err)
 
-        bkg_rate, bkg_rate_err = Event_rate(Hist_Data_Theta2_SumElev[e],0.2,theta2_upper,exposure_hours)
-        for e2 in range(0,e+1):
-            old_content = Hist_Bkg_Rate[len(Hist_Bkg_Rate)-1].GetBinContent(e2+1)
-            old_error = Hist_Bkg_Rate[len(Hist_Bkg_Rate)-1].GetBinError(e2+1)
-            Hist_Bkg_Rate[len(Hist_Bkg_Rate)-1].SetBinContent(e2+1,bkg_rate+old_content)
-            Hist_Bkg_Rate[len(Hist_Bkg_Rate)-1].SetBinError(e2+1,pow(bkg_rate_err*bkg_rate_err+old_error*old_error,0.5))
-
     legend_S2B += ['%s (%0.1f hrs)'%(target,exposure_hours)]
-    color_S2B += [s+1]
+    color_S2B += [49-s]
 
     InputFile.Close()
     Make2DProjectionPlot(Hist_Dark_ShowerDirection_Sum,'Azimuth','Zenith','Dark_ShowerDirection',False)
@@ -2181,8 +2221,13 @@ if UseRDBM:
     MakeComparisonPlotTwoColumn(Hist_SumE_S2B,legend_S2B,color_S2B,'methods','Mismodeling_systematics',0.6,1.4,False,False)
 if UseDark:
     MakeComparisonPlotSigDist(Hist_Dark_S2B,legend_S2B,color_S2B,'E [GeV]','Mismodeling_Dark_systematics',0.6,1.4,True,False)
-MakeComparisonPlot(Hist_Bkg_Rate,legend_S2B,color_S2B,'E [GeV]','event rate','BackgroundRate',True,True)
+MakeComparisonPlot(Hist_Bkg_Rate,legend2_S2B,color2_S2B,'E [GeV]','event rate','BackgroundRate',True,True)
+MakeComparisonPlot(Hist_Sig_Rate,legend2_S2B,color2_S2B,'E [GeV]','event rate','SignalRate',True,True)
+MakeComparisonPlot(Hist_NormSig_Rate,legend2_S2B,color2_S2B,'E [GeV]','event rate','NormSignalRate',True,True)
+MakeComparisonPlot(Hist_S2B_Rate,legend2_S2B,color2_S2B,'E [GeV]','event rate','Sig2BkgRate',True,True)
 
+for hist in range(0,len(Hist_Eigenvalue_Rank)):
+    Hist_Eigenvalue_Rank[hist].GetXaxis().SetRangeUser(0,16)
 MakeComparisonPlot(Hist_Eigenvalue_Rank,legend_S2B,color_S2B,'rank','size of eigenvalues','Eigenvalue_Rank',False,False)
 MakeComparisonPlot(Hist_MSCW,legend_S2B,color_S2B,'MSCW','normalized counts','MultiSourceMSCW',False,False)
 
