@@ -389,8 +389,8 @@ double FirstDerivative(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
 
 double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
 {
-    int binx_blind = hist_data->GetXaxis()->FindBin(1.);
-    int biny_blind = hist_data->GetYaxis()->FindBin(1.);
+    int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
+    int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
     double chi2 = 0.;
     for (int bx=1;bx<=hist_data->GetNbinsX();bx++)
     {
@@ -429,8 +429,8 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
 
 double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
 {
-    int binx_blind = hist_data->GetXaxis()->FindBin(1.);
-    int biny_blind = hist_data->GetYaxis()->FindBin(1.);
+    int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
+    int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
     //int binx_upper = hist_data->GetXaxis()->FindBin(3.);
     //int biny_upper = hist_data->GetXaxis()->FindBin(1.5);
     double chi2 = 0.;
