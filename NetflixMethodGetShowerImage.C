@@ -98,6 +98,9 @@ double theta2 = 0;
 double ra_sky = 0;
 double dec_sky = 0;
 double exposure_hours = 0.;
+double NSB_avg = 0.;
+double NSB_low_cut = 0.;
+double NSB_high_cut = 100.;
 double mean_tele_point_ra = 0.;
 double mean_tele_point_dec = 0.;
 
@@ -255,6 +258,11 @@ pair<double,double> GetSourceRaDec(TString source_name)
             Source_RA = 0.;
                 Source_Dec = 0.;
     }
+    if (source_name=="Proton_NSB750")
+    {
+            Source_RA = 0.;
+                Source_Dec = 0.;
+    }
     return std::make_pair(Source_RA,Source_Dec);
 }
 pair<double,double> GetRunRaDec(string file_name, int run)
@@ -336,6 +344,58 @@ bool PointingSelection(string file_name,int run, double Elev_cut_lower, double E
     return true;
 }
 
+double GetRunNSB(int run_number)
+{
+    string line;
+    char delimiter = ',';
+    string acc_runnumber = "";
+    string acc_nsb = "";
+    int nth_line = 0;
+    int nth_delimiter = 0;
+    std::string::size_type sz;
+    double NSB = 0.;
+
+    ifstream myfile ("/home/rshang/EventDisplay/NewBkgMethodExtendedSource/allrunsdatabaseinfo.txt");
+    if (myfile.is_open())
+    {
+        while ( getline(myfile,line) )
+        {
+            acc_runnumber = "";
+            acc_nsb = "";
+            nth_delimiter = 0;
+            for(int i = 0; i < line.size(); i++)
+            {
+                if(line[i] == delimiter && nth_line!=0)
+                {
+                    if (nth_delimiter==1 && std::stoi(acc_runnumber,nullptr,10)==run_number) 
+                    {
+                        cout << "run = " << acc_runnumber << '\n';
+                    }
+                    if (nth_delimiter==17 && std::stoi(acc_runnumber,nullptr,10)==run_number) 
+                    {
+                        cout << "NSB = " << std::stod(acc_nsb,&sz) << '\n';
+                        NSB = std::stod(acc_nsb,&sz);
+                    }
+                    nth_delimiter += 1;
+                }
+                else if (nth_delimiter==1)
+                {
+                    acc_runnumber += line[i];
+                }
+                else if (nth_delimiter==17)
+                {
+                    acc_nsb += line[i];
+                }
+            }
+            nth_line += 1;
+        }
+        myfile.close();
+    }
+    else cout << "Unable to open file"; 
+
+    return NSB;
+}
+
 vector<pair<string,int>> SelectONRunList(vector<pair<string,int>> Data_runlist, double Elev_cut_lower, double Elev_cut_upper, double Azim_cut_lower, double Azim_cut_upper)
 {
     vector<pair<string,int>> new_list;
@@ -344,6 +404,9 @@ vector<pair<string,int>> SelectONRunList(vector<pair<string,int>> Data_runlist, 
         char run_number[50];
         char Data_observation[50];
         sprintf(run_number, "%i", int(Data_runlist[run].second));
+        double NSB_thisrun = GetRunNSB(int(Data_runlist[run].second));
+        if (NSB_thisrun < NSB_low_cut) continue;
+        if (NSB_thisrun > NSB_high_cut) continue;
         sprintf(Data_observation, "%s", Data_runlist[run].first.c_str());
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
@@ -573,7 +636,7 @@ bool ControlSelectionTheta2()
     if (MSCW>MSCW_cut_blind*3.0) return false;
     return true;
 }
-void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double tel_elev_lower_input, double tel_elev_upper_input, bool isON, double MSCW_cut_input, double MSCL_cut_input)
+void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double tel_elev_lower_input, double tel_elev_upper_input, double NSB_low_cut_input, double NSB_high_cut_input, bool isON, double MSCW_cut_input, double MSCL_cut_input)
 {
 
     TH1::SetDefaultSumw2();
@@ -588,6 +651,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     TString file_tag;
     if (isON) file_tag = "ON";
     else file_tag = "OFF";
+    NSB_low_cut = NSB_low_cut_input;
+    NSB_high_cut = NSB_high_cut_input;
 
     vector<pair<string,int>> PhotonMC_runlist = GetRunList("Photon");
     vector<pair<string,int>> PhotonData_runlist = GetRunList("Crab");
@@ -595,7 +660,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     // Get a list of target observation runs
     vector<pair<string,int>> Data_runlist_init = GetRunList(target);
     vector<pair<string,int>> Data_runlist;
-    if (TString(target)!="Proton") Data_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
+    if (!TString(target).Contains("Proton")) Data_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
     else Data_runlist = Data_runlist_init;
     std::cout << "Data_runlist size = " << Data_runlist.size() << std::endl;
     if (Data_runlist.size()==0) return;
@@ -605,8 +670,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     if (TString(target).Contains("V5")) Dark_runlist_init = GetRunList("EverythingV5");
     vector<pair<string,int>> Dark_runlist;
     std::cout << "initial Dark_runlist size = " << Dark_runlist_init.size() << std::endl;
-    if (TString(target)!="Proton") Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
-    else Dark_runlist = Data_runlist_init;
+    if (!TString(target).Contains("Proton")) Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
+    else Dark_runlist = GetRunList("Proton");
     std::cout << "final Dark_runlist size = " << Dark_runlist.size() << std::endl;
     //vector<pair<string,int>> Dark_runlist = GetRunList("Proton");
 
@@ -617,6 +682,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     mean_tele_point_dec = source_ra_dec.second;
 
     TH1D Hist_ErecS = TH1D("Hist_ErecS","",N_energy_bins,energy_bins);
+    TH1D Hist_Data_NSB = TH1D("Hist_Data_NSB","",20,4,14);
     TH2D Hist_Dark_ShowerDirection = TH2D("Hist_Dark_ShowerDirection","",180,0,360,90,0,90);
     TH2D Hist_Data_ShowerDirection = TH2D("Hist_Data_ShowerDirection","",180,0,360,90,0,90);
     vector<TH2D> Hist_GammaDark_MSCLW;
@@ -629,6 +695,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     vector<TH2D> Hist_Ring_MSCLW;
     vector<TH2D> Hist_Ring_Syst_MSCLW;
     vector<TH2D> Hist_Dark_MSCLW;
+    vector<TH2D> Hist_Dark2_MSCLW;
     vector<TH2D> Hist_Dark_Syst_MSCLW;
     vector<TH1D> Hist_TrueBkgd_SR_SelectFoV_Theta2;
     vector<TH1D> Hist_Data_SR_SelectFoV_Theta2;
@@ -667,6 +734,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Ring_Syst_MSCLW.push_back(TH2D("Hist_Ring_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Dark_MSCLW.push_back(TH2D("Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Dark_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
+        Hist_Dark2_MSCLW.push_back(TH2D("Hist_Dark2_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_Dark2_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
         Hist_Dark_Syst_MSCLW.push_back(TH2D("Hist_Dark_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_TrueBkgd_SR_SelectFoV_Theta2.push_back(TH1D("Hist_TrueBkgd_SR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
         Hist_Data_SR_SelectFoV_Theta2.push_back(TH1D("Hist_Data_SR_SelectFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
@@ -732,11 +801,15 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             if (SizeSecondMax<600.) continue;
             if (pow(Xcore*Xcore+Ycore*Ycore,0.5)>350) continue;
             if (R2off>4.) continue;
-            if (Dark_runlist[run].first=="Proton" && abs(Shower_Az-180.)>90.) continue;
+            if (Dark_runlist[run].first.find("Proton")!=std::string::npos) 
+            {
+                if (Dark_runlist[run].first.find("NSB")==std::string::npos && abs(Shower_Az-180.)>90.) continue;
+            }
             Hist_Dark_ShowerDirection.Fill(Shower_Az,Shower_Ze);
-            if (DarkFoV() || Dark_runlist[run].first=="Proton")
+            if (DarkFoV() || Dark_runlist[run].first.find("Proton")!=std::string::npos)
             {
                 Hist_Dark_MSCLW.at(e).Fill(MSCL,MSCW);
+                Hist_Dark2_MSCLW.at(e).Fill(MSCL,MSCW);
                 Hist_Dark_Syst_MSCLW.at(e).Fill(MSCL,MSCW);
                 if (SignalSelectionTheta2())
                 {
@@ -765,7 +838,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
 
         std::cout << "Get telescope pointing RA and Dec..." << std::endl;
         pair<double,double> tele_point_ra_dec = std::make_pair(0,0);
-        if (TString(target)!="Proton") tele_point_ra_dec = GetRunRaDec(filename,int(Data_runlist[run].second));
+        if (!TString(target).Contains("Proton")) tele_point_ra_dec = GetRunRaDec(filename,int(Data_runlist[run].second));
 
         TFile*  input_file = TFile::Open(filename.c_str());
         TString root_file = "run_"+TString(run_number)+"/stereo/data_on";
@@ -795,6 +868,9 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Data_tree->GetEntry(Data_tree->GetEntries()-1);
         double time_1 = Time;
         exposure_hours += (time_1-time_0)/3600.;
+        double NSB_thisrun = GetRunNSB(int(Data_runlist[run].second));
+        NSB_avg += (time_1-time_0)/3600.*NSB_thisrun;
+        Hist_Data_NSB.Fill(NSB_thisrun);
 
         for (int e=0;e<N_energy_bins;e++) 
         {
@@ -834,9 +910,12 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             if (SizeSecondMax<600.) continue;
             if (pow(Xcore*Xcore+Ycore*Ycore,0.5)>350) continue;
             if (R2off>4.) continue;
-            if (Data_runlist[run].first=="Proton" && abs(Shower_Az-180.)<90.) continue;
+            if (Data_runlist[run].first.find("Proton")!=std::string::npos) 
+            {
+                if (Data_runlist[run].first.find("NSB")==std::string::npos && abs(Shower_Az-180.)<90.) continue;
+            }
             Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze);
-            if (FoV() || Data_runlist[run].first=="Proton")
+            if (FoV() || Data_runlist[run].first.find("Proton")!=std::string::npos)
             {
                 Hist_Data_MSCLW.at(e).Fill(MSCL,MSCW);
                 Hist_TrueBkgd_MSCLW.at(e).Fill(MSCL,MSCW);
@@ -848,7 +927,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             }
             if (SignalSelectionTheta2())
             {
-                if (FoV() || Data_runlist[run].first=="Proton")
+                if (FoV() || Data_runlist[run].first.find("Proton")!=std::string::npos)
                 {
                     Hist_TrueBkgd_SR_SelectFoV_Theta2.at(e).Fill(theta2);
                     Hist_Data_SR_SelectFoV_Theta2.at(e).Fill(theta2);
@@ -857,7 +936,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             }
             if (ControlSelectionTheta2())
             {
-                if (FoV() || Data_runlist[run].first=="Proton")
+                if (FoV() || Data_runlist[run].first.find("Proton")!=std::string::npos)
                 {
                     int binx = Hist_Dark_SR_Skymap.at(e).GetXaxis()->FindBin(Xoff);
                     int biny = Hist_Dark_SR_Skymap.at(e).GetYaxis()->FindBin(Yoff);
@@ -1152,15 +1231,21 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         double Data_SR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
         double Dark_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
         double Data_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
+        double Dark2_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_upper);
+        double Data2_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_upper);
         double Dark_CR_Integral = Dark_Integral-Dark_SR_Integral;
         double Data_CR_Integral = Data_Integral-Data_SR_Integral;
+        double Dark2_CR_Integral = Dark2_Integral-Dark_SR_Integral;
+        double Data2_CR_Integral = Data2_Integral-Data_SR_Integral;
         double Dark_CR_Error = pow(Dark_CR_Integral,0.5);
         double Data_CR_Error = pow(Data_CR_Integral,0.5);
         double scale = Data_CR_Integral/Dark_CR_Integral;
+        double scale2 = Data2_CR_Integral/Dark2_CR_Integral;
         double scale_err = scale*pow(pow(Dark_CR_Error/Dark_CR_Integral,2)+pow(Data_CR_Error/Data_CR_Integral,2),0.5);
         Hist_Dark_MSCLW.at(e).Scale(scale);
+        Hist_Dark2_MSCLW.at(e).Scale(scale2);
         Hist_Dark_Syst_MSCLW.at(e).Scale(scale_err);
-        double gamma_total = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind)-Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        double gamma_total = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind)-Hist_Dark2_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
         gamma_total = max(0.,gamma_total);
         if (PercentCrab>0.)
         {
@@ -1178,14 +1263,17 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         }
     }
 
+    NSB_avg = NSB_avg/exposure_hours;
 
     TFile OutputFile("../Netflix_"+TString(target)+"_Crab"+std::to_string(int(PercentCrab))+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_"+file_tag+".root","recreate");
     TTree InfoTree("InfoTree","info tree");
     InfoTree.Branch("exposure_hours",&exposure_hours,"exposure_hours/D");
     InfoTree.Branch("MSCW_cut_blind",&MSCW_cut_blind,"MSCW_cut_blind/D");
     InfoTree.Branch("MSCL_cut_blind",&MSCL_cut_blind,"MSCL_cut_blind/D");
+    InfoTree.Branch("NSB",&NSB_avg,"NSB/D");
     InfoTree.Fill();
     InfoTree.Write();
+    Hist_Data_NSB.Write();
     Hist_Dark_ShowerDirection.Write();
     Hist_Data_ShowerDirection.Write();
     for (int e=0;e<N_energy_bins;e++)
@@ -1198,6 +1286,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Ring_MSCLW.at(e).Write();
         Hist_Ring_Syst_MSCLW.at(e).Write();
         Hist_Dark_MSCLW.at(e).Write();
+        Hist_Dark2_MSCLW.at(e).Write();
         Hist_Dark_Syst_MSCLW.at(e).Write();
         Hist_TrueBkgd_SR_SelectFoV_Theta2.at(e).Write();
         Hist_Data_SR_SelectFoV_Theta2.at(e).Write();

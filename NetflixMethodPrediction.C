@@ -617,24 +617,24 @@ void FourierParametrizeEigenvectors(const double *par)
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
     {
         col_fix = N_bins_for_deconv-NthEigenvector;
-        first_index = (2*NthEigenvector-2)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
+        first_index = 1+(2*NthEigenvector-2)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             mtx_eigenvector(row,col_fix) += par[first_index+row];
         }
 
         row_fix = N_bins_for_deconv-NthEigenvector;
-        first_index = (2*NthEigenvector-1)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
+        first_index = 1+(2*NthEigenvector-1)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             mtx_eigenvector_inv(row_fix,col) += par[first_index+col];
         }
 
         // build eigenvalue matrix
-        first_index = (2*NthEigenvector-0)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
+        first_index = 1+(2*NthEigenvector-0)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int NthEigenvalue=1;NthEigenvalue<=NumberOfEigenvectors;NthEigenvalue++)
         {
-            mtx_eigenvalue(N_bins_for_deconv-NthEigenvector,N_bins_for_deconv-NthEigenvalue) += par[first_index+NthEigenvalue-1];
+            mtx_eigenvalue(N_bins_for_deconv-NthEigenvector,N_bins_for_deconv-NthEigenvalue) += par[first_index+NthEigenvalue-1]*par[0];
         }
     }
 }
@@ -1216,11 +1216,13 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
     //    }
     //}
 
+    Chi2Minimizer->SetVariable(0, "par["+std::to_string(int(0))+"]", 1, 0.001);
+    Chi2Minimizer->SetVariableLimits(0,0.9,1.1);
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
     {
 
         limit = 0.2;
-        first_index = (2*NthEigenvector-2)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
+        first_index = 1+(2*NthEigenvector-2)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.005);
@@ -1228,7 +1230,7 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
         }
 
         limit = 0.2;
-        first_index = (2*NthEigenvector-1)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
+        first_index = 1+(2*NthEigenvector-1)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.005);
@@ -1237,7 +1239,7 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
 
         // eigenvalues
         double input_value = 0.;
-        first_index = (2*NthEigenvector-0)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
+        first_index = 1+(2*NthEigenvector-0)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int NthEigenvalue=1;NthEigenvalue<=NumberOfEigenvectors;NthEigenvalue++)
         {
             input_value = 0.;
@@ -1642,8 +1644,8 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         //std::cout << "initial deriv_at_zero = " << init_deriv_at_zero << std::endl;
 
         n_fourier_modes = 6;
-        ROOT::Math::Functor Chi2Func(&FourierChi2Function,2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors*NumberOfEigenvectors); 
-        std::cout << "total n paramters = " << 2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors << std::endl;
+        ROOT::Math::Functor Chi2Func(&FourierChi2Function,1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors*NumberOfEigenvectors); 
+        std::cout << "total n paramters = " << 1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors << std::endl;
 
         ROOT::Math::GSLMinimizer Chi2Minimizer_0th( ROOT::Math::kSteepestDescent );
         Chi2Minimizer_0th.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
@@ -1657,7 +1659,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         NthIteration = 0;
         double init_chi2 = FourierChi2Function(par_0th);
         std::cout << "initial chi2 = " << init_chi2 << std::endl;
-        Chi2Minimizer_0th.SetTolerance(0.5*double(N_bins_for_deconv*N_bins_for_deconv));
+        Chi2Minimizer_0th.SetTolerance(0.01*double(N_bins_for_deconv*N_bins_for_deconv));
         Chi2Minimizer_0th.Minimize();
         par_0th = Chi2Minimizer_0th.X();
         std::cout << "final chi2 = " << FourierChi2Function(par_0th) << std::endl;
