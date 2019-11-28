@@ -35,15 +35,13 @@ gal_lat_cut = 0.
 
 elev_range = []
 elev_range += [[75,85]]
-elev_range += [[65,75]]
-elev_range += [[55,65]]
-elev_range += [[45,55]]
+#elev_range += [[65,75]]
+#elev_range += [[55,65]]
+#elev_range += [[45,55]]
 #elev_range += [[35,45]]
 #elev_range += [[25,35]]
 
 PercentCrab = ""
-#PercentCrab = "_Crab0"
-#PercentCrab = "_Crab50"
 #file_tag = "ON"
 file_tag = "OFF"
 
@@ -63,6 +61,10 @@ if "OFF" in file_tag:
 
 tag = file_tag
 
+#FileFolder = 'output_unblind_3x3_3tel_tight'
+#tag += '_unblind_3x3_3tel_tight'
+#FileFolder = 'output_blind_4x4_3tel_tight'
+#tag += '_blind_4x4_3tel_tight'
 FileFolder = 'output_unblind_4x4_3tel_tight'
 tag += '_unblind_4x4_3tel_tight'
 #FileFolder = 'output_unblind_4x4_3tel_medium'
@@ -82,14 +84,20 @@ tag += '_unblind_4x4_3tel_tight'
 #FileFolder = 'output_test'
 #tag += '_test'
 
-#tag += "_Data"
-tag += "_MC"
+tag += "_Data"
+#PercentCrab = "_Crab0"
+PercentCrab = "_Crab50"
+#tag += "_MC"
+
+tag += PercentCrab
 
 target = ""
 source = []
 sky_coord = []
-source += ['Proton_Crab0']
-sky_coord += ['10 07 04 +16 04 55']
+#source += ['Proton_NSB750_Crab0']
+#sky_coord += ['10 07 04 +16 04 55']
+#source += ['Proton_Crab0']
+#sky_coord += ['10 07 04 +16 04 55']
 #source += ['Proton_Crab50']
 #sky_coord += ['10 07 04 +16 04 55']
 #source += ['Proton_Crab100']
@@ -98,20 +106,20 @@ sky_coord += ['10 07 04 +16 04 55']
 #sky_coord += ['10 07 04 +16 04 55']
 #source += ['Proton_Crab400']
 #sky_coord += ['10 07 04 +16 04 55']
-#source += ['Crab']
-#sky_coord += ['05 34 31.97 +22 00 52.1']
-#source += ['Mrk421']
-#sky_coord += ['11 04 19 +38 11 41']
-#source += ['H1426']
-#sky_coord += ['14 28 32.609 +42 40 21.05']
-#source += ['1ES0229']
-#sky_coord += ['02 32 53.2 +20 16 21']
-#source += ['PKS1424']
-#sky_coord += ['14 27 00 +23 47 00']
-#source += ['3C264']
-#sky_coord += ['11 45 5.009 +19 36 22.74']
-#source += ['OJ287V6']
-#sky_coord += ['08 54 49.1 +20 05 58.89']
+source += ['Crab']
+sky_coord += ['05 34 31.97 +22 00 52.1']
+source += ['Mrk421']
+sky_coord += ['11 04 19 +38 11 41']
+source += ['H1426']
+sky_coord += ['14 28 32.609 +42 40 21.05']
+source += ['PKS1424']
+sky_coord += ['14 27 00 +23 47 00']
+source += ['3C264']
+sky_coord += ['11 45 5.009 +19 36 22.74']
+source += ['OJ287V6']
+sky_coord += ['08 54 49.1 +20 05 58.89']
+source += ['1ES0229']
+sky_coord += ['02 32 53.2 +20 16 21']
 #source += ['S3_1227_V6']
 #sky_coord += ['12 30 14.1 +25 18 07']
 #source += ['MS1221V6']
@@ -186,6 +194,9 @@ MSCL_lower_cut = -1.0
 MSCL_upper_cut = 1.0
 MSCL_blind_cut = 1.0
 exposure_hours = 0.
+exposure_hours_dark = 0.
+NSB_avg = 0.
+NSB_avg_dark = 0.
 total_exposure_hours = 0.
 
 NRGBs = 5
@@ -403,7 +414,7 @@ def Event_rate(Hist_SR,time):
 
 def Variation_ratio(Hist_SR, Hist_Bkg,range_lower,range_upper,syst):
 
-    range_lower = 0.4
+    #range_lower = 0.4
 
     norm_bin_low_target = Hist_SR.FindBin(range_lower)
     norm_bin_up_target = Hist_Bkg.FindBin(range_upper)-1
@@ -540,14 +551,15 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     max_hist = 0
     mean = []
     rms = []
+    bkg_idx = 1
     for h in range(0,len(Hists)):
         mean += [Hists[h].GetMean()]
         rms += [Hists[h].GetRMS()]
         if Hists[h]!=0:
             Hists[h].SetLineColor(colors[h])
             Hists[h].GetXaxis().SetTitle(title)
-            if legends[h]=='Bkg (OFF)':
-                Hists[h].SetLineWidth(3)
+            if legends[h]=='predict. bkg.':
+                bkg_idx = h
             if max_heigh < Hists[h].GetMaximum(): 
                 max_heigh = Hists[h].GetMaximum()
                 max_hist = h
@@ -639,7 +651,7 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     data_SR, err_SR = IntegralAndError(Hists[0],norm_bin_low_target,norm_bin_up_target)
     err_bkg = 0
     predict_bkg = 0
-    predict_bkg, err_bkg = IntegralAndError(Hists[1],norm_bin_low_target,norm_bin_up_target)
+    predict_bkg, err_bkg = IntegralAndError(Hists[bkg_idx],norm_bin_low_target,norm_bin_up_target)
     predict_sys, err_sys = IntegralAndSystError(Hist_Err,norm_bin_low_target,norm_bin_up_target,-1)
     err_bkg = pow(err_bkg*err_bkg+err_sys*err_sys,0.5)
     Sig = 1.*CalculateSignificance(data_SR-predict_bkg,predict_bkg,err_bkg)
@@ -714,7 +726,7 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     if 'Energy' in name:
         pad1.SetLogy()
         pad1.SetLogx()
-    c_both.SaveAs('output_plots/%s_%s_%s.pdf'%(name,target,tag))
+    c_both.SaveAs('output_plots/%s_%s_%s.png'%(name,target,tag))
 
 
 def Make2DSkyCoordPlot(Hist_Data,xtitle,ytitle,name,doProj):
@@ -735,7 +747,7 @@ def Make2DSkyCoordPlot(Hist_Data,xtitle,ytitle,name,doProj):
     #Hist_Data.Draw("CONT3 same")
     #pad1.SetLogz()
 
-    canvas.SaveAs('output_plots/%s.pdf'%(name))
+    canvas.SaveAs('output_plots/%s.png'%(name))
 
 def Make2DProjectionPlot(Hist_Data,xtitle,ytitle,name,doProj):
 
@@ -780,7 +792,7 @@ def Make2DProjectionPlot(Hist_Data,xtitle,ytitle,name,doProj):
     line3.SetLineWidth(2)
     line3.Draw()
 
-    canvas.SaveAs('output_plots/%s.pdf'%(name))
+    canvas.SaveAs('output_plots/%s.png'%(name))
 
 def MakeGaussComparisonPlot(Hists,legends,colors,title,name):
     
@@ -895,8 +907,8 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,xtitle,ytitle,name):
 
     Hist_Ratio.GetYaxis().SetTitle(ytitle)
     Hist_Ratio.GetXaxis().SetTitle(xtitle)
-    Hist_Ratio.SetMaximum(1.0)
-    Hist_Ratio.SetMinimum(0)
+    Hist_Ratio.SetMaximum(0.1)
+    Hist_Ratio.SetMinimum(-0.1)
     Hist_Ratio.Draw("COL4Z")
     Hist_Highlight.Draw("CONT3 same")
     canvas.SaveAs('output_plots/SkymapRatio_%s_%s_%s.png'%(name,target,tag))
@@ -1380,8 +1392,13 @@ Hist_Ring_S2B = []
 Hist_MSCW = []
 Hist_Eigenvalue_Rank = []
 Hist_RDBM_S2B_GalLat = []
+Hist_RDBM_S2B_NSB = []
+Hist_Dark_S2B_NSB = []
+Hist_RDBM_S2B_dNSB = []
+Hist_Dark_S2B_dNSB = []
 legend_S2B = []
 color_S2B = []
+color_code = [ROOT.kBlue,ROOT.kGreen,ROOT.kRed]
 
 Hist_Bkg_Rate = []
 Hist_Sig_Rate = []
@@ -1393,12 +1410,13 @@ color2_S2B = []
 c = SkyCoord(sky_coord[:], unit=(u.hourangle, u.deg))
 for s in range(0,len(source)):
 
+    x = c.galactic.l.degree[s]
     y = c.galactic.b.degree[s]
     if abs(y)<gal_lat_cut: continue
 
     target = source[s]
     target_label = target
-    if not PercentCrab=="_Crab0":
+    if not "_Crab0" in PercentCrab and not "_Crab0" in target:
         target_label += " + MC #gamma"
 
     Hist_Dark_ShowerDirection_Sum = ROOT.TH2D("Hist_Dark_ShowerDirection_Sum","",180,0,360,90,0,90)
@@ -1428,7 +1446,7 @@ for s in range(0,len(source)):
 
     souce_ra = round(float(HMS2deg(sky_coord[s].split('+')[0],sky_coord[s].split('+')[1])[0]),3)
     souce_dec = round(float(HMS2deg(sky_coord[s].split('+')[0],sky_coord[s].split('+')[1])[1]),3)
-    if source[s]=='Proton':
+    if 'Proton' in source[s]:
         source_ra = 0.
         source_dec = 0.
 
@@ -1448,9 +1466,16 @@ for s in range(0,len(source)):
     Hist_Ring_Syst_Theta2 = ROOT.TH1D("Hist_Ring_Syst_Theta2","",1024,0,10)
     Hist_Ring_Syst_Skymap = ROOT.TH2D("Hist_Ring_Syst_Skymap","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
     exposure_hours = 0.
+    exposure_hours_dark = 0.
+    NSB_avg = 0.
+    NSB_avg_dark = 0.
 
     Hist_SumE_S2B += [ROOT.TH1D("Hist_SumE_S2B_%s"%(target),"",2,0,2)]
     Hist_RDBM_S2B_GalLat += [ROOT.TH1D("Hist_RDBM_S2B_GalLat_%s"%(target),"",6,0,90)]
+    Hist_RDBM_S2B_NSB += [ROOT.TH1D("Hist_RDBM_S2B_NSB_%s"%(target),"",10,4,9)]
+    Hist_Dark_S2B_NSB += [ROOT.TH1D("Hist_Dark_S2B_NSB_%s"%(target),"",10,4,9)]
+    Hist_RDBM_S2B_dNSB += [ROOT.TH1D("Hist_RDBM_S2B_dNSB_%s"%(target),"",8,-4,4)]
+    Hist_Dark_S2B_dNSB += [ROOT.TH1D("Hist_Dark_S2B_dNSB_%s"%(target),"",8,-4,4)]
     Hist_RDBM_S2B += [ROOT.TH1D("Hist_RDBM_S2B_%s"%(target),"",len(energy_list)-1,array('d',energy_list))]
     Hist_Dark_S2B += [ROOT.TH1D("Hist_Dark_S2B_%s"%(target),"",len(energy_list)-1,array('d',energy_list))]
     Hist_Ring_S2B += [ROOT.TH1D("Hist_Ring_S2B_%s"%(target),"",len(energy_list)-1,array('d',energy_list))]
@@ -1482,8 +1507,6 @@ for s in range(0,len(source)):
         Hist_Sig_Rate += [ROOT.TH1D("Hist_Sig_Rate_%s_%s"%(target,file_elev_lower),"",len(energy_list)-1,array('d',energy_list))]
         Hist_NormSig_Rate += [ROOT.TH1D("Hist_NormSig_Rate_%s_%s"%(target,file_elev_lower),"",len(energy_list)-1,array('d',energy_list))]
         Hist_S2B_Rate += [ROOT.TH1D("Hist_S2B_Rate_%s_%s"%(target,file_elev_lower),"",len(energy_list)-1,array('d',energy_list))]
-        legend2_S2B += ['%s (%0.1f hrs, elev %s-%s)'%(target,exposure_hours,file_elev_lower,file_elev_upper)]
-        color2_S2B += [elev+1]
 
         FilePath = "%s/Netflix_"%(FileFolder)+target+PercentCrab+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_%s"%(file_tag)+".root";
         if not os.path.isfile(FilePath):continue
@@ -1491,8 +1514,14 @@ for s in range(0,len(source)):
         InfoTree = InputFile.Get("InfoTree")
         InfoTree.GetEntry(0)
         exposure_hours += InfoTree.exposure_hours
+        exposure_hours_dark += InfoTree.exposure_hours_dark
+        NSB_avg += InfoTree.exposure_hours*InfoTree.NSB
+        NSB_avg_dark += InfoTree.exposure_hours_dark*InfoTree.NSB_dark
         MSCW_blind_cut = InfoTree.MSCW_cut_blind
         MSCL_blind_cut = InfoTree.MSCL_cut_blind
+
+        legend2_S2B += ['%s (%0.1f hrs, elev %s-%s)'%(target,InfoTree.exposure_hours,file_elev_lower,file_elev_upper)]
+        color2_S2B += [color_code[(elev % 3)]+int(elev/3.)]
 
         HistName = "Hist_Dark_ShowerDirection"
         Hist_Dark_ShowerDirection = InputFile.Get(HistName)
@@ -1592,7 +1621,7 @@ for s in range(0,len(source)):
             Hist2D_Data = InputFile.Get(HistName)
             HistName = "Hist_Ring_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
             Hist2D_Ring = InputFile.Get(HistName)
-            HistName = "Hist_Dark_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+            HistName = "Hist_Dark2_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
             Hist2D_Dark = InputFile.Get(HistName)
             HistName = "Hist_TrueBkgd_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
             Hist2D_TrueBkgd = InputFile.Get(HistName)
@@ -1710,13 +1739,14 @@ for s in range(0,len(source)):
             Hist_Bkg_Rate[len(Hist_Bkg_Rate)-1].SetBinError(e+1,bkg_rate_err)
             Hist_Sig_Rate[len(Hist_Sig_Rate)-1].SetBinContent(e+1,sig_rate)
             Hist_Sig_Rate[len(Hist_Sig_Rate)-1].SetBinError(e+1,sig_rate_err)
-            Hist_S2B_Rate[len(Hist_Sig_Rate)-1].SetBinContent(e+1,sig_rate/bkg_rate)
-            ratio_err = pow(sig_rate_err/sig_rate,2)+pow(bkg_rate_err/bkg_rate,2)
-            ratio_err = sig_rate/bkg_rate*pow(ratio_err,0.5)
-            Hist_S2B_Rate[len(Hist_Sig_Rate)-1].SetBinError(e+1,ratio_err)
-            norm_sig_rate = sig_rate/bkg_rate*Hist_Bkg_Rate[0].GetBinContent(e+1)
-            Hist_NormSig_Rate[len(Hist_NormSig_Rate)-1].SetBinContent(e+1,norm_sig_rate)
-            Hist_NormSig_Rate[len(Hist_NormSig_Rate)-1].SetBinError(e+1,sig_rate_err)
+            if bkg_rate!=0:
+                Hist_S2B_Rate[len(Hist_Sig_Rate)-1].SetBinContent(e+1,sig_rate/bkg_rate)
+                ratio_err = pow(sig_rate_err/sig_rate,2)+pow(bkg_rate_err/bkg_rate,2)
+                ratio_err = sig_rate/bkg_rate*pow(ratio_err,0.5)
+                Hist_S2B_Rate[len(Hist_Sig_Rate)-1].SetBinError(e+1,ratio_err)
+                norm_sig_rate = sig_rate/bkg_rate*Hist_Bkg_Rate[0].GetBinContent(e+1)
+                Hist_NormSig_Rate[len(Hist_NormSig_Rate)-1].SetBinContent(e+1,norm_sig_rate)
+                Hist_NormSig_Rate[len(Hist_NormSig_Rate)-1].SetBinError(e+1,sig_rate_err)
 
             HistName = "Hist_Data_CR_Skymap_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
             Hist_Bkgd_Skymap_Tmp = InputFile.Get(HistName)
@@ -1901,33 +1931,43 @@ for s in range(0,len(source)):
                     MakeChi2Plot(Hists,legends,colors,title,plotname,True,True,MSCW_lower_cut,MSCW_blind_cut,-1)
 
     ErecS_lower_cut = energy_list[0]
+    NSB_avg = NSB_avg/exposure_hours
+    NSB_avg_dark = NSB_avg_dark/exposure_hours_dark
 
     if UseRDBM:
         bkgd_syst = Hist_Bkgd_Syst_Theta2.Integral()/Hist_Bkgd_Theta2.Integral()
         print 'bkgd_syst = %s'%(bkgd_syst)
         s2b = 0
         s2b_err = 0
-        if not PercentCrab=="_Crab0":
+        if not "_Crab0" in PercentCrab and not "_Crab0" in target:
             s2b, s2b_err = Variation_ratio(Hist_TrueBkgd_Theta2,Hist_Bkgd_Theta2,theta2_lower,theta2_upper,bkgd_syst)
         else:
             s2b, s2b_err = Variation_ratio(Hist_Data_Theta2,Hist_Bkgd_Theta2,0.2,theta2_upper,bkgd_syst)
         #s2b, s2b_err = Variation_ratio(Hist_Data_Theta2,Hist_Bkgd_Theta2,theta2_lower,theta2_upper,bkgd_syst)
         Hist_SumE_S2B[len(Hist_SumE_S2B)-1].SetBinContent(2,s2b)
         Hist_SumE_S2B[len(Hist_SumE_S2B)-1].SetBinError(2,s2b_err)
-        Hist_RDBM_S2B_GalLat[len(Hist_RDBM_S2B_GalLat)-1].SetBinContent(Hist_RDBM_S2B_GalLat[0].FindBin(abs(y)),s2b)
-        Hist_RDBM_S2B_GalLat[len(Hist_RDBM_S2B_GalLat)-1].SetBinError(Hist_RDBM_S2B_GalLat[0].FindBin(abs(y)),s2b_err)
+        Hist_RDBM_S2B_GalLat[len(Hist_RDBM_S2B_GalLat)-1].SetBinContent(Hist_RDBM_S2B_GalLat[0].FindBin(pow(y*y,0.5)),s2b)
+        Hist_RDBM_S2B_GalLat[len(Hist_RDBM_S2B_GalLat)-1].SetBinError(Hist_RDBM_S2B_GalLat[0].FindBin(pow(y*y,0.5)),s2b_err)
+        Hist_RDBM_S2B_NSB[len(Hist_RDBM_S2B_NSB)-1].SetBinContent(Hist_RDBM_S2B_NSB[0].FindBin(NSB_avg),s2b)
+        Hist_RDBM_S2B_NSB[len(Hist_RDBM_S2B_NSB)-1].SetBinError(Hist_RDBM_S2B_NSB[0].FindBin(NSB_avg),s2b_err)
+        Hist_RDBM_S2B_dNSB[len(Hist_RDBM_S2B_dNSB)-1].SetBinContent(Hist_RDBM_S2B_dNSB[0].FindBin(NSB_avg-NSB_avg_dark),s2b)
+        Hist_RDBM_S2B_dNSB[len(Hist_RDBM_S2B_dNSB)-1].SetBinError(Hist_RDBM_S2B_dNSB[0].FindBin(NSB_avg-NSB_avg_dark),s2b_err)
     if UseDark:
         dark_syst = Hist_Dark_Syst_Theta2.Integral()/Hist_Dark_Theta2.Integral()
         print 'dark_syst = %s'%(bkgd_syst)
         s2b = 0
         s2b_err = 0
-        if not PercentCrab=="_Crab0":
+        if not "_Crab0" in PercentCrab and not "_Crab0" in target:
             s2b, s2b_err = Variation_ratio(Hist_TrueBkgd_Theta2,Hist_Dark_Theta2,theta2_lower,theta2_upper,dark_syst)
         else:
             s2b, s2b_err = Variation_ratio(Hist_Data_Theta2,Hist_Dark_Theta2,0.2,theta2_upper,dark_syst)
         #s2b, s2b_err = Variation_ratio(Hist_Data_Theta2,Hist_Dark_Theta2,theta2_lower,theta2_upper,dark_syst)
         Hist_SumE_S2B[len(Hist_SumE_S2B)-1].SetBinContent(1,s2b)
         Hist_SumE_S2B[len(Hist_SumE_S2B)-1].SetBinError(1,s2b_err)
+        Hist_Dark_S2B_NSB[len(Hist_Dark_S2B_NSB)-1].SetBinContent(Hist_Dark_S2B_NSB[0].FindBin(NSB_avg),s2b)
+        Hist_Dark_S2B_NSB[len(Hist_Dark_S2B_NSB)-1].SetBinError(Hist_Dark_S2B_NSB[0].FindBin(NSB_avg),s2b_err)
+        Hist_Dark_S2B_dNSB[len(Hist_Dark_S2B_dNSB)-1].SetBinContent(Hist_Dark_S2B_dNSB[0].FindBin(NSB_avg-NSB_avg_dark),s2b)
+        Hist_Dark_S2B_dNSB[len(Hist_Dark_S2B_dNSB)-1].SetBinError(Hist_Dark_S2B_dNSB[0].FindBin(NSB_avg-NSB_avg_dark),s2b_err)
 
     if UseRDBM:
         Hists = []
@@ -1936,15 +1976,15 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_MSCW_SumE]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if not PercentCrab=="_Crab0":
+        if not "_Crab0" in PercentCrab and not "_Crab0" in target:
             Hists += [Hist_TrueBkgd_MSCW_SumE]
             legends += ['true bkg.']
             colors += [2]
         Hists += [Hist_Bkgd_MSCW_SumE]
-        legends += ['pred. bkg.']
+        legends += ['predict. bkg.']
         colors += [4]
         Hists += [Hist_GammaRDBM_MSCW_SumE]
-        legends += ['pred. #gamma']
+        legends += ['predict. #gamma']
         colors += [3]
         plotname = 'Target_W_SumSRs_SumE_RDBM'
         title = 'MSCW'
@@ -1955,12 +1995,12 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_MSCL_SumE]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if not PercentCrab=="_Crab0":
+        if not "_Crab0" in PercentCrab and not "_Crab0" in target:
             Hists += [Hist_TrueBkgd_MSCL_SumE]
             legends += ['true bkg.']
             colors += [2]
         Hists += [Hist_Bkgd_MSCL_SumE]
-        legends += ['pred. bkg.']
+        legends += ['predict. bkg.']
         colors += [4]
         Hists += [Hist_GammaRDBM_MSCL_SumE]
         legends += ['pred. #gamma']
@@ -1976,12 +2016,12 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_MSCW_SumE]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if not PercentCrab=="_Crab0":
+        if not "_Crab0" in PercentCrab and not "_Crab0" in target:
             Hists += [Hist_TrueBkgd_MSCW_SumE]
             legends += ['true bkg.']
             colors += [2]
         Hists += [Hist_Ring_MSCW_SumE]
-        legends += ['pred. bkg.']
+        legends += ['predict. bkg.']
         colors += [4]
         plotname = 'Target_W_SumSRs_SumE_Ring'
         title = 'MSCW'
@@ -1992,12 +2032,12 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_MSCL_SumE]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if not PercentCrab=="_Crab0":
+        if not "_Crab0" in PercentCrab and not "_Crab0" in target:
             Hists += [Hist_TrueBkgd_MSCL_SumE]
             legends += ['true bkg.']
             colors += [2]
         Hists += [Hist_Ring_MSCL_SumE]
-        legends += ['pred. bkg.']
+        legends += ['predict. bkg.']
         colors += [4]
         plotname = 'Target_L_SumSRs_SumE_Ring'
         title = 'MSCL'
@@ -2009,15 +2049,15 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_MSCW_SumE]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if not PercentCrab=="_Crab0":
+        if not "_Crab0" in PercentCrab and not "_Crab0" in target:
             Hists += [Hist_TrueBkgd_MSCW_SumE]
             legends += ['true bkg.']
             colors += [2]
         Hists += [Hist_Dark_MSCW_SumE]
-        legends += ['pred. bkg.']
+        legends += ['predict. bkg.']
         colors += [4]
         Hists += [Hist_GammaDark_MSCW_SumE]
-        legends += ['pred. #gamma']
+        legends += ['predict. #gamma']
         colors += [3]
         plotname = 'Target_W_SumSRs_SumE_Dark'
         title = 'MSCW'
@@ -2028,15 +2068,15 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_MSCL_SumE]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if not PercentCrab=="_Crab0":
+        if not "_Crab0" in PercentCrab and not "_Crab0" in target:
             Hists += [Hist_TrueBkgd_MSCL_SumE]
             legends += ['true bkg.']
             colors += [2]
         Hists += [Hist_Dark_MSCL_SumE]
-        legends += ['pred. bkg.']
+        legends += ['predict. bkg.']
         colors += [4]
         Hists += [Hist_GammaDark_MSCL_SumE]
-        legends += ['pred. #gamma']
+        legends += ['predict. #gamma']
         colors += [3]
         plotname = 'Target_L_SumSRs_SumE_Dark'
         title = 'MSCL'
@@ -2063,12 +2103,12 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_Theta2]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if not PercentCrab=="_Crab0":
+        if not "_Crab0" in PercentCrab and not "_Crab0" in target:
             Hists += [Hist_TrueBkgd_Theta2]
             legends += ['true bkg']
             colors += [2]
         Hists += [Hist_Bkgd_Theta2]
-        legends += ['bkg']
+        legends += ['predict. bkg.']
         colors += [4]
         Hists += [Hist_Bkgd_Syst_Theta2]
         legends += ['syst.']
@@ -2082,12 +2122,12 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_Theta2]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if not PercentCrab=="_Crab0":
+        if not "_Crab0" in PercentCrab and not "_Crab0" in target:
             Hists += [Hist_TrueBkgd_Theta2]
             legends += ['true bkg']
             colors += [2]
         Hists += [Hist_Bkgd_Theta2_Raw]
-        legends += ['bkg']
+        legends += ['predict. bkg.']
         colors += [4]
         Hists += [Hist_Bkgd_Syst_Theta2]
         legends += ['syst.']
@@ -2102,12 +2142,12 @@ for s in range(0,len(source)):
         Hists += [Hist_Data_Theta2]
         legends += ['%s'%(target_label)]
         colors += [1]
-        if not PercentCrab=="_Crab0":
+        if not "_Crab0" in PercentCrab and not "_Crab0" in target:
             Hists += [Hist_TrueBkgd_Theta2]
             legends += ['true bkg']
             colors += [2]
         Hists += [Hist_Dark_Theta2]
-        legends += ['dark']
+        legends += ['predict. bkg.']
         colors += [4]
         Hists += [Hist_Dark_Syst_Theta2]
         legends += ['syst.']
@@ -2123,7 +2163,7 @@ for s in range(0,len(source)):
         legends += ['%s'%(target_label)]
         colors += [1]
         Hists += [Hist_Ring_Theta2]
-        legends += ['ring']
+        legends += ['predict. bkg.']
         colors += [4]
         Hists += [Hist_Ring_Syst_Theta2]
         legends += ['syst.']
@@ -2142,11 +2182,11 @@ for s in range(0,len(source)):
             Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap_smooth,Hist_Bkgd_Skymap_smooth,'RA','Dec',plotname)
             plotname = 'Target_SRall_RDBM_Skymap_Raw_Smooth_E%s'%(ErecS_lower_cut)
             Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap_smooth,Hist_Bkgd_Skymap_Raw_smooth,'RA','Dec',plotname)
-        if UseDark:
-            Hist_Data_Skymap_smooth = Smooth2DMap(Hist_Data_Skymap,smooth_size,False)
-            Hist_Dark_Skymap_smooth = Smooth2DMap(Hist_Dark_Skymap,smooth_size,False)
-            plotname = 'Target_SRall_Dark_Skymap_Smooth_E%s'%(ErecS_lower_cut)
-            Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap_smooth,Hist_Dark_Skymap_smooth,'RA','Dec',plotname)
+        #if UseDark:
+        #    Hist_Data_Skymap_smooth = Smooth2DMap(Hist_Data_Skymap,smooth_size,False)
+        #    Hist_Dark_Skymap_smooth = Smooth2DMap(Hist_Dark_Skymap,smooth_size,False)
+        #    plotname = 'Target_SRall_Dark_Skymap_Smooth_E%s'%(ErecS_lower_cut)
+        #    Hist_Sig = Make2DSignificancePlot(Hist_Data_Skymap_smooth,Hist_Dark_Skymap_smooth,'RA','Dec',plotname)
     if DoSkymap:
         smooth_size = 0.07
         n_rebin = 4
@@ -2176,7 +2216,7 @@ for s in range(0,len(source)):
         print 'bkgd_syst = %s'%(bkgd_syst)
         s2b = 0.
         s2b_err = 0.
-        if not PercentCrab=="_Crab0":
+        if not "_Crab0" in PercentCrab and not "_Crab0" in target:
             s2b, s2b_err = Variation_ratio(Hist_TrueBkgd_Theta2_SumElev[e],Hist_Bkgd_Theta2_SumElev[e],theta2_lower,theta2_upper,bkgd_syst)
         else:
             s2b, s2b_err = Variation_ratio(Hist_Data_Theta2_SumElev[e],Hist_Bkgd_Theta2_SumElev[e],0.2,theta2_upper,bkgd_syst)
@@ -2185,7 +2225,7 @@ for s in range(0,len(source)):
         Hist_RDBM_S2B[len(Hist_RDBM_S2B)-1].SetBinError(e+1,s2b_err)
         dark_syst = 0.
         if Hist_Dark_Theta2_SumElev[e].Integral()!=0.: dark_syst = Hist_Dark_Syst_Theta2_SumElev[e].Integral()/Hist_Dark_Theta2_SumElev[e].Integral()
-        if not PercentCrab=="_Crab0":
+        if not "_Crab0" in PercentCrab and not "_Crab0" in target:
             s2b, s2b_err = Variation_ratio(Hist_TrueBkgd_Theta2_SumElev[e],Hist_Dark_Theta2_SumElev[e],theta2_lower,theta2_upper,dark_syst)
         else:
             s2b, s2b_err = Variation_ratio(Hist_Data_Theta2_SumElev[e],Hist_Dark_Theta2_SumElev[e],0.2,theta2_upper,dark_syst)
@@ -2194,7 +2234,7 @@ for s in range(0,len(source)):
         Hist_Dark_S2B[len(Hist_Dark_S2B)-1].SetBinError(e+1,s2b_err)
 
     legend_S2B += ['%s (%0.1f hrs)'%(target,exposure_hours)]
-    color_S2B += [49-s]
+    color_S2B += [color_code[(s % 3)]+int(s/3.)]
 
     InputFile.Close()
     Make2DProjectionPlot(Hist_Dark_ShowerDirection_Sum,'Azimuth','Zenith','Dark_ShowerDirection',False)
@@ -2218,13 +2258,13 @@ for s in range(0,len(source)):
 if UseRDBM:
     MakeComparisonPlotSigDist(Hist_RDBM_S2B,legend_S2B,color_S2B,'E [GeV]','Mismodeling_RDBM_systematics',0.6,1.4,True,False)
     MakeComparisonPlotSigDist(Hist_RDBM_S2B_GalLat,legend_S2B,color_S2B,'gal. lat.','Mismodeling_RDBM_systematics_GalLat',0.6,1.4,False,False)
+    MakeComparisonPlotSigDist(Hist_RDBM_S2B_NSB,legend_S2B,color_S2B,'NSB','Mismodeling_RDBM_systematics_NSB',0.6,1.4,False,False)
+    MakeComparisonPlotSigDist(Hist_RDBM_S2B_dNSB,legend_S2B,color_S2B,'diff. NSB','Mismodeling_RDBM_systematics_dNSB',0.6,1.4,False,False)
     MakeComparisonPlotTwoColumn(Hist_SumE_S2B,legend_S2B,color_S2B,'methods','Mismodeling_systematics',0.6,1.4,False,False)
 if UseDark:
     MakeComparisonPlotSigDist(Hist_Dark_S2B,legend_S2B,color_S2B,'E [GeV]','Mismodeling_Dark_systematics',0.6,1.4,True,False)
-MakeComparisonPlot(Hist_Bkg_Rate,legend2_S2B,color2_S2B,'E [GeV]','event rate','BackgroundRate',True,True)
-MakeComparisonPlot(Hist_Sig_Rate,legend2_S2B,color2_S2B,'E [GeV]','event rate','SignalRate',True,True)
-MakeComparisonPlot(Hist_NormSig_Rate,legend2_S2B,color2_S2B,'E [GeV]','event rate','NormSignalRate',True,True)
-MakeComparisonPlot(Hist_S2B_Rate,legend2_S2B,color2_S2B,'E [GeV]','event rate','Sig2BkgRate',True,True)
+    MakeComparisonPlotSigDist(Hist_Dark_S2B_NSB,legend_S2B,color_S2B,'NSB','Mismodeling_Dark_systematics_NSB',0.6,1.4,False,False)
+    MakeComparisonPlotSigDist(Hist_Dark_S2B_dNSB,legend_S2B,color_S2B,'diff. NSB','Mismodeling_Dark_systematics_dNSB',0.6,1.4,False,False)
 
 for hist in range(0,len(Hist_Eigenvalue_Rank)):
     Hist_Eigenvalue_Rank[hist].GetXaxis().SetRangeUser(0,16)
@@ -2255,3 +2295,9 @@ Hists += [Prof_GalExcess]
 legends += ["VERITAS extragalactic sources"]
 colors += [2]
 MakeComparisonPlot(Hists,legends,colors,"Gal. lat.","variance","GalExcess",False,False)
+
+MakeComparisonPlot(Hist_Bkg_Rate,legend2_S2B,color2_S2B,'E [GeV]','event rate','BackgroundRate',True,True)
+MakeComparisonPlot(Hist_Sig_Rate,legend2_S2B,color2_S2B,'E [GeV]','event rate','SignalRate',True,True)
+MakeComparisonPlot(Hist_NormSig_Rate,legend2_S2B,color2_S2B,'E [GeV]','event rate','NormSignalRate',True,True)
+MakeComparisonPlot(Hist_S2B_Rate,legend2_S2B,color2_S2B,'E [GeV]','event rate','Sig2BkgRate',True,True)
+
