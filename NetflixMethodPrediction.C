@@ -405,12 +405,12 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
                 double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
                 double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
                 double width = 0.1;
-                double data_err = max(0.8,pow(data,0.5));
-                double model_err = max(0.8,pow(abs(model),0.5));
+                double data_err = max(1.0,pow(data,0.5));
+                double model_err = max(1.0,pow(abs(model),0.5));
                 //double gamma_err = 0.5*gamma;
-                double gamma_err = max(0.8,pow(abs(gamma),0.5));
-                //weight = 1./(data_err*data_err+model_err*model_err+gamma_err*gamma_err);
-                weight = 1./(data_err*data_err+model_err*model_err);
+                double gamma_err = max(1.0,pow(abs(gamma),0.5));
+                weight = 1./(data_err*data_err+model_err*model_err+gamma_err*gamma_err);
+                //weight = 1./(data_err*data_err+model_err*model_err);
                 double chi2_this = weight*pow(data-model-gamma,2);
                 if (isnan(chi2_this))
                 {
@@ -450,8 +450,8 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
                 double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
                 double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
                 double width = 0.1;
-                double data_err = max(0.8,pow(data,0.5));
-                double model_err = max(0.8,pow(abs(model),0.5));
+                double data_err = max(1.0,pow(data,0.5));
+                double model_err = max(1.0,pow(abs(model),0.5));
                 weight = 1./(data_err*data_err+model_err*model_err);
                 double chi2_this = weight*pow(data-model,2);
                 if (isnan(chi2_this))

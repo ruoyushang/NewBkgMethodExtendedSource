@@ -101,6 +101,7 @@ double exposure_hours = 0.;
 double exposure_hours_dark = 0.;
 double NSB_avg = 0.;
 double NSB_avg_dark = 0.;
+double NSB_diff_dark = 0.;
 double NSB_low_cut = 0.;
 double NSB_high_cut = 100.;
 double mean_tele_point_ra = 0.;
@@ -406,10 +407,20 @@ vector<pair<string,int>> SelectONRunList(vector<pair<string,int>> Data_runlist, 
         char run_number[50];
         char Data_observation[50];
         sprintf(run_number, "%i", int(Data_runlist[run].second));
+        sprintf(Data_observation, "%s", Data_runlist[run].first.c_str());
         double NSB_thisrun = GetRunNSB(int(Data_runlist[run].second));
+        if (TString(Data_observation).Contains("NSB075")) NSB_thisrun = 3.30;
+        if (TString(Data_observation).Contains("NSB100")) NSB_thisrun = 3.84;
+        if (TString(Data_observation).Contains("NSB150")) NSB_thisrun = 4.69;
+        if (TString(Data_observation).Contains("NSB200")) NSB_thisrun = 5.41;
+        if (TString(Data_observation).Contains("NSB250")) NSB_thisrun = 6.00;
+        if (TString(Data_observation).Contains("NSB325")) NSB_thisrun = 6.83;
+        if (TString(Data_observation).Contains("NSB425")) NSB_thisrun = 7.73;
+        if (TString(Data_observation).Contains("NSB550")) NSB_thisrun = 8.75;
+        if (TString(Data_observation).Contains("NSB750")) NSB_thisrun = 10.18;
+        if (TString(Data_observation).Contains("NSB1000")) NSB_thisrun = 11.77;
         if (NSB_thisrun < NSB_low_cut) continue;
         if (NSB_thisrun > NSB_high_cut) continue;
-        sprintf(Data_observation, "%s", Data_runlist[run].first.c_str());
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
@@ -433,8 +444,19 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
         sprintf(ON_observation, "%s", ON_runlist[on_run].first.c_str());
         string ON_filename;
         ON_filename = TString("$VERITAS_USER_DATA_DIR/"+TString(ON_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(ON_runnumber)+".root");
-        ON_pointing.push_back(GetRunElevAzim(ON_filename,int(ON_runlist[on_run].second)));
+        if (TString(ON_observation).Contains("Proton")) ON_pointing.push_back(std::make_pair(70,0));
+        else ON_pointing.push_back(GetRunElevAzim(ON_filename,int(ON_runlist[on_run].second)));
         double NSB_thisrun = GetRunNSB(int(ON_runlist[on_run].second));
+        if (TString(ON_observation).Contains("NSB075")) NSB_thisrun = 3.30;
+        if (TString(ON_observation).Contains("NSB100")) NSB_thisrun = 3.84;
+        if (TString(ON_observation).Contains("NSB150")) NSB_thisrun = 4.69;
+        if (TString(ON_observation).Contains("NSB200")) NSB_thisrun = 5.41;
+        if (TString(ON_observation).Contains("NSB250")) NSB_thisrun = 6.00;
+        if (TString(ON_observation).Contains("NSB325")) NSB_thisrun = 6.83;
+        if (TString(ON_observation).Contains("NSB425")) NSB_thisrun = 7.73;
+        if (TString(ON_observation).Contains("NSB550")) NSB_thisrun = 8.75;
+        if (TString(ON_observation).Contains("NSB750")) NSB_thisrun = 10.18;
+        if (TString(ON_observation).Contains("NSB1000")) NSB_thisrun = 11.77;
         ON_NSB.push_back(NSB_thisrun);
     }
 
@@ -448,8 +470,19 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
         sprintf(OFF_observation, "%s", OFF_runlist[off_run].first.c_str());
         string OFF_filename;
         OFF_filename = TString("$VERITAS_USER_DATA_DIR/"+TString(OFF_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(OFF_runnumber)+".root");
-        OFF_pointing.push_back(GetRunElevAzim(OFF_filename,int(OFF_runlist[off_run].second)));
+        if (TString(OFF_observation).Contains("Proton")) OFF_pointing.push_back(std::make_pair(70,0));
+        else OFF_pointing.push_back(GetRunElevAzim(OFF_filename,int(OFF_runlist[off_run].second)));
         double NSB_thisrun = GetRunNSB(int(OFF_runlist[off_run].second));
+        if (TString(OFF_observation).Contains("NSB075")) NSB_thisrun = 3.30;
+        if (TString(OFF_observation).Contains("NSB100")) NSB_thisrun = 3.84;
+        if (TString(OFF_observation).Contains("NSB150")) NSB_thisrun = 4.69;
+        if (TString(OFF_observation).Contains("NSB200")) NSB_thisrun = 5.41;
+        if (TString(OFF_observation).Contains("NSB250")) NSB_thisrun = 6.00;
+        if (TString(OFF_observation).Contains("NSB325")) NSB_thisrun = 6.83;
+        if (TString(OFF_observation).Contains("NSB425")) NSB_thisrun = 7.73;
+        if (TString(OFF_observation).Contains("NSB550")) NSB_thisrun = 8.75;
+        if (TString(OFF_observation).Contains("NSB750")) NSB_thisrun = 10.18;
+        if (TString(OFF_observation).Contains("NSB1000")) NSB_thisrun = 11.77;
         OFF_NSB.push_back(NSB_thisrun);
     }
 
@@ -472,7 +505,7 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
                 }
                 if (already_used_run) continue;
                 double chi2 = pow(ON_pointing[on_run].first-OFF_pointing[off_run].first,2);
-                chi2 += 4.*pow(ON_NSB[on_run]-OFF_NSB[off_run],2);
+                chi2 += 4.*pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2);
                 if (best_chi2>chi2)
                 {
                     best_chi2 = chi2;
@@ -644,7 +677,7 @@ bool ControlSelectionTheta2()
     if (MSCW>MSCW_cut_blind*3.0) return false;
     return true;
 }
-void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double tel_elev_lower_input, double tel_elev_upper_input, double NSB_low_cut_input, double NSB_high_cut_input, bool isON, double MSCW_cut_input, double MSCL_cut_input)
+void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double tel_elev_lower_input, double tel_elev_upper_input, double NSB_diff, bool isON, double MSCW_cut_input, double MSCL_cut_input)
 {
 
     TH1::SetDefaultSumw2();
@@ -659,11 +692,12 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     TString file_tag;
     if (isON) file_tag = "ON";
     else file_tag = "OFF";
-    NSB_low_cut = NSB_low_cut_input;
-    NSB_high_cut = NSB_high_cut_input;
+    NSB_diff_dark = NSB_diff;
 
     vector<pair<string,int>> PhotonMC_runlist = GetRunList("Photon");
     vector<pair<string,int>> PhotonData_runlist = GetRunList("Crab");
+    if (TString(target).Contains("Crab")) PhotonData_runlist = GetRunList("Mrk421");
+    PhotonData_runlist = SelectONRunList(PhotonData_runlist,TelElev_lower,TelElev_upper,0,360);
 
     // Get a list of target observation runs
     vector<pair<string,int>> Data_runlist_init = GetRunList(target);
@@ -676,11 +710,10 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     // Get a list of dark observation runs
     vector<pair<string,int>> Dark_runlist_init = GetRunList("Everything");
     if (TString(target).Contains("V5")) Dark_runlist_init = GetRunList("EverythingV5");
+    if (TString(target).Contains("Proton")) Dark_runlist_init = GetRunList("EverythingProton");
     vector<pair<string,int>> Dark_runlist;
     std::cout << "initial Dark_runlist size = " << Dark_runlist_init.size() << std::endl;
-    if (!TString(target).Contains("Proton")) Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
-    //else Dark_runlist = GetRunList("Proton");
-    else Dark_runlist = Data_runlist;
+    Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
     std::cout << "final Dark_runlist size = " << Dark_runlist.size() << std::endl;
     //vector<pair<string,int>> Dark_runlist = GetRunList("Proton");
 
@@ -796,6 +829,16 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         double time_1 = Time;
         exposure_hours_dark += (time_1-time_0)/3600.;
         double NSB_thisrun = GetRunNSB(int(Dark_runlist[run].second));
+        if (TString(Dark_observation).Contains("NSB075")) NSB_thisrun = 3.30;
+        if (TString(Dark_observation).Contains("NSB100")) NSB_thisrun = 3.84;
+        if (TString(Dark_observation).Contains("NSB150")) NSB_thisrun = 4.69;
+        if (TString(Dark_observation).Contains("NSB200")) NSB_thisrun = 5.41;
+        if (TString(Dark_observation).Contains("NSB250")) NSB_thisrun = 6.00;
+        if (TString(Dark_observation).Contains("NSB325")) NSB_thisrun = 6.83;
+        if (TString(Dark_observation).Contains("NSB425")) NSB_thisrun = 7.73;
+        if (TString(Dark_observation).Contains("NSB550")) NSB_thisrun = 8.75;
+        if (TString(Dark_observation).Contains("NSB750")) NSB_thisrun = 10.18;
+        if (TString(Dark_observation).Contains("NSB1000")) NSB_thisrun = 11.77;
         NSB_avg_dark += (time_1-time_0)/3600.*NSB_thisrun;
         Hist_Dark_NSB.Fill(NSB_thisrun);
 
@@ -820,7 +863,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             if (SizeSecondMax<600.) continue;
             if (pow(Xcore*Xcore+Ycore*Ycore,0.5)>350) continue;
             if (R2off>4.) continue;
-            if (Dark_runlist[run].first.find("Proton")!=std::string::npos) 
+            if (Dark_runlist[run].first.find("Proton")!=std::string::npos && NSB_diff_dark==0.) 
             {
                 //if (Data_runlist[0].first.find("NSB")==std::string::npos && abs(Shower_Az-180.)<90.) continue;
                 if (abs(Shower_Az-180.)<90.) continue;
@@ -889,6 +932,16 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         double time_1 = Time;
         exposure_hours += (time_1-time_0)/3600.;
         double NSB_thisrun = GetRunNSB(int(Data_runlist[run].second));
+        if (TString(Data_observation).Contains("NSB075")) NSB_thisrun = 3.30;
+        if (TString(Data_observation).Contains("NSB100")) NSB_thisrun = 3.84;
+        if (TString(Data_observation).Contains("NSB150")) NSB_thisrun = 4.69;
+        if (TString(Data_observation).Contains("NSB200")) NSB_thisrun = 5.41;
+        if (TString(Data_observation).Contains("NSB250")) NSB_thisrun = 6.00;
+        if (TString(Data_observation).Contains("NSB325")) NSB_thisrun = 6.83;
+        if (TString(Data_observation).Contains("NSB425")) NSB_thisrun = 7.73;
+        if (TString(Data_observation).Contains("NSB550")) NSB_thisrun = 8.75;
+        if (TString(Data_observation).Contains("NSB750")) NSB_thisrun = 10.18;
+        if (TString(Data_observation).Contains("NSB1000")) NSB_thisrun = 11.77;
         NSB_avg += (time_1-time_0)/3600.*NSB_thisrun;
         Hist_Data_NSB.Fill(NSB_thisrun);
 
@@ -930,7 +983,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             if (SizeSecondMax<600.) continue;
             if (pow(Xcore*Xcore+Ycore*Ycore,0.5)>350) continue;
             if (R2off>4.) continue;
-            if (Data_runlist[run].first.find("Proton")!=std::string::npos) 
+            if (Data_runlist[run].first.find("Proton")!=std::string::npos && NSB_diff_dark==0.) 
             {
                 //if (Data_runlist[run].first.find("NSB")==std::string::npos && abs(Shower_Az-180.)>90.) continue;
                 if (abs(Shower_Az-180.)>90.) continue;
@@ -1186,11 +1239,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             int e = energy;
             if (!SelectNImages(3,4)) continue;
             Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze,photon_weight);
-            if (theta2<0.05)
+            if (theta2<0.2)
             {
                 Hist_GammaDataON_MSCLW.at(e).Fill(MSCL,MSCW);
             }
-            else if (theta2>0.05 && theta2<0.1)
+            else if (theta2>0.2 && theta2<0.5)
             {
                 Hist_GammaDataOFF_MSCLW.at(e).Fill(MSCL,MSCW);
             }
@@ -1199,12 +1252,16 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     }
     for (int e=0;e<N_energy_bins;e++) 
     {
-        int binx_blind = Hist_GammaDataON_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_lower);
-        int binx_upper = Hist_GammaDataON_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_upper)-1;
-        int biny_blind = Hist_GammaDataON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_upper);
-        int biny_upper = Hist_GammaDataON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_upper*3)-1;
-        double GammaDataON_CR_Integral = Hist_GammaDataON_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
-        double GammaDataOFF_CR_Integral = Hist_GammaDataOFF_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
+        int binx_blind = Hist_GammaDataON_MSCLW.at(e).GetXaxis()->FindBin(1.);
+        int binx_lower = Hist_GammaDataON_MSCLW.at(e).GetXaxis()->FindBin(MSCL_plot_lower);
+        int biny_blind = Hist_GammaDataON_MSCLW.at(e).GetYaxis()->FindBin(1.);
+        int biny_lower = Hist_GammaDataON_MSCLW.at(e).GetYaxis()->FindBin(MSCW_plot_lower);
+        double GammaDataON_SR_Integral = Hist_GammaDataON_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        double GammaDataOFF_SR_Integral = Hist_GammaDataOFF_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        double GammaDataON_all_Integral = Hist_GammaDataON_MSCLW.at(e).Integral();
+        double GammaDataOFF_all_Integral = Hist_GammaDataOFF_MSCLW.at(e).Integral();
+        double GammaDataON_CR_Integral = GammaDataON_all_Integral-GammaDataON_SR_Integral;
+        double GammaDataOFF_CR_Integral = GammaDataOFF_all_Integral-GammaDataOFF_SR_Integral;
         double scale = GammaDataON_CR_Integral/GammaDataOFF_CR_Integral;
         Hist_GammaDataOFF_MSCLW.at(e).Scale(scale);
         Hist_GammaData_MSCLW.at(e).Add(&Hist_GammaDataON_MSCLW.at(e));
