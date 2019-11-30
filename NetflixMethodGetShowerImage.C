@@ -497,7 +497,10 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
             double best_chi2 = 10000.;
             for (int off_run=0;off_run<OFF_runlist.size();off_run++)
             {
-                if (ON_runlist[on_run].first.compare(OFF_runlist[off_run].first) == 0) continue;
+                if (ON_runlist[on_run].first.find("Proton")==std::string::npos)
+                {
+                    if (ON_runlist[on_run].first.compare(OFF_runlist[off_run].first) == 0) continue;
+                }
                 bool already_used_run = false;
                 for (int new_run=0;new_run<new_list.size();new_run++)
                 {
@@ -798,6 +801,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         char Dark_observation[50];
         sprintf(run_number, "%i", int(Dark_runlist[run].second));
         sprintf(Dark_observation, "%s", Dark_runlist[run].first.c_str());
+        std::cout << "Use dark run " << Dark_runlist[run].first << std::endl;
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Dark_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
