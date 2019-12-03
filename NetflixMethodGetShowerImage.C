@@ -102,6 +102,7 @@ double exposure_hours_dark = 0.;
 double NSB_avg = 0.;
 double NSB_avg_dark = 0.;
 double NSB_diff_dark = 0.;
+double Elev_diff_dark = 0.;
 double NSB_low_cut = 0.;
 double NSB_high_cut = 100.;
 double mean_tele_point_ra = 0.;
@@ -507,7 +508,7 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
                     if (int(new_list[new_run].second)==int(OFF_runlist[off_run].second)) already_used_run = true;
                 }
                 if (already_used_run) continue;
-                double chi2 = pow(ON_pointing[on_run].first-OFF_pointing[off_run].first,2);
+                double chi2 = pow(ON_pointing[on_run].first+Elev_diff_dark-OFF_pointing[off_run].first,2);
                 chi2 += 4.*pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2);
                 if (best_chi2>chi2)
                 {
@@ -680,7 +681,7 @@ bool ControlSelectionTheta2()
     if (MSCW>MSCW_cut_blind*3.0) return false;
     return true;
 }
-void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double tel_elev_lower_input, double tel_elev_upper_input, double NSB_diff, bool isON, double MSCW_cut_input, double MSCL_cut_input)
+void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double tel_elev_lower_input, double tel_elev_upper_input, double Elev_diff, double NSB_diff, bool isON, double MSCW_cut_input, double MSCL_cut_input)
 {
 
     TH1::SetDefaultSumw2();
@@ -695,6 +696,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     TString file_tag;
     if (isON) file_tag = "ON";
     else file_tag = "OFF";
+    Elev_diff_dark = Elev_diff;
     NSB_diff_dark = NSB_diff;
 
     vector<pair<string,int>> PhotonMC_runlist = GetRunList("Photon");

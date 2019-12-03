@@ -673,7 +673,7 @@ double FourierChi2Function(const double *par)
     hist_diff.Add(&hist_data);
     hist_diff.Add(&hist_model,-1.);
     double gamma_total = hist_diff.Integral(binx_lower,binx_blind,biny_lower,biny_blind);
-    gamma_total = max(0.,gamma_total);
+    //gamma_total = max(0.,gamma_total);
     double scale = gamma_total/double(hist_gamma.Integral(binx_lower,binx_blind,biny_lower,biny_blind));
     //std::cout << "binx_lower " << binx_lower << std::endl;
     //std::cout << "binx_blind " << binx_blind << std::endl;
