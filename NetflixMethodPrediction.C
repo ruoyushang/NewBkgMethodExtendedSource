@@ -407,9 +407,9 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
                 double width = 0.1;
                 double data_err = max(1.0,pow(data,0.5));
                 double model_err = max(1.0,pow(abs(model),0.5));
-                //double gamma_err = 0.5*gamma;
                 double gamma_err = max(1.0,pow(abs(gamma),0.5));
                 weight = 1./(data_err*data_err+model_err*model_err+gamma_err*gamma_err);
+                //double model_err = max(1.0,pow(abs(model+gamma),0.5));
                 //weight = 1./(data_err*data_err+model_err*model_err);
                 double chi2_this = weight*pow(data-model-gamma,2);
                 if (isnan(chi2_this))
@@ -672,16 +672,11 @@ double FourierChi2Function(const double *par)
     int biny_upper = hist_diff.GetYaxis()->FindBin(MSCW_cut_upper*2)-1;
     hist_diff.Add(&hist_data);
     hist_diff.Add(&hist_model,-1.);
-    double gamma_total = hist_diff.Integral(binx_lower,binx_blind,biny_lower,biny_blind);
-    //gamma_total = max(0.,gamma_total);
-    double scale = gamma_total/double(hist_gamma.Integral(binx_lower,binx_blind,biny_lower,biny_blind));
-    //std::cout << "binx_lower " << binx_lower << std::endl;
-    //std::cout << "binx_blind " << binx_blind << std::endl;
-    //std::cout << "biny_lower " << biny_lower << std::endl;
-    //std::cout << "biny_blind " << biny_blind << std::endl;
-    //std::cout << "hist_gamma.Integral() " << hist_gamma.Integral() << std::endl;
-    //std::cout << "hist_gamma.Integral(binx_lower,binx_blind,biny_lower,biny_blind) " << hist_gamma.Integral(binx_lower,binx_blind,biny_lower,biny_blind) << std::endl;
-    //std::cout << "gamma_total = " << gamma_total << std::endl;
+    //double gamma_total = hist_diff.Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+    double gamma_total = hist_diff.Integral();
+    gamma_total = max(0.,gamma_total);
+    //double scale = gamma_total/double(hist_gamma.Integral(binx_lower,binx_blind,biny_lower,biny_blind));
+    double scale = gamma_total/double(hist_gamma.Integral());
     hist_gamma.Scale(scale);
     if (signalfree_model) hist_gamma.Scale(0);
 
@@ -1527,9 +1522,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         n_taylor_modes = 6;
 
         NumberOfEigenvectors = rank;
-        //if (CurrentEnergy>=473.) NumberOfEigenvectors = 4;
-        //if (CurrentEnergy>=794.) NumberOfEigenvectors = 3;
-        //if (CurrentEnergy>=2239.) NumberOfEigenvectors = 2;
+        //if (CurrentEnergy>=562.) NumberOfEigenvectors = 2;
 
         eigensolver_data = ComplexEigenSolver<MatrixXcd>(mtx_data);
         eigensolver_dark = ComplexEigenSolver<MatrixXcd>(mtx_dark);

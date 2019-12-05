@@ -677,8 +677,10 @@ bool SignalSelectionTheta2()
 bool ControlSelectionTheta2()
 {
     if (SignalSelectionTheta2()) return false;
-    if (MSCL>MSCL_cut_blind*1.0) return false;
-    if (MSCW>MSCW_cut_blind*3.0) return false;
+    //if (MSCL>MSCL_cut_blind*1.0) return false;
+    //if (MSCW>MSCW_cut_blind*3.0) return false;
+    if (MSCL>MSCL_cut_blind+0.0) return false;
+    if (MSCW>MSCW_cut_blind+2.0) return false;
     return true;
 }
 void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double tel_elev_lower_input, double tel_elev_upper_input, double Elev_diff, double NSB_diff, bool isON, double MSCW_cut_input, double MSCL_cut_input)
@@ -754,6 +756,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     vector<TH2D> Hist_Data_CR_Skymap_Raw;
     vector<TH2D> Hist_Dark_SR_Skymap;
     vector<TH2D> Hist_Dark_CR_Skymap;
+    vector<TH1D> Hist_Dark_SR_Theta2;
+    vector<TH1D> Hist_Dark_CR_Theta2;
     for (int e=0;e<N_energy_bins;e++) 
     {
 
@@ -794,6 +798,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Data_CR_Skymap_Raw.push_back(TH2D("Hist_Data_CR_Skymap_Raw_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
         Hist_Dark_SR_Skymap.push_back(TH2D("Hist_Dark_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",30,-3,3,30,-3,3));
         Hist_Dark_CR_Skymap.push_back(TH2D("Hist_Dark_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",30,-3,3,30,-3,3));
+        Hist_Dark_SR_Theta2.push_back(TH1D("Hist_Dark_SR_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,10));
+        Hist_Dark_CR_Theta2.push_back(TH1D("Hist_Dark_CR_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,10));
     }
 
     std::cout << "Prepare dark run samples..." << std::endl;
@@ -883,10 +889,12 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
                 if (SignalSelectionTheta2())
                 {
                     Hist_Dark_SR_Skymap.at(e).Fill(Xoff,Yoff);
+                    Hist_Dark_SR_Theta2.at(e).Fill(Xoff*Xoff+Yoff*Yoff);
                 }
                 if (ControlSelectionTheta2())
                 {
                     Hist_Dark_CR_Skymap.at(e).Fill(Xoff,Yoff);
+                    Hist_Dark_CR_Theta2.at(e).Fill(Xoff*Xoff+Yoff*Yoff);
                 }
             }
         }
@@ -1018,10 +1026,13 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             {
                 if (FoV() || Data_runlist[run].first.find("Proton")!=std::string::npos)
                 {
-                    int binx = Hist_Dark_SR_Skymap.at(e).GetXaxis()->FindBin(Xoff);
-                    int biny = Hist_Dark_SR_Skymap.at(e).GetYaxis()->FindBin(Yoff);
-                    double dark_cr_content = Hist_Dark_CR_Skymap.at(e).GetBinContent(binx,biny);
-                    double dark_sr_content = Hist_Dark_SR_Skymap.at(e).GetBinContent(binx,biny);
+                    //int binx = Hist_Dark_SR_Skymap.at(e).GetXaxis()->FindBin(Xoff);
+                    //int biny = Hist_Dark_SR_Skymap.at(e).GetYaxis()->FindBin(Yoff);
+                    //double dark_cr_content = Hist_Dark_CR_Skymap.at(e).GetBinContent(binx,biny);
+                    //double dark_sr_content = Hist_Dark_SR_Skymap.at(e).GetBinContent(binx,biny);
+                    int bin = Hist_Dark_SR_Theta2.at(e).FindBin(Xoff*Xoff+Yoff*Yoff);
+                    double dark_cr_content = Hist_Dark_CR_Theta2.at(e).GetBinContent(bin);
+                    double dark_sr_content = Hist_Dark_SR_Theta2.at(e).GetBinContent(bin);
                     double weight = 0.;
                     if (dark_cr_content>0.) weight = dark_sr_content/dark_cr_content;
                     Hist_Data_CR_SelectFoV_Theta2.at(e).Fill(theta2,weight);
@@ -1172,10 +1183,13 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             {
                 if (FoV() && GammaFoV())
                 {
-                    int binx = Hist_Dark_SR_Skymap.at(e).GetXaxis()->FindBin(Xoff);
-                    int biny = Hist_Dark_SR_Skymap.at(e).GetYaxis()->FindBin(Yoff);
-                    double dark_cr_content = Hist_Dark_CR_Skymap.at(e).GetBinContent(binx,biny);
-                    double dark_sr_content = Hist_Dark_SR_Skymap.at(e).GetBinContent(binx,biny);
+                    //int binx = Hist_Dark_SR_Skymap.at(e).GetXaxis()->FindBin(Xoff);
+                    //int biny = Hist_Dark_SR_Skymap.at(e).GetYaxis()->FindBin(Yoff);
+                    //double dark_cr_content = Hist_Dark_CR_Skymap.at(e).GetBinContent(binx,biny);
+                    //double dark_sr_content = Hist_Dark_SR_Skymap.at(e).GetBinContent(binx,biny);
+                    int bin = Hist_Dark_SR_Theta2.at(e).FindBin(Xoff*Xoff+Yoff*Yoff);
+                    double dark_cr_content = Hist_Dark_CR_Theta2.at(e).GetBinContent(bin);
+                    double dark_sr_content = Hist_Dark_SR_Theta2.at(e).GetBinContent(bin);
                     double weight = 0.;
                     if (dark_cr_content>0.) weight = dark_sr_content/dark_cr_content;
                     Hist_Data_CR_SelectFoV_Theta2.at(e).Fill(theta2,weight*photon_weight);
