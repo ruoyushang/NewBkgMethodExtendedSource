@@ -405,12 +405,16 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
                 double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
                 double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
                 double width = 0.1;
-                double data_err = max(1.0,pow(data,0.5));
-                double model_err = max(1.0,pow(abs(model),0.5));
-                double gamma_err = max(1.0,pow(abs(gamma),0.5));
-                weight = 1./(data_err*data_err+model_err*model_err+gamma_err*gamma_err);
+                //double data_err = max(1.0,pow(data,0.5));
+                //double model_err = max(1.0,pow(abs(model),0.5));
+                //double gamma_err = max(1.0,pow(abs(gamma),0.5));
+                //weight = 1./(data_err*data_err+model_err*model_err+gamma_err*gamma_err);
+                //double data_err = max(1.0,pow(data,0.5));
                 //double model_err = max(1.0,pow(abs(model+gamma),0.5));
                 //weight = 1./(data_err*data_err+model_err*model_err);
+                double data_err = max(1.0,pow(max(0.,data-gamma),0.5));
+                double model_err = max(1.0,pow(max(0.,model),0.5));
+                weight = 1./(data_err*data_err+model_err*model_err);
                 double chi2_this = weight*pow(data-model-gamma,2);
                 if (isnan(chi2_this))
                 {
@@ -1222,7 +1226,7 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.005);
-            //Chi2Minimizer->SetVariableLimits(first_index+row,-limit,limit);
+            //if (NthEigenvector>1) Chi2Minimizer->SetVariableLimits(first_index+row,0.,0.);
         }
 
         limit = 0.2;
@@ -1230,7 +1234,7 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.005);
-            //Chi2Minimizer->SetVariableLimits(first_index+col,-limit,limit);
+            //if (NthEigenvector>1) Chi2Minimizer->SetVariableLimits(first_index+col,0.,0.);
         }
 
         // eigenvalues
