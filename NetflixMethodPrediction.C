@@ -412,9 +412,12 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
                 //double data_err = max(1.0,pow(data,0.5));
                 //double model_err = max(1.0,pow(abs(model+gamma),0.5));
                 //weight = 1./(data_err*data_err+model_err*model_err);
-                double data_err = max(1.0,pow(max(0.,data-gamma),0.5));
-                double model_err = max(1.0,pow(max(0.,model),0.5));
+                double data_err = max(1.0,pow(data,0.5));
+                double model_err = max(1.0,pow(abs(model),0.5));
                 weight = 1./(data_err*data_err+model_err*model_err);
+                //double data_err = max(1.0,pow(max(0.,data-gamma),0.5));
+                //double model_err = max(1.0,pow(max(0.,model),0.5));
+                //weight = 1./(data_err*data_err+model_err*model_err);
                 double chi2_this = weight*pow(data-model-gamma,2);
                 if (isnan(chi2_this))
                 {
@@ -436,8 +439,8 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
 {
     int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
     int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
-    //int binx_upper = hist_data->GetXaxis()->FindBin(3.);
-    //int biny_upper = hist_data->GetXaxis()->FindBin(1.5);
+    int binx_upper = hist_data->GetXaxis()->FindBin(MSCL_cut_blind+1.);
+    int biny_upper = hist_data->GetXaxis()->FindBin(MSCW_cut_blind+1.);
     double chi2 = 0.;
     for (int bx=1;bx<=hist_data->GetNbinsX();bx++)
     {
@@ -445,7 +448,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
         {
             if (bx>=binx_blind || by>=biny_blind)
             {
-                //if (bx>=binx_upper || by>=biny_upper) continue;
+                if (bx>=binx_upper || by>=biny_upper) continue;
                 double data = hist_data->GetBinContent(bx,by);
                 double dark = hist_dark->GetBinContent(bx,by);
                 double model = hist_model->GetBinContent(bx,by);
@@ -676,11 +679,11 @@ double FourierChi2Function(const double *par)
     int biny_upper = hist_diff.GetYaxis()->FindBin(MSCW_cut_upper*2)-1;
     hist_diff.Add(&hist_data);
     hist_diff.Add(&hist_model,-1.);
-    //double gamma_total = hist_diff.Integral(binx_lower,binx_blind,biny_lower,biny_blind);
-    double gamma_total = hist_diff.Integral();
+    double gamma_total = hist_diff.Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+    //double gamma_total = hist_diff.Integral();
     gamma_total = max(0.,gamma_total);
-    //double scale = gamma_total/double(hist_gamma.Integral(binx_lower,binx_blind,biny_lower,biny_blind));
-    double scale = gamma_total/double(hist_gamma.Integral());
+    double scale = gamma_total/double(hist_gamma.Integral(binx_lower,binx_blind,biny_lower,biny_blind));
+    //double scale = gamma_total/double(hist_gamma.Integral());
     hist_gamma.Scale(scale);
     if (signalfree_model) hist_gamma.Scale(0);
 
