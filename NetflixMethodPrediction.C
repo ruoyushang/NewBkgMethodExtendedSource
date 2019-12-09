@@ -1256,7 +1256,7 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
                 //limit = 0.1*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
                 //if (NthEigenvalue>NthEigenvector) limit = 0.;
                 //limit = 0.;
-                limit = 0.05*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
+                limit = 0.02*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
             }
             Chi2Minimizer->SetVariable(first_index+NthEigenvalue-1, "par["+std::to_string(int(first_index+NthEigenvalue-1))+"]", input_value, 0.01*limit);
             Chi2Minimizer->SetVariableLimits(first_index+NthEigenvalue-1,input_value-limit,input_value+limit);

@@ -20,39 +20,41 @@ ROOT.gStyle.SetPaintTextFormat("0.3f")
 ONOFF = "OFF"
 
 PercentCrab = "_Crab0"
-#PercentCrab = "_Crab10"
 #PercentCrab = "_Crab20"
 #PercentCrab = "_Crab50"
 #PercentCrab = "_Crab100"
+#PercentCrab = "_Crab200"
+#PercentCrab = "_Crab400"
 
 FileFolder = []
 FileTag = []
 FileLabel = []
 
 Syst_MDM = 0.
+Syst_Dark = 0.
 
 #FileFolder += ['output_test']
 #FileTag += ['test']
 #FileLabel += ['test']
 
-#FileFolder += ['output_unblind_4x4_dNSBp0_tight']
+#FileFolder += ['output_unblind_4x4_nominal_tight']
 #FileTag += ['tight']
 #FileLabel += ['tight']
-FileFolder += ['output_unblind_4x4_dNSBp0_loose']
+FileFolder += ['output_unblind_4x4_nominal_loose']
 FileTag += ['loose']
 FileLabel += ['loose']
 
 #FileFolder += ['output_unblind_4x4_dNSBm3_loose']
 #FileTag += ['dNSBm3']
 #FileLabel += ['#Delta NSB = -3']
-#FileFolder += ['output_unblind_4x4_dNSBp0_loose']
+#FileFolder += ['output_unblind_4x4_nominal_loose']
 #FileTag += ['dNSBp0']
 #FileLabel += ['#Delta NSB = 0']
 #FileFolder += ['output_unblind_4x4_dNSBp3_loose']
 #FileTag += ['dNSBp3']
 #FileLabel += ['#Delta NSB = 3']
 
-#FileFolder += ['output_unblind_4x4_dNSBp0_loose']
+#FileFolder += ['output_unblind_4x4_nominal_loose']
 #FileTag += ['dElev0']
 #FileLabel += ['#Delta elev. = 0']
 #FileFolder += ['output_unblind_4x4_dElevm10_loose']
@@ -63,9 +65,9 @@ FileLabel += ['loose']
 #FileLabel += ['#Delta elev. = -20']
 
 elev_range = []
-#elev_range += [[25,35]]
-#elev_range += [[35,45]]
-#elev_range += [[45,55]]
+elev_range += [[25,35]]
+elev_range += [[35,45]]
+elev_range += [[45,55]]
 elev_range += [[55,65]]
 elev_range += [[65,75]]
 elev_range += [[75,85]]
@@ -226,6 +228,10 @@ Hist_TrueBkgd_Theta2 = ROOT.TH1D("Hist_TrueBkgd_Theta2","",64,0,10)
 Hist_Dark_Theta2 = ROOT.TH1D("Hist_Dark_Theta2","",64,0,10)
 Hist_Bkgd_Theta2 = ROOT.TH1D("Hist_Bkgd_Theta2","",64,0,10)
 Hist_Bkgd_Theta2_Raw = ROOT.TH1D("Hist_Bkgd_Theta2_Raw","",64,0,10)
+Hist_Data_Eigenvalues_real = ROOT.TH1D("Hist_Data_Eigenvalues_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Data_Eigenvector_0_real = ROOT.TH1D("Hist_Data_Eigenvector_0_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Data_Eigenvector_1_real = ROOT.TH1D("Hist_Data_Eigenvector_1_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Data_Eigenvector_2_real = ROOT.TH1D("Hist_Data_Eigenvector_2_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 
 Hist2D_Data_SumE = ROOT.TH2D("Hist2D_Data_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 Hist2D_Dark_SumE = ROOT.TH2D("Hist2D_Dark_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
@@ -250,6 +256,10 @@ Hist_Dark_Theta2_SumE = ROOT.TH1D("Hist_Dark_Theta2_SumE","",64,0,10)
 Hist_TrueBkgd_Theta2_SumE = ROOT.TH1D("Hist_TrueBkgd_Theta2_SumE","",64,0,10)
 Hist_Bkgd_Theta2_SumE = ROOT.TH1D("Hist_Bkgd_Theta2_SumE","",64,0,10)
 Hist_Bkgd_Theta2_Raw_SumE = ROOT.TH1D("Hist_Bkgd_Theta2_Raw_SumE","",64,0,10)
+Hist_Data_Eigenvalues_real_SumE = ROOT.TH1D("Hist_Data_Eigenvalues_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Data_Eigenvector_0_real_SumE = ROOT.TH1D("Hist_Data_Eigenvector_0_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Data_Eigenvector_1_real_SumE = ROOT.TH1D("Hist_Data_Eigenvector_1_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Data_Eigenvector_2_real_SumE = ROOT.TH1D("Hist_Data_Eigenvector_2_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 
 NRGBs = 5
 #NCont = 512
@@ -352,6 +362,23 @@ def Variation_ratio(Hist_SR, Hist_Bkg,range_lower,range_upper):
         sbratio = (data_SR)/(predict_bkg)
         sbratio_err = (data_SR)/(predict_bkg)*pow(pow(err_SR/data_SR,2)+pow(err_bkg/predict_bkg,2),0.5)
     return sbratio, sbratio_err
+
+def Signal_Significance(Hist_SR, Hist_Bkg,range_lower,range_upper,syst):
+
+    #range_lower = 0.4
+
+    norm_bin_low_target = Hist_SR.FindBin(range_lower)
+    norm_bin_up_target = Hist_Bkg.FindBin(range_upper)-1
+    err_SR = 0
+    data_SR = 0
+    data_SR, err_SR = IntegralAndError(Hist_SR,norm_bin_low_target,norm_bin_up_target)
+    err_bkg = 0
+    predict_bkg = 0
+    predict_bkg, err_bkg = IntegralAndError(Hist_Bkg,norm_bin_low_target,norm_bin_up_target)
+    err_bkg = pow(err_bkg,2)+pow(predict_bkg*syst,2)
+    err_bkg = pow(err_bkg,0.5)
+    Sig = 1.*CalculateSignificance(data_SR-predict_bkg,predict_bkg,err_bkg)
+    return Sig
 
 def MakeGaussComparisonPlot(Hists,legends,colors,title,name):
     
@@ -665,7 +692,7 @@ def Smooth2DMap(Hist_Old,smooth_size,addLinearly):
                 Hist_Smooth.SetBinError(bx1,by1,bin_error)
     return Hist_Smooth
 
-def Make2DSignificancePlot(Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_smooth,Hist_highlight,xtitle,ytitle,name):
+def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_smooth,Hist_highlight,xtitle,ytitle,name):
 
     canvas = ROOT.TCanvas("canvas","canvas", 200, 10, 600, 600)
     pad1 = ROOT.TPad("pad1","pad1",0,0,1,1)
@@ -687,7 +714,7 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_smooth,Hist_
             NSR = Hist_SR.GetBinContent(bx+1,by+1)
             NSR_Err = Hist_SR.GetBinError(bx+1,by+1)
             NBkg = Hist_Bkg.GetBinContent(bx+1,by+1)
-            NBkg_Err = pow(pow(Hist_Bkg.GetBinError(bx+1,by+1),2)+pow(Syst_MDM*Hist_Bkg.GetBinContent(bx+1,by+1),2),0.5)
+            NBkg_Err = pow(pow(Hist_Bkg.GetBinError(bx+1,by+1),2)+pow(syst_method*Hist_Bkg.GetBinContent(bx+1,by+1),2),0.5)
             Sig = 1.*CalculateSignificance(NSR-NBkg,NBkg,NBkg_Err)
             Hist_Skymap.SetBinContent(bx+1,by+1,Sig)
     Hist_Skymap_smooth = Hist_SR_smooth.Clone()
@@ -697,7 +724,7 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_smooth,Hist_
             NSR = Hist_SR_smooth.GetBinContent(bx+1,by+1)
             NSR_Err = Hist_SR_smooth.GetBinError(bx+1,by+1)
             NBkg = Hist_Bkg_smooth.GetBinContent(bx+1,by+1)
-            NBkg_Err = pow(pow(Hist_Bkg_smooth.GetBinError(bx+1,by+1),2)+pow(Syst_MDM*Hist_Bkg_smooth.GetBinContent(bx+1,by+1),2),0.5)
+            NBkg_Err = pow(pow(Hist_Bkg_smooth.GetBinError(bx+1,by+1),2)+pow(syst_method*Hist_Bkg_smooth.GetBinContent(bx+1,by+1),2),0.5)
             Sig = 1.*CalculateSignificance(NSR-NBkg,NBkg,NBkg_Err)
             Hist_Skymap_smooth.SetBinContent(bx+1,by+1,Sig)
 
@@ -718,21 +745,24 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_smooth,Hist_
             Hist_highlight.SetBinContent(bx+1,by+1,0.)
             global_sum_data += Hist_SR.GetBinContent(bx+1,by+1)
             global_sum_bkg += Hist_Bkg.GetBinContent(bx+1,by+1)
-            global_sum_bkg_err += pow(Hist_Bkg.GetBinError(bx+1,by+1),2)
-            if Hist_Skymap_smooth.GetBinContent(bx+1,by+1)>=4.0: 
-                Hist_highlight.SetBinContent(bx+1,by+1,4.0)
+            global_sum_bkg_err += pow(Hist_Bkg.GetBinError(bx+1,by+1),2)+Hist_Bkg.GetBinContent(bx+1,by+1)
+            if Hist_Skymap_smooth.GetBinContent(bx+1,by+1)>=3.0: 
+                Hist_highlight.SetBinContent(bx+1,by+1,3.0)
                 sum_bins += 1.
                 sum_data += Hist_SR.GetBinContent(bx+1,by+1)
                 sum_bkg += Hist_Bkg.GetBinContent(bx+1,by+1)
-                sum_bkg_err += pow(Hist_Bkg.GetBinError(bx+1,by+1),2)
+                sum_bkg_err += pow(Hist_Bkg.GetBinError(bx+1,by+1),2)+Hist_Bkg.GetBinContent(bx+1,by+1)
             if Hist_Bkg_smooth.GetBinContent(bx+1,by+1)<100: 
                 Hist_Ratio.SetBinContent(bx+1,by+1,0.)
-    sum_bkg_err = pow(sum_bkg_err+pow(Syst_MDM*sum_bkg,2),0.5)
+    sum_bkg_err = pow(sum_bkg_err+pow(syst_method*sum_bkg,2),0.5)
     sum_sig = 1.*CalculateSignificance(sum_data-sum_bkg,sum_bkg,sum_bkg_err)
-    global_sum_bkg_err = pow(global_sum_bkg_err+pow(Syst_MDM*global_sum_bkg,2),0.5)
+    global_sum_bkg_err = pow(global_sum_bkg_err+pow(syst_method*global_sum_bkg,2),0.5)
     global_sum_sig = 1.*CalculateSignificance(global_sum_data-global_sum_bkg,global_sum_bkg,global_sum_bkg_err)
 
+    binx_size = Hist_SR.GetXaxis().GetBinCenter(2)-Hist_SR.GetXaxis().GetBinCenter(1)
+    biny_size = Hist_SR.GetYaxis().GetBinCenter(2)-Hist_SR.GetYaxis().GetBinCenter(1)
     sum_bins = max(1.,sum_bins)
+    source_size = sum_bins*binx_size*biny_size
     print 'sum_sig = %s'%(sum_sig)
     pvalue = (total_bins/sum_bins)*special.erfc(sum_sig/pow(2,0.5))
     print 'p-value = %s'%(pvalue)
@@ -756,20 +786,24 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_smooth,Hist_
     Hist_Skymap.SetMinimum(-5)
     Hist_Skymap.Draw("COL4Z")
     Hist_highlight.Draw("CONT3 same")
-    #lumilab = ROOT.TLatex(max_x,max_y,'%0.1f#sigma'%(sum_sig) )
-    lumilab1 = ROOT.TLatex(0.2,0.8,'global %0.1f#sigma (syst = %0.1f%%)'%(global_sum_sig,Syst_MDM*100.) )
+    lumilab4 = ROOT.TLatex(0.2,0.85,'count: data (%0.0f) / bkg (%0.0f)'%(global_sum_data,global_sum_bkg) )
+    lumilab4.SetNDC()
+    lumilab4.SetTextSize(0.04)
+    lumilab4.Draw()
+    lumilab1 = ROOT.TLatex(0.2,0.8,'global %0.1f#sigma (syst = %0.1f%%)'%(global_sum_sig,syst_method*100.) )
     lumilab1.SetNDC()
-    lumilab1.SetTextSize(0.05)
+    lumilab1.SetTextSize(0.04)
     lumilab1.Draw()
-    lumilab2 = ROOT.TLatex(0.2,0.75,'local %0.1f#sigma'%(sum_sig) )
-    lumilab2.SetNDC()
-    lumilab2.SetTextSize(0.05)
-    lumilab2.Draw()
-    if not math.isinf(sum_sig_lee):
-        lumilab3 = ROOT.TLatex(0.2,0.7,'local %0.1f#sigma (LEE)'%(sum_sig_lee) )
-        lumilab3.SetNDC()
-        lumilab3.SetTextSize(0.05)
-        lumilab3.Draw()
+    if sum_sig!=0:
+        lumilab2 = ROOT.TLatex(0.2,0.75,'local %0.1f#sigma'%(sum_sig) )
+        lumilab2.SetNDC()
+        lumilab2.SetTextSize(0.04)
+        lumilab2.Draw()
+        if not math.isinf(sum_sig_lee):
+            lumilab3 = ROOT.TLatex(0.2,0.70,'local %0.1f#sigma (LEE)'%(sum_sig_lee) )
+            lumilab3.SetNDC()
+            lumilab3.SetTextSize(0.04)
+            lumilab3.Draw()
     canvas.SaveAs('output_plots/SkymapSig_%s.png'%(name))
 
     Hist_Skymap_smooth.GetYaxis().SetTitle(ytitle)
@@ -778,20 +812,24 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_smooth,Hist_
     Hist_Skymap_smooth.SetMinimum(-5)
     Hist_Skymap_smooth.Draw("COL4Z")
     Hist_highlight.Draw("CONT3 same")
-    #lumilab = ROOT.TLatex(max_x,max_y,'%0.1f#sigma'%(sum_sig) )
-    lumilab1 = ROOT.TLatex(0.2,0.8,'global %0.1f#sigma (syst = %0.1f%%)'%(global_sum_sig,Syst_MDM*100.) )
+    lumilab4 = ROOT.TLatex(0.2,0.85,'count: data (%0.0f) / bkg (%0.0f)'%(global_sum_data,global_sum_bkg) )
+    lumilab4.SetNDC()
+    lumilab4.SetTextSize(0.04)
+    lumilab4.Draw()
+    lumilab1 = ROOT.TLatex(0.2,0.8,'global %0.1f#sigma (syst = %0.1f%%)'%(global_sum_sig,syst_method*100.) )
     lumilab1.SetNDC()
-    lumilab1.SetTextSize(0.05)
+    lumilab1.SetTextSize(0.04)
     lumilab1.Draw()
-    lumilab2 = ROOT.TLatex(0.2,0.75,'local %0.1f#sigma'%(sum_sig) )
-    lumilab2.SetNDC()
-    lumilab2.SetTextSize(0.05)
-    lumilab2.Draw()
-    if not math.isinf(sum_sig_lee):
-        lumilab3 = ROOT.TLatex(0.2,0.7,'local %0.1f#sigma (LEE)'%(sum_sig_lee) )
-        lumilab3.SetNDC()
-        lumilab3.SetTextSize(0.05)
-        lumilab3.Draw()
+    if sum_sig!=0:
+        lumilab2 = ROOT.TLatex(0.2,0.75,'local %0.1f#sigma'%(sum_sig) )
+        lumilab2.SetNDC()
+        lumilab2.SetTextSize(0.04)
+        lumilab2.Draw()
+        if not math.isinf(sum_sig_lee):
+            lumilab3 = ROOT.TLatex(0.2,0.70,'local %0.1f#sigma (LEE)'%(sum_sig_lee) )
+            lumilab3.SetNDC()
+            lumilab3.SetTextSize(0.04)
+            lumilab3.Draw()
     canvas.SaveAs('output_plots/SkymapSmoothSig_%s.png'%(name))
 
     #Hist_Ratio.GetYaxis().SetTitle(ytitle)
@@ -828,6 +866,24 @@ def Make2DSignificancePlot(Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_smooth,Hist_
     Hist_Excess.GetXaxis().SetTitle(xtitle)
     Hist_Excess.Draw("COL4Z")
     Hist_highlight.Draw("CONT3 same")
+    lumilab4 = ROOT.TLatex(0.2,0.85,'count: data (%0.0f) / bkg (%0.0f)'%(global_sum_data,global_sum_bkg) )
+    lumilab4.SetNDC()
+    lumilab4.SetTextSize(0.04)
+    lumilab4.Draw()
+    lumilab1 = ROOT.TLatex(0.2,0.8,'global %0.1f#sigma (syst = %0.1f%%)'%(global_sum_sig,syst_method*100.) )
+    lumilab1.SetNDC()
+    lumilab1.SetTextSize(0.04)
+    lumilab1.Draw()
+    if sum_sig!=0:
+        lumilab2 = ROOT.TLatex(0.2,0.75,'local %0.1f#sigma'%(sum_sig) )
+        lumilab2.SetNDC()
+        lumilab2.SetTextSize(0.04)
+        lumilab2.Draw()
+        if not math.isinf(sum_sig_lee):
+            lumilab3 = ROOT.TLatex(0.2,0.70,'local %0.1f#sigma (LEE)'%(sum_sig_lee) )
+            lumilab3.SetNDC()
+            lumilab3.SetTextSize(0.04)
+            lumilab3.Draw()
     canvas.SaveAs('output_plots/SkymapSmoothExcess_%s.png'%(name))
 
     func = ROOT.TF1("func","gaus", -5, 8)
@@ -979,7 +1035,7 @@ def MakeComparisonPlotTwoColumn(Hists,legends,colors,title,name,minheight,maxhei
 
     c_both.SaveAs('output_plots/%s.png'%(name))
 
-    return syst[1]
+    return syst[0], syst[1]
 
 def MakeComparisonPlotSigDist(Hists,legends,colors,title,name,minheight,maxheight,logx,logy):
 
@@ -1126,14 +1182,14 @@ def MakeComparisonPlotSigDist(Hists,legends,colors,title,name,minheight,maxheigh
 
     c_both.SaveAs('output_plots/%s.png'%(name))
 
-def MakeComparisonPlot(Hists,legends,colors,title_x,title_y,name,logx,logy):
+def MakeComparisonPlot(Hists,legends,colors,title_x,title_y,name,y_min,y_max,logx,logy):
     
     c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
-    pad3 = ROOT.TPad("pad3","pad3",0,0.8,1,1)
+    pad3 = ROOT.TPad("pad3","pad3",0,0.7,1,1)
     pad3.SetBottomMargin(0.0)
     pad3.SetTopMargin(0.03)
     pad3.SetBorderMode(1)
-    pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.8)
+    pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.7)
     pad1.SetBottomMargin(0.1)
     pad1.SetTopMargin(0.0)
     pad1.SetBorderMode(0)
@@ -1164,10 +1220,12 @@ def MakeComparisonPlot(Hists,legends,colors,title_x,title_y,name,logx,logy):
             if min_heigh > Hists[h].GetMinimum(): 
                 min_heigh = Hists[h].GetMinimum()
 
-    #Hists[max_hist].SetMaximum(max_heigh)
-    #Hists[max_hist].SetMinimum(min_heigh)
-    Hists[max_hist].Draw("E")
-    #Hists[0].Draw("E")
+    if not y_max==0. and not y_min==0.:
+        Hists[0].SetMaximum(y_max)
+        Hists[0].SetMinimum(y_min)
+        Hists[0].Draw("E")
+    else:
+        Hists[max_hist].Draw("E")
 
     for h in range(0,len(Hists)):
         #if colors[h]==1 or colors[h]==2: Hists[0].SetLineWidth(3)
@@ -1181,7 +1239,7 @@ def MakeComparisonPlot(Hists,legends,colors,title_x,title_y,name,logx,logy):
     legend.SetNColumns(2)
     legend.SetTextFont(42)
     legend.SetBorderSize(0)
-    legend.SetTextSize(0.15)
+    legend.SetTextSize(0.1)
     legend.SetFillColor(0)
     legend.SetFillStyle(0)
     legend.SetLineColor(0)
@@ -1258,6 +1316,11 @@ def ResetStackedShowerHistograms():
     Hist_Bkgd_Theta2_SumE.Reset()
     Hist_Bkgd_Theta2_Raw_SumE.Reset()
 
+    Hist_Data_Eigenvalues_real_SumE.Reset()
+    Hist_Data_Eigenvector_0_real_SumE.Reset()
+    Hist_Data_Eigenvector_1_real_SumE.Reset()
+    Hist_Data_Eigenvector_2_real_SumE.Reset()
+
 def StackShowerHistograms():
 
     Hist2D_Data_SumE.Add(Hist2D_Data)
@@ -1281,6 +1344,17 @@ def StackShowerHistograms():
     Hist_GammaDark_MSCW_SumE.Add(Hist_GammaDark_MSCW)
     Hist_GammaRDBM_MSCW_SumE.Add(Hist_GammaRDBM_MSCW)
 
+    Hist_Data_Eigenvalues_real_SumE.Add(Hist_Data_Eigenvalues_real)
+    Hist_Data_Eigenvector_0_real.Scale(1./Hist_Data_Eigenvector_0_real.Integral())
+    Hist_Data_Eigenvector_0_real.Scale(Hist_Data_Eigenvalues_real.GetBinContent(1))
+    Hist_Data_Eigenvector_0_real_SumE.Add(Hist_Data_Eigenvector_0_real)
+    Hist_Data_Eigenvector_1_real.Scale(1./Hist_Data_Eigenvector_1_real.Integral())
+    Hist_Data_Eigenvector_1_real.Scale(Hist_Data_Eigenvalues_real.GetBinContent(2))
+    Hist_Data_Eigenvector_1_real_SumE.Add(Hist_Data_Eigenvector_1_real)
+    Hist_Data_Eigenvector_2_real.Scale(1./Hist_Data_Eigenvector_2_real.Integral())
+    Hist_Data_Eigenvector_2_real.Scale(Hist_Data_Eigenvalues_real.GetBinContent(3))
+    Hist_Data_Eigenvector_2_real_SumE.Add(Hist_Data_Eigenvector_2_real)
+
 def Theta2HistScale(Hist,scale,scale_err):
 
     for b in range(1,Hist.GetNbinsX()+1):
@@ -1296,6 +1370,7 @@ def Theta2HistScale(Hist,scale,scale_err):
 def StackSkymapHistograms():
 
     Hist_Data_Skymap_SumE.Add(Hist_Data_Skymap)
+    Hist_Dark_Skymap_SumE.Add(Hist_Dark_Skymap)
     Hist_Bkgd_Skymap_SumE.Add(Hist_Bkgd_Skymap)
     Hist_Bkgd_Skymap_Raw_SumE.Add(Hist_Bkgd_Skymap_Raw)
 
@@ -1339,6 +1414,9 @@ def NormalizeSkyMapHistograms(FilePath):
     Hist_Data_Skymap.Reset()
     Hist_Data_Skymap.Add(InputFile.Get(HistName))
     HistName = "Hist_Data_CR_Skymap_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    Hist_Dark_Skymap.Reset()
+    Hist_Dark_Skymap.Add(InputFile.Get(HistName))
+    HistName = "Hist_Data_CR_Skymap_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
     Hist_Bkgd_Skymap.Reset()
     Hist_Bkgd_Skymap.Add(InputFile.Get(HistName))
     HistName = "Hist_Data_CR_Skymap_Raw_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
@@ -1346,6 +1424,21 @@ def NormalizeSkyMapHistograms(FilePath):
     Hist_Bkgd_Skymap_Raw.Add(InputFile.Get(HistName))
 
     bkg_total, bkg_err = IntegralAndError(Hist_Bkgd_MSCW,bin_lower,bin_upper)
+    dark_bkg_total, dark_bkg_err = IntegralAndError(Hist_Dark_MSCW,bin_lower,bin_upper)
+
+    old_integral = Hist_Dark_Skymap.Integral()
+    scale = 0
+    scale_err = 0
+    if not dark_bkg_total==0 and not old_integral==0:
+        scale = dark_bkg_total/old_integral
+        scale_err = scale*(dark_bkg_err/dark_bkg_total)
+    else:
+        scale = 0
+        scale_err = 0
+    if not dark_bkg_total==0:
+        RaDecHistScale(Hist_Dark_Skymap,scale,scale_err)
+    else:
+        Hist_Dark_Skymap.Scale(0)
 
     old_integral = Hist_Bkgd_Skymap.Integral()
     scale = 0
@@ -1504,6 +1597,19 @@ def GetShowerHistogramsFromFile(FilePath):
     Hist_Bkgd_MSCW.Reset()
     Hist_Bkgd_MSCW.Add(Hist2D_Bkgd.ProjectionY("Hist1D_Bkgd_MSCW",bin_lower_x,bin_upper_x))
 
+    HistName = "Hist_Data_Eigenvalues_real_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    Hist_Data_Eigenvalues_real.Reset()
+    Hist_Data_Eigenvalues_real.Add(InputFile.Get(HistName))
+    HistName = "Hist_Data_InvEigenvectorReal_0_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    Hist_Data_Eigenvector_0_real.Reset()
+    Hist_Data_Eigenvector_0_real.Add(InputFile.Get(HistName))
+    HistName = "Hist_Data_InvEigenvectorReal_1_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    Hist_Data_Eigenvector_1_real.Reset()
+    Hist_Data_Eigenvector_1_real.Add(InputFile.Get(HistName))
+    HistName = "Hist_Data_InvEigenvectorReal_2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    Hist_Data_Eigenvector_2_real.Reset()
+    Hist_Data_Eigenvector_2_real.Add(InputFile.Get(HistName))
+
     InputFile.Close()
 
 def PlotsStackedHistograms(tag):
@@ -1599,6 +1705,190 @@ def PlotsPerEnergyBin():
     title = 'MSCW'
     MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,-1)
 
+def SystAsFunctionOfSignal():
+
+    global ErecS_lower_cut
+    global ErecS_upper_cut
+    global exposure_hours
+    global exposure_hours_dark
+    global NSB_avg
+    global NSB_avg_dark
+
+    folder_path = FileFolder[0]
+    folder_tag = FileTag[0]
+    folder_label = FileLabel[0]
+
+    SignalFlux = []
+    SignalFlux_label = []
+    SignalFlux += ['_Crab0']
+    SignalFlux_label += ['0']
+    #SignalFlux += ['_Crab20']
+    #SignalFlux_label += ['0.2']
+    #SignalFlux += ['_Crab50']
+    #SignalFlux_label += ['0.5']
+    #SignalFlux += ['_Crab100']
+    #SignalFlux_label += ['1.0']
+    #SignalFlux += ['_Crab200']
+    #SignalFlux_label += ['2.0']
+    SignalFlux += ['_Crab400']
+    SignalFlux_label += ['4.0']
+
+    Hist_MDM_S2B_Flux = []
+    Hist_Dark_S2B_Flux = []
+    Hist_Eigenvalue_2ndRank = []
+    legend_S2B = []
+    color_S2B = []
+    color_code = [ROOT.kBlue,ROOT.kGreen,ROOT.kRed]
+    for source in range(0,len(source_list)):
+        if for_syst[source]==False: continue
+        source_name = source_list[source]
+        Hist_MDM_S2B_Flux += [ROOT.TH1D("Hist_MDM_S2B_Flux_%s"%(source_name),"",len(SignalFlux),0,len(SignalFlux))]
+        Hist_Dark_S2B_Flux += [ROOT.TH1D("Hist_Dark_S2B_Flux_%s"%(source_name),"",len(SignalFlux),0,len(SignalFlux))]
+        Hist_Eigenvalue_2ndRank += [ROOT.TH1D("Hist_Eigenvalue_2ndRank_%s"%(source_name),"",len(SignalFlux),0,len(SignalFlux))]
+        legend_S2B += ['%s'%(source_name)]
+        color_S2B += [color_code[(source % 3)]+int(source/3.)]
+        for flux in range(0,len(SignalFlux)):
+            ResetStackedShowerHistograms()
+            for elev in range(0,len(elev_range)):
+                file_elev_lower = elev_range[elev][0]
+                file_elev_upper = elev_range[elev][1]
+                FilePath_Folder0 = []
+                exposure_hours = 0.
+                exposure_hours_dark = 0.
+                NSB_avg = 0.
+                NSB_avg_dark = 0.
+                FilePath = "%s/Netflix_"%(folder_path)+source_list[source]+SignalFlux[flux]+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_%s"%(ONOFF)+".root";
+                FilePath_Folder0 += [FilePath]
+                if not os.path.isfile(FilePath_Folder0[0]):continue
+                GetSourceInfo(FilePath_Folder0)
+                for e in range(0,len(energy_list)-1):
+                    ErecS_lower_cut = energy_list[e]
+                    ErecS_upper_cut = energy_list[e+1]
+                    GetShowerHistogramsFromFile(FilePath_Folder0[0])
+                    StackShowerHistograms()
+                    NormalizeTheta2Histograms(FilePath_Folder0[0])
+                    StackTheta2Histograms()
+            if Hist_Data_Eigenvalues_real_SumE.GetBinContent(1)==0.: continue
+            eigenvalue_err = pow(Hist_Data_Eigenvalues_real_SumE.GetBinContent(1),0.5)
+            scale = 1./Hist_Data_Eigenvalues_real_SumE.GetBinContent(1)
+            Hist_Data_Eigenvalues_real_SumE.Scale(scale)
+            eigenvalue_err = eigenvalue_err*scale
+            Hist_Eigenvalue_2ndRank[len(Hist_Eigenvalue_2ndRank)-1].SetBinContent(flux+1,Hist_Data_Eigenvalues_real_SumE.GetBinContent(2))
+            Hist_Eigenvalue_2ndRank[len(Hist_Eigenvalue_2ndRank)-1].SetBinError(flux+1,eigenvalue_err)
+            Hist_Eigenvalue_2ndRank[len(Hist_Eigenvalue_2ndRank)-1].GetXaxis().SetBinLabel(flux+1,SignalFlux_label[flux])
+            s2b = 0.
+            s2b_err = 0.
+            significance = 0.
+            if not "_Crab0" in SignalFlux[flux]:
+                s2b, s2b_err = Variation_ratio(Hist_TrueBkgd_Theta2_SumE,Hist_Bkgd_Theta2_SumE,0.2,10.)
+            else:
+                s2b, s2b_err = Variation_ratio(Hist_Data_Theta2_SumE,Hist_Bkgd_Theta2_SumE,0.2,10.)
+            significance = Signal_Significance(Hist_Data_Theta2_SumE,Hist_Bkgd_Theta2_SumE,0.2,10.,Syst_MDM)
+            Hist_MDM_S2B_Flux[len(Hist_MDM_S2B_Flux)-1].SetBinContent(flux+1,s2b)
+            Hist_MDM_S2B_Flux[len(Hist_MDM_S2B_Flux)-1].SetBinError(flux+1,s2b_err)
+            Hist_MDM_S2B_Flux[len(Hist_MDM_S2B_Flux)-1].GetXaxis().SetBinLabel(flux+1,SignalFlux_label[flux])
+            s2b = 0.
+            s2b_err = 0.
+            significance = 0.
+            if not "_Crab0" in PercentCrab:
+                s2b, s2b_err = Variation_ratio(Hist_TrueBkgd_Theta2_SumE,Hist_Dark_Theta2_SumE,0.2,10.)
+            else:
+                s2b, s2b_err = Variation_ratio(Hist_Data_Theta2_SumE,Hist_Dark_Theta2_SumE,0.2,10.)
+            Hist_Dark_S2B_Flux[len(Hist_Dark_S2B_Flux)-1].SetBinContent(flux+1,s2b)
+            Hist_Dark_S2B_Flux[len(Hist_Dark_S2B_Flux)-1].SetBinError(flux+1,s2b_err)
+            Hist_Dark_S2B_Flux[len(Hist_Dark_S2B_Flux)-1].GetXaxis().SetBinLabel(flux+1,SignalFlux_label[flux])
+    MakeComparisonPlotSigDist(Hist_MDM_S2B_Flux,legend_S2B,color_S2B,'signal flux in Crab unit','Systematics_MDM_Flux_%s'%(folder_tag),0.6,1.4,False,False)
+    MakeComparisonPlotSigDist(Hist_Dark_S2B_Flux,legend_S2B,color_S2B,'signal flux in Crab unit','Systematics_Dark_Flux_%s'%(folder_tag),0.6,1.4,False,False)
+    MakeComparisonPlot(Hist_Eigenvalue_2ndRank,legend_S2B,color_S2B,'signal flux in Crab unit','size of eigenvalues','Eigenvalue_2ndRank%s_%s'%(PercentCrab,folder_tag),0.2,0.4,False,False)
+
+    Hist_Eigenvalue_Rank = []
+    Hist_Eigenvector_0 = []
+    Hist_Eigenvector_1 = []
+    Hist_Eigenvector_2 = []
+    Hist_Shower_MSCW = []
+    legend_S2B = []
+    color_S2B = []
+    color_code = [ROOT.kBlue,ROOT.kGreen,ROOT.kRed]
+    for flux in range(0,len(SignalFlux)):
+        Hist_Eigenvalue_Rank += [ROOT.TH1D("Hist_Eigenvalue_Rank_%s"%(flux),"",N_bins_for_deconv,0,N_bins_for_deconv)]
+        Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0_%s"%(flux),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1_%s"%(flux),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2_%s"%(flux),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Shower_MSCW += [ROOT.TH1D("Hist_Shower_MSCW_%s"%(flux),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        legend_S2B += ['Flux %s Crab unit'%(SignalFlux_label[flux])]
+        color_S2B += [color_code[(flux % 3)]+int(flux/3.)]
+        ResetStackedShowerHistograms()
+        for elev in range(0,len(elev_range)):
+            file_elev_lower = elev_range[elev][0]
+            file_elev_upper = elev_range[elev][1]
+            for source in range(0,len(source_list)):
+                if for_syst[source]==False: continue
+                source_name = source_list[source]
+                FilePath_Folder0 = []
+                exposure_hours = 0.
+                exposure_hours_dark = 0.
+                NSB_avg = 0.
+                NSB_avg_dark = 0.
+                FilePath = "%s/Netflix_"%(folder_path)+source_list[source]+SignalFlux[flux]+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_%s"%(ONOFF)+".root";
+                FilePath_Folder0 += [FilePath]
+                if not os.path.isfile(FilePath_Folder0[0]):continue
+                GetSourceInfo(FilePath_Folder0)
+                for e in range(0,len(energy_list)-1):
+                    ErecS_lower_cut = energy_list[e]
+                    ErecS_upper_cut = energy_list[e+1]
+                    GetShowerHistogramsFromFile(FilePath_Folder0[0])
+                    StackShowerHistograms()
+                    NormalizeTheta2Histograms(FilePath_Folder0[0])
+                    StackTheta2Histograms()
+
+        scale_norm = 1./Hist_Data_Eigenvalues_real_SumE.GetBinContent(1)
+        Hist_Data_Eigenvector_0_real_SumE.Scale(scale_norm) # this makes sure they all have the same sign
+        abs_integral = 0.
+        for binx in range(0,Hist_Data_Eigenvector_0_real_SumE.GetNbinsX()):
+            abs_integral += abs(Hist_Data_Eigenvector_0_real_SumE.GetBinContent(binx+1))
+        scale_norm = 1./abs_integral
+        Hist_Data_Eigenvector_0_real_SumE.Scale(scale_norm) # this makes sure they all have the same normalization
+        Hist_Eigenvector_0[len(Hist_Eigenvector_0)-1].Add(Hist_Data_Eigenvector_0_real_SumE)
+
+        scale_norm = 1./Hist_Data_Eigenvalues_real_SumE.GetBinContent(2)
+        Hist_Data_Eigenvector_1_real_SumE.Scale(scale_norm) # this makes sure they all have the same sign
+        abs_integral = 0.
+        for binx in range(0,Hist_Data_Eigenvector_1_real_SumE.GetNbinsX()):
+            abs_integral += abs(Hist_Data_Eigenvector_1_real_SumE.GetBinContent(binx+1))
+        scale_norm = 1./abs_integral
+        Hist_Data_Eigenvector_1_real_SumE.Scale(scale_norm) # this makes sure they all have the same normalization
+        Hist_Eigenvector_1[len(Hist_Eigenvector_1)-1].Add(Hist_Data_Eigenvector_1_real_SumE)
+
+        scale_norm = 1./Hist_Data_Eigenvalues_real_SumE.GetBinContent(3)
+        Hist_Data_Eigenvector_2_real_SumE.Scale(scale_norm) # this makes sure they all have the same sign
+        abs_integral = 0.
+        for binx in range(0,Hist_Data_Eigenvector_2_real_SumE.GetNbinsX()):
+            abs_integral += abs(Hist_Data_Eigenvector_2_real_SumE.GetBinContent(binx+1))
+        scale_norm = 1./abs_integral
+        Hist_Data_Eigenvector_2_real_SumE.Scale(scale_norm) # this makes sure they all have the same normalization
+        Hist_Eigenvector_2[len(Hist_Eigenvector_2)-1].Add(Hist_Data_Eigenvector_2_real_SumE)
+
+        abs_integral = 0.
+        for binx in range(0,Hist_Data_MSCW_SumE.GetNbinsX()):
+            abs_integral += abs(Hist_Data_MSCW_SumE.GetBinContent(binx+1))
+        scale_norm = 1./abs_integral
+        Hist_Data_MSCW_SumE.Scale(scale_norm) # this makes sure they all have the same normalization
+        Hist_Shower_MSCW[len(Hist_Shower_MSCW)-1].Add(Hist_Data_MSCW_SumE)
+
+        Hist_Eigenvalue_Rank[len(Hist_Eigenvalue_Rank)-1].Add(Hist_Data_Eigenvalues_real_SumE)
+        if Hist_Eigenvalue_Rank[len(Hist_Eigenvalue_Rank)-1].GetBinContent(1)>0:
+            scale = 1./Hist_Eigenvalue_Rank[len(Hist_Eigenvalue_Rank)-1].GetBinContent(1)
+            Hist_Eigenvalue_Rank[len(Hist_Eigenvalue_Rank)-1].Scale(scale)
+
+    for hist in range(0,len(Hist_Eigenvalue_Rank)):
+        Hist_Eigenvalue_Rank[hist].GetXaxis().SetRangeUser(0,16)
+    MakeComparisonPlot(Hist_Eigenvalue_Rank,legend_S2B,color_S2B,'rank','size of eigenvalues','Eigenvalue_Rank_Flux_%s'%(folder_tag),0.,0.,False,False)
+    MakeComparisonPlot(Hist_Eigenvector_0,legend_S2B,color_S2B,'columns','size of eigenvector','Eigenvector_0_Flux_%s'%(folder_tag),0.,0.,False,False)
+    MakeComparisonPlot(Hist_Eigenvector_1,legend_S2B,color_S2B,'columns','size of eigenvector','Eigenvector_1_Flux_%s'%(folder_tag),0.,0.,False,False)
+    MakeComparisonPlot(Hist_Eigenvector_2,legend_S2B,color_S2B,'columns','size of eigenvector','Eigenvector_2_Flux_%s'%(folder_tag),0.,0.,False,False)
+    MakeComparisonPlot(Hist_Shower_MSCW,legend_S2B,color_S2B,'MSCW','normalized counts','ShowerMSCW_Flux_%s'%(folder_tag),0.,0.,False,False)
+
+
 def SystAsFunctionOfElevation():
 
     global ErecS_lower_cut
@@ -1614,6 +1904,7 @@ def SystAsFunctionOfElevation():
 
     Hist_MDM_S2B_Elev = []
     Hist_Dark_S2B_Elev = []
+    Hist_Eigenvalue_2ndRank = []
     legend_S2B = []
     color_S2B = []
     color_code = [ROOT.kBlue,ROOT.kGreen,ROOT.kRed]
@@ -1622,7 +1913,8 @@ def SystAsFunctionOfElevation():
         source_name = source_list[source]
         Hist_MDM_S2B_Elev += [ROOT.TH1D("Hist_MDM_S2B_Elev_%s"%(source_name),"",len(elev_range),elev_range[0][0],elev_range[len(elev_range)-1][1])]
         Hist_Dark_S2B_Elev += [ROOT.TH1D("Hist_Dark_S2B_Elev_%s"%(source_name),"",len(elev_range),elev_range[0][0],elev_range[len(elev_range)-1][1])]
-        legend_S2B += ['%s (%0.1f hrs)'%(source_name,exposure_hours)]
+        Hist_Eigenvalue_2ndRank += [ROOT.TH1D("Hist_Eigenvalue_2ndRank_%s"%(source_name),"",len(elev_range),elev_range[0][0],elev_range[len(elev_range)-1][1])]
+        legend_S2B += ['%s'%(source_name)]
         color_S2B += [color_code[(source % 3)]+int(source/3.)]
         for elev in range(0,len(elev_range)):
             file_elev_lower = elev_range[elev][0]
@@ -1644,6 +1936,12 @@ def SystAsFunctionOfElevation():
                 StackShowerHistograms()
                 NormalizeTheta2Histograms(FilePath_Folder0[0])
                 StackTheta2Histograms()
+            eigenvalue_err = pow(Hist_Data_Eigenvalues_real_SumE.GetBinContent(1),0.5)
+            scale = 1./Hist_Data_Eigenvalues_real_SumE.GetBinContent(1)
+            Hist_Data_Eigenvalues_real_SumE.Scale(scale)
+            eigenvalue_err = eigenvalue_err*scale
+            Hist_Eigenvalue_2ndRank[len(Hist_Eigenvalue_2ndRank)-1].SetBinContent(elev+1,Hist_Data_Eigenvalues_real_SumE.GetBinContent(2))
+            Hist_Eigenvalue_2ndRank[len(Hist_Eigenvalue_2ndRank)-1].SetBinError(elev+1,eigenvalue_err)
             s2b = 0.
             s2b_err = 0.
             if not "_Crab0" in PercentCrab:
@@ -1663,6 +1961,93 @@ def SystAsFunctionOfElevation():
 
     MakeComparisonPlotSigDist(Hist_MDM_S2B_Elev,legend_S2B,color_S2B,'Elev.','Systematics_MDM_Elev_%s'%(folder_tag),0.6,1.4,False,False)
     MakeComparisonPlotSigDist(Hist_Dark_S2B_Elev,legend_S2B,color_S2B,'Elev.','Systematics_Dark_Elev_%s'%(folder_tag),0.6,1.4,False,False)
+    MakeComparisonPlot(Hist_Eigenvalue_2ndRank,legend_S2B,color_S2B,'Elev.','size of eigenvalues','Eigenvalue_2ndRank_Elev_%s'%(folder_tag),0.1,0.4,False,False)
+
+    Hist_Eigenvalue_Rank = []
+    Hist_Eigenvector_0 = []
+    Hist_Eigenvector_1 = []
+    Hist_Eigenvector_2 = []
+    Hist_Shower_MSCW = []
+    legend_S2B = []
+    color_S2B = []
+    color_code = [ROOT.kBlue,ROOT.kGreen,ROOT.kRed]
+    for elev in range(0,len(elev_range)):
+        file_elev_lower = elev_range[elev][0]
+        file_elev_upper = elev_range[elev][1]
+        Hist_Eigenvalue_Rank += [ROOT.TH1D("Hist_Eigenvalue_Rank_%s"%(elev),"",N_bins_for_deconv,0,N_bins_for_deconv)]
+        Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0_%s"%(elev),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1_%s"%(elev),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2_%s"%(elev),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Shower_MSCW += [ROOT.TH1D("Hist_Shower_MSCW_%s"%(elev),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        legend_S2B += ['Elev. %s-%s'%(file_elev_lower,file_elev_upper)]
+        color_S2B += [color_code[(elev % 3)]+int(elev/3.)]
+        ResetStackedShowerHistograms()
+        for source in range(0,len(source_list)):
+            if for_syst[source]==False: continue
+            source_name = source_list[source]
+            FilePath_Folder0 = []
+            exposure_hours = 0.
+            exposure_hours_dark = 0.
+            NSB_avg = 0.
+            NSB_avg_dark = 0.
+            FilePath = "%s/Netflix_"%(folder_path)+source_list[source]+PercentCrab+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_%s"%(ONOFF)+".root";
+            FilePath_Folder0 += [FilePath]
+            if not os.path.isfile(FilePath_Folder0[0]):continue
+            GetSourceInfo(FilePath_Folder0)
+            for e in range(0,len(energy_list)-1):
+                ErecS_lower_cut = energy_list[e]
+                ErecS_upper_cut = energy_list[e+1]
+                GetShowerHistogramsFromFile(FilePath_Folder0[0])
+                StackShowerHistograms()
+                NormalizeTheta2Histograms(FilePath_Folder0[0])
+                StackTheta2Histograms()
+
+        scale_norm = 1./Hist_Data_Eigenvalues_real_SumE.GetBinContent(1)
+        Hist_Data_Eigenvector_0_real_SumE.Scale(scale_norm) # this makes sure they all have the same sign
+        abs_integral = 0.
+        for binx in range(0,Hist_Data_Eigenvector_0_real_SumE.GetNbinsX()):
+            abs_integral += abs(Hist_Data_Eigenvector_0_real_SumE.GetBinContent(binx+1))
+        scale_norm = 1./abs_integral
+        Hist_Data_Eigenvector_0_real_SumE.Scale(scale_norm) # this makes sure they all have the same normalization
+        Hist_Eigenvector_0[len(Hist_Eigenvector_0)-1].Add(Hist_Data_Eigenvector_0_real_SumE)
+
+        scale_norm = 1./Hist_Data_Eigenvalues_real_SumE.GetBinContent(2)
+        Hist_Data_Eigenvector_1_real_SumE.Scale(scale_norm) # this makes sure they all have the same sign
+        abs_integral = 0.
+        for binx in range(0,Hist_Data_Eigenvector_1_real_SumE.GetNbinsX()):
+            abs_integral += abs(Hist_Data_Eigenvector_1_real_SumE.GetBinContent(binx+1))
+        scale_norm = 1./abs_integral
+        Hist_Data_Eigenvector_1_real_SumE.Scale(scale_norm) # this makes sure they all have the same normalization
+        Hist_Eigenvector_1[len(Hist_Eigenvector_1)-1].Add(Hist_Data_Eigenvector_1_real_SumE)
+
+        scale_norm = 1./Hist_Data_Eigenvalues_real_SumE.GetBinContent(3)
+        Hist_Data_Eigenvector_2_real_SumE.Scale(scale_norm) # this makes sure they all have the same sign
+        abs_integral = 0.
+        for binx in range(0,Hist_Data_Eigenvector_2_real_SumE.GetNbinsX()):
+            abs_integral += abs(Hist_Data_Eigenvector_2_real_SumE.GetBinContent(binx+1))
+        scale_norm = 1./abs_integral
+        Hist_Data_Eigenvector_2_real_SumE.Scale(scale_norm) # this makes sure they all have the same normalization
+        Hist_Eigenvector_2[len(Hist_Eigenvector_2)-1].Add(Hist_Data_Eigenvector_2_real_SumE)
+
+        abs_integral = 0.
+        for binx in range(0,Hist_Data_MSCW_SumE.GetNbinsX()):
+            abs_integral += abs(Hist_Data_MSCW_SumE.GetBinContent(binx+1))
+        scale_norm = 1./abs_integral
+        Hist_Data_MSCW_SumE.Scale(scale_norm) # this makes sure they all have the same normalization
+        Hist_Shower_MSCW[len(Hist_Shower_MSCW)-1].Add(Hist_Data_MSCW_SumE)
+
+        Hist_Eigenvalue_Rank[len(Hist_Eigenvalue_Rank)-1].Add(Hist_Data_Eigenvalues_real_SumE)
+        if Hist_Eigenvalue_Rank[len(Hist_Eigenvalue_Rank)-1].GetBinContent(1)>0:
+            scale = 1./Hist_Eigenvalue_Rank[len(Hist_Eigenvalue_Rank)-1].GetBinContent(1)
+            Hist_Eigenvalue_Rank[len(Hist_Eigenvalue_Rank)-1].Scale(scale)
+
+    for hist in range(0,len(Hist_Eigenvalue_Rank)):
+        Hist_Eigenvalue_Rank[hist].GetXaxis().SetRangeUser(0,16)
+    MakeComparisonPlot(Hist_Eigenvalue_Rank,legend_S2B,color_S2B,'rank','size of eigenvalues','Eigenvalue_Rank_Elev_%s'%(folder_tag),0.,0.,False,False)
+    MakeComparisonPlot(Hist_Eigenvector_0,legend_S2B,color_S2B,'columns','size of eigenvector','Eigenvector_0_Elev_%s'%(folder_tag),0.,0.,False,False)
+    MakeComparisonPlot(Hist_Eigenvector_1,legend_S2B,color_S2B,'columns','size of eigenvector','Eigenvector_1_Elev_%s'%(folder_tag),0.,0.,False,False)
+    MakeComparisonPlot(Hist_Eigenvector_2,legend_S2B,color_S2B,'columns','size of eigenvector','Eigenvector_2_Elev_%s'%(folder_tag),0.,0.,False,False)
+    MakeComparisonPlot(Hist_Shower_MSCW,legend_S2B,color_S2B,'MSCW','normalized counts','ShowerMSCW_Elev_%s'%(folder_tag),0.,0.,False,False)
 
 def SystAsFunctionOfGalLat():
 
@@ -1882,6 +2267,7 @@ def SystDarkVsMDM():
     global NSB_avg
     global NSB_avg_dark
     global Syst_MDM
+    global Syst_Dark
 
     folder_path = FileFolder[0]
     folder_tag = FileTag[0]
@@ -1897,6 +2283,9 @@ def SystDarkVsMDM():
             FilePath = "%s/Netflix_"%(folder_path)+source_list[source]+PercentCrab+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_%s"%(ONOFF)+".root";
             FilePath_Folder0[len(FilePath_Folder0)-1] += [FilePath]
 
+    Hist_Eigenvalue_Rank = []
+    Hist_Eigenvector_0 = []
+    Hist_Eigenvector_1 = []
     Hist_S2B = []
     legend_S2B = []
     color_S2B = []
@@ -1913,6 +2302,9 @@ def SystDarkVsMDM():
         Hist_S2B += [ROOT.TH1D("Hist_S2B_%s"%(source_name),"",2,0,2)]
         Hist_S2B[len(Hist_S2B)-1].GetXaxis().SetBinLabel(1,'Initial')
         Hist_S2B[len(Hist_S2B)-1].GetXaxis().SetBinLabel(2,'MDM')
+        Hist_Eigenvalue_Rank += [ROOT.TH1D("Hist_Eigenvalue_Rank_%s"%(source_name),"",N_bins_for_deconv,0,N_bins_for_deconv)]
+        Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0_%s"%(source_name),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1_%s"%(source_name),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
         legend_S2B += ['%s (%0.1f hrs)'%(source_name,exposure_hours)]
         color_S2B += [color_code[(source % 3)]+int(source/3.)]
         ResetStackedShowerHistograms()
@@ -1926,6 +2318,30 @@ def SystDarkVsMDM():
                 NormalizeTheta2Histograms(FilePath_Folder0[source][path])
                 StackTheta2Histograms()
             #PlotsStackedHistograms('%s_%s_%s'%(source_name,path,folder_tag))
+
+        scale_norm = 1./Hist_Data_Eigenvalues_real_SumE.GetBinContent(1)
+        Hist_Data_Eigenvector_0_real_SumE.Scale(scale_norm) # this makes sure they all have the same sign
+        abs_integral = 0.
+        for binx in range(0,Hist_Data_Eigenvector_0_real_SumE.GetNbinsX()):
+            abs_integral += abs(Hist_Data_Eigenvector_0_real_SumE.GetBinContent(binx+1))
+        scale_norm += 1./abs_integral
+        Hist_Data_Eigenvector_0_real_SumE.Scale(scale_norm) # this makes sure they all have the same normalization
+        Hist_Eigenvector_0[len(Hist_Eigenvector_0)-1].Add(Hist_Data_Eigenvector_0_real_SumE)
+
+        scale_norm = 1./Hist_Data_Eigenvalues_real_SumE.GetBinContent(2)
+        Hist_Data_Eigenvector_1_real_SumE.Scale(scale_norm) # this makes sure they all have the same sign
+        abs_integral = 0.
+        for binx in range(0,Hist_Data_Eigenvector_1_real_SumE.GetNbinsX()):
+            abs_integral += abs(Hist_Data_Eigenvector_1_real_SumE.GetBinContent(binx+1))
+        scale_norm += 1./abs_integral
+        Hist_Data_Eigenvector_1_real_SumE.Scale(scale_norm) # this makes sure they all have the same normalization
+        Hist_Eigenvector_1[len(Hist_Eigenvector_1)-1].Add(Hist_Data_Eigenvector_1_real_SumE)
+
+        Hist_Eigenvalue_Rank[len(Hist_Eigenvalue_Rank)-1].Add(Hist_Data_Eigenvalues_real_SumE)
+        if Hist_Eigenvalue_Rank[len(Hist_Eigenvalue_Rank)-1].GetBinContent(1)>0:
+            scale = 1./Hist_Eigenvalue_Rank[len(Hist_Eigenvalue_Rank)-1].GetBinContent(1)
+            Hist_Eigenvalue_Rank[len(Hist_Eigenvalue_Rank)-1].Scale(scale)
+
         s2b = 0.
         s2b_err = 0.
         if not "_Crab0" in PercentCrab:
@@ -1942,7 +2358,13 @@ def SystDarkVsMDM():
             s2b, s2b_err = Variation_ratio(Hist_Data_Theta2_SumE,Hist_Dark_Theta2_SumE,0.2,10.)
         Hist_S2B[len(Hist_S2B)-1].SetBinContent(1,s2b)
         Hist_S2B[len(Hist_S2B)-1].SetBinError(1,s2b_err)
-    Syst_MDM = MakeComparisonPlotTwoColumn(Hist_S2B,legend_S2B,color_S2B,'methods','Systematics_DarkVsMDM%s_%s'%(PercentCrab,folder_tag),0.6,1.4,False,False)
+
+    Syst_Dark, Syst_MDM = MakeComparisonPlotTwoColumn(Hist_S2B,legend_S2B,color_S2B,'methods','Systematics_DarkVsMDM%s_%s'%(PercentCrab,folder_tag),0.6,1.4,False,False)
+    for hist in range(0,len(Hist_Eigenvalue_Rank)):
+        Hist_Eigenvalue_Rank[hist].GetXaxis().SetRangeUser(0,16)
+    MakeComparisonPlot(Hist_Eigenvalue_Rank,legend_S2B,color_S2B,'rank','size of eigenvalues','Eigenvalue_Rank%s_%s'%(PercentCrab,folder_tag),0.,0.,False,False)
+    MakeComparisonPlot(Hist_Eigenvector_0,legend_S2B,color_S2B,'columns','size of eigenvector','Eigenvector_0%s_%s'%(PercentCrab,folder_tag),0.,0.,False,False)
+    MakeComparisonPlot(Hist_Eigenvector_1,legend_S2B,color_S2B,'columns','size of eigenvector','Eigenvector_1%s_%s'%(PercentCrab,folder_tag),0.,0.,False,False)
 
 def CompareDiffFolders():
 
@@ -2060,6 +2482,7 @@ def SingleSourceSpectrum(source_name_input):
     folder_label = FileLabel[0]
 
     Hist_MDM_NormSig_Rate = []
+    Hist_MDM_InclBkg_Rate = []
     Hist_MDM_Sig_Rate = []
     Hist_MDM_Bkg_Rate = []
     legend_S2B = []
@@ -2067,6 +2490,43 @@ def SingleSourceSpectrum(source_name_input):
     color_code = [ROOT.kBlue,ROOT.kGreen,ROOT.kRed]
 
     source_name = source_name_input
+    binx_lower = Hist2D_Data.GetYaxis().FindBin(MSCL_lower_cut)
+    binx_upper = Hist2D_Data.GetYaxis().FindBin(MSCL_blind_cut)-1
+    biny_lower = Hist2D_Data.GetYaxis().FindBin(MSCW_lower_cut)
+    biny_upper = Hist2D_Data.GetYaxis().FindBin(MSCW_blind_cut)-1
+
+    for elev in range(0,len(elev_range)):
+        file_elev_lower = elev_range[elev][0]
+        file_elev_upper = elev_range[elev][1]
+        FilePath_Folder0 = []
+        exposure_hours = 0.
+        exposure_hours_dark = 0.
+        NSB_avg = 0.
+        NSB_avg_dark = 0.
+        FilePath = "%s/Netflix_"%(folder_path)+source_name+PercentCrab+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_%s"%(ONOFF)+".root";
+        FilePath_Folder0 += [FilePath]
+        if not os.path.isfile(FilePath_Folder0[0]): continue
+        GetSourceInfo(FilePath_Folder0)
+        print 'Source %s, exposure = %s, NSB = %s'%(source_name,exposure_hours,NSB_avg)
+        if exposure_hours==0: continue
+        Hist_MDM_InclBkg_Rate += [ROOT.TH1D("Hist_MDM_InclBkg_Rate_%s"%(file_elev_upper),"",len(energy_list)-1,array('d',energy_list))]
+        Hist_MDM_Bkg_Rate += [ROOT.TH1D("Hist_MDM_Bkg_Rate_%s"%(file_elev_upper),"",len(energy_list)-1,array('d',energy_list))]
+        for e in range(0,len(energy_list)-1):
+            ErecS_lower_cut = energy_list[e]
+            ErecS_upper_cut = energy_list[e+1]
+            GetShowerHistogramsFromFile(FilePath_Folder0[0])
+            NormalizeSkyMapHistograms(FilePath_Folder0[0])
+            incl_bkg_integral = Hist2D_Bkgd.Integral(binx_lower,binx_upper,biny_lower,biny_upper)
+            incl_bkg_rate, incl_bkg_rate_err = Event_rate(incl_bkg_integral,exposure_hours)
+            Hist_MDM_InclBkg_Rate[len(Hist_MDM_InclBkg_Rate)-1].SetBinContent(e+1,incl_bkg_rate)
+            Hist_MDM_InclBkg_Rate[len(Hist_MDM_InclBkg_Rate)-1].SetBinError(e+1,incl_bkg_rate_err)
+            Hist_temp = Hist_Bkgd_Skymap.Clone()
+            Hist_temp.Rebin2D(n_rebin,n_rebin)
+            bkg_integral = SkymapHighlightIntegral(Hist_temp,Hist_Highlight_Skymap)
+            bkg_rate, bkg_rate_err = Event_rate(bkg_integral,exposure_hours)
+            Hist_MDM_Bkg_Rate[len(Hist_MDM_Bkg_Rate)-1].SetBinContent(e+1,bkg_rate)
+            Hist_MDM_Bkg_Rate[len(Hist_MDM_Bkg_Rate)-1].SetBinError(e+1,bkg_rate_err)
+
     for elev in range(0,len(elev_range)):
         file_elev_lower = elev_range[elev][0]
         file_elev_upper = elev_range[elev][1]
@@ -2083,9 +2543,8 @@ def SingleSourceSpectrum(source_name_input):
         if exposure_hours==0: continue
         Hist_MDM_NormSig_Rate += [ROOT.TH1D("Hist_MDM_NormSig_Rate_%s"%(file_elev_upper),"",len(energy_list)-1,array('d',energy_list))]
         Hist_MDM_Sig_Rate += [ROOT.TH1D("Hist_MDM_Sig_Rate_%s"%(file_elev_upper),"",len(energy_list)-1,array('d',energy_list))]
-        Hist_MDM_Bkg_Rate += [ROOT.TH1D("Hist_MDM_Bkg_Rate_%s"%(file_elev_upper),"",len(energy_list)-1,array('d',energy_list))]
         legend_S2B += ['%s elev. %s-%s'%(source_name,file_elev_lower,file_elev_upper)]
-        color_S2B += [color_code[(elev % 3)]+int(elev/3.)]
+        color_S2B += [color_code[(elev % 3)]-2*int(elev/3.)]
         for e in range(0,len(energy_list)-1):
             ErecS_lower_cut = energy_list[e]
             ErecS_upper_cut = energy_list[e+1]
@@ -2097,21 +2556,23 @@ def SingleSourceSpectrum(source_name_input):
             Hist_temp = Hist_Bkgd_Skymap.Clone()
             Hist_temp.Rebin2D(n_rebin,n_rebin)
             bkg_integral = SkymapHighlightIntegral(Hist_temp,Hist_Highlight_Skymap)
-            incl_bkg_integral = Hist2D_Bkgd.Integral()
+            incl_bkg_integral = Hist2D_Bkgd.Integral(binx_lower,binx_upper,biny_lower,biny_upper)
             data_rate, data_rate_err = Event_rate(data_integral,exposure_hours)
             bkg_rate, bkg_rate_err = Event_rate(bkg_integral,exposure_hours)
             incl_bkg_rate, incl_bkg_rate_err = Event_rate(incl_bkg_integral,exposure_hours)
             sig_rate = data_rate-bkg_rate
             sig_rate_err = pow(data_rate_err*data_rate_err+bkg_rate_err*bkg_rate_err,0.5)
-            Hist_MDM_Bkg_Rate[len(Hist_MDM_Bkg_Rate)-1].SetBinContent(e+1,incl_bkg_rate)
-            Hist_MDM_Bkg_Rate[len(Hist_MDM_Bkg_Rate)-1].SetBinError(e+1,incl_bkg_rate_err)
             Hist_MDM_Sig_Rate[len(Hist_MDM_Sig_Rate)-1].SetBinContent(e+1,sig_rate)
             Hist_MDM_Sig_Rate[len(Hist_MDM_Sig_Rate)-1].SetBinError(e+1,sig_rate_err)
             if bkg_rate!=0:
-                norm_sig_rate = sig_rate/incl_bkg_rate*Hist_MDM_Bkg_Rate[len(Hist_MDM_Bkg_Rate)-1].GetBinContent(e+1)
+                norm_sig_rate = sig_rate/incl_bkg_rate*Hist_MDM_InclBkg_Rate[len(Hist_MDM_InclBkg_Rate)-1].GetBinContent(e+1)
+                #norm_sig_rate = sig_rate/bkg_rate*Hist_MDM_Bkg_Rate[len(Hist_MDM_InclBkg_Rate)-1].GetBinContent(e+1)
                 Hist_MDM_NormSig_Rate[len(Hist_MDM_NormSig_Rate)-1].SetBinContent(e+1,norm_sig_rate)
                 Hist_MDM_NormSig_Rate[len(Hist_MDM_NormSig_Rate)-1].SetBinError(e+1,sig_rate_err)
-    MakeComparisonPlot(Hist_MDM_NormSig_Rate,legend_S2B,color_S2B,'E [GeV]','event rate','SignalFluxNorm_MDM%s_%s'%(PercentCrab,folder_tag),True,True)
+    MakeComparisonPlot(Hist_MDM_NormSig_Rate,legend_S2B,color_S2B,'E [GeV]','events/hour (normalized)','SignalFluxNorm_MDM%s_%s'%(PercentCrab,folder_tag),0.,0.,True,True)
+    MakeComparisonPlot(Hist_MDM_Sig_Rate,legend_S2B,color_S2B,'E [GeV]','events/hour','SignalFlux_MDM%s_%s'%(PercentCrab,folder_tag),0.,0.,True,True)
+    MakeComparisonPlot(Hist_MDM_Bkg_Rate,legend_S2B,color_S2B,'E [GeV]','events/hour','BkgdFlux_MDM%s_%s'%(PercentCrab,folder_tag),0.,0.,True,True)
+    MakeComparisonPlot(Hist_MDM_InclBkg_Rate,legend_S2B,color_S2B,'E [GeV]','events/hour','InclBkgdFlux_MDM%s_%s'%(PercentCrab,folder_tag),0.,0.,True,True)
 
 def SingleSourceSkyMap(source_name_input):
 
@@ -2158,9 +2619,10 @@ def SingleSourceSkyMap(source_name_input):
                 NormalizeSkyMapHistograms(FilePath_Folder0[source][path])
                 StackSkymapHistograms()
 
-        PlotsStackedHistograms('%s%s_%s'%(source_name,PercentCrab,folder_tag))
+        PlotsStackedHistograms('%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
 
         Hist_Data_Skymap_SumE.Rebin2D(n_rebin,n_rebin)
+        Hist_Dark_Skymap_SumE.Rebin2D(n_rebin,n_rebin)
         Hist_Bkgd_Skymap_SumE.Rebin2D(n_rebin,n_rebin)
         Hist_Bkgd_Skymap_Raw_SumE.Rebin2D(n_rebin,n_rebin)
         Hist_Highlight_Skymap.Rebin2D(n_rebin,n_rebin)
@@ -2168,10 +2630,13 @@ def SingleSourceSkyMap(source_name_input):
         Hist_Data_Skymap_smooth = Smooth2DMap(Hist_Data_Skymap_SumE,smooth_size,False)
         Hist_Bkgd_Skymap_smooth = Smooth2DMap(Hist_Bkgd_Skymap_SumE,smooth_size,False)
 
-        #Hist_Bkgd_Skymap_Raw_smooth = Smooth2DMap(Hist_Bkgd_Skymap_Raw_SumE,smooth_size,False)
-        #Make2DSignificancePlot(Hist_Data_Skymap_SumE,Hist_Bkgd_Skymap_Raw_SumE,Hist_Data_Skymap_smooth,Hist_Bkgd_Skymap_Raw_smooth,Hist_Highlight_Skymap,'RA','Dec','SkymapRaw_%s_%s'%(source_name,folder_tag))
+        Hist_Dark_Skymap_smooth = Smooth2DMap(Hist_Dark_Skymap_SumE,smooth_size,False)
+        Make2DSignificancePlot(Syst_Dark,Hist_Data_Skymap_SumE,Hist_Dark_Skymap_SumE,Hist_Data_Skymap_smooth,Hist_Dark_Skymap_smooth,Hist_Highlight_Skymap,'RA','Dec','Skymap_Dark_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
 
-        Make2DSignificancePlot(Hist_Data_Skymap_SumE,Hist_Bkgd_Skymap_SumE,Hist_Data_Skymap_smooth,Hist_Bkgd_Skymap_smooth,Hist_Highlight_Skymap,'RA','Dec','Skymap_%s%s_%s'%(source_name,PercentCrab,folder_tag))
+        Hist_Bkgd_Skymap_Raw_smooth = Smooth2DMap(Hist_Bkgd_Skymap_Raw_SumE,smooth_size,False)
+        Make2DSignificancePlot(Syst_MDM,Hist_Data_Skymap_SumE,Hist_Bkgd_Skymap_Raw_SumE,Hist_Data_Skymap_smooth,Hist_Bkgd_Skymap_Raw_smooth,Hist_Highlight_Skymap,'RA','Dec','Skymap_MDM_Raw_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
+
+        Make2DSignificancePlot(Syst_MDM,Hist_Data_Skymap_SumE,Hist_Bkgd_Skymap_SumE,Hist_Data_Skymap_smooth,Hist_Bkgd_Skymap_smooth,Hist_Highlight_Skymap,'RA','Dec','Skymap_MDM_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
 
 def HMS2deg(ra='', dec=''):
     print 'ra = %s'%(ra)
@@ -2196,15 +2661,16 @@ def HMS2deg(ra='', dec=''):
 
 
 SystDarkVsMDM()
-#SystAsFunctionOfEnergy()
+SystAsFunctionOfEnergy()
+SystAsFunctionOfElevation()
 #SystAsFunctionOfNSB()
 #SystAsFunctionOfGalLat()
-#SystAsFunctionOfElevation()
+#SystAsFunctionOfSignal()
 #CompareDiffFolders()
 
 #source_of_interest = 'Proton_NSB200'
 #source_of_interest = 'Proton_NSB750'
-source_of_interest = 'Crab'
+#source_of_interest = 'Crab'
 #source_of_interest = 'Mrk421'
 #source_of_interest = 'H1426'
 #source_of_interest = 'PKS1424'
@@ -2220,7 +2686,7 @@ source_of_interest = 'Crab'
 #source_of_interest = '1ES1011V6'
 #source_of_interest = 'NGC1275V6'
 #source_of_interest = '1ES0647V6'
-#source_of_interest = '1ES1440V6'
+source_of_interest = '1ES1440V6'
 #source_of_interest = '1ES1741V6'
 #source_of_interest = 'IC443HotSpot'
 #source_of_interest = 'RGBJ0710'
@@ -2238,9 +2704,11 @@ source_idx = FindSourceIndex(source_of_interest)
 souce_ra = round(float(HMS2deg(sky_coord[source_idx].split('+')[0],sky_coord[source_idx].split('+')[1])[0]),3)
 souce_dec = round(float(HMS2deg(sky_coord[source_idx].split('+')[0],sky_coord[source_idx].split('+')[1])[1]),3)
 Hist_Data_Skymap = ROOT.TH2D("Hist_Data_Skymap","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
+Hist_Dark_Skymap = ROOT.TH2D("Hist_Dark_Skymap","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
 Hist_Bkgd_Skymap = ROOT.TH2D("Hist_Bkgd_Skymap","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
 Hist_Bkgd_Skymap_Raw = ROOT.TH2D("Hist_Bkgd_Skymap_Raw","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
 Hist_Data_Skymap_SumE = ROOT.TH2D("Hist_Data_Skymap_SumE","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
+Hist_Dark_Skymap_SumE = ROOT.TH2D("Hist_Dark_Skymap_SumE","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
 Hist_Bkgd_Skymap_SumE = ROOT.TH2D("Hist_Bkgd_Skymap_SumE","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
 Hist_Bkgd_Skymap_Raw_SumE = ROOT.TH2D("Hist_Bkgd_Skymap_Raw_SumE","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
 Hist_Highlight_Skymap = ROOT.TH2D("Hist_Highlight_Skymap","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
@@ -2250,7 +2718,15 @@ smooth_size = 0.1
 #n_rebin = 2
 #smooth_size = 0.05
 
-ONOFF = "ON"
-#ONOFF = "OFF"
-SingleSourceSkyMap(source_of_interest)
-SingleSourceSpectrum(source_of_interest)
+#ONOFF = "ON"
+ONOFF = "OFF"
+
+PercentCrab = "_Crab0"
+#PercentCrab = "_Crab20"
+#PercentCrab = "_Crab50"
+#PercentCrab = "_Crab100"
+#PercentCrab = "_Crab200"
+#PercentCrab = "_Crab400"
+
+#SingleSourceSkyMap(source_of_interest)
+#SingleSourceSpectrum(source_of_interest)
