@@ -20,11 +20,11 @@ ROOT.gStyle.SetPaintTextFormat("0.3f")
 ONOFF = "OFF"
 
 PercentCrab = "_Crab0"
+#PercentCrab = "_Crab10"
 #PercentCrab = "_Crab20"
 #PercentCrab = "_Crab50"
 #PercentCrab = "_Crab100"
 #PercentCrab = "_Crab200"
-#PercentCrab = "_Crab400"
 
 FileFolder = []
 FileTag = []
@@ -40,6 +40,9 @@ Syst_Dark = 0.
 #FileFolder += ['output_unblind_4x4_nominal_tight']
 #FileTag += ['tight']
 #FileLabel += ['tight']
+#FileFolder += ['output_unblind_4x4_nominal_medium']
+#FileTag += ['medium']
+#FileLabel += ['medium']
 FileFolder += ['output_unblind_4x4_nominal_loose']
 FileTag += ['loose']
 FileLabel += ['loose']
@@ -65,8 +68,8 @@ FileLabel += ['loose']
 #FileLabel += ['#Delta elev. = -20']
 
 elev_range = []
-elev_range += [[25,35]]
-elev_range += [[35,45]]
+#elev_range += [[25,35]]
+#elev_range += [[35,45]]
 elev_range += [[45,55]]
 elev_range += [[55,65]]
 elev_range += [[65,75]]
@@ -167,6 +170,12 @@ sky_coord += ['10 07 04 +16 04 55']
 for_syst += [False]
 source_list += ['IC443HotSpotV5']
 sky_coord += ['06 18 2.700 +22 39 36.00']
+for_syst += [False]
+source_list += ['GemingaV6']
+sky_coord += ['06 32 28 +17 22 00']
+for_syst += [False]
+source_list += ['GemingaV5']
+sky_coord += ['06 32 28 +17 22 00']
 for_syst += [False]
 
 gal_coord = SkyCoord(sky_coord[:], unit=(u.hourangle, u.deg))
@@ -488,6 +497,7 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     for h in range(0,len(Hists)):
         mean += [Hists[h].GetMean()]
         rms += [Hists[h].GetRMS()]
+        if 'MSCW' in name: Hists[h].GetXaxis().SetRangeUser(-1,MSCW_blind_cut+1)
         if Hists[h]!=0:
             Hists[h].SetLineColor(colors[h])
             Hists[h].GetXaxis().SetTitle(title)
@@ -587,7 +597,8 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     predict_bkg = 0
     predict_bkg, err_bkg = IntegralAndError(Hists[bkg_idx],norm_bin_low_target,norm_bin_up_target)
     predict_sys, err_sys = IntegralAndSystError(Hist_Err,norm_bin_low_target,norm_bin_up_target,-1)
-    err_bkg = pow(err_bkg*err_bkg+err_sys*err_sys,0.5)
+    #err_bkg = pow(err_bkg*err_bkg+err_sys*err_sys,0.5)
+    err_bkg = pow(err_bkg*err_bkg+(Syst_MDM*predict_bkg)*(Syst_MDM*predict_bkg),0.5)
     Sig = 1.*CalculateSignificance(data_SR-predict_bkg,predict_bkg,err_bkg)
     lumilab2 = ROOT.TLatex(0.15,0.60,'Excess = %0.1f#pm%0.1f (%0.1f#sigma)'%(data_SR-predict_bkg,pow(err_SR*err_SR+err_bkg*err_bkg,0.5),Sig) )
     lumilab2.SetNDC()
@@ -637,6 +648,7 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     #Hist_Band.GetXaxis().SetRangeUser(low_end,high_end)
     Hist_Band.Draw("e2")
     line2 = ROOT.TLine(Hist_Band.GetBinLowEdge(1),1,Hist_Band.GetBinLowEdge(Hist_Band.GetNbinsX()+1),1)
+    if 'MSCW' in name: line2 = ROOT.TLine(-1,1,MSCW_blind_cut+1,1)
     line2.SetLineStyle(1)
     line2.SetLineColor(1)
     line2.SetLineWidth(2)
@@ -692,7 +704,161 @@ def Smooth2DMap(Hist_Old,smooth_size,addLinearly):
                 Hist_Smooth.SetBinError(bx1,by1,bin_error)
     return Hist_Smooth
 
-def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_smooth,Hist_highlight,xtitle,ytitle,name):
+def Make2DSignificanceCameraFoVPlot(exposure,syst_method,Hist_SR,Hist_Bkg,xtitle,ytitle,name):
+
+    canvas = ROOT.TCanvas("canvas","canvas", 200, 10, 600, 600)
+    pad1 = ROOT.TPad("pad1","pad1",0,0,1,1)
+    pad1.SetBottomMargin(0.15)
+    pad1.SetRightMargin(0.15)
+    pad1.SetLeftMargin(0.15)
+    pad1.SetTopMargin(0.15)
+    pad1.SetBorderMode(0)
+    pad1.Draw()
+    pad1.cd()
+    for bx in range(0,Hist_SR.GetNbinsX()):
+        for by in range(0,Hist_SR.GetNbinsY()):
+            theta2 = pow(Hist_SR.GetXaxis().GetBinCenter(bx+1),2)+pow(Hist_SR.GetYaxis().GetBinCenter(by+1),2)
+
+    Hist_Skymap = Hist_SR.Clone()
+    Hist_Excess = Hist_SR.Clone()
+    syst_fov = 0.
+    n_bins = 0
+    for bx in range(0,Hist_SR.GetNbinsX()):
+        for by in range(0,Hist_SR.GetNbinsY()):
+            if Hist_Bkg.GetBinContent(bx+1,by+1)==0: continue
+            n_bins += 1
+            NSR = Hist_SR.GetBinContent(bx+1,by+1)
+            NSR_Err = Hist_SR.GetBinError(bx+1,by+1)
+            NBkg = Hist_Bkg.GetBinContent(bx+1,by+1)
+            NBkg_Err = pow(pow(Hist_Bkg.GetBinError(bx+1,by+1),2)+pow(syst_method*Hist_Bkg.GetBinContent(bx+1,by+1),2),0.5)
+            syst_fov += pow(NSR/NBkg-1.,2)
+            Sig = 1.*CalculateSignificance(NSR-NBkg,NBkg,NBkg_Err)
+            Hist_Skymap.SetBinContent(bx+1,by+1,Sig)
+            Hist_Excess.SetBinContent(bx+1,by+1,NSR/NBkg-1.)
+    syst_fov = syst_fov/n_bins
+    syst_fov = pow(syst_fov,0.5)
+
+    total_bins = 0.
+    sum_bins = 0.
+    sum_data = 0.
+    sum_bkg = 0.
+    sum_bkg_err = 0.
+    bias_sum_bins = 0.
+    bias_sum_data = 0.
+    bias_sum_bkg = 0.
+    bias_sum_bkg_err = 0.
+    global_sum_data = 0.
+    global_sum_bkg = 0.
+    global_sum_bkg_err = 0.
+    for bx in range(0,Hist_SR.GetNbinsX()):
+        for by in range(0,Hist_SR.GetNbinsY()):
+            global_sum_data += Hist_SR.GetBinContent(bx+1,by+1)
+            global_sum_bkg += Hist_Bkg.GetBinContent(bx+1,by+1)
+            global_sum_bkg_err += pow(Hist_Bkg.GetBinError(bx+1,by+1),2)+Hist_Bkg.GetBinContent(bx+1,by+1)
+            bin_ra = Hist_SR.GetXaxis().GetBinCenter(bx+1)
+            bin_dec = Hist_SR.GetYaxis().GetBinCenter(by+1)
+            bin_theta2 = pow(pow(0.-bin_ra,2)+pow(0.-bin_dec,2),0.5)
+            if bin_theta2<theta2_range: total_bins += 1.
+            if bin_theta2<theta2_range and Hist_Skymap.GetBinContent(bx+1,by+1)>=highlight_threshold: 
+                bias_sum_bins += 1.
+                bias_sum_data += Hist_SR.GetBinContent(bx+1,by+1)
+                bias_sum_bkg += Hist_Bkg.GetBinContent(bx+1,by+1)
+                bias_sum_bkg_err += pow(Hist_Bkg.GetBinError(bx+1,by+1),2)+Hist_Bkg.GetBinContent(bx+1,by+1)
+            if bin_theta2<theta2_range and abs(Hist_Skymap.GetBinContent(bx+1,by+1))>=highlight_threshold: 
+                sum_bins += 1.
+                sum_data += Hist_SR.GetBinContent(bx+1,by+1)
+                sum_bkg += Hist_Bkg.GetBinContent(bx+1,by+1)
+                sum_bkg_err += pow(Hist_Bkg.GetBinError(bx+1,by+1),2)+Hist_Bkg.GetBinContent(bx+1,by+1)
+    sum_bkg_err = pow(sum_bkg_err+pow(syst_method*sum_bkg,2),0.5)
+    sum_sig = 1.*CalculateSignificance(sum_data-sum_bkg,sum_bkg,sum_bkg_err)
+    bias_sum_bkg_err = pow(bias_sum_bkg_err+pow(syst_method*bias_sum_bkg,2),0.5)
+    bias_sum_sig = 1.*CalculateSignificance(bias_sum_data-bias_sum_bkg,bias_sum_bkg,bias_sum_bkg_err)
+    global_sum_bkg_err = pow(global_sum_bkg_err+pow(syst_method*global_sum_bkg,2),0.5)
+    global_sum_sig = 1.*CalculateSignificance(global_sum_data-global_sum_bkg,global_sum_bkg,global_sum_bkg_err)
+
+    binx_size = Hist_SR.GetXaxis().GetBinCenter(2)-Hist_SR.GetXaxis().GetBinCenter(1)
+    biny_size = Hist_SR.GetYaxis().GetBinCenter(2)-Hist_SR.GetYaxis().GetBinCenter(1)
+    sum_bins = max(1.,sum_bins)
+    source_size = sum_bins*binx_size*biny_size
+    print 'sum_sig = %s'%(sum_sig)
+    pvalue = (total_bins/sum_bins)*special.erfc(sum_sig/pow(2,0.5))
+    print 'p-value = %s'%(pvalue)
+    sum_sig_lee = max(0,special.erfinv(1.-pvalue)*pow(2,0.5))
+    print 'sum_sig_lee = %s'%(sum_sig_lee)
+
+
+    Hist_Skymap.GetYaxis().SetTitle(ytitle)
+    Hist_Skymap.GetXaxis().SetTitle(xtitle)
+    Hist_Skymap.SetMaximum(5)
+    Hist_Skymap.SetMinimum(-5)
+    Hist_Skymap.Draw("COL4Z")
+    lumilab4 = ROOT.TLatex(0.2,0.85,'exposure = %0.1f hours'%(exposure) )
+    lumilab4.SetNDC()
+    lumilab4.SetTextSize(0.04)
+    lumilab4.Draw()
+    lumilab1 = ROOT.TLatex(0.2,0.8,'global %0.1f#sigma (syst = %0.1f%%)'%(global_sum_sig,syst_method*100.) )
+    lumilab1.SetNDC()
+    lumilab1.SetTextSize(0.04)
+    lumilab1.Draw()
+    lumilab2 = ROOT.TLatex(0.2,0.75,'local %0.1f#sigma'%(bias_sum_sig) )
+    lumilab2.SetNDC()
+    lumilab2.SetTextSize(0.04)
+    lumilab2.Draw()
+    lumilab3 = ROOT.TLatex(0.2,0.70,'local %0.1f#sigma (unbiased)'%(sum_sig) )
+    lumilab3.SetNDC()
+    lumilab3.SetTextSize(0.04)
+    lumilab3.Draw()
+    if not math.isinf(sum_sig_lee):
+        lumilab5 = ROOT.TLatex(0.2,0.65,'local %0.1f#sigma (LEE)'%(sum_sig_lee) )
+        lumilab5.SetNDC()
+        lumilab5.SetTextSize(0.04)
+        lumilab5.Draw()
+    canvas.SaveAs('output_plots/SkymapSig_%s.png'%(name))
+
+    Hist_Excess.GetYaxis().SetTitle(ytitle)
+    Hist_Excess.GetXaxis().SetTitle(xtitle)
+    Hist_Excess.SetMaximum(0.02)
+    Hist_Excess.SetMinimum(-0.02)
+    Hist_Excess.Draw("COL4Z")
+    lumilab4 = ROOT.TLatex(0.2,0.85,'exposure = %0.1f hours'%(exposure) )
+    lumilab4.SetNDC()
+    lumilab4.SetTextSize(0.04)
+    lumilab4.Draw()
+    lumilab3 = ROOT.TLatex(0.2,0.8,'rad. accept. syst. = %0.2f%%'%(syst_fov*100.) )
+    lumilab3.SetNDC()
+    lumilab3.SetTextSize(0.04)
+    lumilab3.Draw()
+    canvas.SaveAs('output_plots/SkymapExcess_%s.png'%(name))
+
+    func = ROOT.TF1("func","gaus", -5, 8)
+    func.SetParameters(10.,0.,1.0)
+    Hist_Sig = ROOT.TH1D("Hist_Sig","",65,-5,8)
+    Hist_Sig_cut = ROOT.TH1D("Hist_Sig_cut","",65,-5,8)
+    for bx in range(0,Hist_Skymap.GetNbinsX()):
+        for by in range(0,Hist_Skymap.GetNbinsY()):
+            if not Hist_SR.GetBinContent(bx+1,by+1)==0 and not Hist_Bkg.GetBinContent(bx+1,by+1)==0:
+                content = Hist_Skymap.GetBinContent(bx+1,by+1)
+                Hist_Sig.Fill(content)
+                locationx1 = Hist_Skymap.GetXaxis().GetBinCenter(bx)
+                locationy1 = Hist_Skymap.GetYaxis().GetBinCenter(by)
+                if (pow(locationx1*locationx1+locationy1*locationy1,0.5)>0.5):
+                    Hist_Sig_cut.Fill(content)
+    Hist_Model = ROOT.TH1D("Hist_Model","",65,-5,8)
+    Hist_Model.FillRandom("func",10000*int(Hist_Sig.GetEntries()))
+    Hist_Model.Scale(1./10000.)
+    Hist_Model.SetMinimum(0.5)
+    Hist_list = []
+    legend_list = []
+    color_list = []
+    Hist_list += [Hist_Model]
+    legend_list += ['Perfect Gaussian']
+    color_list += [2]
+    Hist_list += [Hist_Sig]
+    legend_list += ['Data']
+    color_list += [4]
+    MakeGaussComparisonPlot(Hist_list,legend_list,color_list,'significance','SigDist_%s'%(name))
+
+def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_smooth,xtitle,ytitle,name):
 
     canvas = ROOT.TCanvas("canvas","canvas", 200, 10, 600, 600)
     pad1 = ROOT.TPad("pad1","pad1",0,0,1,1)
@@ -733,6 +899,10 @@ def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_
     sum_data = 0.
     sum_bkg = 0.
     sum_bkg_err = 0.
+    bias_sum_bins = 0.
+    bias_sum_data = 0.
+    bias_sum_bkg = 0.
+    bias_sum_bkg_err = 0.
     global_sum_data = 0.
     global_sum_bkg = 0.
     global_sum_bkg_err = 0.
@@ -741,13 +911,27 @@ def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_
     Hist_Ratio.Divide(Hist_Bkg_smooth)
     for bx in range(0,Hist_SR.GetNbinsX()):
         for by in range(0,Hist_SR.GetNbinsY()):
-            total_bins += 1.
-            Hist_highlight.SetBinContent(bx+1,by+1,0.)
+            Hist_Highlight_Skymap.SetBinContent(bx+1,by+1,0.)
+            Hist_Highlight_Bias_Skymap.SetBinContent(bx+1,by+1,0.)
             global_sum_data += Hist_SR.GetBinContent(bx+1,by+1)
             global_sum_bkg += Hist_Bkg.GetBinContent(bx+1,by+1)
             global_sum_bkg_err += pow(Hist_Bkg.GetBinError(bx+1,by+1),2)+Hist_Bkg.GetBinContent(bx+1,by+1)
-            if Hist_Skymap_smooth.GetBinContent(bx+1,by+1)>=3.0: 
-                Hist_highlight.SetBinContent(bx+1,by+1,3.0)
+            bin_ra = Hist_SR.GetXaxis().GetBinCenter(bx+1)
+            bin_dec = Hist_SR.GetYaxis().GetBinCenter(by+1)
+            bin_theta2 = pow(pow(source_ra-bin_ra,2)+pow(source_dec-bin_dec,2),0.5)
+            if bin_theta2<theta2_range: total_bins += 1.
+            if bin_theta2<theta2_range and Hist_Skymap_smooth.GetBinContent(bx+1,by+1)>=highlight_threshold: 
+                local_sig = Hist_Skymap_smooth.GetBinContent(bx+1,by+1);
+                #Hist_Highlight_Bias_Skymap.SetBinContent(bx+1,by+1,int(local_sig))
+                Hist_Highlight_Bias_Skymap.SetBinContent(bx+1,by+1,1.)
+                bias_sum_bins += 1.
+                bias_sum_data += Hist_SR.GetBinContent(bx+1,by+1)
+                bias_sum_bkg += Hist_Bkg.GetBinContent(bx+1,by+1)
+                bias_sum_bkg_err += pow(Hist_Bkg.GetBinError(bx+1,by+1),2)+Hist_Bkg.GetBinContent(bx+1,by+1)
+            if bin_theta2<theta2_range and abs(Hist_Skymap_smooth.GetBinContent(bx+1,by+1))>=highlight_threshold: 
+                local_sig = Hist_Skymap_smooth.GetBinContent(bx+1,by+1);
+                #Hist_Highlight_Skymap.SetBinContent(bx+1,by+1,int(abs(local_sig)))
+                Hist_Highlight_Skymap.SetBinContent(bx+1,by+1,1.)
                 sum_bins += 1.
                 sum_data += Hist_SR.GetBinContent(bx+1,by+1)
                 sum_bkg += Hist_Bkg.GetBinContent(bx+1,by+1)
@@ -756,6 +940,8 @@ def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_
                 Hist_Ratio.SetBinContent(bx+1,by+1,0.)
     sum_bkg_err = pow(sum_bkg_err+pow(syst_method*sum_bkg,2),0.5)
     sum_sig = 1.*CalculateSignificance(sum_data-sum_bkg,sum_bkg,sum_bkg_err)
+    bias_sum_bkg_err = pow(bias_sum_bkg_err+pow(syst_method*bias_sum_bkg,2),0.5)
+    bias_sum_sig = 1.*CalculateSignificance(bias_sum_data-bias_sum_bkg,bias_sum_bkg,bias_sum_bkg_err)
     global_sum_bkg_err = pow(global_sum_bkg_err+pow(syst_method*global_sum_bkg,2),0.5)
     global_sum_sig = 1.*CalculateSignificance(global_sum_data-global_sum_bkg,global_sum_bkg,global_sum_bkg_err)
 
@@ -785,25 +971,24 @@ def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_
     Hist_Skymap.SetMaximum(5)
     Hist_Skymap.SetMinimum(-5)
     Hist_Skymap.Draw("COL4Z")
-    Hist_highlight.Draw("CONT3 same")
-    lumilab4 = ROOT.TLatex(0.2,0.85,'count: data (%0.0f) / bkg (%0.0f)'%(global_sum_data,global_sum_bkg) )
-    lumilab4.SetNDC()
-    lumilab4.SetTextSize(0.04)
-    lumilab4.Draw()
-    lumilab1 = ROOT.TLatex(0.2,0.8,'global %0.1f#sigma (syst = %0.1f%%)'%(global_sum_sig,syst_method*100.) )
+    Hist_Highlight_Bias_Skymap.Draw("CONT3 same")
+    lumilab1 = ROOT.TLatex(0.2,0.85,'global %0.1f#sigma (syst = %0.1f%%)'%(global_sum_sig,syst_method*100.) )
     lumilab1.SetNDC()
     lumilab1.SetTextSize(0.04)
     lumilab1.Draw()
-    if sum_sig!=0:
-        lumilab2 = ROOT.TLatex(0.2,0.75,'local %0.1f#sigma'%(sum_sig) )
-        lumilab2.SetNDC()
-        lumilab2.SetTextSize(0.04)
-        lumilab2.Draw()
-        if not math.isinf(sum_sig_lee):
-            lumilab3 = ROOT.TLatex(0.2,0.70,'local %0.1f#sigma (LEE)'%(sum_sig_lee) )
-            lumilab3.SetNDC()
-            lumilab3.SetTextSize(0.04)
-            lumilab3.Draw()
+    lumilab2 = ROOT.TLatex(0.2,0.80,'local %0.1f#sigma'%(bias_sum_sig) )
+    lumilab2.SetNDC()
+    lumilab2.SetTextSize(0.04)
+    lumilab2.Draw()
+    lumilab3 = ROOT.TLatex(0.2,0.75,'local %0.1f#sigma (unbiased)'%(sum_sig) )
+    lumilab3.SetNDC()
+    lumilab3.SetTextSize(0.04)
+    lumilab3.Draw()
+    if not math.isinf(sum_sig_lee):
+        lumilab5 = ROOT.TLatex(0.2,0.70,'local %0.1f#sigma (LEE)'%(sum_sig_lee) )
+        lumilab5.SetNDC()
+        lumilab5.SetTextSize(0.04)
+        lumilab5.Draw()
     canvas.SaveAs('output_plots/SkymapSig_%s.png'%(name))
 
     Hist_Skymap_smooth.GetYaxis().SetTitle(ytitle)
@@ -811,25 +996,24 @@ def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_
     Hist_Skymap_smooth.SetMaximum(5)
     Hist_Skymap_smooth.SetMinimum(-5)
     Hist_Skymap_smooth.Draw("COL4Z")
-    Hist_highlight.Draw("CONT3 same")
-    lumilab4 = ROOT.TLatex(0.2,0.85,'count: data (%0.0f) / bkg (%0.0f)'%(global_sum_data,global_sum_bkg) )
-    lumilab4.SetNDC()
-    lumilab4.SetTextSize(0.04)
-    lumilab4.Draw()
-    lumilab1 = ROOT.TLatex(0.2,0.8,'global %0.1f#sigma (syst = %0.1f%%)'%(global_sum_sig,syst_method*100.) )
+    Hist_Highlight_Bias_Skymap.Draw("CONT3 same")
+    lumilab1 = ROOT.TLatex(0.2,0.85,'global %0.1f#sigma (syst = %0.1f%%)'%(global_sum_sig,syst_method*100.) )
     lumilab1.SetNDC()
     lumilab1.SetTextSize(0.04)
     lumilab1.Draw()
-    if sum_sig!=0:
-        lumilab2 = ROOT.TLatex(0.2,0.75,'local %0.1f#sigma'%(sum_sig) )
-        lumilab2.SetNDC()
-        lumilab2.SetTextSize(0.04)
-        lumilab2.Draw()
-        if not math.isinf(sum_sig_lee):
-            lumilab3 = ROOT.TLatex(0.2,0.70,'local %0.1f#sigma (LEE)'%(sum_sig_lee) )
-            lumilab3.SetNDC()
-            lumilab3.SetTextSize(0.04)
-            lumilab3.Draw()
+    lumilab2 = ROOT.TLatex(0.2,0.80,'local %0.1f#sigma'%(bias_sum_sig) )
+    lumilab2.SetNDC()
+    lumilab2.SetTextSize(0.04)
+    lumilab2.Draw()
+    lumilab3 = ROOT.TLatex(0.2,0.75,'local %0.1f#sigma (unbiased)'%(sum_sig) )
+    lumilab3.SetNDC()
+    lumilab3.SetTextSize(0.04)
+    lumilab3.Draw()
+    if not math.isinf(sum_sig_lee):
+        lumilab5 = ROOT.TLatex(0.2,0.70,'local %0.1f#sigma (LEE)'%(sum_sig_lee) )
+        lumilab5.SetNDC()
+        lumilab5.SetTextSize(0.04)
+        lumilab5.Draw()
     canvas.SaveAs('output_plots/SkymapSmoothSig_%s.png'%(name))
 
     #Hist_Ratio.GetYaxis().SetTitle(ytitle)
@@ -837,7 +1021,7 @@ def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_
     ##Hist_Ratio.SetMaximum(0.1)
     ##Hist_Ratio.SetMinimum(-0.1)
     #Hist_Ratio.Draw("COL4Z")
-    #Hist_highlight.Draw("CONT3 same")
+    #Hist_Highlight_Bias_Skymap.Draw("CONT3 same")
     #canvas.SaveAs('output_plots/SkymapRatio_%s.png'%(name))
 
     #Hist_Excess = Hist_SR.Clone()
@@ -865,25 +1049,24 @@ def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_
     Hist_Excess.GetYaxis().SetTitle(ytitle)
     Hist_Excess.GetXaxis().SetTitle(xtitle)
     Hist_Excess.Draw("COL4Z")
-    Hist_highlight.Draw("CONT3 same")
-    lumilab4 = ROOT.TLatex(0.2,0.85,'count: data (%0.0f) / bkg (%0.0f)'%(global_sum_data,global_sum_bkg) )
-    lumilab4.SetNDC()
-    lumilab4.SetTextSize(0.04)
-    lumilab4.Draw()
-    lumilab1 = ROOT.TLatex(0.2,0.8,'global %0.1f#sigma (syst = %0.1f%%)'%(global_sum_sig,syst_method*100.) )
+    Hist_Highlight_Bias_Skymap.Draw("CONT3 same")
+    lumilab1 = ROOT.TLatex(0.2,0.85,'global %0.1f#sigma (syst = %0.1f%%)'%(global_sum_sig,syst_method*100.) )
     lumilab1.SetNDC()
     lumilab1.SetTextSize(0.04)
     lumilab1.Draw()
-    if sum_sig!=0:
-        lumilab2 = ROOT.TLatex(0.2,0.75,'local %0.1f#sigma'%(sum_sig) )
-        lumilab2.SetNDC()
-        lumilab2.SetTextSize(0.04)
-        lumilab2.Draw()
-        if not math.isinf(sum_sig_lee):
-            lumilab3 = ROOT.TLatex(0.2,0.70,'local %0.1f#sigma (LEE)'%(sum_sig_lee) )
-            lumilab3.SetNDC()
-            lumilab3.SetTextSize(0.04)
-            lumilab3.Draw()
+    lumilab2 = ROOT.TLatex(0.2,0.80,'local %0.1f#sigma'%(bias_sum_sig) )
+    lumilab2.SetNDC()
+    lumilab2.SetTextSize(0.04)
+    lumilab2.Draw()
+    lumilab3 = ROOT.TLatex(0.2,0.75,'local %0.1f#sigma (unbiased)'%(sum_sig) )
+    lumilab3.SetNDC()
+    lumilab3.SetTextSize(0.04)
+    lumilab3.Draw()
+    if not math.isinf(sum_sig_lee):
+        lumilab5 = ROOT.TLatex(0.2,0.70,'local %0.1f#sigma (LEE)'%(sum_sig_lee) )
+        lumilab5.SetNDC()
+        lumilab5.SetTextSize(0.04)
+        lumilab5.Draw()
     canvas.SaveAs('output_plots/SkymapSmoothExcess_%s.png'%(name))
 
     func = ROOT.TF1("func","gaus", -5, 8)
@@ -1367,6 +1550,12 @@ def Theta2HistScale(Hist,scale,scale_err):
         Hist.SetBinContent(b,new_content)
         Hist.SetBinError(b,new_error)
 
+def StackCameraFoVHistograms():
+
+    Hist_Data_CameraFoV_SumE.Add(Hist_Data_CameraFoV)
+    Hist_Bkgd_CameraFoV_SumE.Add(Hist_Bkgd_CameraFoV)
+    Hist_Bkgd_CameraFoV_Raw_SumE.Add(Hist_Bkgd_CameraFoV_Raw)
+
 def StackSkymapHistograms():
 
     Hist_Data_Skymap_SumE.Add(Hist_Data_Skymap)
@@ -1397,6 +1586,60 @@ def RaDecHistScale(Hist,scale,scale_err):
             new_error = 0
             if old_content>0 and scale>0:
                 new_error = new_content*(scale_err/scale)
+
+def NormalizeCameraFoVHistograms(FilePath):
+
+    global MSCW_blind_cut
+    global MSCL_blind_cut
+    InputFile = ROOT.TFile(FilePath)
+    InfoTree = InputFile.Get("InfoTree")
+    InfoTree.GetEntry(0)
+    MSCW_blind_cut = InfoTree.MSCW_cut_blind
+    MSCL_blind_cut = InfoTree.MSCL_cut_blind
+    bin_lower = Hist2D_Data.GetYaxis().FindBin(MSCW_lower_cut)
+    bin_upper = Hist2D_Data.GetYaxis().FindBin(MSCW_blind_cut)-1
+
+    HistName = "Hist_Data_SR_CameraFoV_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    Hist_Data_CameraFoV.Reset()
+    Hist_Data_CameraFoV.Add(InputFile.Get(HistName))
+    HistName = "Hist_Data_CR_CameraFoV_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    Hist_Bkgd_CameraFoV.Reset()
+    Hist_Bkgd_CameraFoV.Add(InputFile.Get(HistName))
+    HistName = "Hist_Data_CR_CameraFoV_Raw_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    Hist_Bkgd_CameraFoV_Raw.Reset()
+    Hist_Bkgd_CameraFoV_Raw.Add(InputFile.Get(HistName))
+
+    #bkg_total, bkg_err = IntegralAndError(Hist_Data_MSCW,bin_lower,bin_upper)
+    bkg_total = Hist_Data_CameraFoV.Integral()
+    bkg_err = 0
+
+    old_integral = Hist_Bkgd_CameraFoV.Integral()
+    scale = 0
+    scale_err = 0
+    if not bkg_total==0 and not old_integral==0:
+        scale = bkg_total/old_integral
+        scale_err = scale*(bkg_err/bkg_total)
+    else:
+        scale = 0
+        scale_err = 0
+    if not bkg_total==0:
+        RaDecHistScale(Hist_Bkgd_CameraFoV,scale,scale_err)
+    else:
+        Hist_Bkgd_CameraFoV.Scale(0)
+
+    old_integral = Hist_Bkgd_CameraFoV_Raw.Integral()
+    scale = 0
+    scale_err = 0
+    if not bkg_total==0 and not old_integral==0:
+        scale = bkg_total/old_integral
+        scale_err = scale*(bkg_err/bkg_total)
+    else:
+        scale = 0
+        scale_err = 0
+    if not bkg_total==0:
+        RaDecHistScale(Hist_Bkgd_CameraFoV_Raw,scale,scale_err)
+    else:
+        Hist_Bkgd_CameraFoV_Raw.Scale(0)
 
 def NormalizeSkyMapHistograms(FilePath):
 
@@ -1636,6 +1879,25 @@ def PlotsStackedHistograms(tag):
     Hists = []
     legends = []
     colors = []
+    Hists += [Hist_Data_MSCL_SumE]
+    legends += ['obs. data']
+    colors += [1]
+    Hists += [Hist_TrueBkgd_MSCL_SumE]
+    legends += ['true bkg.']
+    colors += [2]
+    Hists += [Hist_Bkgd_MSCL_SumE]
+    legends += ['predict. bkg.']
+    colors += [4]
+    Hists += [Hist_GammaRDBM_MSCL_SumE]
+    legends += ['predict. #gamma']
+    colors += [3]
+    plotname = 'Stack_MSCL_MDM_%s'%(tag)
+    title = 'MSCL'
+    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCL_lower_cut,MSCL_blind_cut,-1)
+
+    Hists = []
+    legends = []
+    colors = []
     Hists += [Hist_Data_MSCW_SumE]
     legends += ['obs. data']
     colors += [1]
@@ -1651,6 +1913,25 @@ def PlotsStackedHistograms(tag):
     plotname = 'Stack_MSCW_Dark_%s'%(tag)
     title = 'MSCW'
     MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCW_lower_cut,MSCW_blind_cut,-1)
+
+    Hists = []
+    legends = []
+    colors = []
+    Hists += [Hist_Data_MSCL_SumE]
+    legends += ['obs. data']
+    colors += [1]
+    Hists += [Hist_TrueBkgd_MSCL_SumE]
+    legends += ['true bkg.']
+    colors += [2]
+    Hists += [Hist_Dark_MSCL_SumE]
+    legends += ['predict. bkg.']
+    colors += [4]
+    Hists += [Hist_GammaDark_MSCL_SumE]
+    legends += ['predict. #gamma']
+    colors += [3]
+    plotname = 'Stack_MSCL_Dark_%s'%(tag)
+    title = 'MSCL'
+    MakeChi2Plot(Hists,legends,colors,title,plotname,True,False,MSCL_lower_cut,MSCL_blind_cut,-1)
 
     Hists = []
     legends = []
@@ -1722,14 +2003,14 @@ def SystAsFunctionOfSignal():
     SignalFlux_label = []
     SignalFlux += ['_Crab0']
     SignalFlux_label += ['0']
-    #SignalFlux += ['_Crab20']
-    #SignalFlux_label += ['0.2']
-    #SignalFlux += ['_Crab50']
-    #SignalFlux_label += ['0.5']
-    #SignalFlux += ['_Crab100']
-    #SignalFlux_label += ['1.0']
-    #SignalFlux += ['_Crab200']
-    #SignalFlux_label += ['2.0']
+    SignalFlux += ['_Crab20']
+    SignalFlux_label += ['0.2']
+    SignalFlux += ['_Crab50']
+    SignalFlux_label += ['0.5']
+    SignalFlux += ['_Crab100']
+    SignalFlux_label += ['1.0']
+    SignalFlux += ['_Crab200']
+    SignalFlux_label += ['2.0']
     SignalFlux += ['_Crab400']
     SignalFlux_label += ['4.0']
 
@@ -1778,18 +2059,15 @@ def SystAsFunctionOfSignal():
             Hist_Eigenvalue_2ndRank[len(Hist_Eigenvalue_2ndRank)-1].GetXaxis().SetBinLabel(flux+1,SignalFlux_label[flux])
             s2b = 0.
             s2b_err = 0.
-            significance = 0.
             if not "_Crab0" in SignalFlux[flux]:
                 s2b, s2b_err = Variation_ratio(Hist_TrueBkgd_Theta2_SumE,Hist_Bkgd_Theta2_SumE,0.2,10.)
             else:
                 s2b, s2b_err = Variation_ratio(Hist_Data_Theta2_SumE,Hist_Bkgd_Theta2_SumE,0.2,10.)
-            significance = Signal_Significance(Hist_Data_Theta2_SumE,Hist_Bkgd_Theta2_SumE,0.2,10.,Syst_MDM)
             Hist_MDM_S2B_Flux[len(Hist_MDM_S2B_Flux)-1].SetBinContent(flux+1,s2b)
             Hist_MDM_S2B_Flux[len(Hist_MDM_S2B_Flux)-1].SetBinError(flux+1,s2b_err)
             Hist_MDM_S2B_Flux[len(Hist_MDM_S2B_Flux)-1].GetXaxis().SetBinLabel(flux+1,SignalFlux_label[flux])
             s2b = 0.
             s2b_err = 0.
-            significance = 0.
             if not "_Crab0" in PercentCrab:
                 s2b, s2b_err = Variation_ratio(Hist_TrueBkgd_Theta2_SumE,Hist_Dark_Theta2_SumE,0.2,10.)
             else:
@@ -1799,7 +2077,7 @@ def SystAsFunctionOfSignal():
             Hist_Dark_S2B_Flux[len(Hist_Dark_S2B_Flux)-1].GetXaxis().SetBinLabel(flux+1,SignalFlux_label[flux])
     MakeComparisonPlotSigDist(Hist_MDM_S2B_Flux,legend_S2B,color_S2B,'signal flux in Crab unit','Systematics_MDM_Flux_%s'%(folder_tag),0.6,1.4,False,False)
     MakeComparisonPlotSigDist(Hist_Dark_S2B_Flux,legend_S2B,color_S2B,'signal flux in Crab unit','Systematics_Dark_Flux_%s'%(folder_tag),0.6,1.4,False,False)
-    MakeComparisonPlot(Hist_Eigenvalue_2ndRank,legend_S2B,color_S2B,'signal flux in Crab unit','size of eigenvalues','Eigenvalue_2ndRank%s_%s'%(PercentCrab,folder_tag),0.2,0.4,False,False)
+    MakeComparisonPlot(Hist_Eigenvalue_2ndRank,legend_S2B,color_S2B,'signal flux in Crab unit','size of eigenvalues','Eigenvalue_2ndRank_Flux_%s'%(folder_tag),0.1,0.4,False,False)
 
     Hist_Eigenvalue_Rank = []
     Hist_Eigenvector_0 = []
@@ -1868,10 +2146,10 @@ def SystAsFunctionOfSignal():
         Hist_Data_Eigenvector_2_real_SumE.Scale(scale_norm) # this makes sure they all have the same normalization
         Hist_Eigenvector_2[len(Hist_Eigenvector_2)-1].Add(Hist_Data_Eigenvector_2_real_SumE)
 
-        abs_integral = 0.
-        for binx in range(0,Hist_Data_MSCW_SumE.GetNbinsX()):
-            abs_integral += abs(Hist_Data_MSCW_SumE.GetBinContent(binx+1))
-        scale_norm = 1./abs_integral
+        bin_lower = Hist2D_Data.GetYaxis().FindBin(1.)
+        bin_upper = Hist2D_Data.GetYaxis().FindBin(3.)-1
+        mscw_norm = Hist_Data_MSCW_SumE.Integral(bin_lower,bin_upper)
+        scale_norm = 1./mscw_norm
         Hist_Data_MSCW_SumE.Scale(scale_norm) # this makes sure they all have the same normalization
         Hist_Shower_MSCW[len(Hist_Shower_MSCW)-1].Add(Hist_Data_MSCW_SumE)
 
@@ -1888,6 +2166,51 @@ def SystAsFunctionOfSignal():
     MakeComparisonPlot(Hist_Eigenvector_2,legend_S2B,color_S2B,'columns','size of eigenvector','Eigenvector_2_Flux_%s'%(folder_tag),0.,0.,False,False)
     MakeComparisonPlot(Hist_Shower_MSCW,legend_S2B,color_S2B,'MSCW','normalized counts','ShowerMSCW_Flux_%s'%(folder_tag),0.,0.,False,False)
 
+def RadialAcceptance():
+
+    global ErecS_lower_cut
+    global ErecS_upper_cut
+    global exposure_hours
+    global exposure_hours_dark
+    global NSB_avg
+    global NSB_avg_dark
+
+    folder_path = FileFolder[0]
+    folder_tag = FileTag[0]
+    folder_label = FileLabel[0]
+
+    ResetStackedShowerHistograms()
+    exposure_hours_total = 0.
+    for source in range(0,len(source_list)):
+        if for_syst[source]==False: continue
+        source_name = source_list[source]
+        for elev in range(0,len(elev_range)):
+            file_elev_lower = elev_range[elev][0]
+            file_elev_upper = elev_range[elev][1]
+            FilePath_Folder0 = []
+            exposure_hours = 0.
+            exposure_hours_dark = 0.
+            NSB_avg = 0.
+            NSB_avg_dark = 0.
+            FilePath = "%s/Netflix_"%(folder_path)+source_list[source]+PercentCrab+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_%s"%(ONOFF)+".root";
+            FilePath_Folder0 += [FilePath]
+            if not os.path.isfile(FilePath_Folder0[0]):continue
+            GetSourceInfo(FilePath_Folder0)
+            exposure_hours_total += exposure_hours
+            for e in range(0,len(energy_list)-1):
+                ErecS_lower_cut = energy_list[e]
+                ErecS_upper_cut = energy_list[e+1]
+                GetShowerHistogramsFromFile(FilePath_Folder0[0])
+                StackShowerHistograms()
+                NormalizeCameraFoVHistograms(FilePath_Folder0[0])
+                StackCameraFoVHistograms()
+
+    Hist_Data_CameraFoV_SumE.Rebin2D(n_rebin,n_rebin)
+    Hist_Bkgd_CameraFoV_SumE.Rebin2D(n_rebin,n_rebin)
+    Hist_Bkgd_CameraFoV_Raw_SumE.Rebin2D(n_rebin,n_rebin)
+
+    Make2DSignificanceCameraFoVPlot(exposure_hours_total,Syst_MDM,Hist_Data_CameraFoV_SumE,Hist_Bkgd_CameraFoV_SumE,'X','Y','CameraFoV%s_%s_%s'%(PercentCrab,ONOFF,folder_tag))
+    Make2DSignificanceCameraFoVPlot(exposure_hours_total,Syst_MDM,Hist_Data_CameraFoV_SumE,Hist_Bkgd_CameraFoV_Raw_SumE,'X','Y','CameraFoV_Raw%s_%s_%s'%(PercentCrab,ONOFF,folder_tag))
 
 def SystAsFunctionOfElevation():
 
@@ -2029,10 +2352,10 @@ def SystAsFunctionOfElevation():
         Hist_Data_Eigenvector_2_real_SumE.Scale(scale_norm) # this makes sure they all have the same normalization
         Hist_Eigenvector_2[len(Hist_Eigenvector_2)-1].Add(Hist_Data_Eigenvector_2_real_SumE)
 
-        abs_integral = 0.
-        for binx in range(0,Hist_Data_MSCW_SumE.GetNbinsX()):
-            abs_integral += abs(Hist_Data_MSCW_SumE.GetBinContent(binx+1))
-        scale_norm = 1./abs_integral
+        bin_lower = Hist2D_Data.GetYaxis().FindBin(1.)
+        bin_upper = Hist2D_Data.GetYaxis().FindBin(3.)-1
+        mscw_norm = Hist_Data_MSCW_SumE.Integral(bin_lower,bin_upper)
+        scale_norm = 1./mscw_norm
         Hist_Data_MSCW_SumE.Scale(scale_norm) # this makes sure they all have the same normalization
         Hist_Shower_MSCW[len(Hist_Shower_MSCW)-1].Add(Hist_Data_MSCW_SumE)
 
@@ -2119,6 +2442,63 @@ def SystAsFunctionOfGalLat():
         Hist_Dark_S2B_GalLat[len(Hist_Dark_S2B_GalLat)-1].SetBinError(Hist_Dark_S2B_GalLat[len(Hist_Dark_S2B_GalLat)-1].FindBin(abs(gal_y)),s2b_err)
     MakeComparisonPlotSigDist(Hist_MDM_S2B_GalLat,legend_S2B,color_S2B,'gal. lat.','Systematics_MDM_GalLat%s_%s'%(PercentCrab,folder_tag),0.6,1.4,False,False)
     MakeComparisonPlotSigDist(Hist_Dark_S2B_GalLat,legend_S2B,color_S2B,'gal. lat.','Systematics_Dark_GalLat%s_%s'%(PercentCrab,folder_tag),0.6,1.4,False,False)
+
+def SensitivityAsFunctionOfExposure():
+
+    global ErecS_lower_cut
+    global ErecS_upper_cut
+    global exposure_hours
+    global exposure_hours_dark
+    global NSB_avg
+    global NSB_avg_dark
+
+    folder_path = FileFolder[0]
+    folder_tag = FileTag[0]
+    folder_label = FileLabel[0]
+
+    FilePath_Folder0 = []
+    for source in range(0,len(source_list)):
+        if for_syst[source]==False: continue
+        FilePath_Folder0 += [[source_list[source]]]
+        for elev in range(0,len(elev_range)):
+            file_elev_lower = elev_range[elev][0]
+            file_elev_upper = elev_range[elev][1]
+            FilePath = "%s/Netflix_"%(folder_path)+source_list[source]+PercentCrab+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_%s"%(ONOFF)+".root";
+            FilePath_Folder0[len(FilePath_Folder0)-1] += [FilePath]
+
+    Hist_MDM_FOM_time = []
+    Hist_Dark_FOM_time = []
+    legend_S2B = []
+    color_S2B = []
+    color_code = [ROOT.kBlue,ROOT.kGreen,ROOT.kRed]
+    for source in range(0,len(FilePath_Folder0)):
+        source_name = FilePath_Folder0[source][0]
+        exposure_hours = 0.
+        exposure_hours_dark = 0.
+        NSB_avg = 0.
+        NSB_avg_dark = 0.
+        GetSourceInfo(FilePath_Folder0[source])
+        print 'Source %s, exposure = %s, NSB = %s'%(source_name,exposure_hours,NSB_avg)
+        Hist_MDM_FOM_time += [ROOT.TH1D("Hist_MDM_FOM_time_%s"%(source_name),"",10,0,100)]
+        Hist_Dark_FOM_time += [ROOT.TH1D("Hist_Dark_FOM_time_%s"%(source_name),"",10,0,100)]
+        legend_S2B += ['%s (%0.1f hrs)'%(source_name,exposure_hours)]
+        color_S2B += [color_code[(source % 3)]+int(source/3.)]
+        ResetStackedShowerHistograms()
+        for e in range(0,len(energy_list)-1):
+            ErecS_lower_cut = energy_list[e]
+            ErecS_upper_cut = energy_list[e+1]
+            for path in range(1,len(FilePath_Folder0[source])):
+                if not os.path.isfile(FilePath_Folder0[source][path]):continue
+                GetShowerHistogramsFromFile(FilePath_Folder0[source][path])
+                StackShowerHistograms()
+                NormalizeTheta2Histograms(FilePath_Folder0[source][path])
+                StackTheta2Histograms()
+        significance = Signal_Significance(Hist_Data_Theta2_SumE,Hist_Bkgd_Theta2_SumE,0.,10.,Syst_MDM)
+        Hist_MDM_FOM_time[len(Hist_MDM_FOM_time)-1].SetBinContent(Hist_MDM_FOM_time[len(Hist_MDM_FOM_time)-1].FindBin(exposure_hours),significance)
+        significance = Signal_Significance(Hist_Data_Theta2_SumE,Hist_Dark_Theta2_SumE,0.,10.,Syst_Dark)
+        Hist_Dark_FOM_time[len(Hist_Dark_FOM_time)-1].SetBinContent(Hist_Dark_FOM_time[len(Hist_Dark_FOM_time)-1].FindBin(exposure_hours),significance)
+    MakeComparisonPlot(Hist_MDM_FOM_time,legend_S2B,color_S2B,'exposure hours','detection significance','Sensitivity_MDM_time%s_%s'%(PercentCrab,folder_tag),0.,0.,False,False)
+    MakeComparisonPlot(Hist_Dark_FOM_time,legend_S2B,color_S2B,'exposure hours','detection significance','Sensitivity_Dark_time%s_%s'%(PercentCrab,folder_tag),0.,0.,False,False)
 
 def SystAsFunctionOfNSB():
 
@@ -2522,7 +2902,7 @@ def SingleSourceSpectrum(source_name_input):
             Hist_MDM_InclBkg_Rate[len(Hist_MDM_InclBkg_Rate)-1].SetBinError(e+1,incl_bkg_rate_err)
             Hist_temp = Hist_Bkgd_Skymap.Clone()
             Hist_temp.Rebin2D(n_rebin,n_rebin)
-            bkg_integral = SkymapHighlightIntegral(Hist_temp,Hist_Highlight_Skymap)
+            bkg_integral = SkymapHighlightIntegral(Hist_temp,Hist_Highlight_Bias_Skymap)
             bkg_rate, bkg_rate_err = Event_rate(bkg_integral,exposure_hours)
             Hist_MDM_Bkg_Rate[len(Hist_MDM_Bkg_Rate)-1].SetBinContent(e+1,bkg_rate)
             Hist_MDM_Bkg_Rate[len(Hist_MDM_Bkg_Rate)-1].SetBinError(e+1,bkg_rate_err)
@@ -2552,10 +2932,10 @@ def SingleSourceSpectrum(source_name_input):
             NormalizeSkyMapHistograms(FilePath_Folder0[0])
             Hist_temp = Hist_Data_Skymap.Clone()
             Hist_temp.Rebin2D(n_rebin,n_rebin)
-            data_integral = SkymapHighlightIntegral(Hist_temp,Hist_Highlight_Skymap)
+            data_integral = SkymapHighlightIntegral(Hist_temp,Hist_Highlight_Bias_Skymap)
             Hist_temp = Hist_Bkgd_Skymap.Clone()
             Hist_temp.Rebin2D(n_rebin,n_rebin)
-            bkg_integral = SkymapHighlightIntegral(Hist_temp,Hist_Highlight_Skymap)
+            bkg_integral = SkymapHighlightIntegral(Hist_temp,Hist_Highlight_Bias_Skymap)
             incl_bkg_integral = Hist2D_Bkgd.Integral(binx_lower,binx_upper,biny_lower,biny_upper)
             data_rate, data_rate_err = Event_rate(data_integral,exposure_hours)
             bkg_rate, bkg_rate_err = Event_rate(bkg_integral,exposure_hours)
@@ -2619,6 +2999,7 @@ def SingleSourceSkyMap(source_name_input):
                 NormalizeSkyMapHistograms(FilePath_Folder0[source][path])
                 StackSkymapHistograms()
 
+        ErecS_lower_cut = energy_list[0]
         PlotsStackedHistograms('%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
 
         Hist_Data_Skymap_SumE.Rebin2D(n_rebin,n_rebin)
@@ -2626,17 +3007,18 @@ def SingleSourceSkyMap(source_name_input):
         Hist_Bkgd_Skymap_SumE.Rebin2D(n_rebin,n_rebin)
         Hist_Bkgd_Skymap_Raw_SumE.Rebin2D(n_rebin,n_rebin)
         Hist_Highlight_Skymap.Rebin2D(n_rebin,n_rebin)
+        Hist_Highlight_Bias_Skymap.Rebin2D(n_rebin,n_rebin)
 
         Hist_Data_Skymap_smooth = Smooth2DMap(Hist_Data_Skymap_SumE,smooth_size,False)
         Hist_Bkgd_Skymap_smooth = Smooth2DMap(Hist_Bkgd_Skymap_SumE,smooth_size,False)
 
         Hist_Dark_Skymap_smooth = Smooth2DMap(Hist_Dark_Skymap_SumE,smooth_size,False)
-        Make2DSignificancePlot(Syst_Dark,Hist_Data_Skymap_SumE,Hist_Dark_Skymap_SumE,Hist_Data_Skymap_smooth,Hist_Dark_Skymap_smooth,Hist_Highlight_Skymap,'RA','Dec','Skymap_Dark_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
+        Make2DSignificancePlot(Syst_Dark,Hist_Data_Skymap_SumE,Hist_Dark_Skymap_SumE,Hist_Data_Skymap_smooth,Hist_Dark_Skymap_smooth,'RA','Dec','Skymap_Dark_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
 
         Hist_Bkgd_Skymap_Raw_smooth = Smooth2DMap(Hist_Bkgd_Skymap_Raw_SumE,smooth_size,False)
-        Make2DSignificancePlot(Syst_MDM,Hist_Data_Skymap_SumE,Hist_Bkgd_Skymap_Raw_SumE,Hist_Data_Skymap_smooth,Hist_Bkgd_Skymap_Raw_smooth,Hist_Highlight_Skymap,'RA','Dec','Skymap_MDM_Raw_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
+        Make2DSignificancePlot(Syst_MDM,Hist_Data_Skymap_SumE,Hist_Bkgd_Skymap_Raw_SumE,Hist_Data_Skymap_smooth,Hist_Bkgd_Skymap_Raw_smooth,'RA','Dec','Skymap_MDM_Raw_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
 
-        Make2DSignificancePlot(Syst_MDM,Hist_Data_Skymap_SumE,Hist_Bkgd_Skymap_SumE,Hist_Data_Skymap_smooth,Hist_Bkgd_Skymap_smooth,Hist_Highlight_Skymap,'RA','Dec','Skymap_MDM_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
+        Make2DSignificancePlot(Syst_MDM,Hist_Data_Skymap_SumE,Hist_Bkgd_Skymap_SumE,Hist_Data_Skymap_smooth,Hist_Bkgd_Skymap_smooth,'RA','Dec','Skymap_MDM_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
 
 def HMS2deg(ra='', dec=''):
     print 'ra = %s'%(ra)
@@ -2660,18 +3042,19 @@ def HMS2deg(ra='', dec=''):
         return RA or DEC
 
 
-SystDarkVsMDM()
-SystAsFunctionOfEnergy()
-SystAsFunctionOfElevation()
+SystDarkVsMDM() # run this to get method systematics
+#SystAsFunctionOfEnergy()
+#SystAsFunctionOfElevation()
 #SystAsFunctionOfNSB()
 #SystAsFunctionOfGalLat()
 #SystAsFunctionOfSignal()
+#SensitivityAsFunctionOfExposure()
 #CompareDiffFolders()
 
 #source_of_interest = 'Proton_NSB200'
 #source_of_interest = 'Proton_NSB750'
 #source_of_interest = 'Crab'
-#source_of_interest = 'Mrk421'
+source_of_interest = 'Mrk421'
 #source_of_interest = 'H1426'
 #source_of_interest = 'PKS1424'
 #source_of_interest = '3C264'
@@ -2686,47 +3069,66 @@ SystAsFunctionOfElevation()
 #source_of_interest = '1ES1011V6'
 #source_of_interest = 'NGC1275V6'
 #source_of_interest = '1ES0647V6'
-source_of_interest = '1ES1440V6'
+#source_of_interest = '1ES1440V6'
 #source_of_interest = '1ES1741V6'
 #source_of_interest = 'IC443HotSpot'
 #source_of_interest = 'RGBJ0710'
 #source_of_interest = 'CasA'
-#source_of_interest = 'WComaeV6'
 #source_of_interest = 'M82'
 #source_of_interest = 'G079'
+#source_of_interest = 'WComaeV6'
 #source_of_interest = '1ES1218V6'
 #source_of_interest = 'MGRO_J1908_V6'
 #source_of_interest = 'MGRO_J1908_V5'
 #source_of_interest = 'Segue1V5'
 #source_of_interest = 'IC443HotSpotV5'
+#source_of_interest = 'GemingaV6'
+#source_of_interest = 'GemingaV5'
 
 source_idx = FindSourceIndex(source_of_interest)
-souce_ra = round(float(HMS2deg(sky_coord[source_idx].split('+')[0],sky_coord[source_idx].split('+')[1])[0]),3)
-souce_dec = round(float(HMS2deg(sky_coord[source_idx].split('+')[0],sky_coord[source_idx].split('+')[1])[1]),3)
-Hist_Data_Skymap = ROOT.TH2D("Hist_Data_Skymap","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
-Hist_Dark_Skymap = ROOT.TH2D("Hist_Dark_Skymap","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
-Hist_Bkgd_Skymap = ROOT.TH2D("Hist_Bkgd_Skymap","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
-Hist_Bkgd_Skymap_Raw = ROOT.TH2D("Hist_Bkgd_Skymap_Raw","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
-Hist_Data_Skymap_SumE = ROOT.TH2D("Hist_Data_Skymap_SumE","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
-Hist_Dark_Skymap_SumE = ROOT.TH2D("Hist_Dark_Skymap_SumE","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
-Hist_Bkgd_Skymap_SumE = ROOT.TH2D("Hist_Bkgd_Skymap_SumE","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
-Hist_Bkgd_Skymap_Raw_SumE = ROOT.TH2D("Hist_Bkgd_Skymap_Raw_SumE","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
-Hist_Highlight_Skymap = ROOT.TH2D("Hist_Highlight_Skymap","",150,souce_ra-3,souce_ra+3,150,souce_dec-3,souce_dec+3)
+source_ra = round(float(HMS2deg(sky_coord[source_idx].split('+')[0],sky_coord[source_idx].split('+')[1])[0]),3)
+source_dec = round(float(HMS2deg(sky_coord[source_idx].split('+')[0],sky_coord[source_idx].split('+')[1])[1]),3)
+Hist_Data_Skymap = ROOT.TH2D("Hist_Data_Skymap","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Dark_Skymap = ROOT.TH2D("Hist_Dark_Skymap","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Bkgd_Skymap = ROOT.TH2D("Hist_Bkgd_Skymap","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Bkgd_Skymap_Raw = ROOT.TH2D("Hist_Bkgd_Skymap_Raw","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Data_Skymap_SumE = ROOT.TH2D("Hist_Data_Skymap_SumE","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Dark_Skymap_SumE = ROOT.TH2D("Hist_Dark_Skymap_SumE","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Bkgd_Skymap_SumE = ROOT.TH2D("Hist_Bkgd_Skymap_SumE","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Bkgd_Skymap_Raw_SumE = ROOT.TH2D("Hist_Bkgd_Skymap_Raw_SumE","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Highlight_Skymap = ROOT.TH2D("Hist_Highlight_Skymap","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Highlight_Bias_Skymap = ROOT.TH2D("Hist_Highlight_Bias_Skymap","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Data_CameraFoV = ROOT.TH2D("Hist_Data_CameraFoV","",150,-3,3,150,-3,3)
+Hist_Bkgd_CameraFoV = ROOT.TH2D("Hist_Bkgd_CameraFoV","",150,-3,3,150,-3,3)
+Hist_Bkgd_CameraFoV_Raw = ROOT.TH2D("Hist_Bkgd_CameraFoV_Raw","",150,-3,3,150,-3,3)
+Hist_Data_CameraFoV_SumE = ROOT.TH2D("Hist_Data_CameraFoV_SumE","",150,-3,3,150,-3,3)
+Hist_Bkgd_CameraFoV_SumE = ROOT.TH2D("Hist_Bkgd_CameraFoV_SumE","",150,-3,3,150,-3,3)
+Hist_Bkgd_CameraFoV_Raw_SumE = ROOT.TH2D("Hist_Bkgd_CameraFoV_Raw_SumE","",150,-3,3,150,-3,3)
 
-n_rebin = 4
+#n_rebin = 8
+#smooth_size = 0.1
+#n_rebin = 4
+#smooth_size = 0.1
+n_rebin = 2
 smooth_size = 0.1
-#n_rebin = 2
-#smooth_size = 0.05
 
-#ONOFF = "ON"
-ONOFF = "OFF"
+theta2_range = 1.0
+highlight_threshold = 3.0
+
+#ONOFF = "OFF"
+#PercentCrab = "_Crab0"
+#RadialAcceptance()
+
+ONOFF = "ON"
+#ONOFF = "OFF"
 
 PercentCrab = "_Crab0"
+#PercentCrab = "_Crab10"
 #PercentCrab = "_Crab20"
 #PercentCrab = "_Crab50"
 #PercentCrab = "_Crab100"
 #PercentCrab = "_Crab200"
-#PercentCrab = "_Crab400"
 
-#SingleSourceSkyMap(source_of_interest)
-#SingleSourceSpectrum(source_of_interest)
+SingleSourceSkyMap(source_of_interest)
+SingleSourceSpectrum(source_of_interest)
+

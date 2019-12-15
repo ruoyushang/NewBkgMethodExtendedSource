@@ -112,6 +112,16 @@ pair<double,double> GetSourceRaDec(TString source_name)
 {
     double Source_RA = 0.;
     double Source_Dec = 0.;
+    if (source_name=="GemingaV6")
+    {
+            Source_RA = 98.117;
+                Source_Dec = 17.367;
+    }
+    if (source_name=="GemingaV5")
+    {
+            Source_RA = 98.117;
+                Source_Dec = 17.367;
+    }
     if (source_name=="PKS1441V6")
     {
             Source_RA = 220.987;
@@ -635,7 +645,7 @@ bool GammaFoV() {
     double y = dec_sky-mean_tele_point_dec;
     double size1 = 0.5;
     double diff1 = pow(x*x+y*y-size1,3)-2.*(x*x*y*y*y);
-    double size2 = 0.8;
+    double size2 = 0.9;
     double diff2 = pow(x*x+y*y-size2,3)-2.*(x*x*y*y*y);
     if (diff1<0) return false;
     if (diff2>0) return false;
@@ -644,7 +654,7 @@ bool GammaFoV() {
 bool DarkFoV() {
     //if (R2off<Theta2_cut_lower) return false;
     //if (R2off>Theta2_cut_upper) return false;
-    if (theta2<0.1) return false;
+    if (theta2<0.3) return false;
     if (theta2>Theta2_cut_upper) return false;
     return true;
 }
@@ -692,7 +702,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     MSCL_cut_blind = MSCL_cut_input;
     TelElev_lower = tel_elev_lower_input;
     TelElev_upper = tel_elev_upper_input;
-    Theta2_cut_lower = 0.2;
+    Theta2_cut_lower = 0.3;
     Theta2_cut_upper = 10.;
     if (isON) Theta2_cut_lower = 0.;
     TString file_tag;
@@ -703,7 +713,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
 
     vector<pair<string,int>> PhotonMC_runlist = GetRunList("Photon");
     vector<pair<string,int>> PhotonData_runlist = GetRunList("Crab");
-    //if (TString(target).Contains("Crab")) PhotonData_runlist = GetRunList("Mrk421");
+    if (TString(target).Contains("Mrk421")) PhotonData_runlist = GetRunList("Mrk421");
     PhotonData_runlist = SelectONRunList(PhotonData_runlist,TelElev_lower,TelElev_upper,0,360);
 
     // Get a list of target observation runs
@@ -754,8 +764,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     vector<TH2D> Hist_Data_SR_Skymap;
     vector<TH2D> Hist_Data_CR_Skymap;
     vector<TH2D> Hist_Data_CR_Skymap_Raw;
-    vector<TH2D> Hist_Dark_SR_Skymap;
-    vector<TH2D> Hist_Dark_CR_Skymap;
+    vector<TH2D> Hist_Data_SR_CameraFoV;
+    vector<TH2D> Hist_Data_CR_CameraFoV;
+    vector<TH2D> Hist_Data_CR_CameraFoV_Raw;
+    vector<TH2D> Hist_Dark_SR_CameraFoV;
+    vector<TH2D> Hist_Dark_CR_CameraFoV;
     vector<TH1D> Hist_Dark_SR_Theta2;
     vector<TH1D> Hist_Dark_CR_Theta2;
     for (int e=0;e<N_energy_bins;e++) 
@@ -796,8 +809,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Data_SR_Skymap.push_back(TH2D("Hist_Data_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
         Hist_Data_CR_Skymap.push_back(TH2D("Hist_Data_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
         Hist_Data_CR_Skymap_Raw.push_back(TH2D("Hist_Data_CR_Skymap_Raw_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
-        Hist_Dark_SR_Skymap.push_back(TH2D("Hist_Dark_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,-3,3,20,-3,3));
-        Hist_Dark_CR_Skymap.push_back(TH2D("Hist_Dark_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,-3,3,20,-3,3));
+        Hist_Data_SR_CameraFoV.push_back(TH2D("Hist_Data_SR_CameraFoV_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
+        Hist_Data_CR_CameraFoV.push_back(TH2D("Hist_Data_CR_CameraFoV_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
+        Hist_Data_CR_CameraFoV_Raw.push_back(TH2D("Hist_Data_CR_CameraFoV_Raw_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
+        Hist_Dark_SR_CameraFoV.push_back(TH2D("Hist_Dark_SR_CameraFoV_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,-3,3,20,-3,3));
+        Hist_Dark_CR_CameraFoV.push_back(TH2D("Hist_Dark_CR_CameraFoV_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,-3,3,20,-3,3));
         Hist_Dark_SR_Theta2.push_back(TH1D("Hist_Dark_SR_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,10));
         Hist_Dark_CR_Theta2.push_back(TH1D("Hist_Dark_CR_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,10));
     }
@@ -888,12 +904,12 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
                 Hist_Dark_Syst_MSCLW.at(e).Fill(MSCL,MSCW);
                 if (SignalSelectionTheta2())
                 {
-                    Hist_Dark_SR_Skymap.at(e).Fill(Xoff,Yoff);
+                    Hist_Dark_SR_CameraFoV.at(e).Fill(Xoff,Yoff);
                     Hist_Dark_SR_Theta2.at(e).Fill(Xoff*Xoff+Yoff*Yoff);
                 }
                 if (ControlSelectionTheta2())
                 {
-                    Hist_Dark_CR_Skymap.at(e).Fill(Xoff,Yoff);
+                    Hist_Dark_CR_CameraFoV.at(e).Fill(Xoff,Yoff);
                     Hist_Dark_CR_Theta2.at(e).Fill(Xoff*Xoff+Yoff*Yoff);
                 }
             }
@@ -1020,16 +1036,17 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
                     Hist_TrueBkgd_SR_SelectFoV_Theta2.at(e).Fill(theta2);
                     Hist_Data_SR_SelectFoV_Theta2.at(e).Fill(theta2);
                     Hist_Data_SR_Skymap.at(e).Fill(ra_sky,dec_sky);
+                    Hist_Data_SR_CameraFoV.at(e).Fill(Xoff,Yoff);
                 }
             }
             if (ControlSelectionTheta2())
             {
                 if (FoV() || Data_runlist[run].first.find("Proton")!=std::string::npos)
                 {
-                    int binx = Hist_Dark_SR_Skymap.at(e).GetXaxis()->FindBin(Xoff);
-                    int biny = Hist_Dark_SR_Skymap.at(e).GetYaxis()->FindBin(Yoff);
-                    double dark_cr_content = Hist_Dark_CR_Skymap.at(e).GetBinContent(binx,biny);
-                    double dark_sr_content = Hist_Dark_SR_Skymap.at(e).GetBinContent(binx,biny);
+                    int binx = Hist_Dark_SR_CameraFoV.at(e).GetXaxis()->FindBin(Xoff);
+                    int biny = Hist_Dark_SR_CameraFoV.at(e).GetYaxis()->FindBin(Yoff);
+                    double dark_cr_content = Hist_Dark_CR_CameraFoV.at(e).GetBinContent(binx,biny);
+                    double dark_sr_content = Hist_Dark_SR_CameraFoV.at(e).GetBinContent(binx,biny);
                     //int bin = Hist_Dark_SR_Theta2.at(e).FindBin(Xoff*Xoff+Yoff*Yoff);
                     //double dark_cr_content = Hist_Dark_CR_Theta2.at(e).GetBinContent(bin);
                     //double dark_sr_content = Hist_Dark_SR_Theta2.at(e).GetBinContent(bin);
@@ -1039,6 +1056,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
                     Hist_Data_CR_SelectFoV_Theta2_Raw.at(e).Fill(theta2,1.);
                     Hist_Data_CR_Skymap.at(e).Fill(ra_sky,dec_sky,weight);
                     Hist_Data_CR_Skymap_Raw.at(e).Fill(ra_sky,dec_sky,1.);
+                    Hist_Data_CR_CameraFoV.at(e).Fill(Xoff,Yoff,weight);
+                    Hist_Data_CR_CameraFoV_Raw.at(e).Fill(Xoff,Yoff,1.);
                 }
             }
         }
@@ -1160,7 +1179,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             if (energy>=N_energy_bins) continue;
             int e = energy;
             if (!SelectNImages(3,4)) continue;
-            if (theta2<0.2) Hist_GammaMC_MSCLW.at(e).Fill(MSCL,MSCW,1.);
+            if (theta2<0.3) Hist_GammaMC_MSCLW.at(e).Fill(MSCL,MSCW,1.);
             Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze,photon_weight);
             if (FoV() && GammaFoV())
             {
@@ -1183,10 +1202,10 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             {
                 if (FoV() && GammaFoV())
                 {
-                    int binx = Hist_Dark_SR_Skymap.at(e).GetXaxis()->FindBin(Xoff);
-                    int biny = Hist_Dark_SR_Skymap.at(e).GetYaxis()->FindBin(Yoff);
-                    double dark_cr_content = Hist_Dark_CR_Skymap.at(e).GetBinContent(binx,biny);
-                    double dark_sr_content = Hist_Dark_SR_Skymap.at(e).GetBinContent(binx,biny);
+                    int binx = Hist_Dark_SR_CameraFoV.at(e).GetXaxis()->FindBin(Xoff);
+                    int biny = Hist_Dark_SR_CameraFoV.at(e).GetYaxis()->FindBin(Yoff);
+                    double dark_cr_content = Hist_Dark_CR_CameraFoV.at(e).GetBinContent(binx,biny);
+                    double dark_sr_content = Hist_Dark_SR_CameraFoV.at(e).GetBinContent(binx,biny);
                     //int bin = Hist_Dark_SR_Theta2.at(e).FindBin(Xoff*Xoff+Yoff*Yoff);
                     //double dark_cr_content = Hist_Dark_CR_Theta2.at(e).GetBinContent(bin);
                     //double dark_sr_content = Hist_Dark_SR_Theta2.at(e).GetBinContent(bin);
@@ -1259,11 +1278,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             int e = energy;
             if (!SelectNImages(3,4)) continue;
             Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze,photon_weight);
-            if (theta2<0.2)
+            if (theta2<0.3)
             {
                 Hist_GammaDataON_MSCLW.at(e).Fill(MSCL,MSCW);
             }
-            else if (theta2>0.2 && theta2<0.5)
+            else if (theta2>0.3 && theta2<0.5)
             {
                 Hist_GammaDataOFF_MSCLW.at(e).Fill(MSCL,MSCW);
             }
@@ -1399,6 +1418,9 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Data_SR_Skymap.at(e).Write();
         Hist_Data_CR_Skymap.at(e).Write();
         Hist_Data_CR_Skymap_Raw.at(e).Write();
+        Hist_Data_SR_CameraFoV.at(e).Write();
+        Hist_Data_CR_CameraFoV.at(e).Write();
+        Hist_Data_CR_CameraFoV_Raw.at(e).Write();
     }
     OutputFile.Close();
 
