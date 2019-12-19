@@ -283,6 +283,11 @@ pair<double,double> GetSourceRaDec(TString source_name)
             Source_RA = 0.;
                 Source_Dec = 0.;
     }
+    if (source_name=="Everything")
+    {
+            Source_RA = 0.;
+                Source_Dec = 0.;
+    }
     return std::make_pair(Source_RA,Source_Dec);
 }
 pair<double,double> GetRunRaDec(string file_name, int run)
@@ -387,13 +392,13 @@ double GetRunNSB(int run_number)
             {
                 if(line[i] == delimiter && nth_line!=0)
                 {
-                    if (nth_delimiter==1 && std::stoi(acc_runnumber,nullptr,10)==run_number) 
-                    {
-                        cout << "run = " << acc_runnumber << '\n';
-                    }
+                    //if (nth_delimiter==1 && std::stoi(acc_runnumber,nullptr,10)==run_number) 
+                    //{
+                    //    cout << "run = " << acc_runnumber << '\n';
+                    //}
                     if (nth_delimiter==17 && std::stoi(acc_runnumber,nullptr,10)==run_number) 
                     {
-                        cout << "NSB = " << std::stod(acc_nsb,&sz) << '\n';
+                        //cout << "NSB = " << std::stod(acc_nsb,&sz) << '\n';
                         NSB = std::stod(acc_nsb,&sz);
                     }
                     nth_delimiter += 1;
@@ -756,6 +761,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     mean_tele_point_dec = source_ra_dec.second;
 
     TH1D Hist_ErecS = TH1D("Hist_ErecS","",N_energy_bins,energy_bins);
+    TH1D Hist_EffArea = TH1D("Hist_EffArea","",N_energy_bins,energy_bins);
     TH1D Hist_Dark_NSB = TH1D("Hist_Dark_NSB","",20,4,14);
     TH1D Hist_Data_NSB = TH1D("Hist_Data_NSB","",20,4,14);
     TH2D Hist_Dark_ShowerDirection = TH2D("Hist_Dark_ShowerDirection","",180,0,360,90,0,90);
@@ -837,14 +843,14 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Dark_CR_Theta2.push_back(TH1D("Hist_Dark_CR_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,10));
     }
 
-    std::cout << "Prepare dark run samples..." << std::endl;
+    //std::cout << "Prepare dark run samples..." << std::endl;
     for (int run=0;run<Dark_runlist.size();run++)
     {
         char run_number[50];
         char Dark_observation[50];
         sprintf(run_number, "%i", int(Dark_runlist[run].second));
         sprintf(Dark_observation, "%s", Dark_runlist[run].first.c_str());
-        std::cout << "Use dark run " << Dark_runlist[run].first << std::endl;
+        //std::cout << "Use dark run " << Dark_runlist[run].first << std::endl;
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Dark_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
@@ -944,7 +950,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
 
 
 
-    std::cout << "Prepare ON run samples..." << std::endl;
+    //std::cout << "Prepare ON run samples..." << std::endl;
     for (int run=0;run<Data_runlist.size();run++)
     {
         char run_number[50];
@@ -954,7 +960,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         string filename;
         filename = TString("$VERITAS_USER_DATA_DIR/"+TString(Data_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(run_number)+".root");
 
-        std::cout << "Get telescope pointing RA and Dec..." << std::endl;
+        //std::cout << "Get telescope pointing RA and Dec..." << std::endl;
         pair<double,double> tele_point_ra_dec = std::make_pair(0,0);
         if (!TString(target).Contains("Proton")) tele_point_ra_dec = GetRunRaDec(filename,int(Data_runlist[run].second));
 
@@ -979,7 +985,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Data_tree->SetBranchAddress("Shower_Az",&Shower_Az);
 
         // Get effective area and livetime and determine the cosmic electron counts for this run.
-        std::cout << "Get effective area and livetime..." << std::endl;
+        //std::cout << "Get effective area and livetime..." << std::endl;
 	TH1* i_hEffAreaP = ( TH1* )getEffAreaHistogram(input_file,Data_runlist[run].second);
         Data_tree->GetEntry(0);
         double time_0 = Time;
@@ -1011,8 +1017,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             double expected_electrons = gamma_flux[e]*eff_area*(time_1-time_0)*(energy_bins[e+1]-energy_bins[e])/1000.;
             //std::cout << "expected_electrons = " << expected_electrons << std::endl;
             gamma_count[e] += expected_electrons; // this is used to normalize MC electron template.
+
+            Hist_EffArea.SetBinContent(e+1,Hist_EffArea.GetBinContent(e+1)+eff_area*(time_1-time_0));
+
         }
-        std::cout << "Finished getting effective area and livetime..." << std::endl;
+        //std::cout << "Finished getting effective area and livetime..." << std::endl;
 
 
         for (int entry=0;entry<Data_tree->GetEntries();entry++) 
@@ -1030,6 +1039,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             R2off = Xoff*Xoff+Yoff*Yoff;
             ra_sky = tele_point_ra_dec.first+Xoff_derot;
             dec_sky = tele_point_ra_dec.second+Yoff_derot;
+            if (TString(target).Contains("Everything"))
+            {
+                ra_sky = Xoff;
+                dec_sky = Yoff;
+            }
             int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
@@ -1092,7 +1106,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     }
 
 
-    std::cout << "Prepare photon MC samples..." << std::endl;
+    //std::cout << "Prepare photon MC samples..." << std::endl;
     double n_photon = 0.;
     for (int run=0;run<PhotonMC_runlist.size();run++)
     {
@@ -1200,6 +1214,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             R2off = Xoff*Xoff+Yoff*Yoff;
             ra_sky = mean_tele_point_ra+ra_sky;
             dec_sky = mean_tele_point_dec+dec_sky;
+            if (TString(target).Contains("Everything"))
+            {
+                ra_sky = Xoff;
+                dec_sky = Yoff;
+            }
             int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
             photon_weight = gamma_count[energy]/raw_gamma_count[energy];
             if (energy<0) continue;
@@ -1413,6 +1432,10 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
 
     NSB_avg = NSB_avg/exposure_hours;
     NSB_avg_dark = NSB_avg_dark/exposure_hours_dark;
+    for (int e=0;e<N_energy_bins;e++) 
+    {
+        Hist_EffArea.SetBinContent(e+1,Hist_EffArea.GetBinContent(e+1)/(3600.*exposure_hours));
+    }
 
     TFile OutputFile("../Netflix_"+TString(target)+"_Crab"+std::to_string(int(PercentCrab))+"_TelElev"+std::to_string(int(TelElev_lower))+"to"+std::to_string(int(TelElev_upper))+"_"+file_tag+".root","recreate");
     TTree InfoTree("InfoTree","info tree");
@@ -1428,6 +1451,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     InfoTree.Write();
     Hist_Dark_NSB.Write();
     Hist_Data_NSB.Write();
+    Hist_EffArea.Write();
     Hist_Dark_ShowerDirection.Write();
     Hist_Data_ShowerDirection.Write();
     for (int e=0;e<N_energy_bins;e++)

@@ -558,7 +558,7 @@ void TaylorParametrizeEigenvectors(const double *par)
     }
 }
 
-void FourierParametrizeEigenvectors(const double *par)
+void NetflixParametrizeEigenvectors(const double *par)
 {
 
     for (int col=0;col<N_bins_for_deconv;col++)
@@ -648,10 +648,10 @@ void FourierParametrizeEigenvectors(const double *par)
 }
 
 
-double FourierChi2Function(const double *par)
+double NetflixChi2Function(const double *par)
 {
 
-    FourierParametrizeEigenvectors(par);
+    NetflixParametrizeEigenvectors(par);
     //double deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
     //if (0.8*init_deriv_at_zero>deriv_at_zero) return 1e10;
     //if (1.2*init_deriv_at_zero<deriv_at_zero) return 1e10;
@@ -1081,7 +1081,7 @@ void FourierSet2ndIterationVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, co
     }
 
 }
-double FourierChi2Function1D_0(const double *par)
+double NetflixChi2Function1D_0(const double *par)
 {
     for (int row=0;row<N_bins_for_deconv;row++)
     {
@@ -1106,7 +1106,7 @@ double FourierChi2Function1D_0(const double *par)
     }
     return chi2;
 }
-double FourierChi2Function1D_1(const double *par)
+double NetflixChi2Function1D_1(const double *par)
 {
     for (int row=0;row<N_bins_for_deconv;row++)
     {
@@ -1131,7 +1131,7 @@ double FourierChi2Function1D_1(const double *par)
     }
     return chi2;
 }
-void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
+void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
 {
 
     eigensolver_data = ComplexEigenSolver<MatrixXcd>(mtx_data);
@@ -1147,77 +1147,7 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
     Chi2Minimizer1D.SetMaxIterations(200); // for GSL
     Chi2Minimizer1D.SetTolerance(0.001);
     const double *par_1D;
-
     
-    //for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
-    //{
-
-    //    std::cout << NthEigenvector << "-th eigenvector" << std::endl;
-    //    vtr_data = eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector);
-    //    ROOT::Math::Functor Chi2Func_0(&FourierChi2Function1D_0,(2+2*n_fourier_modes));
-    //    Chi2Minimizer1D.SetFunction(Chi2Func_0);
-    //    first_index = 0;
-    //    Chi2Minimizer1D.SetVariable(first_index,"par_1D["+std::to_string(int(first_index))+"]",1.,0.001);
-    //    Chi2Minimizer1D.SetVariable(first_index+1,"par_1D["+std::to_string(int(first_index+1))+"]",1.,0.001);
-    //    for (int mode=1;mode<=n_fourier_modes;mode++)
-    //    {
-    //        Chi2Minimizer1D.SetVariable(first_index+1+2*mode-1,"par_1D["+std::to_string(int(first_index+1+2*mode-1))+"]",1.,0.001);
-    //        Chi2Minimizer1D.SetVariable(first_index+1+2*mode,"par_1D["+std::to_string(int(first_index+1+2*mode))+"]",1.,0.001);
-    //    }
-    //    Chi2Minimizer1D.Minimize();
-    //    par_1D = Chi2Minimizer1D.X();
-    //    std::cout << "coeff " << 0 << " = " << par_1D[0] << std::endl;
-    //    std::cout << "coeff " << 1 << " = " << par_1D[1] << std::endl;
-
-    //    first_index = (2*NthEigenvector-2)*(2+2*n_fourier_modes)+NumberOfEigenvectors*(NthEigenvector-1);
-    //    Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",par_1D[0],0.001);
-    //    Chi2Minimizer->SetVariable(first_index+1,"par["+std::to_string(int(first_index+1))+"]",par_1D[1],0.001);
-    //    for (int mode=1;mode<=n_fourier_modes;mode++)
-    //    {
-    //        std::cout << "coeff " << 1+2*mode-1 << " = " << par_1D[1+2*mode-1] << std::endl;
-    //        std::cout << "coeff " << 1+2*mode << " = " << par_1D[1+2*mode] << std::endl;
-    //        Chi2Minimizer->SetVariable(first_index+1+2*mode-1,"par["+std::to_string(int(first_index+1+2*mode-1))+"]",par_1D[1+2*mode-1],0.001);
-    //        Chi2Minimizer->SetVariable(first_index+1+2*mode,"par["+std::to_string(int(first_index+1+2*mode))+"]",par_1D[1+2*mode],0.001);
-    //    }
-
-    //    std::cout << NthEigenvector << "-th inverse eigenvector" << std::endl;
-    //    vtr_data = eigensolver_data.eigenvectors().inverse().row(mtx_dark.cols()-NthEigenvector);
-    //    ROOT::Math::Functor Chi2Func_1(&FourierChi2Function1D_1,(2+2*n_fourier_modes));
-    //    Chi2Minimizer1D.SetFunction(Chi2Func_1);
-    //    first_index = 0;
-    //    Chi2Minimizer1D.SetVariable(first_index,"par_1D["+std::to_string(int(first_index))+"]",1.,0.001);
-    //    Chi2Minimizer1D.SetVariable(first_index+1,"par_1D["+std::to_string(int(first_index+1))+"]",1.,0.001);
-    //    for (int mode=1;mode<=n_fourier_modes;mode++)
-    //    {
-    //        Chi2Minimizer1D.SetVariable(first_index+1+2*mode-1,"par_1D["+std::to_string(int(first_index+1+2*mode-1))+"]",1.,0.001);
-    //        Chi2Minimizer1D.SetVariable(first_index+1+2*mode,"par_1D["+std::to_string(int(first_index+1+2*mode))+"]",1.,0.001);
-    //    }
-    //    Chi2Minimizer1D.Minimize();
-    //    par_1D = Chi2Minimizer1D.X();
-    //    std::cout << "coeff " << 0 << " = " << par_1D[0] << std::endl;
-    //    std::cout << "coeff " << 1 << " = " << par_1D[1] << std::endl;
-
-    //    first_index = (2*NthEigenvector-1)*(2+2*n_fourier_modes)+NumberOfEigenvectors*(NthEigenvector-1);
-    //    Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",par_1D[0],0.001);
-    //    Chi2Minimizer->SetVariable(first_index+1,"par["+std::to_string(int(first_index+1))+"]",par_1D[1],0.001);
-    //    for (int mode=1;mode<=n_fourier_modes;mode++)
-    //    {
-    //        std::cout << "coeff " << 1+2*mode-1 << " = " << par_1D[1+2*mode-1] << std::endl;
-    //        std::cout << "coeff " << 1+2*mode << " = " << par_1D[1+2*mode] << std::endl;
-    //        Chi2Minimizer->SetVariable(first_index+1+2*mode-1,"par["+std::to_string(int(first_index+1+2*mode-1))+"]",par_1D[1+2*mode-1],0.001);
-    //        Chi2Minimizer->SetVariable(first_index+1+2*mode,"par["+std::to_string(int(first_index+1+2*mode))+"]",par_1D[1+2*mode],0.001);
-    //    }
-
-    //    // eigenvalues
-    //    double input_value = 0.;
-    //    first_index = (2*NthEigenvector-0)*(2+2*n_fourier_modes)+NumberOfEigenvectors*(NthEigenvector-1);
-    //    for (int NthEigenvalue=1;NthEigenvalue<=NumberOfEigenvectors;NthEigenvalue++)
-    //    {
-    //        input_value = eigensolver_data.eigenvalues()(N_bins_for_deconv-NthEigenvector).real();
-    //        if (NthEigenvalue!=NthEigenvector) input_value = 0.;
-    //        Chi2Minimizer->SetVariable(first_index+NthEigenvalue-1, "par["+std::to_string(int(first_index+NthEigenvalue-1))+"]", input_value, 0.001);
-    //    }
-    //}
 
     Chi2Minimizer->SetVariable(0, "par["+std::to_string(int(0))+"]", 1, 0.001);
     Chi2Minimizer->SetVariableLimits(0,0.9,1.1);
@@ -1229,7 +1159,6 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.005);
-            //if (NthEigenvector>1) Chi2Minimizer->SetVariableLimits(first_index+row,0.,0.);
         }
 
         limit = 0.2;
@@ -1237,7 +1166,6 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.005);
-            //if (NthEigenvector>1) Chi2Minimizer->SetVariableLimits(first_index+col,0.,0.);
         }
 
         // eigenvalues
@@ -1248,13 +1176,10 @@ void FourierSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
             input_value = 0.;
             if (NthEigenvalue==NthEigenvector && NthEigenvalue==1)
             {
-                //limit = 0.2*eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvector).real();
                 limit = 0.;
             }
             else
             {
-                //limit = 0.1*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
-                //if (NthEigenvalue>NthEigenvector) limit = 0.;
                 //limit = 0.;
                 limit = 0.02*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
             }
@@ -1493,20 +1418,23 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         Hist_Fit_InvEigenvectorImag_2.push_back(TH1D("Hist_Fit_InvEigenvectorImag_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
         Hist_Dark_InvEigenvectorImag_2.push_back(TH1D("Hist_Dark_InvEigenvectorImag_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
 
-        //if (energy_bins[e]<237) continue;
-        //if (energy_bins[e]>=282) continue;
-        //if (energy_bins[e]<335) continue;
-        //if (energy_bins[e]>=398) continue;
-        //if (energy_bins[e]<398) continue;
-        //if (energy_bins[e]>=473) continue;
-        //if (energy_bins[e]<473) continue;
-        //if (energy_bins[e]>=562) continue;
-        //if (energy_bins[e]<562) continue;
-        //if (energy_bins[e]>=794) continue;
-        //if (energy_bins[e]<1585) continue;
-        //if (energy_bins[e]>=2239) continue;
-        //if (energy_bins[e]<2239) continue;
-        //if (CurrentEnergy<794.) continue;
+        //if (TString(target).Contains("Everything"))
+        //{
+        //    //if (energy_bins[e]<237) continue;
+        //    //if (energy_bins[e]>=282) continue;
+        //    //if (energy_bins[e]<335) continue;
+        //    //if (energy_bins[e]>=398) continue;
+        //    if (energy_bins[e]<398) continue;
+        //    if (energy_bins[e]>=473) continue;
+        //    //if (energy_bins[e]<473) continue;
+        //    //if (energy_bins[e]>=562) continue;
+        //    //if (energy_bins[e]<562) continue;
+        //    //if (energy_bins[e]>=794) continue;
+        //    //if (energy_bins[e]<1585) continue;
+        //    //if (energy_bins[e]>=2239) continue;
+        //    //if (energy_bins[e]<2239) continue;
+        //    //if (CurrentEnergy<794.) continue;
+        //}
 
         MatrixXcd mtx_data_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         MatrixXcd mtx_dark_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
@@ -1555,6 +1483,25 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         mtx_data_redu = eigensolver_data.eigenvectors()*mtx_eigenval_data_redu*eigensolver_data.eigenvectors().inverse();
         mtx_dark_redu = eigensolver_dark.eigenvectors()*mtx_eigenval_dark_redu*eigensolver_dark.eigenvectors().inverse();
 
+        if (TString(target).Contains("Everything"))
+        {
+            char textfile[50] = "";
+            sprintf(textfile, "../eigenvector_E%i_Elev%i.txt", int(energy_bins[e]), int(TelElev_lower));
+        sprintf(e_low, "%i", int(energy_bins[e]));
+            std::ofstream myfile;
+            myfile.open (textfile);
+            myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+            myfile << "eigenvalues:" << std::endl;
+            myfile << mtx_eigenval_data_redu.block(mtx_data.rows()-NumberOfEigenvectors,mtx_data.cols()-NumberOfEigenvectors,NumberOfEigenvectors,NumberOfEigenvectors) << std::endl << std::endl;
+            myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+            myfile << "eigenvectors:" << std::endl;
+            myfile << eigensolver_data.eigenvectors().block(0,mtx_data.cols()-NumberOfEigenvectors,mtx_data.rows(),NumberOfEigenvectors) << std::endl << std::endl;
+            myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+            myfile << "inverse eigenvectors:" << std::endl;
+            myfile << eigensolver_data.eigenvectors().inverse().block(mtx_data.rows()-NumberOfEigenvectors,0,NumberOfEigenvectors,mtx_data.cols()) << std::endl << std::endl;
+            myfile.close();
+        }
+
         for (int NthEigenvalue=1;NthEigenvalue<=N_bins_for_deconv;NthEigenvalue++)
         {
             Hist_Data_Eigenvalues_real.at(e).SetBinContent(NthEigenvalue,eigensolver_data.eigenvalues()(N_bins_for_deconv-NthEigenvalue).real());
@@ -1569,18 +1516,6 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         fill1DHistogram(&Hist_Data_InvEigenvectorReal_0.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-1).real());
         fill1DHistogram(&Hist_Data_InvEigenvectorReal_1.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-2).real());
         fill1DHistogram(&Hist_Data_InvEigenvectorReal_2.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-3).real());
-        //FourierFitEigenvector(&Hist_Data_EigenvectorReal_0.at(e),&Hist_Fit_EigenvectorReal_0.at(e));
-        //FourierFitEigenvector(&Hist_Data_EigenvectorReal_1.at(e),&Hist_Fit_EigenvectorReal_1.at(e));
-        //FourierFitEigenvector(&Hist_Data_EigenvectorReal_2.at(e),&Hist_Fit_EigenvectorReal_2.at(e));
-        //FourierFitEigenvector(&Hist_Data_InvEigenvectorReal_0.at(e),&Hist_Fit_InvEigenvectorReal_0.at(e));
-        //FourierFitEigenvector(&Hist_Data_InvEigenvectorReal_1.at(e),&Hist_Fit_InvEigenvectorReal_1.at(e));
-        //FourierFitEigenvector(&Hist_Data_InvEigenvectorReal_2.at(e),&Hist_Fit_InvEigenvectorReal_2.at(e));
-        //TaylorFitEigenvector(&Hist_Data_EigenvectorReal_0.at(e),&Hist_Fit_EigenvectorReal_0.at(e));
-        //TaylorFitEigenvector(&Hist_Data_EigenvectorReal_1.at(e),&Hist_Fit_EigenvectorReal_1.at(e));
-        //TaylorFitEigenvector(&Hist_Data_EigenvectorReal_2.at(e),&Hist_Fit_EigenvectorReal_2.at(e));
-        //TaylorFitEigenvector(&Hist_Data_InvEigenvectorReal_0.at(e),&Hist_Fit_InvEigenvectorReal_0.at(e));
-        //TaylorFitEigenvector(&Hist_Data_InvEigenvectorReal_1.at(e),&Hist_Fit_InvEigenvectorReal_1.at(e));
-        //TaylorFitEigenvector(&Hist_Data_InvEigenvectorReal_2.at(e),&Hist_Fit_InvEigenvectorReal_2.at(e));
         fill1DHistogram(&Hist_Dark_EigenvectorReal_0.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-1).real());
         fill1DHistogram(&Hist_Dark_EigenvectorReal_1.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-2).real());
         fill1DHistogram(&Hist_Dark_EigenvectorReal_2.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-3).real());
@@ -1593,18 +1528,6 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         fill1DHistogram(&Hist_Data_InvEigenvectorImag_0.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-1).imag());
         fill1DHistogram(&Hist_Data_InvEigenvectorImag_1.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-2).imag());
         fill1DHistogram(&Hist_Data_InvEigenvectorImag_2.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-3).imag());
-        //FourierFitEigenvector(&Hist_Data_EigenvectorImag_0.at(e),&Hist_Fit_EigenvectorImag_0.at(e));
-        //FourierFitEigenvector(&Hist_Data_EigenvectorImag_1.at(e),&Hist_Fit_EigenvectorImag_1.at(e));
-        //FourierFitEigenvector(&Hist_Data_EigenvectorImag_2.at(e),&Hist_Fit_EigenvectorImag_2.at(e));
-        //FourierFitEigenvector(&Hist_Data_InvEigenvectorImag_0.at(e),&Hist_Fit_InvEigenvectorImag_0.at(e));
-        //FourierFitEigenvector(&Hist_Data_InvEigenvectorImag_1.at(e),&Hist_Fit_InvEigenvectorImag_1.at(e));
-        //FourierFitEigenvector(&Hist_Data_InvEigenvectorImag_2.at(e),&Hist_Fit_InvEigenvectorImag_2.at(e));
-        //TaylorFitEigenvector(&Hist_Data_EigenvectorImag_0.at(e),&Hist_Fit_EigenvectorImag_0.at(e));
-        //TaylorFitEigenvector(&Hist_Data_EigenvectorImag_1.at(e),&Hist_Fit_EigenvectorImag_1.at(e));
-        //TaylorFitEigenvector(&Hist_Data_EigenvectorImag_2.at(e),&Hist_Fit_EigenvectorImag_2.at(e));
-        //TaylorFitEigenvector(&Hist_Data_InvEigenvectorImag_0.at(e),&Hist_Fit_InvEigenvectorImag_0.at(e));
-        //TaylorFitEigenvector(&Hist_Data_InvEigenvectorImag_1.at(e),&Hist_Fit_InvEigenvectorImag_1.at(e));
-        //TaylorFitEigenvector(&Hist_Data_InvEigenvectorImag_2.at(e),&Hist_Fit_InvEigenvectorImag_2.at(e));
         fill1DHistogram(&Hist_Dark_EigenvectorImag_0.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-1).imag());
         fill1DHistogram(&Hist_Dark_EigenvectorImag_1.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-2).imag());
         fill1DHistogram(&Hist_Dark_EigenvectorImag_2.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-3).imag());
@@ -1641,65 +1564,28 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         // kVectorBFGS2, kSteepestDescent
 
         SetInitialEigenvectors();
-        //init_deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector_init, &mtx_eigenvector_inv_init);
-        //std::cout << "initial deriv_at_zero = " << init_deriv_at_zero << std::endl;
 
         n_fourier_modes = 6;
-        ROOT::Math::Functor Chi2Func(&FourierChi2Function,1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors*NumberOfEigenvectors); 
+        ROOT::Math::Functor Chi2Func(&NetflixChi2Function,1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors*NumberOfEigenvectors); 
         std::cout << "total n paramters = " << 1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors << std::endl;
 
         ROOT::Math::GSLMinimizer Chi2Minimizer_0th( ROOT::Math::kSteepestDescent );
         Chi2Minimizer_0th.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
-        //Chi2Minimizer_0th.SetMaxIterations(10000); // for GSL
         Chi2Minimizer_0th.SetMaxIterations(100); // for GSL
         Chi2Minimizer_0th.SetTolerance(0.001);
-        Chi2Minimizer_0th.SetPrintLevel(2);
+        Chi2Minimizer_0th.SetPrintLevel(1);
+        //Chi2Minimizer_0th.SetPrintLevel(2);
         Chi2Minimizer_0th.SetFunction(Chi2Func);
-        FourierSetInitialVariables(&Chi2Minimizer_0th);
+        NetflixSetInitialVariables(&Chi2Minimizer_0th);
         const double *par_0th = Chi2Minimizer_0th.X();
         NthIteration = 0;
-        double init_chi2 = FourierChi2Function(par_0th);
+        double init_chi2 = NetflixChi2Function(par_0th);
         std::cout << "initial chi2 = " << init_chi2 << std::endl;
         Chi2Minimizer_0th.SetTolerance(0.01*double(N_bins_for_deconv*N_bins_for_deconv));
         Chi2Minimizer_0th.Minimize();
         par_0th = Chi2Minimizer_0th.X();
-        std::cout << "final chi2 = " << FourierChi2Function(par_0th) << std::endl;
-        FourierParametrizeEigenvectors(par_0th);
-        //double final_deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
-        //std::cout << "final deriv_at_zero = " << final_deriv_at_zero << std::endl;
-
-        //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kVectorBFGS );
-        //Chi2Minimizer_1st.SetMaxFunctionCalls(200); // for Minuit/Minuit2
-        //Chi2Minimizer_1st.SetMaxIterations(200); // for GSL
-        //Chi2Minimizer_1st.SetTolerance(0.001);
-        //Chi2Minimizer_1st.SetFunction(Chi2Func);
-        //FourierSet2ndIterationVariables(&Chi2Minimizer_1st,par_0th,1);
-        //Chi2Minimizer_1st.Minimize();
-        //const double *par_1st = Chi2Minimizer_1st.X();
-        //FourierParametrizeEigenvectors(par_1st);
-        ////SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
-
-        //ROOT::Math::GSLMinimizer Chi2Minimizer_2nd( ROOT::Math::kVectorBFGS );
-        //Chi2Minimizer_2nd.SetMaxFunctionCalls(200); // for Minuit/Minuit2
-        //Chi2Minimizer_2nd.SetMaxIterations(200); // for GSL
-        //Chi2Minimizer_2nd.SetTolerance(0.001);
-        //Chi2Minimizer_2nd.SetFunction(Chi2Func);
-        //FourierSet2ndIterationVariables(&Chi2Minimizer_2nd,par_1st,2);
-        //Chi2Minimizer_2nd.Minimize();
-        //const double *par_2nd = Chi2Minimizer_2nd.X();
-        //FourierParametrizeEigenvectors(par_2nd);
-        ////SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
-
-        //ROOT::Math::GSLMinimizer Chi2Minimizer_3rd( ROOT::Math::kVectorBFGS );
-        //Chi2Minimizer_3rd.SetMaxFunctionCalls(200); // for Minuit/Minuit2
-        //Chi2Minimizer_3rd.SetMaxIterations(200); // for GSL
-        //Chi2Minimizer_3rd.SetTolerance(0.001);
-        //Chi2Minimizer_3rd.SetFunction(Chi2Func);
-        //FourierSet2ndIterationVariables(&Chi2Minimizer_3rd,par_2nd,2);
-        //Chi2Minimizer_3rd.Minimize();
-        //const double *par_3rd = Chi2Minimizer_3rd.X();
-        //FourierParametrizeEigenvectors(par_3rd);
-        ////SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
+        std::cout << "final chi2 = " << NetflixChi2Function(par_0th) << std::endl;
+        NetflixParametrizeEigenvectors(par_0th);
 
         mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
 
@@ -1716,63 +1602,6 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         fill1DHistogram(&Hist_Fit_InvEigenvectorImag_0.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-1).imag());
         fill1DHistogram(&Hist_Fit_InvEigenvectorImag_1.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-2).imag());
         fill1DHistogram(&Hist_Fit_InvEigenvectorImag_2.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-3).imag());
-        //
-        //mtx_eigenvector.col(mtx_data.cols()-1).real() = fillVector(&Hist_Data_EigenvectorReal_0.at(e));
-        //mtx_eigenvector.col(mtx_data.cols()-2).real() = fillVector(&Hist_Data_EigenvectorReal_1.at(e));
-        //mtx_eigenvector.col(mtx_data.cols()-3).real() = fillVector(&Hist_Data_EigenvectorReal_2.at(e));
-        //mtx_eigenvector_inv.row(mtx_data.cols()-1).real() = fillVector(&Hist_Data_InvEigenvectorReal_0.at(e));
-        //mtx_eigenvector_inv.row(mtx_data.cols()-2).real() = fillVector(&Hist_Data_InvEigenvectorReal_1.at(e));
-        //mtx_eigenvector_inv.row(mtx_data.cols()-3).real() = fillVector(&Hist_Data_InvEigenvectorReal_2.at(e));
-        //mtx_eigenvector.col(mtx_data.cols()-1).imag() = fillVector(&Hist_Data_EigenvectorImag_0.at(e));
-        //mtx_eigenvector.col(mtx_data.cols()-2).imag() = fillVector(&Hist_Data_EigenvectorImag_1.at(e));
-        //mtx_eigenvector.col(mtx_data.cols()-3).imag() = fillVector(&Hist_Data_EigenvectorImag_2.at(e));
-        //mtx_eigenvector_inv.row(mtx_data.cols()-1).imag() = fillVector(&Hist_Data_InvEigenvectorImag_0.at(e));
-        //mtx_eigenvector_inv.row(mtx_data.cols()-2).imag() = fillVector(&Hist_Data_InvEigenvectorImag_1.at(e));
-        //mtx_eigenvector_inv.row(mtx_data.cols()-3).imag() = fillVector(&Hist_Data_InvEigenvectorImag_2.at(e));
-        //std::cout << "mtx_eigenvector_inv.row(mtx_data.cols()-1)" << std::endl;
-        //std::cout << mtx_eigenvector_inv.row(mtx_data.cols()-1) << std::endl;
-        //
-        //mtx_eigenvector.col(mtx_data.cols()-1).real() = fillVector(&Hist_Fit_EigenvectorReal_0.at(e));
-        //mtx_eigenvector.col(mtx_data.cols()-2).real() = fillVector(&Hist_Fit_EigenvectorReal_1.at(e));
-        //mtx_eigenvector.col(mtx_data.cols()-3).real() = fillVector(&Hist_Fit_EigenvectorReal_2.at(e));
-        //mtx_eigenvector_inv.row(mtx_data.cols()-1).real() = fillVector(&Hist_Fit_InvEigenvectorReal_0.at(e));
-        //mtx_eigenvector_inv.row(mtx_data.cols()-2).real() = fillVector(&Hist_Fit_InvEigenvectorReal_1.at(e));
-        //mtx_eigenvector_inv.row(mtx_data.cols()-3).real() = fillVector(&Hist_Fit_InvEigenvectorReal_2.at(e));
-        //mtx_eigenvector.col(mtx_data.cols()-1).imag() = fillVector(&Hist_Fit_EigenvectorImag_0.at(e));
-        //mtx_eigenvector.col(mtx_data.cols()-2).imag() = fillVector(&Hist_Fit_EigenvectorImag_1.at(e));
-        //mtx_eigenvector.col(mtx_data.cols()-3).imag() = fillVector(&Hist_Fit_EigenvectorImag_2.at(e));
-        //mtx_eigenvector_inv.row(mtx_data.cols()-1).imag() = fillVector(&Hist_Fit_InvEigenvectorImag_0.at(e));
-        //mtx_eigenvector_inv.row(mtx_data.cols()-2).imag() = fillVector(&Hist_Fit_InvEigenvectorImag_1.at(e));
-        //mtx_eigenvector_inv.row(mtx_data.cols()-3).imag() = fillVector(&Hist_Fit_InvEigenvectorImag_2.at(e));
-        //
-        //for (int col=0;col<N_bins_for_deconv;col++)
-        //{
-        //    for (int row=0;row<N_bins_for_deconv;row++)
-        //    {
-        //        mtx_eigenvector(row,col) = 0.;
-        //        mtx_eigenvector_inv(row,col) = 0.;
-        //    }
-        //}
-        //mtx_eigenvector.col(mtx_data.cols()-1) = eigensolver_data.eigenvectors().col(mtx_data.cols()-1);
-        //mtx_eigenvector.col(mtx_data.cols()-2) = eigensolver_data.eigenvectors().col(mtx_data.cols()-2);
-        //mtx_eigenvector.col(mtx_data.cols()-3) = eigensolver_data.eigenvectors().col(mtx_data.cols()-3);
-        //mtx_eigenvector_inv.row(mtx_data.cols()-1) = eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-1);
-        //mtx_eigenvector_inv.row(mtx_data.cols()-2) = eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-2);
-        //mtx_eigenvector_inv.row(mtx_data.cols()-3) = eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-3);
-        //for (int i=0;i<mtx_dark.cols();i++)
-        //{
-        //    for (int j=0;j<mtx_dark.rows();j++)
-        //    {
-        //        if (i==j) 
-        //        {
-        //            mtx_eigenvalue(i,j) = eigensolver_data.eigenvalues()(i);
-        //        }
-        //        else
-        //        {
-        //            mtx_eigenvalue(i,j) = 0;
-        //        }
-        //    }
-        //}
         fill2DHistogramAbs(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
         fill2DHistogramAbs(&Hist_GammaRDBM_MSCLW.at(e),mtx_gamma);
 
@@ -1783,8 +1612,6 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         if (signalfree_model) Hist_GammaRDBM_MSCLW.at(e).Scale(0);
 
         fill2DHistogramAbs(&Hist_Redu_MSCLW.at(e),mtx_data_redu);
-        //RestoreEdge(Hist_Dark,&Hist_Bkgd_MSCLW.at(e),-0.5,-0.5);
-        //NormalizeHist2D(Hist_Data,&Hist_Bkgd_MSCLW.at(e));
         std::cout << "Hist_Redu_MSCLW.at(e).Integral() = " << Hist_Redu_MSCLW.at(e).Integral(1,20,1,20) << std::endl;
         std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,20,1,20) << std::endl;
         std::cout << "eigensolver_data.eigenvalues()(mtx_data.cols()-1):" << std::endl;

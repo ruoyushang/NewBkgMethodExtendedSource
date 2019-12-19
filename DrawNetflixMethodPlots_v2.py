@@ -41,12 +41,12 @@ Syst_Dark = 0.
 #FileTag += ['tight']
 #FileLabel += ['tight']
 
-#FileFolder += ['output_unblind_4x4_nominal_tight']
-#FileTag += ['tight']
-#FileLabel += ['tight']
-FileFolder += ['output_unblind_4x4_nominal_medium']
-FileTag += ['medium']
-FileLabel += ['medium']
+FileFolder += ['output_unblind_4x4_nominal_tight']
+FileTag += ['tight']
+FileLabel += ['tight']
+#FileFolder += ['output_unblind_4x4_nominal_medium']
+#FileTag += ['medium']
+#FileLabel += ['medium']
 #FileFolder += ['output_unblind_4x4_nominal_loose']
 #FileTag += ['loose']
 #FileLabel += ['loose']
@@ -721,8 +721,6 @@ def Smooth2DMap(Hist_Old,smooth_size,addLinearly):
 
 def Make2DSignificanceCameraFoVPlot(exposure,syst_method,Hist_SR,Hist_Bkg,xtitle,ytitle,name):
 
-    global n_upcrossing
-
     canvas = ROOT.TCanvas("canvas","canvas", 200, 10, 600, 600)
     pad1 = ROOT.TPad("pad1","pad1",0,0,1,1)
     pad1.SetBottomMargin(0.15)
@@ -755,7 +753,6 @@ def Make2DSignificanceCameraFoVPlot(exposure,syst_method,Hist_SR,Hist_Bkg,xtitle
     syst_fov = syst_fov/n_bins
     syst_fov = pow(syst_fov,0.5)
 
-    n_upcrossing = 0.
     total_bins = 0.
     sum_bins = 0.
     sum_data = 0.
@@ -787,7 +784,7 @@ def Make2DSignificanceCameraFoVPlot(exposure,syst_method,Hist_SR,Hist_Bkg,xtitle
                 sum_data += Hist_SR.GetBinContent(bx+1,by+1)
                 sum_bkg += Hist_Bkg.GetBinContent(bx+1,by+1)
                 sum_bkg_err += pow(Hist_Bkg.GetBinError(bx+1,by+1),2)+Hist_Bkg.GetBinContent(bx+1,by+1)
-    n_upcrossing = bias_sum_bins/total_bins
+
     sum_bkg_err = pow(sum_bkg_err+pow(syst_method*sum_bkg,2),0.5)
     sum_sig = 1.*CalculateSignificance(sum_data-sum_bkg,sum_bkg,sum_bkg_err)
     bias_sum_bkg_err = pow(bias_sum_bkg_err+pow(syst_method*bias_sum_bkg,2),0.5)
@@ -798,18 +795,16 @@ def Make2DSignificanceCameraFoVPlot(exposure,syst_method,Hist_SR,Hist_Bkg,xtitle
     binx_size = Hist_SR.GetXaxis().GetBinCenter(2)-Hist_SR.GetXaxis().GetBinCenter(1)
     biny_size = Hist_SR.GetYaxis().GetBinCenter(2)-Hist_SR.GetYaxis().GetBinCenter(1)
     sum_bins = max(1.,sum_bins)
-    source_size = sum_bins*binx_size*biny_size
-    print 'sum_sig = %s'%(sum_sig)
-    #pvalue = special.erfc(bias_sum_sig/pow(2,0.5))
-    pvalue = 1.-ROOT.TMath.Freq(bias_sum_sig)
-    #pvalue = 1.-ROOT.TMath.Freq(sum_sig)
-    print 'p-value = %s'%(pvalue)
-    #sum_sig_lee = max(0,special.erfinv(1.-(pvalue+n_upcrossing))*pow(2,0.5))
-    sum_sig_lee = max(0,ROOT.TMath.NormQuantile(1.-(pvalue+n_upcrossing)))
-    #sum_sig_lee = max(0,ROOT.TMath.NormQuantile(1.-(pvalue)))
+    bias_sum_bins = max(1.,bias_sum_bins)
+    source_size = bias_sum_bins*binx_size*biny_size
+    #pvalue = 1.-ROOT.TMath.Freq(bias_sum_sig)
+    pvalue = special.erfc(sum_sig/pow(2,0.5))
+    print 'pvalue = %s'%(pvalue)
+    trial_factor = total_bins/sum_bins
+    print 'trial_factor = %s'%(trial_factor)
+    #sum_sig_lee = max(0,ROOT.TMath.NormQuantile(1.-(pvalue*trial_factor)))
+    sum_sig_lee = max(0,special.erfinv(1.-(pvalue*trial_factor))*pow(2,0.5))
     print 'sum_sig_lee = %s'%(sum_sig_lee)
-    print 'n_upcrossing = %s'%(n_upcrossing)
-
 
     Hist_Skymap.GetYaxis().SetTitle(ytitle)
     Hist_Skymap.GetXaxis().SetTitle(xtitle)
@@ -964,15 +959,15 @@ def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_
     binx_size = Hist_SR.GetXaxis().GetBinCenter(2)-Hist_SR.GetXaxis().GetBinCenter(1)
     biny_size = Hist_SR.GetYaxis().GetBinCenter(2)-Hist_SR.GetYaxis().GetBinCenter(1)
     sum_bins = max(1.,sum_bins)
-    source_size = sum_bins*binx_size*biny_size
-    print 'sum_sig = %s'%(sum_sig)
-    #pvalue = special.erfc(sum_sig/pow(2,0.5))
-    pvalue = 1.-ROOT.TMath.Freq(bias_sum_sig)
-    #pvalue = 1.-ROOT.TMath.Freq(sum_sig)
-    print 'p-value = %s'%(pvalue)
-    #sum_sig_lee = max(0,special.erfinv(1.-(pvalue+n_upcrossing))*pow(2,0.5))
-    sum_sig_lee = max(0,ROOT.TMath.NormQuantile(1.-(pvalue+n_upcrossing)))
-    #sum_sig_lee = max(0,ROOT.TMath.NormQuantile(1.-(pvalue)))
+    bias_sum_bins = max(1.,bias_sum_bins)
+    source_size = bias_sum_bins*binx_size*biny_size
+    #pvalue = 1.-ROOT.TMath.Freq(bias_sum_sig)
+    pvalue = special.erfc(sum_sig/pow(2,0.5))
+    print 'pvalue = %s'%(pvalue)
+    trial_factor = total_bins/sum_bins
+    print 'trial_factor = %s'%(trial_factor)
+    #sum_sig_lee = max(0,ROOT.TMath.NormQuantile(1.-(pvalue*trial_factor)))
+    sum_sig_lee = max(0,special.erfinv(1.-(pvalue*trial_factor))*pow(2,0.5))
     print 'sum_sig_lee = %s'%(sum_sig_lee)
 
     max_sig = 0.
@@ -2199,6 +2194,10 @@ def RadialAcceptance():
     Make2DSignificanceCameraFoVPlot(exposure_hours_total,Syst_MDM,Hist_Data_CameraFoV_SumE,Hist_Bkgd_CameraFoV_Err_SumE,'X','Y','CameraFoV_Err%s_%s_%s'%(PercentCrab,ONOFF,folder_tag))
     Make2DSignificanceCameraFoVPlot(exposure_hours_total,Syst_MDM,Hist_Data_CameraFoV_SumE,Hist_Bkgd_CameraFoV_SumE,'X','Y','CameraFoV%s_%s_%s'%(PercentCrab,ONOFF,folder_tag))
 
+    Hist_Data_CameraFoV_smooth = Smooth2DMap(Hist_Data_CameraFoV_SumE,smooth_size,False)
+    Hist_Bkgd_CameraFoV_smooth = Smooth2DMap(Hist_Bkgd_CameraFoV_SumE,smooth_size,False)
+    Make2DSignificanceCameraFoVPlot(exposure_hours_total,Syst_MDM,Hist_Data_CameraFoV_smooth,Hist_Bkgd_CameraFoV_smooth,'X','Y','CameraFoV_Smooth%s_%s_%s'%(PercentCrab,ONOFF,folder_tag))
+
 def SystAsFunctionOfElevation():
 
     global ErecS_lower_cut
@@ -3043,7 +3042,7 @@ SystDarkVsMDM() # run this to get method systematics
 #source_of_interest = 'Proton_NSB200'
 #source_of_interest = 'Proton_NSB750'
 #source_of_interest = 'Crab'
-source_of_interest = 'Mrk421'
+#source_of_interest = 'Mrk421'
 #source_of_interest = 'H1426'
 #source_of_interest = 'PKS1424'
 #source_of_interest = '3C264'
@@ -3071,7 +3070,7 @@ source_of_interest = 'Mrk421'
 #source_of_interest = 'MGRO_J1908_V5'
 #source_of_interest = 'Segue1V5'
 #source_of_interest = 'IC443HotSpotV5'
-#source_of_interest = 'GemingaV6'
+source_of_interest = 'GemingaV6'
 #source_of_interest = 'GemingaV5'
 
 source_idx = FindSourceIndex(source_of_interest)
@@ -3100,14 +3099,13 @@ smooth_size = 0.05
 
 theta2_range = 2.0
 highlight_threshold = 2.0
-n_upcrossing = 0.
 
-ONOFF = "OFF"
-PercentCrab = "_Crab0"
-RadialAcceptance()
+#ONOFF = "OFF"
+#PercentCrab = "_Crab0"
+#RadialAcceptance()
 
-#ONOFF = "ON"
-ONOFF = "OFF"
+ONOFF = "ON"
+#ONOFF = "OFF"
 
 PercentCrab = "_Crab0"
 #PercentCrab = "_Crab10"
@@ -3117,6 +3115,5 @@ PercentCrab = "_Crab0"
 #PercentCrab = "_Crab200"
 
 SingleSourceSkyMap(source_of_interest)
-SingleSourceSpectrum(source_of_interest)
+#SingleSourceSpectrum(source_of_interest)
 
-print 'n_upcrossing = %s'%(n_upcrossing)
