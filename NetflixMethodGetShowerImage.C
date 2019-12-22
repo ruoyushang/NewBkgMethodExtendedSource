@@ -513,7 +513,7 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
 
     vector<pair<string,int>> new_list;
     vector<pair<double,double>> ON_pointing_radec_new;
-    for (int n=0;n<2;n++)
+    for (int n=0;n<5;n++)
     {
         for (int on_run=0;on_run<ON_runlist.size();on_run++)
         {
@@ -534,7 +534,7 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
                 }
                 if (already_used_run) continue;
                 double chi2 = pow(ON_pointing[on_run].first+Elev_diff_dark-OFF_pointing[off_run].first,2);
-                chi2 += 4.*pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2);
+                chi2 += 10.*pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2);
                 if (best_chi2>chi2)
                 {
                     best_chi2 = chi2;
@@ -776,7 +776,6 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     vector<TH2D> Hist_Ring_MSCLW;
     vector<TH2D> Hist_Ring_Syst_MSCLW;
     vector<TH2D> Hist_Dark_MSCLW;
-    vector<TH2D> Hist_Dark2_MSCLW;
     vector<TH2D> Hist_Dark_Syst_MSCLW;
     vector<TH1D> Hist_TrueBkgd_SR_Skymap_Theta2;
     vector<TH1D> Hist_Data_SR_Skymap_Theta2;
@@ -822,8 +821,6 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Ring_Syst_MSCLW.push_back(TH2D("Hist_Ring_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Dark_MSCLW.push_back(TH2D("Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Dark_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
-        Hist_Dark2_MSCLW.push_back(TH2D("Hist_Dark2_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-        Hist_Dark2_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
         Hist_Dark_Syst_MSCLW.push_back(TH2D("Hist_Dark_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_TrueBkgd_SR_Skymap_Theta2.push_back(TH1D("Hist_TrueBkgd_SR_Skymap_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
         Hist_Data_SR_Skymap_Theta2.push_back(TH1D("Hist_Data_SR_Skymap_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
@@ -931,7 +928,6 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             if (DarkFoV() || Dark_runlist[run].first.find("Proton")!=std::string::npos)
             {
                 Hist_Dark_MSCLW.at(e).Fill(MSCL,MSCW);
-                Hist_Dark2_MSCLW.at(e).Fill(MSCL,MSCW);
                 Hist_Dark_Syst_MSCLW.at(e).Fill(MSCL,MSCW);
                 if (SignalSelectionTheta2())
                 {
@@ -1371,10 +1367,10 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
 
     for (int e=0;e<N_energy_bins;e++) 
     {
-        int binx_blind = Hist_Ring_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_lower);
-        int binx_upper = Hist_Ring_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_blind)-1;
-        int biny_blind = Hist_Ring_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind);
-        int biny_upper = Hist_Ring_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*3)-1;
+        int binx_blind = Hist_Ring_MSCLW.at(e).GetXaxis()->FindBin(1.);
+        int binx_upper = Hist_Ring_MSCLW.at(e).GetXaxis()->FindBin(3.)-1;
+        int biny_blind = Hist_Ring_MSCLW.at(e).GetYaxis()->FindBin(1.);
+        int biny_upper = Hist_Ring_MSCLW.at(e).GetYaxis()->FindBin(3.)-1;
         double Ring_CR_Integral = Hist_Ring_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double Data_CR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_blind,binx_upper,biny_blind,biny_upper);
         double Ring_CR_Error = pow(Ring_CR_Integral,0.5);
@@ -1388,31 +1384,25 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     {
         int binx_lower = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_lower);
         int binx_blind = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_blind)-1;
-        int binx_upper = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_blind*2)-1;
+        int binx_upper = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(3.)-1;
         int biny_lower = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_lower);
         int biny_blind = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind)-1;
-        int biny_upper = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind*2)-1;
+        int biny_upper = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(3.)-1;
         double Dark_SR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
         double Data_SR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
         //double Dark_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
         //double Data_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
         double Dark_Integral = Hist_Dark_MSCLW.at(e).Integral();
         double Data_Integral = Hist_Data_MSCLW.at(e).Integral();
-        double Dark2_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_upper);
-        double Data2_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_upper);
         double Dark_CR_Integral = Dark_Integral-Dark_SR_Integral;
         double Data_CR_Integral = Data_Integral-Data_SR_Integral;
-        double Dark2_CR_Integral = Dark2_Integral-Dark_SR_Integral;
-        double Data2_CR_Integral = Data2_Integral-Data_SR_Integral;
         double Dark_CR_Error = pow(Dark_CR_Integral,0.5);
         double Data_CR_Error = pow(Data_CR_Integral,0.5);
         double scale = Data_CR_Integral/Dark_CR_Integral;
-        double scale2 = Data2_CR_Integral/Dark2_CR_Integral;
         double scale_err = scale*pow(pow(Dark_CR_Error/Dark_CR_Integral,2)+pow(Data_CR_Error/Data_CR_Integral,2),0.5);
         Hist_Dark_MSCLW.at(e).Scale(scale);
-        Hist_Dark2_MSCLW.at(e).Scale(scale2);
         Hist_Dark_Syst_MSCLW.at(e).Scale(scale_err);
-        double gamma_total = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind)-Hist_Dark2_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        double gamma_total = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind)-Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
         gamma_total = max(0.,gamma_total);
         if (PercentCrab>0.)
         {
@@ -1464,7 +1454,6 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Ring_MSCLW.at(e).Write();
         Hist_Ring_Syst_MSCLW.at(e).Write();
         Hist_Dark_MSCLW.at(e).Write();
-        Hist_Dark2_MSCLW.at(e).Write();
         Hist_Dark_Syst_MSCLW.at(e).Write();
         Hist_TrueBkgd_SR_Skymap_Theta2.at(e).Write();
         Hist_Data_SR_Skymap_Theta2.at(e).Write();

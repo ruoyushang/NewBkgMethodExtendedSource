@@ -389,8 +389,10 @@ double FirstDerivative(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
 
 double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
 {
-    int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
-    int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
+    //int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
+    //int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
+    int binx_blind = hist_data->GetXaxis()->FindBin(1.);
+    int biny_blind = hist_data->GetYaxis()->FindBin(1.);
     double chi2 = 0.;
     for (int bx=1;bx<=hist_data->GetNbinsX();bx++)
     {
@@ -437,10 +439,14 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
 
 double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
 {
-    int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
-    int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
-    int binx_upper = hist_data->GetXaxis()->FindBin(MSCL_cut_blind+1.);
-    int biny_upper = hist_data->GetXaxis()->FindBin(MSCW_cut_blind+1.);
+    //int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
+    //int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
+    //int binx_upper = hist_data->GetXaxis()->FindBin(MSCL_cut_blind+1.);
+    //int biny_upper = hist_data->GetXaxis()->FindBin(MSCW_cut_blind+1.);
+    int binx_blind = hist_data->GetXaxis()->FindBin(1.);
+    int biny_blind = hist_data->GetYaxis()->FindBin(1.);
+    int binx_upper = hist_data->GetXaxis()->FindBin(3.);
+    int biny_upper = hist_data->GetXaxis()->FindBin(3.);
     double chi2 = 0.;
     for (int bx=1;bx<=hist_data->GetNbinsX();bx++)
     {
@@ -1318,6 +1324,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
     vector<TH1D> Hist_Dark_Eigenvalues_real;
     vector<TH1D> Hist_Data_Eigenvalues_imag;
     vector<TH1D> Hist_Dark_Eigenvalues_imag;
+    vector<TH1D> Hist_Fit_Eigenvalues_real;
     vector<TH1D> Hist_Data_EigenvectorReal_0;
     vector<TH1D> Hist_Fit_EigenvectorReal_0;
     vector<TH1D> Hist_Dark_EigenvectorReal_0;
@@ -1381,6 +1388,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         Hist_Dark_Eigenvalues_real.push_back(TH1D("Hist_Dark_Eigenvalues_real_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,0,N_bins_for_deconv));
         Hist_Data_Eigenvalues_imag.push_back(TH1D("Hist_Data_Eigenvalues_imag_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,0,N_bins_for_deconv));
         Hist_Dark_Eigenvalues_imag.push_back(TH1D("Hist_Dark_Eigenvalues_imag_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,0,N_bins_for_deconv));
+        Hist_Fit_Eigenvalues_real.push_back(TH1D("Hist_Fit_Eigenvalues_real_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,0,N_bins_for_deconv));
         Hist_Data_EigenvectorReal_0.push_back(TH1D("Hist_Data_EigenvectorReal_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
         Hist_Fit_EigenvectorReal_0.push_back(TH1D("Hist_Fit_EigenvectorReal_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
         Hist_Dark_EigenvectorReal_0.push_back(TH1D("Hist_Dark_EigenvectorReal_0_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper));
@@ -1468,38 +1476,45 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         {
             for (int j=0;j<mtx_dark.rows();j++)
             {
-                if (i==j && i>=mtx_dark.cols()-NumberOfEigenvectors) 
-                {
-                    mtx_eigenval_data_redu(i,j) = eigensolver_data.eigenvalues()(i);
-                    mtx_eigenval_dark_redu(i,j) = eigensolver_dark.eigenvalues()(i);
-                }
-                else
-                {
-                    mtx_eigenval_data_redu(i,j) = 0;
-                    mtx_eigenval_dark_redu(i,j) = 0;
-                }
+                mtx_eigenval_data_redu(i,j) = eigensolver_data.eigenvalues()(i);
+                mtx_eigenval_dark_redu(i,j) = eigensolver_dark.eigenvalues()(i);
+                //if (i==j && i>=mtx_dark.cols()-NumberOfEigenvectors) 
+                //{
+                //    mtx_eigenval_data_redu(i,j) = eigensolver_data.eigenvalues()(i);
+                //    mtx_eigenval_dark_redu(i,j) = eigensolver_dark.eigenvalues()(i);
+                //}
+                //else
+                //{
+                //    mtx_eigenval_data_redu(i,j) = 0;
+                //    mtx_eigenval_dark_redu(i,j) = 0;
+                //}
             }
         }
         mtx_data_redu = eigensolver_data.eigenvectors()*mtx_eigenval_data_redu*eigensolver_data.eigenvectors().inverse();
         mtx_dark_redu = eigensolver_dark.eigenvectors()*mtx_eigenval_dark_redu*eigensolver_dark.eigenvectors().inverse();
 
-        if (TString(target).Contains("Everything"))
+        double count_gamma_like = Hist_Data->Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        double count_total = Hist_Data->Integral();
+        //if (TString(target).Contains("Everything"))
+        if (file_tag == "OFF")
         {
-            char textfile[50] = "";
-            sprintf(textfile, "../eigenvector_E%i_Elev%i.txt", int(energy_bins[e]), int(TelElev_lower));
-        sprintf(e_low, "%i", int(energy_bins[e]));
-            std::ofstream myfile;
-            myfile.open (textfile);
-            myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-            myfile << "eigenvalues:" << std::endl;
-            myfile << mtx_eigenval_data_redu.block(mtx_data.rows()-NumberOfEigenvectors,mtx_data.cols()-NumberOfEigenvectors,NumberOfEigenvectors,NumberOfEigenvectors) << std::endl << std::endl;
-            myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-            myfile << "eigenvectors:" << std::endl;
-            myfile << eigensolver_data.eigenvectors().block(0,mtx_data.cols()-NumberOfEigenvectors,mtx_data.rows(),NumberOfEigenvectors) << std::endl << std::endl;
-            myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-            myfile << "inverse eigenvectors:" << std::endl;
-            myfile << eigensolver_data.eigenvectors().inverse().block(mtx_data.rows()-NumberOfEigenvectors,0,NumberOfEigenvectors,mtx_data.cols()) << std::endl << std::endl;
-            myfile.close();
+          char textfile[50] = "";
+          sprintf(textfile, "../eigenvector_%s_E%i_Elev%i.txt", target, int(energy_bins[e]), int(TelElev_lower));
+          std::ofstream myfile;
+          myfile.open (textfile);
+          myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+          myfile << "total counts:" << count_total << std::endl;
+          myfile << "gamma-like counts:" << count_gamma_like << std::endl;
+          myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+          myfile << "eigenvalues:" << std::endl;
+          myfile << mtx_eigenval_data_redu.block(mtx_data.rows()-6,mtx_data.cols()-6,6,6) << std::endl << std::endl;
+          //myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+          //myfile << "eigenvectors:" << std::endl;
+          //myfile << eigensolver_data.eigenvectors().block(0,mtx_data.cols()-6,mtx_data.rows(),6) << std::endl << std::endl;
+          //myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+          //myfile << "inverse eigenvectors:" << std::endl;
+          //myfile << eigensolver_data.eigenvectors().inverse().block(mtx_data.rows()-6,0,6,mtx_data.cols()) << std::endl << std::endl;
+          myfile.close();
         }
 
         for (int NthEigenvalue=1;NthEigenvalue<=N_bins_for_deconv;NthEigenvalue++)
@@ -1589,6 +1604,10 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
 
         mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
 
+        for (int NthEigenvalue=1;NthEigenvalue<=N_bins_for_deconv;NthEigenvalue++)
+        {
+            Hist_Fit_Eigenvalues_real.at(e).SetBinContent(NthEigenvalue,mtx_eigenvalue(N_bins_for_deconv-NthEigenvalue,N_bins_for_deconv-NthEigenvalue).real());
+        }
 
         fill1DHistogram(&Hist_Fit_EigenvectorReal_0.at(e),mtx_eigenvector.col(mtx_data.cols()-1).real());
         fill1DHistogram(&Hist_Fit_EigenvectorReal_1.at(e),mtx_eigenvector.col(mtx_data.cols()-2).real());
@@ -1643,6 +1662,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         Hist_Dark_Eigenvalues_real.at(e).Write();
         Hist_Data_Eigenvalues_imag.at(e).Write();
         Hist_Dark_Eigenvalues_imag.at(e).Write();
+        Hist_Fit_Eigenvalues_real.at(e).Write();
         Hist_Data_EigenvectorReal_0.at(e).Write();
         Hist_Fit_EigenvectorReal_0.at(e).Write();
         Hist_Dark_EigenvectorReal_0.at(e).Write();
