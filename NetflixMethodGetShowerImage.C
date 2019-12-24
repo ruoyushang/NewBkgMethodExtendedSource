@@ -53,13 +53,18 @@ double MSCL_cut_lower = -1.0;
 double MSCL_cut_blind = 1.0;
 double MSCL_cut_upper = 1.0;
 
-const int N_energy_bins = 11;
-double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,2239,4467,8913};
-double gamma_flux[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-double gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-double raw_gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-//int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,20,20};
-int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,40,40};
+//const int N_energy_bins = 11;
+//double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,2239,4467,8913};
+//double gamma_flux[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
+//double gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
+//double raw_gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
+//int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,40,40};
+const int N_energy_bins = 1;
+double energy_bins[N_energy_bins+1] = {200,8913};
+double gamma_flux[N_energy_bins] = {0.};
+double gamma_count[N_energy_bins] = {0.};
+double raw_gamma_count[N_energy_bins] = {0.};
+int N_bins_for_deconv_at_E[N_energy_bins] = {40};
 
 int N_bins_for_deconv = 40;
 double MSCW_plot_lower = -1.;
@@ -766,6 +771,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     TH1D Hist_Data_NSB = TH1D("Hist_Data_NSB","",20,4,14);
     TH2D Hist_Dark_ShowerDirection = TH2D("Hist_Dark_ShowerDirection","",180,0,360,90,0,90);
     TH2D Hist_Data_ShowerDirection = TH2D("Hist_Data_ShowerDirection","",180,0,360,90,0,90);
+    TH2D Hist_Data_MSCLW_incl = TH2D("Hist_Data_MSCLW_incl","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     vector<TH2D> Hist_GammaDark_MSCLW;
     vector<TH2D> Hist_GammaMC_MSCLW;
     vector<TH2D> Hist_GammaData_MSCLW;
@@ -1056,6 +1062,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze);
             if (FoV() || Data_runlist[run].first.find("Proton")!=std::string::npos)
             {
+                Hist_Data_MSCLW_incl.Fill(MSCL,MSCW);
                 Hist_Data_MSCLW.at(e).Fill(MSCL,MSCW);
                 Hist_TrueBkgd_MSCLW.at(e).Fill(MSCL,MSCW);
             }
@@ -1225,6 +1232,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze,photon_weight);
             if (FoV() && GammaFoV())
             {
+                Hist_Data_MSCLW_incl.Fill(MSCL,MSCW,photon_weight);
                 Hist_Data_MSCLW.at(e).Fill(MSCL,MSCW,photon_weight);
             }
             if (RingFoV() && GammaFoV())
@@ -1444,6 +1452,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     Hist_EffArea.Write();
     Hist_Dark_ShowerDirection.Write();
     Hist_Data_ShowerDirection.Write();
+    Hist_Data_MSCLW_incl.Write();
     for (int e=0;e<N_energy_bins;e++)
     {
         Hist_GammaDark_MSCLW.at(e).Write();
