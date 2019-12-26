@@ -33,9 +33,9 @@ FileLabel = []
 Syst_MDM = 0.
 Syst_Dark = 0.
 
-FileFolder += ['output_test']
-FileTag += ['test']
-FileLabel += ['test']
+#FileFolder += ['output_test']
+#FileTag += ['test']
+#FileLabel += ['test']
 
 #FileFolder += ['output_unblind_4x4_smallfov_tight']
 #FileTag += ['tight']
@@ -44,9 +44,9 @@ FileLabel += ['test']
 #FileFolder += ['output_unblind_4x4_nominal_tight']
 #FileTag += ['tight']
 #FileLabel += ['tight']
-#FileFolder += ['output_unblind_4x4_nominal_medium']
-#FileTag += ['medium']
-#FileLabel += ['medium']
+FileFolder += ['output_unblind_4x4_nominal_medium']
+FileTag += ['medium']
+FileLabel += ['medium']
 #FileFolder += ['output_unblind_4x4_nominal_loose']
 #FileTag += ['loose']
 #FileLabel += ['loose']
@@ -82,121 +82,121 @@ elev_range += [[75,85]]
 source_list = []
 sky_coord = []
 for_syst = []
-#source_list += ['Proton_NSB200']
-#sky_coord += ['10 07 04 +16 04 55']
-#for_syst += [False]
-#source_list += ['Proton_NSB750']
-#sky_coord += ['10 07 04 +16 04 55']
-#for_syst += [False]
+source_list += ['Proton_NSB200']
+sky_coord += ['10 07 04 +16 04 55']
+for_syst += [False]
+source_list += ['Proton_NSB750']
+sky_coord += ['10 07 04 +16 04 55']
+for_syst += [False]
 source_list += ['Crab']
 sky_coord += ['05 34 31.97 +22 00 52.1']
 for_syst += [True]
-#source_list += ['Mrk421']
-#sky_coord += ['11 04 19 +38 11 41']
-#for_syst += [True]
-#source_list += ['H1426']
-#sky_coord += ['14 28 32.609 +42 40 21.05']
-#for_syst += [True]
+source_list += ['Mrk421']
+sky_coord += ['11 04 19 +38 11 41']
+for_syst += [True]
+source_list += ['H1426']
+sky_coord += ['14 28 32.609 +42 40 21.05']
+for_syst += [True]
 source_list += ['PKS1424']
 sky_coord += ['14 27 00 +23 47 00']
 for_syst += [True]
-#source_list += ['3C264']
-#sky_coord += ['11 45 5.009 +19 36 22.74']
-#for_syst += [True]
-#source_list += ['OJ287V6']
-#sky_coord += ['08 54 49.1 +20 05 58.89']
-#for_syst += [True]
-#source_list += ['1ES0229']
-#sky_coord += ['02 32 53.2 +20 16 21']
-#for_syst += [True]
-#source_list += ['S3_1227_V6']
-#sky_coord += ['12 30 14.1 +25 18 07']
-#for_syst += [True]
-#source_list += ['MS1221V6']
-#sky_coord += ['12 24 24.2 +24 36 24']
-#for_syst += [True]
-#source_list += ['PKS1441V6']
-#sky_coord += ['14 43 56.9 +25 01 44']
-#for_syst += [True]
-#source_list += ['RBS0413V6']
-#sky_coord += ['03 19 47 +18 45 42']
-#for_syst += [True]
-#source_list += ['PG1553V6']
-#sky_coord += ['15 55 44.7 +11 11 41']
-#for_syst += [True]
-#source_list += ['Segue1V6']
-#sky_coord += ['10 07 04 +16 04 55']
-#for_syst += [True]
-#source_list += ['1ES1011V6']
-#sky_coord += ['10 15 4.139 +49 26 0.71']
-#for_syst += [True]
-#source_list += ['NGC1275V6']
-#sky_coord += ['03 19 48.1 +41 30 42']
-#for_syst += [True]
-#source_list += ['1ES0647V6']
-#sky_coord += ['06 50 46.490 +25 02 59.62']
-#for_syst += [True]
-#source_list += ['1ES1440V6']
-#sky_coord += ['14 42 48.277 +12 00 40.37']
-#for_syst += [True]
-#source_list += ['1ES1741V6']
-#sky_coord += ['17 44 01.2 +19 32 47']
-#for_syst += [True]
-#source_list += ['IC443HotSpot']
-#sky_coord += ['06 18 2.700 +22 39 36.00']
-#for_syst += [True]
-#source_list += ['RGBJ0710']
-#sky_coord += ['07 10 26.4 +59 09 00']
-#for_syst += [True]
-#source_list += ['CasA']
-#sky_coord += ['23 23 13.8 +58 48 26']
-#for_syst += [True]
-#source_list += ['WComaeV6']
-#sky_coord += ['12 21 31.7 +28 13 59']
-#for_syst += [True]
-#source_list += ['M82']
-#sky_coord += ['09 55 52.7 +69 40 46']
-#for_syst += [True]
-#source_list += ['G079']
-#sky_coord += ['20 32 28.56 +40 19 41.52']
-#for_syst += [False]
-#source_list += ['1ES1218V6']
-#sky_coord += ['12 21 26.3 +30 11 29']
-#for_syst += [False]
-#source_list += ['MGRO_J1908_V6']
-#sky_coord += ['19 07 54 +06 16 07']
-#for_syst += [False]
-#source_list += ['MGRO_J1908_V5']
-#sky_coord += ['19 07 54 +06 16 07']
-#for_syst += [False]
-#source_list += ['Segue1V5']
-#sky_coord += ['10 07 04 +16 04 55']
-#for_syst += [False]
-#source_list += ['IC443HotSpotV5']
-#sky_coord += ['06 18 2.700 +22 39 36.00']
-#for_syst += [False]
-#source_list += ['GemingaV6']
-#sky_coord += ['06 32 28 +17 22 00']
-#for_syst += [False]
-#source_list += ['GemingaV5']
-#sky_coord += ['06 32 28 +17 22 00']
-#for_syst += [False]
+source_list += ['3C264']
+sky_coord += ['11 45 5.009 +19 36 22.74']
+for_syst += [True]
+source_list += ['OJ287V6']
+sky_coord += ['08 54 49.1 +20 05 58.89']
+for_syst += [True]
+source_list += ['1ES0229']
+sky_coord += ['02 32 53.2 +20 16 21']
+for_syst += [True]
+source_list += ['S3_1227_V6']
+sky_coord += ['12 30 14.1 +25 18 07']
+for_syst += [True]
+source_list += ['MS1221V6']
+sky_coord += ['12 24 24.2 +24 36 24']
+for_syst += [True]
+source_list += ['PKS1441V6']
+sky_coord += ['14 43 56.9 +25 01 44']
+for_syst += [True]
+source_list += ['RBS0413V6']
+sky_coord += ['03 19 47 +18 45 42']
+for_syst += [True]
+source_list += ['PG1553V6']
+sky_coord += ['15 55 44.7 +11 11 41']
+for_syst += [True]
+source_list += ['Segue1V6']
+sky_coord += ['10 07 04 +16 04 55']
+for_syst += [True]
+source_list += ['1ES1011V6']
+sky_coord += ['10 15 4.139 +49 26 0.71']
+for_syst += [True]
+source_list += ['NGC1275V6']
+sky_coord += ['03 19 48.1 +41 30 42']
+for_syst += [True]
+source_list += ['1ES0647V6']
+sky_coord += ['06 50 46.490 +25 02 59.62']
+for_syst += [True]
+source_list += ['1ES1440V6']
+sky_coord += ['14 42 48.277 +12 00 40.37']
+for_syst += [True]
+source_list += ['1ES1741V6']
+sky_coord += ['17 44 01.2 +19 32 47']
+for_syst += [True]
+source_list += ['IC443HotSpot']
+sky_coord += ['06 18 2.700 +22 39 36.00']
+for_syst += [True]
+source_list += ['RGBJ0710']
+sky_coord += ['07 10 26.4 +59 09 00']
+for_syst += [True]
+source_list += ['CasA']
+sky_coord += ['23 23 13.8 +58 48 26']
+for_syst += [True]
+source_list += ['WComaeV6']
+sky_coord += ['12 21 31.7 +28 13 59']
+for_syst += [True]
+source_list += ['M82']
+sky_coord += ['09 55 52.7 +69 40 46']
+for_syst += [True]
+source_list += ['G079']
+sky_coord += ['20 32 28.56 +40 19 41.52']
+for_syst += [False]
+source_list += ['1ES1218V6']
+sky_coord += ['12 21 26.3 +30 11 29']
+for_syst += [False]
+source_list += ['MGRO_J1908_V6']
+sky_coord += ['19 07 54 +06 16 07']
+for_syst += [False]
+source_list += ['MGRO_J1908_V5']
+sky_coord += ['19 07 54 +06 16 07']
+for_syst += [False]
+source_list += ['Segue1V5']
+sky_coord += ['10 07 04 +16 04 55']
+for_syst += [False]
+source_list += ['IC443HotSpotV5']
+sky_coord += ['06 18 2.700 +22 39 36.00']
+for_syst += [False]
+source_list += ['GemingaV6']
+sky_coord += ['06 32 28 +17 22 00']
+for_syst += [False]
+source_list += ['GemingaV5']
+sky_coord += ['06 32 28 +17 22 00']
+for_syst += [False]
 
 gal_coord = SkyCoord(sky_coord[:], unit=(u.hourangle, u.deg))
 
 energy_list = []
 energy_list += [200]
-#energy_list += [237]
-#energy_list += [282]
-#energy_list += [335]
-#energy_list += [398] # works from here
-#energy_list += [473]
-#energy_list += [562]
-#energy_list += [794]
-#energy_list += [1122]
-#energy_list += [2239]
-#energy_list += [4467]
-energy_list += [8913]
+energy_list += [237]
+energy_list += [282]
+energy_list += [335]
+energy_list += [398] # works from here
+energy_list += [473]
+energy_list += [562]
+energy_list += [794]
+energy_list += [1122]
+energy_list += [2239]
+energy_list += [4467]
+#energy_list += [8913]
 
 exposure_hours = 0.
 exposure_hours_dark = 0.
@@ -297,16 +297,16 @@ Hist_Bkgd_CameraFoV_Raw_SumE = ROOT.TH2D("Hist_Bkgd_CameraFoV_Raw_SumE","",150,-
 
 energy_bin = []
 energy_bin += [200]
-#energy_bin += [237]
-#energy_bin += [282]
-#energy_bin += [335]
-#energy_bin += [398] # works from here
-#energy_bin += [473]
-#energy_bin += [562]
-#energy_bin += [794]
-#energy_bin += [1122]
-#energy_bin += [2239]
-#energy_bin += [4467]
+energy_bin += [237]
+energy_bin += [282]
+energy_bin += [335]
+energy_bin += [398] # works from here
+energy_bin += [473]
+energy_bin += [562]
+energy_bin += [794]
+energy_bin += [1122]
+energy_bin += [2239]
+energy_bin += [4467]
 energy_bin += [8913]
 Hist_EffArea = ROOT.TH1D("Hist_EffArea","",len(energy_bin)-1,array('d',energy_bin))
 
@@ -1479,8 +1479,9 @@ def MakeComparisonPlot(Hists,legends,colors,title_x,title_y,name,y_min,y_max,log
     pad3.SetTopMargin(0.03)
     pad3.SetBorderMode(1)
     pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.7)
-    pad1.SetBottomMargin(0.1)
+    pad1.SetBottomMargin(0.2)
     pad1.SetTopMargin(0.0)
+    pad1.SetLeftMargin(0.2)
     pad1.SetBorderMode(0)
     if logy: pad1.SetGrid()
     pad1.Draw()
@@ -1501,6 +1502,12 @@ def MakeComparisonPlot(Hists,legends,colors,title_x,title_y,name,y_min,y_max,log
         rms += [0]
         amp += [0]
         if Hists[h]!=0:
+            Hists[h].GetXaxis().SetTitleOffset(0.8)
+            Hists[h].GetXaxis().SetTitleSize(0.06)
+            Hists[h].GetXaxis().SetLabelSize(0.06)
+            Hists[h].GetYaxis().SetLabelSize(0.06)
+            Hists[h].GetYaxis().SetTitleOffset(1.0)
+            Hists[h].GetYaxis().SetTitleSize(0.06)
             Hists[h].GetXaxis().SetTitle(title_x)
             Hists[h].GetYaxis().SetTitle(title_y)
             if max_heigh < Hists[h].GetMaximum(): 
@@ -2177,7 +2184,9 @@ def SystAsFunctionOfSignal():
         Hist_Dark_S2B_Flux += [ROOT.TH1D("Hist_Dark_S2B_Flux_%s"%(source_name),"",len(SignalFlux),0,len(SignalFlux))]
         Hist_Eigenvalue_2ndRank += [ROOT.TH1D("Hist_Eigenvalue_2ndRank_%s"%(source_name),"",len(SignalFlux),0,len(SignalFlux))]
         legend_S2B += ['%s'%(source_name)]
-        color_S2B += [color_code[int(source*len(color_code)/len(source_list))]]
+        color_idx = int(source*len(color_code)/max(1,len(source_list)-1))
+        color_idx = min(color_idx,len(color_code)-1)
+        color_S2B += [color_code[color_idx]]
         for flux in range(0,len(SignalFlux)):
             ResetStackedShowerHistograms()
             for elev in range(0,len(elev_range)):
@@ -2242,7 +2251,9 @@ def SystAsFunctionOfSignal():
         Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2_%s"%(flux),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
         Hist_Shower_MSCW += [ROOT.TH1D("Hist_Shower_MSCW_%s"%(flux),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
         legend_S2B += ['Flux %s Crab unit'%(SignalFlux_label[flux])]
-        color_S2B += [color_code[int(flux*len(color_code)/len(SignalFlux))]]
+        color_idx = int(flux*len(color_code)/max(1,len(SignalFlux)-1))
+        color_idx = min(color_idx,len(color_code)-1)
+        color_S2B += [color_code[color_idx]]
         ResetStackedShowerHistograms()
         for elev in range(0,len(elev_range)):
             file_elev_lower = elev_range[elev][0]
@@ -2396,7 +2407,9 @@ def SystAsFunctionOfElevation():
         Hist_Dark_S2B_Elev += [ROOT.TH1D("Hist_Dark_S2B_Elev_%s"%(source_name),"",len(elev_range),elev_range[0][0],elev_range[len(elev_range)-1][1])]
         Hist_Eigenvalue_2ndRank += [ROOT.TH1D("Hist_Eigenvalue_2ndRank_%s"%(source_name),"",len(elev_range),elev_range[0][0],elev_range[len(elev_range)-1][1])]
         legend_S2B += ['%s'%(source_name)]
-        color_S2B += [color_code[int(source*len(color_code)/len(source_list))]]
+        color_idx = int(source*len(color_code)/max(1,len(source_list)-1))
+        color_idx = min(color_idx,len(color_code)-1)
+        color_S2B += [color_code[color_idx]]
         for elev in range(0,len(elev_range)):
             file_elev_lower = elev_range[elev][0]
             file_elev_upper = elev_range[elev][1]
@@ -2461,7 +2474,9 @@ def SystAsFunctionOfElevation():
         Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2_%s"%(elev),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
         Hist_Shower_MSCW += [ROOT.TH1D("Hist_Shower_MSCW_%s"%(elev),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
         legend_S2B += ['Elev. %s-%s'%(file_elev_lower,file_elev_upper)]
-        color_S2B += [color_code[int(elev*len(color_code)/len(elev_range))]]
+        color_idx = int(elev*len(color_code)/max(1,len(elev_range)-1))
+        color_idx = min(color_idx,len(color_code)-1)
+        color_S2B += [color_code[color_idx]]
         ResetStackedShowerHistograms()
         for source in range(0,len(source_list)):
             if for_syst[source]==False: continue
@@ -2574,7 +2589,9 @@ def SystAsFunctionOfGalLat():
         Hist_MDM_S2B_GalLat += [ROOT.TH1D("Hist_MDM_S2B_GalLat_%s"%(source_name),"",9,0,90)]
         Hist_Dark_S2B_GalLat += [ROOT.TH1D("Hist_Dark_S2B_GalLat_%s"%(source_name),"",9,0,90)]
         legend_S2B += ['%s (%0.1f hrs)'%(source_name,exposure_hours)]
-        color_S2B += [color_code[int(source*len(color_code)/len(FilePath_Folder0))]]
+        color_idx = int(source*len(color_code)/max(1,len(FilePath_Folder0)-1))
+        color_idx = min(color_idx,len(color_code)-1)
+        color_S2B += [color_code[color_idx]]
         ResetStackedShowerHistograms()
         for e in range(0,len(energy_list)-1):
             ErecS_lower_cut = energy_list[e]
@@ -2638,7 +2655,9 @@ def SensitivityAsFunctionOfExposure():
     color_S2B = []
     for big_t in range(0,len(time_bin)-1):
         legend_S2B += ['%s hours'%(time_bin[big_t])]
-        color_S2B += [color_code[int(big_t*len(color_code)/(len(time_bin)-1))]]
+        color_idx = int(big_t*len(color_code)/max(1,len(time_bin)-2))
+        color_idx = min(color_idx,len(color_code)-1)
+        color_S2B += [color_code[color_idx]]
         Hist_Eigenvalue_real_Rank += [ROOT.TH1D("Hist_Eigenvalue_real_Rank_T%s"%(time_bin[big_t]),"",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvalue_imag_Rank += [ROOT.TH1D("Hist_Eigenvalue_imag_Rank_T%s"%(time_bin[big_t]),"",N_bins_for_deconv,0,N_bins_for_deconv)]
         ResetStackedShowerHistograms()
@@ -2710,7 +2729,9 @@ def SystAsFunctionOfNSB():
         Hist_MDM_S2B_NSB += [ROOT.TH1D("Hist_MDM_S2B_NSB_%s"%(source_name),"",4,4.5,8.5)]
         Hist_Dark_S2B_NSB += [ROOT.TH1D("Hist_Dark_S2B_NSB_%s"%(source_name),"",4,4.5,8.5)]
         legend_S2B += ['%s (%0.1f hrs)'%(source_name,exposure_hours)]
-        color_S2B += [color_code[int(source*len(color_code)/len(FilePath_Folder0))]]
+        color_idx = int(source*len(color_code)/max(1,len(FilePath_Folder0)-1))
+        color_idx = min(color_idx,len(color_code)-1)
+        color_S2B += [color_code[color_idx]]
         ResetStackedShowerHistograms()
         for e in range(0,len(energy_list)-1):
             ErecS_lower_cut = energy_list[e]
@@ -2752,7 +2773,9 @@ def SystAsFunctionOfNSB():
     color_S2B = []
     for big_t in range(0,len(NSB_bin)-1):
         legend_S2B += ['NSB = %s'%(NSB_bin[big_t])]
-        color_S2B += [color_code[int(big_t*len(color_code)/(len(NSB_bin)-1))]]
+        color_idx = int(big_t*len(color_code)/max(1,len(NSB_bin)-2))
+        color_idx = min(color_idx,len(color_code)-1)
+        color_S2B += [color_code[color_idx]]
         Hist_Eigenvalue_real_Rank += [ROOT.TH1D("Hist_Eigenvalue_real_Rank_NSB%s"%(NSB_bin[big_t]),"",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvalue_imag_Rank += [ROOT.TH1D("Hist_Eigenvalue_imag_Rank_NSB%s"%(NSB_bin[big_t]),"",N_bins_for_deconv,0,N_bins_for_deconv)]
         ResetStackedShowerHistograms()
@@ -2825,7 +2848,9 @@ def SystAsFunctionOfEnergy():
         Hist_MDM_S2B_Energy += [ROOT.TH1D("Hist_MDM_S2B_Energy_%s"%(source_name),"",len(energy_list)-1,array('d',energy_list))]
         Hist_Dark_S2B_Energy += [ROOT.TH1D("Hist_Dark_S2B_Energy_%s"%(source_name),"",len(energy_list)-1,array('d',energy_list))]
         legend_S2B += ['%s (%0.1f hrs)'%(source_name,exposure_hours)]
-        color_S2B += [color_code[int(source*len(color_code)/len(FilePath_Folder0))]]
+        color_idx = int(source*len(color_code)/max(1,len(FilePath_Folder0)-1))
+        color_idx = min(color_idx,len(color_code)-1)
+        color_S2B += [color_code[color_idx]]
         for e in range(0,len(energy_list)-1):
             ErecS_lower_cut = energy_list[e]
             ErecS_upper_cut = energy_list[e+1]
@@ -2866,7 +2891,9 @@ def SystAsFunctionOfEnergy():
     color_S2B = []
     for big_e in range(0,len(big_energy_bin)-1):
         legend_S2B += ['%s GeV'%(big_energy_bin[big_e])]
-        color_S2B += [color_code[int(big_e*len(color_code)/(len(big_energy_bin)-1))]]
+        color_idx = int(big_e*len(color_code)/max(1,len(big_energy_bin)-2))
+        color_idx = min(color_idx,len(color_code)-1)
+        color_S2B += [color_code[color_idx]]
         Hist_Eigenvalue_real_Rank += [ROOT.TH1D("Hist_Eigenvalue_real_Rank_E%s"%(big_energy_bin[big_e]),"",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvalue_imag_Rank += [ROOT.TH1D("Hist_Eigenvalue_imag_Rank_E%s"%(big_energy_bin[big_e]),"",N_bins_for_deconv,0,N_bins_for_deconv)]
         ResetStackedShowerHistograms()
@@ -2939,7 +2966,9 @@ def SystAsFunctionOfRank():
         if exposure_hours==0: continue
         Hist_Ratio_Rank += [ROOT.TH1D("Hist_Ratio_Rank_%s"%(source_name),"",8,0,8)]
         legend_S2B += ['%s (%0.1f hrs)'%(source_name,exposure_hours)]
-        color_S2B += [color_code[int(source*len(color_code)/len(FilePath_Folder0))]]
+        color_idx = int(source*len(color_code)/max(1,len(FilePath_Folder0)-1))
+        color_idx = min(color_idx,len(color_code)-1)
+        color_S2B += [color_code[color_idx]]
         for rank in range(0,8):
             Hist2D_Data_SumE.Reset()
             Hist2D_Bkgd_SumE.Reset()
@@ -2965,6 +2994,8 @@ def SystAsFunctionOfRank():
             data_integral = Hist2D_Data_SumE.Integral(bin_lower_x,bin_upper_x,bin_lower_y,bin_upper_y)
             bkgd_integral = Hist2D_Bkgd_SumE.Integral(bin_lower_x,bin_upper_x,bin_lower_y,bin_upper_y)
             Hist_Ratio_Rank[len(Hist_Ratio_Rank)-1].SetBinContent(rank+1,1.-bkgd_integral/data_integral)
+            ratio_err = bkgd_integral/data_integral*1./pow(data_integral,0.5)
+            Hist_Ratio_Rank[len(Hist_Ratio_Rank)-1].SetBinError(rank+1,ratio_err)
 
     MakeComparisonPlot(Hist_Ratio_Rank,legend_S2B,color_S2B,'rank','1-ratio in gamma region','Ratio_Rank%s_%s'%(PercentCrab,folder_tag),0.,0.,False,True)
 
@@ -3021,7 +3052,9 @@ def SystDarkVsMDM():
         Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0_%s"%(source_name),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
         Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1_%s"%(source_name),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
         legend_S2B += ['%s (%0.1f hrs)'%(source_name,exposure_hours)]
-        color_S2B += [color_code[int(source*len(color_code)/len(FilePath_Folder0))]]
+        color_idx = int(source*len(color_code)/max(1,len(FilePath_Folder0)-1))
+        color_idx = min(color_idx,len(color_code)-1)
+        color_S2B += [color_code[color_idx]]
         ResetStackedShowerHistograms()
         for path in range(1,len(FilePath_Folder0[source])):
             if not os.path.isfile(FilePath_Folder0[source][path]):continue
@@ -3133,7 +3166,9 @@ def CompareDiffFolders():
         Hist_MDM_S2B += [ROOT.TH1D("Hist_MDM_S2B_%s"%(source_name),"",len(FilePath_AllFolders),0,len(FilePath_AllFolders))]
         Hist_Dark_S2B += [ROOT.TH1D("Hist_Dark_S2B_%s"%(source_name),"",len(FilePath_AllFolders),0,len(FilePath_AllFolders))]
         legend_S2B += ['%s (%0.1f hrs)'%(source_name,exposure_hours)]
-        color_S2B += [color_code[int(source*len(color_code)/len(FilePath_AllFolders[0]))]]
+        color_idx = int(source*len(color_code)/max(1,len(FilePath_AllFolders[0])-1))
+        color_idx = min(color_idx,len(color_code)-1)
+        color_S2B += [color_code[color_idx]]
         for folder in range(0,len(FileFolder)):
             folder_path = FileFolder[folder]
             folder_tag = FileTag[folder]
@@ -3281,7 +3316,9 @@ def SingleSourceSpectrum(source_name_input):
         Hist_MDM_NormSig_Rate += [ROOT.TH1D("Hist_MDM_NormSig_Rate_%s"%(file_elev_upper),"",len(energy_list)-1,array('d',energy_list))]
         Hist_MDM_Sig_Rate += [ROOT.TH1D("Hist_MDM_Sig_Rate_%s"%(file_elev_upper),"",len(energy_list)-1,array('d',energy_list))]
         legend_S2B += ['%s elev. %s-%s'%(source_name,file_elev_lower,file_elev_upper)]
-        color_S2B += [color_code[int(count*len(color_code)/len(elev_range))]]
+        color_idx = int(count*len(color_code)/max(1,len(elev_range)-1))
+        color_idx = min(color_idx,len(color_code)-1)
+        color_S2B += [color_code[color_idx]]
         count += 1
         for e in range(0,len(energy_list)-1):
             ErecS_lower_cut = energy_list[e]
@@ -3393,13 +3430,17 @@ def SingleSourceSkyMap(source_name_input):
         Hist_Eigenvalue_imag_Rank += [ROOT.TH1D("Hist_Eigenvalue_imag_Rank_Data","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvalue_imag_Rank[len(Hist_Eigenvalue_imag_Rank)-1].Add(Hist_Data_Eigenvalues_imag_SumE)
         legend_S2B += ['ON data']
-        color_S2B += [color_code[int(0*len(color_code)/2)]]
+        color_idx = int(0*len(color_code)/1)
+        color_idx = min(color_idx,len(color_code)-1)
+        color_S2B += [color_code[color_idx]]
         Hist_Eigenvalue_real_Rank += [ROOT.TH1D("Hist_Eigenvalue_real_Rank_Dark","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvalue_real_Rank[len(Hist_Eigenvalue_real_Rank)-1].Add(Hist_Dark_Eigenvalues_real_SumE)
         Hist_Eigenvalue_imag_Rank += [ROOT.TH1D("Hist_Eigenvalue_imag_Rank_Dark","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvalue_imag_Rank[len(Hist_Eigenvalue_imag_Rank)-1].Add(Hist_Dark_Eigenvalues_imag_SumE)
         legend_S2B += ['OFF data']
-        color_S2B += [color_code[int(1*len(color_code)/2)]]
+        color_idx = int(1*len(color_code)/1)
+        color_idx = min(color_idx,len(color_code)-1)
+        color_S2B += [color_code[color_idx]]
 
 
         for hist in range(0,len(Hist_Eigenvalue_real_Rank)):
@@ -3407,7 +3448,7 @@ def SingleSourceSkyMap(source_name_input):
         MakeComparisonPlot(Hist_Eigenvalue_real_Rank,legend_S2B,color_S2B,'rank','size of eigenvalues','ONOFF_Eigenvalue_real_Rank_%s%s_%s'%(source_name,PercentCrab,folder_tag),0.,0.,False,True)
         for hist in range(0,len(Hist_Eigenvalue_imag_Rank)):
             Hist_Eigenvalue_imag_Rank[hist].GetXaxis().SetRangeUser(0,16)
-        MakeComparisonPlot(Hist_Eigenvalue_imag_Rank,legend_S2B,color_S2B,'rank','size of eigenvalues','ONOFF_Eigenvalue_imag_Rank_%s%s_%s'%(source_name,PercentCrab,folder_tag),0.,0.,False,True)
+        MakeComparisonPlot(Hist_Eigenvalue_imag_Rank,legend_S2B,color_S2B,'rank','size of eigenvalues','ONOFF_Eigenvalue_imag_Rank_%s%s_%s'%(source_name,PercentCrab,folder_tag),0.,0.,False,False)
 
         ErecS_lower_cut = energy_list[0]
         PlotsStackedHistograms('%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
@@ -3448,19 +3489,19 @@ def HMS2deg(ra='', dec=''):
     else:
         return RA or DEC
 
-#SystDarkVsMDM() # run this to get method systematics
+SystDarkVsMDM() # run this to get method systematics
 #SystAsFunctionOfEnergy()
-#SystAsFunctionOfElevation()
-#SystAsFunctionOfNSB()
+SystAsFunctionOfElevation()
+SystAsFunctionOfNSB()
 #SystAsFunctionOfGalLat()
 #SystAsFunctionOfSignal()
 #SensitivityAsFunctionOfExposure()
-SystAsFunctionOfRank()
+#SystAsFunctionOfRank()
 #CompareDiffFolders()
 
 #source_of_interest = 'Proton_NSB200'
 #source_of_interest = 'Proton_NSB750'
-source_of_interest = 'Crab'
+#source_of_interest = 'Crab'
 #source_of_interest = 'Mrk421'
 #source_of_interest = 'H1426'
 #source_of_interest = 'PKS1424'
@@ -3489,7 +3530,7 @@ source_of_interest = 'Crab'
 #source_of_interest = 'MGRO_J1908_V5'
 #source_of_interest = 'Segue1V5'
 #source_of_interest = 'IC443HotSpotV5'
-#source_of_interest = 'GemingaV6'
+source_of_interest = 'GemingaV6'
 #source_of_interest = 'GemingaV5'
 #source_of_interest = 'Everything'
 
@@ -3534,6 +3575,6 @@ PercentCrab = "_Crab0"
 #PercentCrab = "_Crab100"
 #PercentCrab = "_Crab200"
 
-SingleSourceSkyMap(source_of_interest)
+#SingleSourceSkyMap(source_of_interest)
 #SingleSourceSpectrum(source_of_interest)
 
