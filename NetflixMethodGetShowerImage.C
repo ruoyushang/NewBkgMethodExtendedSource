@@ -710,11 +710,12 @@ bool SignalSelectionTheta2()
 }
 bool ControlSelectionTheta2()
 {
-    if (SignalSelectionTheta2()) return false;
-    //if (MSCL>MSCL_cut_blind*1.0) return false;
-    //if (MSCW>MSCW_cut_blind*3.0) return false;
-    if (MSCL>MSCL_cut_blind+1.0) return false;
-    if (MSCW>MSCW_cut_blind+1.0) return false;
+    //if (SignalSelectionTheta2()) return false;
+    //if (MSCL>MSCL_cut_blind+1.0) return false;
+    //if (MSCW>MSCW_cut_blind+1.0) return false;
+    if (MSCL<1.0 && MSCW<1.0) return false;
+    if (MSCL>3.0) return false;
+    if (MSCW>3.0) return false;
     return true;
 }
 void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double tel_elev_lower_input, double tel_elev_upper_input, double Elev_diff, double NSB_diff, bool isON, double MSCW_cut_input, double MSCL_cut_input, double Theta2_cut_input)
@@ -1392,14 +1393,14 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     {
         int binx_lower = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_lower);
         int binx_blind = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(MSCL_cut_blind)-1;
-        int binx_upper = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(3.)-1;
+        int binx_upper = Hist_Dark_MSCLW.at(e).GetXaxis()->FindBin(1.)-1;
         int biny_lower = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_lower);
         int biny_blind = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind)-1;
-        int biny_upper = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(3.)-1;
-        double Dark_SR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
-        double Data_SR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
-        //double Dark_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
-        //double Data_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
+        int biny_upper = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(1.)-1;
+        //double Dark_SR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        //double Data_SR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        double Dark_SR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
+        double Data_SR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
         double Dark_Integral = Hist_Dark_MSCLW.at(e).Integral();
         double Data_Integral = Hist_Data_MSCLW.at(e).Integral();
         double Dark_CR_Integral = Dark_Integral-Dark_SR_Integral;
