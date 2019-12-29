@@ -455,6 +455,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
             if (bx>=binx_blind || by>=biny_blind)
             {
                 if (bx>=binx_upper || by>=biny_upper) continue;
+                if (bx>=binx_blind && by>=biny_blind) continue;
                 double data = hist_data->GetBinContent(bx,by);
                 double dark = hist_dark->GetBinContent(bx,by);
                 double model = hist_model->GetBinContent(bx,by);
