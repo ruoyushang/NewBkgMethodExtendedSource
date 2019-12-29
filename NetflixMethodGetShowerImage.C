@@ -19,6 +19,7 @@
 #include <iomanip>
 #include <stdio.h>
 #include <utility>
+#include <math.h> 
 
 #include <algorithm>
 #include <functional>
@@ -294,6 +295,22 @@ pair<double,double> GetSourceRaDec(TString source_name)
                 Source_Dec = 0.;
     }
     return std::make_pair(Source_RA,Source_Dec);
+}
+pair<double,double> ConvertRaDecToGalactic(double Ra, double Dec)
+{
+    double delta = Dec*M_PI/180.;
+    double delta_G = 27.12825*M_PI/180.;
+    double alpha = Ra*M_PI/180.;
+    double alpha_G = 192.85948*M_PI/180.;
+    double l_NCP = 122.93192*M_PI/180.;
+    double sin_b = sin(delta)*sin(delta_G)+cos(delta)*cos(delta_G)*cos(alpha-alpha_G);
+    double cos_b = cos(asin(sin_b));
+    double sin_l_NCP_m_l = cos(delta)*sin(alpha-alpha_G)/cos_b;
+    double b = (asin(sin_b))*180./M_PI;
+    double l = (l_NCP-asin(sin_l_NCP_m_l))*180./M_PI;
+    double b_round = floor(b*pow(10,2))/pow(10,2);
+    double l_round = floor(l*pow(10,2))/pow(10,2);
+    return std::make_pair(l_round,b_round);
 }
 pair<double,double> GetRunRaDec(string file_name, int run)
 {
@@ -793,6 +810,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     vector<TH2D> Hist_Data_SR_Skymap;
     vector<TH2D> Hist_Data_CR_Skymap;
     vector<TH2D> Hist_Data_CR_Skymap_Raw;
+    vector<TH2D> Hist_Data_SR_Skymap_Galactic;
+    vector<TH2D> Hist_Data_CR_Skymap_Galactic;
     vector<TH2D> Hist_Data_SR_CameraFoV;
     vector<TH2D> Hist_Data_CR_CameraFoV;
     vector<TH2D> Hist_Data_CR_CameraFoV_Raw;
@@ -838,6 +857,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Data_SR_Skymap.push_back(TH2D("Hist_Data_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
         Hist_Data_CR_Skymap.push_back(TH2D("Hist_Data_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
         Hist_Data_CR_Skymap_Raw.push_back(TH2D("Hist_Data_CR_Skymap_Raw_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
+
+        pair<double,double> tele_point_l_b = ConvertRaDecToGalactic(mean_tele_point_ra, mean_tele_point_dec);
+        Hist_Data_SR_Skymap_Galactic.push_back(TH2D("Hist_Data_SR_Skymap_Galactic_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,tele_point_l_b.first-3,tele_point_l_b.first+3,150,tele_point_l_b.second-3,tele_point_l_b.second+3));
+        Hist_Data_CR_Skymap_Galactic.push_back(TH2D("Hist_Data_CR_Skymap_Galactic_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,tele_point_l_b.first-3,tele_point_l_b.first+3,150,tele_point_l_b.second-3,tele_point_l_b.second+3));
+
         Hist_Data_SR_CameraFoV.push_back(TH2D("Hist_Data_SR_CameraFoV_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
         Hist_Data_CR_CameraFoV.push_back(TH2D("Hist_Data_CR_CameraFoV_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
         Hist_Data_CR_CameraFoV_Raw.push_back(TH2D("Hist_Data_CR_CameraFoV_Raw_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
@@ -1047,6 +1071,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
                 ra_sky = Xoff;
                 dec_sky = Yoff;
             }
+            pair<double,double> evt_l_b = ConvertRaDecToGalactic(ra_sky,dec_sky);
             int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
@@ -1080,6 +1105,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
                     Hist_Data_SR_Skymap_Theta2.at(e).Fill(theta2);
                     Hist_Data_SR_Skymap.at(e).Fill(ra_sky,dec_sky);
                     Hist_Data_SR_CameraFoV.at(e).Fill(Xoff,Yoff);
+                    Hist_Data_SR_Skymap_Galactic.at(e).Fill(evt_l_b.first,evt_l_b.second);
                 }
             }
             if (ControlSelectionTheta2())
@@ -1101,6 +1127,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
                     Hist_Data_CR_CameraFoV_Theta2_Raw.at(e).Fill(R2off,1.);
                     Hist_Data_CR_Skymap.at(e).Fill(ra_sky,dec_sky,weight);
                     Hist_Data_CR_Skymap_Raw.at(e).Fill(ra_sky,dec_sky,1.);
+                    Hist_Data_CR_Skymap_Galactic.at(e).Fill(evt_l_b.first,evt_l_b.second,weight);
                     Hist_Data_CR_CameraFoV.at(e).Fill(Xoff,Yoff,weight);
                     Hist_Data_CR_CameraFoV_Raw.at(e).Fill(Xoff,Yoff,1.);
                 }
@@ -1223,6 +1250,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
                 ra_sky = Xoff;
                 dec_sky = Yoff;
             }
+            pair<double,double> evt_l_b = ConvertRaDecToGalactic(ra_sky,dec_sky);
             int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
             photon_weight = gamma_count[energy]/raw_gamma_count[energy];
             if (energy<0) continue;
@@ -1247,6 +1275,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
                 {
                     Hist_Data_SR_Skymap_Theta2.at(e).Fill(theta2,photon_weight);
                     Hist_Data_SR_Skymap.at(e).Fill(ra_sky,dec_sky,photon_weight);
+                    Hist_Data_SR_Skymap_Galactic.at(e).Fill(evt_l_b.first,evt_l_b.second,photon_weight);
                 }
             }
             if (ControlSelectionTheta2())
@@ -1268,6 +1297,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
                     Hist_Data_CR_CameraFoV_Theta2_Raw.at(e).Fill(R2off,photon_weight);
                     Hist_Data_CR_Skymap.at(e).Fill(ra_sky,dec_sky,weight*photon_weight);
                     Hist_Data_CR_Skymap_Raw.at(e).Fill(ra_sky,dec_sky,photon_weight);
+                    Hist_Data_CR_Skymap_Galactic.at(e).Fill(evt_l_b.first,evt_l_b.second,weight*photon_weight);
                 }
             }
         }
@@ -1474,6 +1504,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Data_SR_Skymap.at(e).Write();
         Hist_Data_CR_Skymap.at(e).Write();
         Hist_Data_CR_Skymap_Raw.at(e).Write();
+        Hist_Data_SR_Skymap_Galactic.at(e).Write();
+        Hist_Data_CR_Skymap_Galactic.at(e).Write();
         Hist_Data_SR_CameraFoV.at(e).Write();
         Hist_Data_CR_CameraFoV.at(e).Write();
         Hist_Data_CR_CameraFoV_Raw.at(e).Write();
