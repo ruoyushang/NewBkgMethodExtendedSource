@@ -33,9 +33,9 @@ FileLabel = []
 Syst_MDM = 0.026
 Syst_Dark = 0.
 
-FileFolder += ['output_test']
-FileTag += ['test']
-FileLabel += ['test']
+#FileFolder += ['output_test']
+#FileTag += ['test']
+#FileLabel += ['test']
 
 #FileFolder += ['output_unblind_4x4_smallfov_tight']
 #FileTag += ['tight']
@@ -44,9 +44,9 @@ FileLabel += ['test']
 #FileFolder += ['output_unblind_4x4_nominal_tight']
 #FileTag += ['tight']
 #FileLabel += ['tight']
-#FileFolder += ['output_unblind_4x4_nominal_medium']
-#FileTag += ['medium']
-#FileLabel += ['medium']
+FileFolder += ['output_unblind_4x4_nominal_medium']
+FileTag += ['medium']
+FileLabel += ['medium']
 #FileFolder += ['output_unblind_4x4_nominal_loose']
 #FileTag += ['loose']
 #FileLabel += ['loose']
@@ -1504,13 +1504,13 @@ def CompareWithOfficalSpectrum(Hist,legends,title_x,title_y,name,y_min,y_max,log
     #func.SetParameters(0.838,-2.99)
     #func.Draw("same")
     # 1ES 1218 https://arxiv.org/pdf/0810.0301.pdf
-    #func = ROOT.TF1("func","[0]*pow(10,-12)*pow(x/500.,[1])", 200, 2000)
-    #func.SetParameters(7.5,-3.08)
-    #func.Draw("same")
-    # Crab https://arxiv.org/pdf/1508.06442.pdf
-    func = ROOT.TF1("func","[0]*pow(10,-12)*pow(x/1000.,[1]+[2]*log(x/1000.))", 200, 4000)
-    func.SetParameters(37.5,-2.467,-0.16)
+    func = ROOT.TF1("func","[0]*pow(10,-12)*pow(x/500.,[1])", 200, 2000)
+    func.SetParameters(7.5,-3.08)
     func.Draw("same")
+    # Crab https://arxiv.org/pdf/1508.06442.pdf
+    #func = ROOT.TF1("func","[0]*pow(10,-12)*pow(x/1000.,[1]+[2]*log(x/1000.))", 200, 4000)
+    #func.SetParameters(37.5,-2.467,-0.16)
+    #func.Draw("same")
 
     pad3.cd()
     legend = ROOT.TLegend(0.1,0.1,0.9,0.9)
@@ -1622,6 +1622,11 @@ def GetSourceInfo(file_list):
     global exposure_hours_dark
     global NSB_avg
     global NSB_avg_dark
+    global source_ra
+    global source_dec
+    global source_l
+    global source_b
+
     exposure_hours = 0.
     exposure_hours_dark = 0.
     NSB_avg = 0.
@@ -1638,6 +1643,10 @@ def GetSourceInfo(file_list):
         NSB_avg_dark += InfoTree.exposure_hours_dark*InfoTree.NSB_dark
         MSCW_blind_cut = InfoTree.MSCW_cut_blind
         MSCL_blind_cut = InfoTree.MSCL_cut_blind
+        source_ra = InfoTree.mean_tele_point_ra
+        source_dec = InfoTree.mean_tele_point_dec
+        source_l = InfoTree.mean_tele_point_l
+        source_b = InfoTree.mean_tele_point_b
         HistName = "Hist_EffArea"
         Hist_EffArea.Reset()
         Hist_EffArea.Add(InputFile.Get(HistName))
@@ -3307,7 +3316,7 @@ def SkymapHighlightIntegral(hist_data,hist_highlight):
 
     return integral
 
-def Event_rate(count,time,energy_lower,energy_upper):
+def Event_rate(count,time,energy_lower,energy_upper,use_effarea):
 
     err = pow(count,0.5)
     area = 0.
@@ -3319,8 +3328,12 @@ def Event_rate(count,time,energy_lower,energy_upper):
     flux = 0.
     flux_err = 0.
     if (area)>0.: 
-        flux = count/(area*(energy_upper-energy_lower)/1000.)
-        flux_err = err/(area*(energy_upper-energy_lower)/1000.)
+        if use_effarea:
+            flux = count/(area*(energy_upper-energy_lower)/1000.)
+            flux_err = err/(area*(energy_upper-energy_lower)/1000.)
+        else:
+            flux = count/(time*3600.*(energy_upper-energy_lower)/1000.)
+            flux_err = err/(time*3600.*(energy_upper-energy_lower)/1000.)
     return flux, flux_err
 
 def SingleSourceSpectrum(source_name_input):
@@ -3339,6 +3352,8 @@ def SingleSourceSpectrum(source_name_input):
     Hist_MDM_NormSig_Rate = []
     Hist_MDM_InclBkg_Rate = []
     Hist_MDM_Sig_Rate = []
+    Hist_EffArea_source = []
+    Hist_EffArea_Ref = []
     legend_S2B = []
     color_S2B = []
 
@@ -3367,6 +3382,7 @@ def SingleSourceSpectrum(source_name_input):
         file_elev_lower = elev_refer[elev][0]
         file_elev_upper = elev_refer[elev][1]
         Hist_MDM_InclBkg_Rate += [ROOT.TH1D("Hist_MDM_InclBkg_Rate_%s"%(file_elev_upper),"",len(energy_list)-1,array('d',energy_list))]
+        Hist_EffArea_Ref += [ROOT.TH1D("Hist_EffArea_Ref_%s"%(file_elev_upper),"",len(energy_list)-1,array('d',energy_list))]
         for e in range(0,len(energy_list)-1):
             ErecS_lower_cut = energy_list[e]
             ErecS_upper_cut = energy_list[e+1]
@@ -3380,7 +3396,7 @@ def SingleSourceSpectrum(source_name_input):
                 exposure_hours_dark = 0.
                 NSB_avg = 0.
                 NSB_avg_dark = 0.
-                FilePath = "%s/Netflix_"%(folder_path)+source_refer[source]+PercentCrab+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_ON"+".root";
+                FilePath = "%s/Netflix_"%(folder_path)+source_refer[source]+PercentCrab+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_OFF"+".root";
                 FilePath_Folder0 += [FilePath]
                 print 'Read ref. file: %s'%(FilePath_Folder0[0])
                 if not os.path.isfile(FilePath_Folder0[0]):continue
@@ -3390,9 +3406,11 @@ def SingleSourceSpectrum(source_name_input):
                 StackShowerHistograms()
                 sum_exposure_hours += exposure_hours
             incl_bkg_integral = Hist2D_Bkgd_SumE.Integral(binx_lower,binx_upper,biny_lower,biny_upper)
-            incl_bkg_rate, incl_bkg_rate_err = Event_rate(incl_bkg_integral,sum_exposure_hours,ErecS_lower_cut,ErecS_upper_cut)
+            incl_bkg_rate, incl_bkg_rate_err = Event_rate(incl_bkg_integral,sum_exposure_hours,ErecS_lower_cut,ErecS_upper_cut,False)
             Hist_MDM_InclBkg_Rate[len(Hist_MDM_InclBkg_Rate)-1].SetBinContent(e+1,incl_bkg_rate)
             Hist_MDM_InclBkg_Rate[len(Hist_MDM_InclBkg_Rate)-1].SetBinError(e+1,incl_bkg_rate_err)
+            Hist_EffArea_Ref[len(Hist_EffArea_Ref)-1].SetBinContent(e+1,Hist_EffArea_SumE.GetBinContent(e+1)/(sum_exposure_hours*3600.))
+
 
     source_name = source_name_input
     count = 0
@@ -3413,6 +3431,7 @@ def SingleSourceSpectrum(source_name_input):
         if exposure_hours==0: continue
         Hist_MDM_NormSig_Rate += [ROOT.TH1D("Hist_MDM_NormSig_Rate_%s"%(file_elev_upper),"",len(energy_list)-1,array('d',energy_list))]
         Hist_MDM_Sig_Rate += [ROOT.TH1D("Hist_MDM_Sig_Rate_%s"%(file_elev_upper),"",len(energy_list)-1,array('d',energy_list))]
+        Hist_EffArea_source += [ROOT.TH1D("Hist_EffArea_source_%s"%(file_elev_upper),"",len(energy_list)-1,array('d',energy_list))]
         legend_S2B += ['%s elev. %s-%s'%(source_name,file_elev_lower,file_elev_upper)]
         color_idx = int(count*len(color_code)/max(1,len(elev_range)-1))
         color_idx = min(color_idx,len(color_code)-1)
@@ -3431,25 +3450,47 @@ def SingleSourceSpectrum(source_name_input):
             Hist_temp.Rebin2D(n_rebin,n_rebin)
             bkg_integral = SkymapHighlightIntegral(Hist_temp,Hist_Highlight_Bias_Skymap)
             incl_bkg_integral = Hist2D_Bkgd.Integral(binx_lower,binx_upper,biny_lower,biny_upper)
-            data_rate, data_rate_err = Event_rate(data_integral,exposure_hours,ErecS_lower_cut,ErecS_upper_cut)
-            bkg_rate, bkg_rate_err = Event_rate(bkg_integral,exposure_hours,ErecS_lower_cut,ErecS_upper_cut)
-            incl_bkg_rate, incl_bkg_rate_err = Event_rate(incl_bkg_integral,exposure_hours,ErecS_lower_cut,ErecS_upper_cut)
+            data_rate, data_rate_err = Event_rate(data_integral,exposure_hours,ErecS_lower_cut,ErecS_upper_cut,True)
+            bkg_rate, bkg_rate_err = Event_rate(bkg_integral,exposure_hours,ErecS_lower_cut,ErecS_upper_cut,True)
             sig_rate = data_rate-bkg_rate
             sig_rate_err = pow(data_rate_err*data_rate_err+bkg_rate_err*bkg_rate_err,0.5)
             Hist_MDM_Sig_Rate[len(Hist_MDM_Sig_Rate)-1].SetBinContent(e+1,sig_rate)
             Hist_MDM_Sig_Rate[len(Hist_MDM_Sig_Rate)-1].SetBinError(e+1,sig_rate_err)
+            Hist_EffArea_source[len(Hist_EffArea_source)-1].SetBinContent(e+1,Hist_EffArea_SumE.GetBinContent(e+1)/(exposure_hours*3600.))
+            data_rate, data_rate_err = Event_rate(data_integral,exposure_hours,ErecS_lower_cut,ErecS_upper_cut,False)
+            bkg_rate, bkg_rate_err = Event_rate(bkg_integral,exposure_hours,ErecS_lower_cut,ErecS_upper_cut,False)
+            sig_rate = data_rate-bkg_rate
+            sig_rate_err = pow(data_rate_err*data_rate_err+bkg_rate_err*bkg_rate_err,0.5)
+            incl_bkg_rate, incl_bkg_rate_err = Event_rate(incl_bkg_integral,exposure_hours,ErecS_lower_cut,ErecS_upper_cut,False)
+            eff_area_ref = Hist_EffArea_Ref[len(Hist_EffArea_Ref)-1].GetBinContent(e+1)*10000.
             if bkg_rate!=0:
-                norm_sig_rate = sig_rate/incl_bkg_rate*Hist_MDM_InclBkg_Rate[len(Hist_MDM_InclBkg_Rate)-1].GetBinContent(e+1)
-                norm_sig_rate_err = sig_rate_err/incl_bkg_rate*Hist_MDM_InclBkg_Rate[len(Hist_MDM_InclBkg_Rate)-1].GetBinContent(e+1)
-                #norm_sig_rate = sig_rate/bkg_rate*Hist_MDM_InclBkg_Rate[len(Hist_MDM_InclBkg_Rate)-1].GetBinContent(e+1)
-                #norm_sig_rate_err = sig_rate_err/bkg_rate*Hist_MDM_InclBkg_Rate[len(Hist_MDM_InclBkg_Rate)-1].GetBinContent(e+1)
+                norm_sig_rate = sig_rate/incl_bkg_rate*Hist_MDM_InclBkg_Rate[len(Hist_MDM_InclBkg_Rate)-1].GetBinContent(e+1)/eff_area_ref
+                norm_sig_rate_err = sig_rate_err/incl_bkg_rate*Hist_MDM_InclBkg_Rate[len(Hist_MDM_InclBkg_Rate)-1].GetBinContent(e+1)/eff_area_ref
                 Hist_MDM_NormSig_Rate[len(Hist_MDM_NormSig_Rate)-1].SetBinContent(e+1,norm_sig_rate)
                 Hist_MDM_NormSig_Rate[len(Hist_MDM_NormSig_Rate)-1].SetBinError(e+1,norm_sig_rate_err)
 
+    Hist_MDM_Sig_Rate += [ROOT.TH1D("Hist_MDM_Sig_Rate_avg","",len(energy_list)-1,array('d',energy_list))]
     Hist_MDM_NormSig_Rate += [ROOT.TH1D("Hist_MDM_NormSig_Rate_avg","",len(energy_list)-1,array('d',energy_list))]
     legend_S2B += ['%s avg.'%(source_name)]
     color_S2B += [1]
     for e in range(0,len(energy_list)-1):
+        avg_rate = 0.
+        avg_err = 0.
+        sum_weight = 0.
+        count = 0
+        for elev in range(0,len(Hist_MDM_Sig_Rate)-1):
+            rate = Hist_MDM_Sig_Rate[elev].GetBinContent(e+1)
+            if rate==0: continue
+            count += 1
+            weight = 1./pow(Hist_MDM_Sig_Rate[elev].GetBinError(e+1),2)
+            sum_weight += weight
+            avg_rate += rate*weight
+            avg_err += pow(Hist_MDM_Sig_Rate[elev].GetBinError(e+1),2)
+        if count==0: continue
+        avg_rate = avg_rate/sum_weight
+        avg_err = pow(1./sum_weight,0.5)
+        Hist_MDM_Sig_Rate[len(Hist_MDM_Sig_Rate)-1].SetBinContent(e+1,avg_rate)
+        Hist_MDM_Sig_Rate[len(Hist_MDM_Sig_Rate)-1].SetBinError(e+1,avg_err)
         avg_rate = 0.
         avg_err = 0.
         sum_weight = 0.
@@ -3468,9 +3509,10 @@ def SingleSourceSpectrum(source_name_input):
         Hist_MDM_NormSig_Rate[len(Hist_MDM_NormSig_Rate)-1].SetBinContent(e+1,avg_rate)
         Hist_MDM_NormSig_Rate[len(Hist_MDM_NormSig_Rate)-1].SetBinError(e+1,avg_err)
 
-    CompareWithOfficalSpectrum(Hist_MDM_NormSig_Rate[len(Hist_MDM_NormSig_Rate)-1],legend_S2B[len(legend_S2B)-1],'E [GeV]','events/sec/cm^{2}/TeV (normalized)','SignalFluxOffical_%s_MDM%s_%s'%(source_name_input,PercentCrab,folder_tag),0.,0.,True,True)
+    CompareWithOfficalSpectrum(Hist_MDM_Sig_Rate[len(Hist_MDM_Sig_Rate)-1],legend_S2B[len(legend_S2B)-1],'E [GeV]','events/sec/cm^{2}/TeV','SignalFluxOffical_%s_MDM%s_%s'%(source_name_input,PercentCrab,folder_tag),0.,0.,True,True)
     MakeComparisonPlot(Hist_MDM_NormSig_Rate,legend_S2B,color_S2B,'E [GeV]','events/sec/cm^{2}/TeV (normalized)','SignalFluxNorm_%s_MDM%s_%s'%(source_name_input,PercentCrab,folder_tag),0.,0.,True,True)
     MakeComparisonPlot(Hist_MDM_Sig_Rate,legend_S2B,color_S2B,'E [GeV]','events/sec/cm^{2}/TeV','SignalFlux_%s_MDM%s_%s'%(source_name_input,PercentCrab,folder_tag),0.,0.,True,True)
+    MakeComparisonPlot(Hist_EffArea_source,legend_S2B,color_S2B,'E [GeV]','sec #times cm^{2}','EffArea_%s_MDM%s_%s'%(source_name_input,PercentCrab,folder_tag),0.,0.,True,True)
 
 def SingleSourceSkyMap(source_name_input):
 
@@ -3596,7 +3638,7 @@ def HMS2deg(ra='', dec=''):
     else:
         return RA or DEC
 
-#SystDarkVsMDM() # run this to get method systematics
+SystDarkVsMDM() # run this to get method systematics
 #SystAsFunctionOfEnergy()
 #SystAsFunctionOfElevation()
 #SystAsFunctionOfNSB()
@@ -3608,7 +3650,7 @@ def HMS2deg(ra='', dec=''):
 
 #source_of_interest = 'Proton_NSB200'
 #source_of_interest = 'Proton_NSB750'
-source_of_interest = 'Crab'
+#source_of_interest = 'Crab'
 #source_of_interest = 'Mrk421'
 #source_of_interest = 'H1426'
 #source_of_interest = 'PKS1424'
@@ -3631,7 +3673,7 @@ source_of_interest = 'Crab'
 #source_of_interest = 'CasA'
 #source_of_interest = 'M82'
 #source_of_interest = 'G079'
-#source_of_interest = 'WComaeV6'
+source_of_interest = 'WComaeV6'
 #source_of_interest = '1ES1218V6'
 #source_of_interest = 'MGRO_J1908_V6'
 #source_of_interest = 'MGRO_J1908_V5'
@@ -3640,35 +3682,6 @@ source_of_interest = 'Crab'
 #source_of_interest = 'GemingaV6'
 #source_of_interest = 'GemingaV5'
 #source_of_interest = 'Everything'
-
-source_idx = FindSourceIndex(source_of_interest)
-source_ra = round(float(HMS2deg(sky_coord[source_idx].split('+')[0],sky_coord[source_idx].split('+')[1])[0]),3)
-source_dec = round(float(HMS2deg(sky_coord[source_idx].split('+')[0],sky_coord[source_idx].split('+')[1])[1]),3)
-Hist_Data_Skymap = ROOT.TH2D("Hist_Data_Skymap","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
-Hist_Dark_Skymap = ROOT.TH2D("Hist_Dark_Skymap","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
-Hist_Bkgd_Skymap = ROOT.TH2D("Hist_Bkgd_Skymap","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
-Hist_Bkgd_Skymap_Raw = ROOT.TH2D("Hist_Bkgd_Skymap_Raw","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
-Hist_Data_Skymap_SumE = ROOT.TH2D("Hist_Data_Skymap_SumE","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
-Hist_Dark_Skymap_SumE = ROOT.TH2D("Hist_Dark_Skymap_SumE","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
-Hist_Bkgd_Skymap_SumE = ROOT.TH2D("Hist_Bkgd_Skymap_SumE","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
-Hist_Bkgd_Skymap_Raw_SumE = ROOT.TH2D("Hist_Bkgd_Skymap_Raw_SumE","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
-Hist_Highlight_Skymap = ROOT.TH2D("Hist_Highlight_Skymap","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
-Hist_Highlight_Bias_Skymap = ROOT.TH2D("Hist_Highlight_Bias_Skymap","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
-Hist_Highlight_Skymap_zoomin = ROOT.TH2D("Hist_Highlight_Skymap_zoomin","",50,source_ra-1,source_ra+1,50,source_dec-1,source_dec+1)
-Hist_Skymap_zoomin = ROOT.TH2D("Hist_Skymap_zoomin","",50,source_ra-1,source_ra+1,50,source_dec-1,source_dec+1)
-gal_l = gal_coord.galactic.l.degree[source_idx]
-gal_l = math.floor(gal_l*pow(10,2))/pow(10,2)
-gal_b = gal_coord.galactic.b.degree[source_idx]
-gal_b = math.floor(gal_b*pow(10,2))/pow(10,2)
-Hist_Data_Skymap_Galactic = ROOT.TH2D("Hist_Data_Skymap_Galactic","",150,gal_l-3,gal_l+3,150,gal_b-3,gal_b+3)
-Hist_Bkgd_Skymap_Galactic = ROOT.TH2D("Hist_Bkgd_Skymap_Galactic","",150,gal_l-3,gal_l+3,150,gal_b-3,gal_b+3)
-Hist_Data_Skymap_Galactic_SumE = ROOT.TH2D("Hist_Data_Skymap_Galactic_SumE","",150,gal_l-3,gal_l+3,150,gal_b-3,gal_b+3)
-Hist_Bkgd_Skymap_Galactic_SumE = ROOT.TH2D("Hist_Bkgd_Skymap_Galactic_SumE","",150,gal_l-3,gal_l+3,150,gal_b-3,gal_b+3)
-Hist_Highlight_Skymap_Galactic = ROOT.TH2D("Hist_Highlight_Skymap_Galactic","",150,gal_l-3,gal_l+3,150,gal_b-3,gal_b+3)
-Hist_Highlight_Bias_Skymap_Galactic = ROOT.TH2D("Hist_Highlight_Bias_Skymap_Galactic","",150,gal_l-3,gal_l+3,150,gal_b-3,gal_b+3)
-Hist_Highlight_Skymap_Galactic_zoomin = ROOT.TH2D("Hist_Highlight_Skymap_Galactic_zoomin","",50,gal_l-1,gal_l+1,50,gal_b-1,gal_b+1)
-Hist_Skymap_Galactic_zoomin = ROOT.TH2D("Hist_Skymap_Galactic_zoomin","",50,gal_l-1,gal_l+1,50,gal_b-1,gal_b+1)
-
 
 #n_rebin = 8
 #smooth_size = 0.1
@@ -3682,12 +3695,12 @@ smooth_size = 0.05
 theta2_range = 2.0
 highlight_threshold = 2.0
 
-#ONOFF = "OFF"
-#PercentCrab = "_Crab0"
-#RadialAcceptance()
-
-#ONOFF = "ON"
 ONOFF = "OFF"
+PercentCrab = "_Crab0"
+RadialAcceptance()
+
+ONOFF = "ON"
+#ONOFF = "OFF"
 
 PercentCrab = "_Crab0"
 #PercentCrab = "_Crab10"
@@ -3696,6 +3709,50 @@ PercentCrab = "_Crab0"
 #PercentCrab = "_Crab100"
 #PercentCrab = "_Crab200"
 
-SingleSourceSkyMap(source_of_interest)
+
+source_ra = 0.
+source_dec = 0.
+source_l = 0.
+source_b = 0.
+source_idx = FindSourceIndex(source_of_interest)
+#source_ra = round(float(HMS2deg(sky_coord[source_idx].split('+')[0],sky_coord[source_idx].split('+')[1])[0]),3)
+#source_dec = round(float(HMS2deg(sky_coord[source_idx].split('+')[0],sky_coord[source_idx].split('+')[1])[1]),3)
+
+for elev in range(0,len(elev_range)):
+    file_elev_lower = elev_range[elev][0]
+    file_elev_upper = elev_range[elev][1]
+    SourceFilePath = "%s/Netflix_"%(FileFolder[0])+source_list[source_idx]+PercentCrab+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_%s"%(ONOFF)+".root";
+    FilePath_Folder = []
+    FilePath_Folder += [SourceFilePath]
+    if not os.path.isfile(FilePath_Folder[0]): 
+        continue
+    else:
+        GetSourceInfo(FilePath_Folder)
+        break
+
+Hist_Data_Skymap = ROOT.TH2D("Hist_Data_Skymap","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Dark_Skymap = ROOT.TH2D("Hist_Dark_Skymap","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Bkgd_Skymap = ROOT.TH2D("Hist_Bkgd_Skymap","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Bkgd_Skymap_Raw = ROOT.TH2D("Hist_Bkgd_Skymap_Raw","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Data_Skymap_SumE = ROOT.TH2D("Hist_Data_Skymap_SumE","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Dark_Skymap_SumE = ROOT.TH2D("Hist_Dark_Skymap_SumE","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Bkgd_Skymap_SumE = ROOT.TH2D("Hist_Bkgd_Skymap_SumE","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Bkgd_Skymap_Raw_SumE = ROOT.TH2D("Hist_Bkgd_Skymap_Raw_SumE","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Highlight_Skymap = ROOT.TH2D("Hist_Highlight_Skymap","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Highlight_Bias_Skymap = ROOT.TH2D("Hist_Highlight_Bias_Skymap","",150,source_ra-3,source_ra+3,150,source_dec-3,source_dec+3)
+Hist_Highlight_Skymap_zoomin = ROOT.TH2D("Hist_Highlight_Skymap_zoomin","",50,source_ra-1,source_ra+1,50,source_dec-1,source_dec+1)
+Hist_Skymap_zoomin = ROOT.TH2D("Hist_Skymap_zoomin","",50,source_ra-1,source_ra+1,50,source_dec-1,source_dec+1)
+
+Hist_Data_Skymap_Galactic = ROOT.TH2D("Hist_Data_Skymap_Galactic","",150,source_l-3,source_l+3,150,source_b-3,source_b+3)
+Hist_Bkgd_Skymap_Galactic = ROOT.TH2D("Hist_Bkgd_Skymap_Galactic","",150,source_l-3,source_l+3,150,source_b-3,source_b+3)
+Hist_Data_Skymap_Galactic_SumE = ROOT.TH2D("Hist_Data_Skymap_Galactic_SumE","",150,source_l-3,source_l+3,150,source_b-3,source_b+3)
+Hist_Bkgd_Skymap_Galactic_SumE = ROOT.TH2D("Hist_Bkgd_Skymap_Galactic_SumE","",150,source_l-3,source_l+3,150,source_b-3,source_b+3)
+Hist_Highlight_Skymap_Galactic = ROOT.TH2D("Hist_Highlight_Skymap_Galactic","",150,source_l-3,source_l+3,150,source_b-3,source_b+3)
+Hist_Highlight_Bias_Skymap_Galactic = ROOT.TH2D("Hist_Highlight_Bias_Skymap_Galactic","",150,source_l-3,source_l+3,150,source_b-3,source_b+3)
+Hist_Highlight_Skymap_Galactic_zoomin = ROOT.TH2D("Hist_Highlight_Skymap_Galactic_zoomin","",50,source_l-1,source_l+1,50,source_b-1,source_b+1)
+Hist_Skymap_Galactic_zoomin = ROOT.TH2D("Hist_Skymap_Galactic_zoomin","",50,source_l-1,source_l+1,50,source_b-1,source_b+1)
+
+
+#SingleSourceSkyMap(source_of_interest)
 #SingleSourceSpectrum(source_of_interest)
 
