@@ -445,8 +445,10 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
     //int biny_upper = hist_data->GetXaxis()->FindBin(MSCW_cut_blind+1.);
     int binx_blind = hist_data->GetXaxis()->FindBin(1.);
     int biny_blind = hist_data->GetYaxis()->FindBin(1.);
+    //int binx_upper = hist_data->GetXaxis()->FindBin(3.);
+    //int biny_upper = hist_data->GetYaxis()->FindBin(3.);
     int binx_upper = hist_data->GetXaxis()->FindBin(3.);
-    int biny_upper = hist_data->GetXaxis()->FindBin(3.);
+    int biny_upper = hist_data->GetYaxis()->FindBin(2.);
     double chi2 = 0.;
     for (int bx=1;bx<=hist_data->GetNbinsX();bx++)
     {
@@ -455,7 +457,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
             if (bx>=binx_blind || by>=biny_blind)
             {
                 if (bx>=binx_upper || by>=biny_upper) continue;
-                if (bx>=binx_blind && by>=biny_blind) continue;
+                //if (bx>=binx_blind && by>=biny_blind) continue;
                 double data = hist_data->GetBinContent(bx,by);
                 double dark = hist_dark->GetBinContent(bx,by);
                 double model = hist_model->GetBinContent(bx,by);
@@ -1159,14 +1161,14 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
         first_index = 1+(2*NthEigenvector-2)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int row=0;row<N_bins_for_deconv;row++)
         {
-            Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.005);
+            Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.01);
         }
 
         limit = 0.2;
         first_index = 1+(2*NthEigenvector-1)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int col=0;col<N_bins_for_deconv;col++)
         {
-            Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.005);
+            Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.01);
         }
 
         // eigenvalues

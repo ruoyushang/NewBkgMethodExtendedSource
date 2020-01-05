@@ -127,6 +127,11 @@ pair<double,double> GetSourceRaDec(TString source_name)
 {
     double Source_RA = 0.;
     double Source_Dec = 0.;
+    if (source_name=="SgrAV6")
+    {
+            Source_RA = 266.415;
+                Source_Dec = -29.006;
+    }
     if (source_name=="GemingaV6")
     {
             Source_RA = 98.117;
@@ -153,6 +158,11 @@ pair<double,double> GetSourceRaDec(TString source_name)
                 Source_Dec = 25.302;
     }
     if (source_name=="Crab")
+    {
+            Source_RA = 83.633;
+                Source_Dec = 22.014;
+    }
+    if (source_name=="CrabV5")
     {
             Source_RA = 83.633;
                 Source_Dec = 22.014;
@@ -735,7 +745,7 @@ bool ControlSelectionTheta2()
     //if (MSCW>MSCW_cut_blind+1.0) return false;
     if (MSCL<1.0 && MSCW<1.0) return false;
     if (MSCL>3.0) return false;
-    if (MSCW>3.0) return false;
+    if (MSCW>2.0) return false;
     return true;
 }
 void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double tel_elev_lower_input, double tel_elev_upper_input, double Elev_diff, double NSB_diff, bool isON, double MSCW_cut_input, double MSCL_cut_input, double Theta2_cut_input)
@@ -760,6 +770,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     vector<pair<string,int>> PhotonMC_runlist = GetRunList("Photon");
     vector<pair<string,int>> PhotonData_runlist = GetRunList("Crab");
     if (TString(target).Contains("Mrk421")) PhotonData_runlist = GetRunList("Mrk421");
+    if (TString(target).Contains("V5")) PhotonData_runlist = GetRunList("CrabV5");
     PhotonData_runlist = SelectONRunList(PhotonData_runlist,TelElev_lower,TelElev_upper,0,360);
 
     // Get a list of target observation runs
@@ -805,6 +816,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     vector<TH2D> Hist_Dark_MSCLW;
     vector<TH2D> Hist_Dark_Syst_MSCLW;
     vector<TH1D> Hist_TrueBkgd_SR_Skymap_Theta2;
+    vector<TH1D> Hist_Data_SR_MJD;
+    vector<TH1D> Hist_Data_CR_MJD;
     vector<TH1D> Hist_Data_SR_Skymap_Theta2;
     vector<TH1D> Hist_Data_CR_Skymap_Theta2;
     vector<TH1D> Hist_Data_CR_Skymap_Theta2_Raw;
@@ -851,12 +864,12 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Dark_MSCLW.push_back(TH2D("Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Dark_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
         Hist_Dark_Syst_MSCLW.push_back(TH2D("Hist_Dark_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-        Hist_TrueBkgd_SR_Skymap_Theta2.push_back(TH1D("Hist_TrueBkgd_SR_Skymap_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
-        Hist_Data_SR_Skymap_Theta2.push_back(TH1D("Hist_Data_SR_Skymap_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
-        Hist_Data_CR_Skymap_Theta2.push_back(TH1D("Hist_Data_CR_Skymap_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
-        Hist_Data_CR_Skymap_Theta2_Raw.push_back(TH1D("Hist_Data_CR_Skymap_Theta2_Raw_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
-        Hist_Data_CR_CameraFoV_Theta2.push_back(TH1D("Hist_Data_CR_CameraFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
-        Hist_Data_CR_CameraFoV_Theta2_Raw.push_back(TH1D("Hist_Data_CR_CameraFoV_Theta2_Raw_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",1024,0,10));
+        Hist_TrueBkgd_SR_Skymap_Theta2.push_back(TH1D("Hist_TrueBkgd_SR_Skymap_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",50,0,10));
+        Hist_Data_SR_Skymap_Theta2.push_back(TH1D("Hist_Data_SR_Skymap_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",50,0,10));
+        Hist_Data_CR_Skymap_Theta2.push_back(TH1D("Hist_Data_CR_Skymap_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",50,0,10));
+        Hist_Data_CR_Skymap_Theta2_Raw.push_back(TH1D("Hist_Data_CR_Skymap_Theta2_Raw_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",50,0,10));
+        Hist_Data_CR_CameraFoV_Theta2.push_back(TH1D("Hist_Data_CR_CameraFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",50,0,10));
+        Hist_Data_CR_CameraFoV_Theta2_Raw.push_back(TH1D("Hist_Data_CR_CameraFoV_Theta2_Raw_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",50,0,10));
         Hist_Data_SR_Skymap.push_back(TH2D("Hist_Data_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
         Hist_Data_CR_Skymap.push_back(TH2D("Hist_Data_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
         Hist_Data_CR_Skymap_Raw.push_back(TH2D("Hist_Data_CR_Skymap_Raw_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
@@ -870,8 +883,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Data_SR_CameraFoV.push_back(TH2D("Hist_Data_SR_CameraFoV_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
         Hist_Data_CR_CameraFoV.push_back(TH2D("Hist_Data_CR_CameraFoV_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
         Hist_Data_CR_CameraFoV_Raw.push_back(TH2D("Hist_Data_CR_CameraFoV_Raw_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,-3,3,150,-3,3));
-        Hist_Dark_SR_CameraFoV.push_back(TH2D("Hist_Dark_SR_CameraFoV_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",10,0,5,6,0,2*M_PI));
-        Hist_Dark_CR_CameraFoV.push_back(TH2D("Hist_Dark_CR_CameraFoV_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",10,0,5,6,0,2*M_PI));
+        Hist_Dark_SR_CameraFoV.push_back(TH2D("Hist_Dark_SR_CameraFoV_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,5,6,0,2*M_PI));
+        Hist_Dark_CR_CameraFoV.push_back(TH2D("Hist_Dark_CR_CameraFoV_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,5,6,0,2*M_PI));
         Hist_Dark_SR_Theta2.push_back(TH1D("Hist_Dark_SR_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,10));
         Hist_Dark_CR_Theta2.push_back(TH1D("Hist_Dark_CR_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",20,0,10));
     }
