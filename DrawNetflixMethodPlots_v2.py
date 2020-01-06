@@ -72,12 +72,12 @@ FileLabel += ['tight']
 #FileLabel += ['#Delta elev. = -20']
 
 elev_range = []
-#elev_range += [[25,35]]
+elev_range += [[25,35]]
 #elev_range += [[35,45]]
 #elev_range += [[45,55]]
 #elev_range += [[55,65]]
 #elev_range += [[65,75]]
-elev_range += [[75,85]]
+#elev_range += [[75,85]]
 
 source_list = []
 sky_coord = []
@@ -194,21 +194,17 @@ for_syst += [False]
 gal_coord = SkyCoord(sky_coord[:], unit=(u.hourangle, u.deg))
 
 energy_list = []
-energy_list += [200]
-#energy_list += [237]
-#energy_list += [282]
-#energy_list += [335]
-#energy_list += [398] # works from here
-#energy_list += [473]
-#energy_list += [562]
-#energy_list += [794]
-#energy_list += [1122]
-#energy_list += [2239]
-#energy_list += [4467]
-energy_list += [8913]
+energy_list += [pow(10,2.3)]
+energy_list += [pow(10,2.4)]
+energy_list += [pow(10,2.5)]
+energy_list += [pow(10,2.6)]
+energy_list += [pow(10,2.7)]
+energy_list += [pow(10,2.9)]
+energy_list += [pow(10,3.1)]
+energy_list += [pow(10,4.0)]
 
-xoff_list = [-3.,-2.,-1.,0.,1.,2.,3.]
-yoff_list = [-3.,-2.,-1.,0.,1.,2.,3.]
+xoff_list = [-3.,3.]
+yoff_list = [-3.,3.]
 
 exposure_hours = 0.
 exposure_hours_dark = 0.
@@ -327,8 +323,8 @@ energy_bin += [pow(10,3.8)]
 energy_bin += [pow(10,3.9)]
 energy_bin += [pow(10,4.0)]
 
-Hist_EffArea = ROOT.TH1D("Hist_EffArea","",len(energy_bin)-1,array('d',energy_bin))
-Hist_EffArea_SumE = ROOT.TH1D("Hist_EffArea_SumE","",len(energy_bin)-1,array('d',energy_bin))
+Hist_EffArea = ROOT.TH1D("Hist_EffArea","",len(energy_list)-1,array('d',energy_list))
+Hist_EffArea_SumE = ROOT.TH1D("Hist_EffArea_SumE","",len(energy_list)-1,array('d',energy_list))
 
 Hist_Data_Energy = ROOT.TH1D("Hist_Data_Energy","",len(energy_bin)-1,array('d',energy_bin))
 Hist_TrueBkgd_Energy = ROOT.TH1D("Hist_TrueBkgd_Energy","",len(energy_bin)-1,array('d',energy_bin))
@@ -1830,7 +1826,7 @@ def RaDecHistScale(Hist,scale,scale_err):
             if old_content>0 and scale>0:
                 new_error = new_content*(scale_err/scale)
 
-def NormalizeCameraFoVHistograms(FilePath,b_xoff,b_yoff):
+def NormalizeCameraFoVHistograms(FilePath,b_xoff,b_yoff,b_energy):
 
     global MSCW_blind_cut
     global MSCL_blind_cut
@@ -1842,20 +1838,20 @@ def NormalizeCameraFoVHistograms(FilePath,b_xoff,b_yoff):
     bin_lower = Hist2D_Data.GetYaxis().FindBin(MSCW_lower_cut)
     bin_upper = Hist2D_Data.GetYaxis().FindBin(MSCW_blind_cut)-1
 
-    HistName = "Hist_Data_SR_CameraFoV_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_SR_CameraFoV_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Data_CameraFoV.Reset()
     Hist_Data_CameraFoV.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_CameraFoV_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_CR_CameraFoV_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Bkgd_CameraFoV.Reset()
     Hist_Bkgd_CameraFoV.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_CameraFoV_Raw_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_CR_CameraFoV_Raw_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Bkgd_CameraFoV_Raw.Reset()
     Hist_Bkgd_CameraFoV_Raw.Add(InputFile.Get(HistName))
 
-    if Hist2D_Data.Integral()<1600.:
-        Hist_Data_CameraFoV.Reset()
-        Hist_Bkgd_CameraFoV.Reset()
-        Hist_Bkgd_CameraFoV_Raw.Reset()
+    #if Hist2D_Data.Integral()<1600.:
+    #    Hist_Data_CameraFoV.Reset()
+    #    Hist_Bkgd_CameraFoV.Reset()
+    #    Hist_Bkgd_CameraFoV_Raw.Reset()
     if math.isnan(Hist2D_GammaRDBM.Integral()):
         Hist_Data_CameraFoV.Reset()
         Hist_Bkgd_CameraFoV.Reset()
@@ -1893,7 +1889,7 @@ def NormalizeCameraFoVHistograms(FilePath,b_xoff,b_yoff):
     else:
         Hist_Bkgd_CameraFoV_Raw.Scale(0)
 
-def NormalizeSkyMapHistograms(FilePath,b_xoff,b_yoff):
+def NormalizeSkyMapHistograms(FilePath,b_xoff,b_yoff,b_energy):
 
     global MSCW_blind_cut
     global MSCL_blind_cut
@@ -1905,32 +1901,32 @@ def NormalizeSkyMapHistograms(FilePath,b_xoff,b_yoff):
     bin_lower = Hist2D_Data.GetYaxis().FindBin(MSCW_lower_cut)
     bin_upper = Hist2D_Data.GetYaxis().FindBin(MSCW_blind_cut)-1
 
-    HistName = "Hist_Data_SR_Skymap_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_SR_Skymap_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Data_Skymap.Reset()
     Hist_Data_Skymap.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_SR_Skymap_Galactic_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_SR_Skymap_Galactic_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Data_Skymap_Galactic.Reset()
     Hist_Data_Skymap_Galactic.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Skymap_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_CR_Skymap_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Dark_Skymap.Reset()
     Hist_Dark_Skymap.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Skymap_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_CR_Skymap_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Bkgd_Skymap.Reset()
     Hist_Bkgd_Skymap.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Skymap_Galactic_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_CR_Skymap_Galactic_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Bkgd_Skymap_Galactic.Reset()
     Hist_Bkgd_Skymap_Galactic.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Skymap_Raw_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_CR_Skymap_Raw_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Bkgd_Skymap_Raw.Reset()
     Hist_Bkgd_Skymap_Raw.Add(InputFile.Get(HistName))
 
-    if Hist2D_Data.Integral()<1600.:
-        Hist_Data_Skymap.Reset()
-        Hist_Data_Skymap_Galactic.Reset()
-        Hist_Dark_Skymap.Reset()
-        Hist_Bkgd_Skymap.Reset()
-        Hist_Bkgd_Skymap_Galactic.Reset()
-        Hist_Bkgd_Skymap_Raw.Reset()
+    #if Hist2D_Data.Integral()<1600.:
+    #    Hist_Data_Skymap.Reset()
+    #    Hist_Data_Skymap_Galactic.Reset()
+    #    Hist_Dark_Skymap.Reset()
+    #    Hist_Bkgd_Skymap.Reset()
+    #    Hist_Bkgd_Skymap_Galactic.Reset()
+    #    Hist_Bkgd_Skymap_Raw.Reset()
     if math.isnan(Hist2D_GammaRDBM.Integral()):
         Hist_Data_Skymap.Reset()
         Hist_Data_Skymap_Galactic.Reset()
@@ -1986,7 +1982,7 @@ def NormalizeSkyMapHistograms(FilePath,b_xoff,b_yoff):
     else:
         Hist_Bkgd_Skymap_Raw.Scale(0)
 
-def NormalizeEnergyHistograms(FilePath,b_xoff,b_yoff):
+def NormalizeEnergyHistograms(FilePath,b_xoff,b_yoff,b_energy):
 
     global MSCW_blind_cut
     global MSCL_blind_cut
@@ -1998,20 +1994,20 @@ def NormalizeEnergyHistograms(FilePath,b_xoff,b_yoff):
     bin_lower = Hist2D_Data.GetYaxis().FindBin(MSCW_lower_cut)
     bin_upper = Hist2D_Data.GetYaxis().FindBin(MSCW_blind_cut)-1
 
-    HistName = "Hist_Data_SR_Skymap_Energy_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_SR_Skymap_Energy_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Data_Energy.Reset()
     Hist_Data_Energy.Add(InputFile.Get(HistName))
-    HistName = "Hist_TrueBkgd_SR_Skymap_Energy_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_TrueBkgd_SR_Skymap_Energy_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_TrueBkgd_Energy.Reset()
     Hist_TrueBkgd_Energy.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Skymap_Energy_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_CR_Skymap_Energy_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Bkgd_Energy.Reset()
     Hist_Bkgd_Energy.Add(InputFile.Get(HistName))
 
-    if Hist2D_Data.Integral()<1600.:
-        Hist_Data_Energy.Reset()
-        Hist_TrueBkgd_Energy.Reset()
-        Hist_Bkgd_Energy.Reset()
+    #if Hist2D_Data.Integral()<1600.:
+    #    Hist_Data_Energy.Reset()
+    #    Hist_TrueBkgd_Energy.Reset()
+    #    Hist_Bkgd_Energy.Reset()
     if math.isnan(Hist2D_GammaRDBM.Integral()):
         Hist_Data_Energy.Reset()
         Hist_TrueBkgd_Energy.Reset()
@@ -2033,7 +2029,7 @@ def NormalizeEnergyHistograms(FilePath,b_xoff,b_yoff):
     else:
         Hist_Bkgd_Energy.Scale(0)
 
-def NormalizeTheta2Histograms(FilePath,b_xoff,b_yoff):
+def NormalizeTheta2Histograms(FilePath,b_xoff,b_yoff,b_energy):
 
     global MSCW_blind_cut
     global MSCL_blind_cut
@@ -2045,35 +2041,35 @@ def NormalizeTheta2Histograms(FilePath,b_xoff,b_yoff):
     bin_lower = Hist2D_Data.GetYaxis().FindBin(MSCW_lower_cut)
     bin_upper = Hist2D_Data.GetYaxis().FindBin(MSCW_blind_cut)-1
 
-    HistName = "Hist_Data_SR_Skymap_Theta2_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_SR_Skymap_Theta2_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Data_Theta2.Reset()
     Hist_Data_Theta2.Add(InputFile.Get(HistName))
-    HistName = "Hist_TrueBkgd_SR_Skymap_Theta2_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_TrueBkgd_SR_Skymap_Theta2_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_TrueBkgd_Theta2.Reset()
     Hist_TrueBkgd_Theta2.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Skymap_Theta2_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_CR_Skymap_Theta2_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Dark_Theta2.Reset()
     Hist_Dark_Theta2.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Skymap_Theta2_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_CR_Skymap_Theta2_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Bkgd_Theta2.Reset()
     Hist_Bkgd_Theta2.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Skymap_Theta2_Raw_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_CR_Skymap_Theta2_Raw_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Bkgd_Theta2_Raw.Reset()
     Hist_Bkgd_Theta2_Raw.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_CameraFoV_Theta2_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_CR_CameraFoV_Theta2_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Bkgd_R2off.Reset()
     Hist_Bkgd_R2off.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_CameraFoV_Theta2_Raw_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_CR_CameraFoV_Theta2_Raw_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Bkgd_R2off_Raw.Reset()
     Hist_Bkgd_R2off_Raw.Add(InputFile.Get(HistName))
 
-    if Hist2D_Data.Integral()<1600.:
-        Hist_Data_Theta2.Reset()
-        Hist_TrueBkgd_Theta2.Reset()
-        Hist_Dark_Theta2.Reset()
-        Hist_Bkgd_Theta2.Reset()
-        Hist_Bkgd_R2off.Reset()
-        Hist_Bkgd_R2off_Raw.Reset()
+    #if Hist2D_Data.Integral()<1600.:
+    #    Hist_Data_Theta2.Reset()
+    #    Hist_TrueBkgd_Theta2.Reset()
+    #    Hist_Dark_Theta2.Reset()
+    #    Hist_Bkgd_Theta2.Reset()
+    #    Hist_Bkgd_R2off.Reset()
+    #    Hist_Bkgd_R2off_Raw.Reset()
     if math.isnan(Hist2D_GammaRDBM.Integral()):
         Hist_Data_Theta2.Reset()
         Hist_TrueBkgd_Theta2.Reset()
@@ -2145,7 +2141,7 @@ def NormalizeEigenvalues():
     scale_norm = 1./Hist_Fit_Eigenvalues_real_SumE.GetBinContent(1)
     Hist_Fit_Eigenvalues_real_SumE.Scale(scale_norm)
 
-def GetShowerHistogramsFromFile(FilePath,b_xoff,b_yoff):
+def GetShowerHistogramsFromFile(FilePath,b_xoff,b_yoff,b_energy):
 
     global MSCW_blind_cut
     global MSCL_blind_cut
@@ -2159,24 +2155,24 @@ def GetShowerHistogramsFromFile(FilePath,b_xoff,b_yoff):
     bin_lower_y = Hist2D_Data.GetYaxis().FindBin(MSCW_lower_cut)
     bin_upper_y = Hist2D_Data.GetYaxis().FindBin(MSCW_blind_cut)-1
 
-    print 'Getting file Xoff%sYoff%s'%(b_xoff,b_yoff)
+    print 'Getting file Xoff%sYoff%sE%s'%(b_xoff,b_yoff,b_energy)
 
-    HistName = "Hist_Data_MSCLW_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_MSCLW_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist2D_Data.Reset()
     Hist2D_Data.Add(InputFile.Get(HistName))
-    HistName = "Hist_Dark_MSCLW_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Dark_MSCLW_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist2D_Dark.Reset()
     Hist2D_Dark.Add(InputFile.Get(HistName))
-    HistName = "Hist_TrueBkgd_MSCLW_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_TrueBkgd_MSCLW_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist2D_TrueBkgd.Reset()
     Hist2D_TrueBkgd.Add(InputFile.Get(HistName))
-    HistName = "Hist_GammaDark_MSCLW"
+    HistName = "Hist_GammaDark_MSCLW_E%s"%(b_energy)
     Hist2D_GammaDark.Reset()
     Hist2D_GammaDark.Add(InputFile.Get(HistName))
-    HistName = "Hist_GammaRDBM_MSCLW_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_GammaRDBM_MSCLW_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist2D_GammaRDBM.Reset()
     Hist2D_GammaRDBM.Add(InputFile.Get(HistName))
-    HistName = "Hist_Bkgd_MSCLW_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Bkgd_MSCLW_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist2D_Bkgd.Reset()
     Hist2D_Bkgd.Add(InputFile.Get(HistName))
     for bx in range(1,Hist2D_Bkgd.GetNbinsX()+1):
@@ -2184,13 +2180,13 @@ def GetShowerHistogramsFromFile(FilePath,b_xoff,b_yoff):
             data_err = pow(Hist2D_Bkgd.GetBinContent(bx,by),0.5)
             Hist2D_Bkgd.SetBinError(bx,by,data_err)
 
-    if Hist2D_Data.Integral()<1600.:
-        Hist2D_Data.Reset()
-        Hist2D_Dark.Reset()
-        Hist2D_TrueBkgd.Reset()
-        Hist2D_GammaDark.Reset()
-        Hist2D_GammaRDBM.Reset()
-        Hist2D_Bkgd.Reset()
+    #if Hist2D_Data.Integral()<1600.:
+    #    Hist2D_Data.Reset()
+    #    Hist2D_Dark.Reset()
+    #    Hist2D_TrueBkgd.Reset()
+    #    Hist2D_GammaDark.Reset()
+    #    Hist2D_GammaRDBM.Reset()
+    #    Hist2D_Bkgd.Reset()
     if math.isnan(Hist2D_GammaRDBM.Integral()):
         Hist2D_Data.Reset()
         Hist2D_Dark.Reset()
@@ -2224,31 +2220,31 @@ def GetShowerHistogramsFromFile(FilePath,b_xoff,b_yoff):
     Hist_Bkgd_MSCW.Reset()
     Hist_Bkgd_MSCW.Add(Hist2D_Bkgd.ProjectionY("Hist1D_Bkgd_MSCW",bin_lower_x,bin_upper_x))
 
-    HistName = "Hist_Data_Eigenvalues_real_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_Eigenvalues_real_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Data_Eigenvalues_real.Reset()
     Hist_Data_Eigenvalues_real.Add(InputFile.Get(HistName))
-    HistName = "Hist_Dark_Eigenvalues_real_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Dark_Eigenvalues_real_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Dark_Eigenvalues_real.Reset()
     Hist_Dark_Eigenvalues_real.Add(InputFile.Get(HistName))
-    HistName = "Hist_Fit_Eigenvalues_real_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Fit_Eigenvalues_real_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Fit_Eigenvalues_real.Reset()
     Hist_Fit_Eigenvalues_real.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_Eigenvalues_imag_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_Eigenvalues_imag_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Data_Eigenvalues_imag.Reset()
     Hist_Data_Eigenvalues_imag.Add(InputFile.Get(HistName))
-    HistName = "Hist_Dark_Eigenvalues_imag_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Dark_Eigenvalues_imag_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Dark_Eigenvalues_imag.Reset()
     Hist_Dark_Eigenvalues_imag.Add(InputFile.Get(HistName))
-    #HistName = "Hist_Fit_Eigenvalues_imag_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    #HistName = "Hist_Fit_Eigenvalues_imag_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     #Hist_Fit_Eigenvalues_imag.Reset()
     #Hist_Fit_Eigenvalues_imag.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_InvEigenvectorReal_0_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_InvEigenvectorReal_0_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Data_Eigenvector_0_real.Reset()
     Hist_Data_Eigenvector_0_real.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_InvEigenvectorReal_1_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_InvEigenvectorReal_1_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Data_Eigenvector_1_real.Reset()
     Hist_Data_Eigenvector_1_real.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_InvEigenvectorReal_2_Xoff%sYoff%s"%(b_xoff,b_yoff)
+    HistName = "Hist_Data_InvEigenvectorReal_2_Xoff%sYoff%sE%s"%(b_xoff,b_yoff,b_energy)
     Hist_Data_Eigenvector_2_real.Reset()
     Hist_Data_Eigenvector_2_real.Add(InputFile.Get(HistName))
 
@@ -2444,10 +2440,11 @@ def SystAsFunctionOfSignal():
                 GetSourceInfo(FilePath_Folder0)
                 for b_xoff in range(0,len(xoff_list)-1):
                     for b_yoff in range(0,len(yoff_list)-1):
-                        GetShowerHistogramsFromFile(FilePath_Folder0[0],b_xoff,b_yoff)
-                        StackShowerHistograms()
-                        NormalizeTheta2Histograms(FilePath_Folder0[0],b_xoff,b_yoff)
-                        StackTheta2Histograms()
+                        for b_energy in range(0,len(energy_list)-1):
+                            GetShowerHistogramsFromFile(FilePath_Folder0[0],b_xoff,b_yoff,b_energy)
+                            StackShowerHistograms()
+                            NormalizeTheta2Histograms(FilePath_Folder0[0],b_xoff,b_yoff,b_energy)
+                            StackTheta2Histograms()
 
             NormalizeEigenvalues()
             Hist_Eigenvalue_2ndRank[len(Hist_Eigenvalue_2ndRank)-1].SetBinContent(flux+1,Hist_Data_Eigenvalues_real_SumE.GetBinContent(2))
@@ -2512,10 +2509,11 @@ def SystAsFunctionOfSignal():
                 GetSourceInfo(FilePath_Folder0)
                 for b_xoff in range(0,len(xoff_list)-1):
                     for b_yoff in range(0,len(yoff_list)-1):
-                        GetShowerHistogramsFromFile(FilePath_Folder0[0],b_xoff,b_yoff)
-                        StackShowerHistograms()
-                        NormalizeTheta2Histograms(FilePath_Folder0[0],b_xoff,b_yoff)
-                        StackTheta2Histograms()
+                        for b_energy in range(0,len(energy_list)-1):
+                            GetShowerHistogramsFromFile(FilePath_Folder0[0],b_xoff,b_yoff,b_energy)
+                            StackShowerHistograms()
+                            NormalizeTheta2Histograms(FilePath_Folder0[0],b_xoff,b_yoff,b_energy)
+                            StackTheta2Histograms()
 
         scale_norm = 1./Hist_Data_Eigenvalues_real_SumE.GetBinContent(1)
         Hist_Data_Eigenvector_0_real_SumE.Scale(scale_norm) # this makes sure they all have the same sign
@@ -2599,12 +2597,13 @@ def RadialAcceptance():
             exposure_hours_total += exposure_hours
             for b_xoff in range(0,len(xoff_list)-1):
                 for b_yoff in range(0,len(yoff_list)-1):
-                    GetShowerHistogramsFromFile(FilePath_Folder0[0],b_xoff,b_yoff)
-                    StackShowerHistograms()
-                    NormalizeTheta2Histograms(FilePath_Folder0[0],b_xoff,b_yoff)
-                    StackTheta2Histograms()
-                    NormalizeCameraFoVHistograms(FilePath_Folder0[0],b_xoff,b_yoff)
-                    StackCameraFoVHistograms()
+                    for b_energy in range(0,len(energy_list)-1):
+                        GetShowerHistogramsFromFile(FilePath_Folder0[0],b_xoff,b_yoff,b_energy)
+                        StackShowerHistograms()
+                        NormalizeTheta2Histograms(FilePath_Folder0[0],b_xoff,b_yoff,b_energy)
+                        StackTheta2Histograms()
+                        NormalizeCameraFoVHistograms(FilePath_Folder0[0],b_xoff,b_yoff,b_energy)
+                        StackCameraFoVHistograms()
 
     Hist_Data_CameraFoV_SumE.Rebin2D(n_rebin,n_rebin)
     Hist_Bkgd_CameraFoV_SumE.Rebin2D(n_rebin,n_rebin)
@@ -2663,10 +2662,11 @@ def SystAsFunctionOfElevation():
             GetSourceInfo(FilePath_Folder0)
             for b_xoff in range(0,len(xoff_list)-1):
                 for b_yoff in range(0,len(yoff_list)-1):
-                    GetShowerHistogramsFromFile(FilePath_Folder0[0],b_xoff,b_yoff)
-                    StackShowerHistograms()
-                    NormalizeTheta2Histograms(FilePath_Folder0[0],b_xoff,b_yoff)
-                    StackTheta2Histograms()
+                    for b_energy in range(0,len(energy_list)-1):
+                        GetShowerHistogramsFromFile(FilePath_Folder0[0],b_xoff,b_yoff,b_energy)
+                        StackShowerHistograms()
+                        NormalizeTheta2Histograms(FilePath_Folder0[0],b_xoff,b_yoff,b_energy)
+                        StackTheta2Histograms()
 
             NormalizeEigenvalues()
             Hist_Eigenvalue_2ndRank[len(Hist_Eigenvalue_2ndRank)-1].SetBinContent(elev+1,Hist_Data_Eigenvalues_real_SumE.GetBinContent(2))
@@ -2729,10 +2729,11 @@ def SystAsFunctionOfElevation():
             GetSourceInfo(FilePath_Folder0)
             for b_xoff in range(0,len(xoff_list)-1):
                 for b_yoff in range(0,len(yoff_list)-1):
-                    GetShowerHistogramsFromFile(FilePath_Folder0[0],b_xoff,b_yoff)
-                    StackShowerHistograms()
-                    NormalizeTheta2Histograms(FilePath_Folder0[0],b_xoff,b_yoff)
-                    StackTheta2Histograms()
+                    for b_energy in range(0,len(energy_list)-1):
+                        GetShowerHistogramsFromFile(FilePath_Folder0[0],b_xoff,b_yoff,b_energy)
+                        StackShowerHistograms()
+                        NormalizeTheta2Histograms(FilePath_Folder0[0],b_xoff,b_yoff,b_energy)
+                        StackTheta2Histograms()
 
         Make2DSignificancePlotShowerShape(Hist2D_Data_SumE,Hist2D_Bkgd_SumE,Hist2D_GammaRDBM_SumE,'MSCL','MSCW','MSCLW_Elev%sto%s_%s'%(file_elev_lower,file_elev_upper,folder_tag))
 
@@ -2831,12 +2832,13 @@ def SystAsFunctionOfGalLat():
         ResetStackedShowerHistograms()
         for b_xoff in range(0,len(xoff_list)-1):
             for b_yoff in range(0,len(yoff_list)-1):
-                for path in range(1,len(FilePath_Folder0[source])):
-                    if not os.path.isfile(FilePath_Folder0[source][path]):continue
-                    GetShowerHistogramsFromFile(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                    StackShowerHistograms()
-                    NormalizeTheta2Histograms(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                    StackTheta2Histograms()
+                for b_energy in range(0,len(energy_list)-1):
+                    for path in range(1,len(FilePath_Folder0[source])):
+                        if not os.path.isfile(FilePath_Folder0[source][path]):continue
+                        GetShowerHistogramsFromFile(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                        StackShowerHistograms()
+                        NormalizeTheta2Histograms(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                        StackTheta2Histograms()
         s2b = 0.
         s2b_err = 0.
         if not "_Crab0" in PercentCrab:
@@ -2908,12 +2910,13 @@ def SensitivityAsFunctionOfExposure():
             if exposure_hours>time_bin[big_t+1]: continue
             for b_xoff in range(0,len(xoff_list)-1):
                 for b_yoff in range(0,len(yoff_list)-1):
-                    for path in range(1,len(FilePath_Folder0[source])):
-                        if not os.path.isfile(FilePath_Folder0[source][path]):continue
-                        GetShowerHistogramsFromFile(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                        StackShowerHistograms()
-                        NormalizeTheta2Histograms(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                        StackTheta2Histograms()
+                    for b_energy in range(0,len(energy_list)-1):
+                        for path in range(1,len(FilePath_Folder0[source])):
+                            if not os.path.isfile(FilePath_Folder0[source][path]):continue
+                            GetShowerHistogramsFromFile(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                            StackShowerHistograms()
+                            NormalizeTheta2Histograms(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                            StackTheta2Histograms()
 
         NormalizeEigenvalues()
         Hist_Eigenvalue_real_Rank[len(Hist_Eigenvalue_real_Rank)-1].Add(Hist_Data_Eigenvalues_real_SumE)
@@ -2969,12 +2972,13 @@ def SystAsFunctionOfNSB():
         ResetStackedShowerHistograms()
         for b_xoff in range(0,len(xoff_list)-1):
             for b_yoff in range(0,len(yoff_list)-1):
-                for path in range(1,len(FilePath_Folder0[source])):
-                    if not os.path.isfile(FilePath_Folder0[source][path]):continue
-                    GetShowerHistogramsFromFile(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                    StackShowerHistograms()
-                    NormalizeTheta2Histograms(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                    StackTheta2Histograms()
+                for b_energy in range(0,len(energy_list)-1):
+                    for path in range(1,len(FilePath_Folder0[source])):
+                        if not os.path.isfile(FilePath_Folder0[source][path]):continue
+                        GetShowerHistogramsFromFile(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                        StackShowerHistograms()
+                        NormalizeTheta2Histograms(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                        StackTheta2Histograms()
         s2b = 0.
         s2b_err = 0.
         if not "_Crab0" in PercentCrab:
@@ -3024,12 +3028,13 @@ def SystAsFunctionOfNSB():
             if NSB_avg>NSB_bin[big_t+1]: continue
             for b_xoff in range(0,len(xoff_list)-1):
                 for b_yoff in range(0,len(yoff_list)-1):
-                    for path in range(1,len(FilePath_Folder0[source])):
-                        if not os.path.isfile(FilePath_Folder0[source][path]):continue
-                        GetShowerHistogramsFromFile(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                        StackShowerHistograms()
-                        NormalizeTheta2Histograms(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                        StackTheta2Histograms()
+                    for b_energy in range(0,len(energy_list)-1):
+                        for path in range(1,len(FilePath_Folder0[source])):
+                            if not os.path.isfile(FilePath_Folder0[source][path]):continue
+                            GetShowerHistogramsFromFile(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                            StackShowerHistograms()
+                            NormalizeTheta2Histograms(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                            StackTheta2Histograms()
 
         NormalizeEigenvalues()
         Hist_Eigenvalue_real_Rank[len(Hist_Eigenvalue_real_Rank)-1].Add(Hist_Data_Eigenvalues_real_SumE)
@@ -3086,12 +3091,13 @@ def SystAsFunctionOfEnergy():
         ResetStackedShowerHistograms()
         for b_xoff in range(0,len(xoff_list)-1):
             for b_yoff in range(0,len(yoff_list)-1):
-                for path in range(1,len(FilePath_Folder0[source])):
-                    if not os.path.isfile(FilePath_Folder0[source][path]):continue
-                    GetShowerHistogramsFromFile(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                    StackShowerHistograms()
-                    NormalizeTheta2Histograms(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                    StackTheta2Histograms()
+                for b_energy in range(0,len(energy_list)-1):
+                    for path in range(1,len(FilePath_Folder0[source])):
+                        if not os.path.isfile(FilePath_Folder0[source][path]):continue
+                        GetShowerHistogramsFromFile(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                        StackShowerHistograms()
+                        NormalizeTheta2Histograms(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                        StackTheta2Histograms()
         s2b = 0.
         s2b_err = 0.
         if not "_Crab0" in PercentCrab:
@@ -3138,12 +3144,13 @@ def SystAsFunctionOfEnergy():
             print 'Source %s, exposure = %s, NSB = %s'%(source_name,exposure_hours,NSB_avg)
             for b_xoff in range(0,len(xoff_list)-1):
                 for b_yoff in range(0,len(yoff_list)-1):
-                    for path in range(1,len(FilePath_Folder0[source])):
-                        if not os.path.isfile(FilePath_Folder0[source][path]):continue
-                        GetShowerHistogramsFromFile(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                        StackShowerHistograms()
-                        NormalizeTheta2Histograms(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                        StackTheta2Histograms()
+                    for b_energy in range(0,len(energy_list)-1):
+                        for path in range(1,len(FilePath_Folder0[source])):
+                            if not os.path.isfile(FilePath_Folder0[source][path]):continue
+                            GetShowerHistogramsFromFile(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                            StackShowerHistograms()
+                            NormalizeTheta2Histograms(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                            StackTheta2Histograms()
 
         NormalizeEigenvalues()
         Hist_Eigenvalue_real_Rank[len(Hist_Eigenvalue_real_Rank)-1].Add(Hist_Data_Eigenvalues_real_SumE)
@@ -3290,10 +3297,11 @@ def SystDarkVsMDM():
             if not os.path.isfile(FilePath_Folder0[source][path]):continue
             for b_xoff in range(0,len(xoff_list)-1):
                 for b_yoff in range(0,len(yoff_list)-1):
-                    GetShowerHistogramsFromFile(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                    StackShowerHistograms()
-                    NormalizeTheta2Histograms(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                    StackTheta2Histograms()
+                    for b_energy in range(0,len(energy_list)-1):
+                        GetShowerHistogramsFromFile(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                        StackShowerHistograms()
+                        NormalizeTheta2Histograms(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                        StackTheta2Histograms()
 
         scale_norm = 1./Hist_Data_Eigenvalues_real_SumE.GetBinContent(1)
         Hist_Data_Eigenvector_0_real_SumE.Scale(scale_norm) # this makes sure they all have the same sign
@@ -3413,10 +3421,11 @@ def CompareDiffFolders():
                 if not os.path.isfile(FilePath_AllFolders[folder][source][path]):continue
                 for b_xoff in range(0,len(xoff_list)-1):
                     for b_yoff in range(0,len(yoff_list)-1):
-                        GetShowerHistogramsFromFile(FilePath_AllFolders[folder][source][path],b_xoff,b_yoff)
-                        StackShowerHistograms()
-                        NormalizeTheta2Histograms(FilePath_AllFolders[folder][source][path],b_xoff,b_yoff)
-                        StackTheta2Histograms()
+                        for b_energy in range(0,len(energy_list)-1):
+                            GetShowerHistogramsFromFile(FilePath_AllFolders[folder][source][path],b_xoff,b_yoff,b_energy)
+                            StackShowerHistograms()
+                            NormalizeTheta2Histograms(FilePath_AllFolders[folder][source][path],b_xoff,b_yoff,b_energy)
+                            StackTheta2Histograms()
             s2b = 0.
             s2b_err = 0.
             if not "_Crab0" in PercentCrab:
@@ -3546,9 +3555,10 @@ def SingleSourceSpectrum(source_name_input):
             print 'Ref. source %s, exposure = %s, NSB = %s'%(source_name,exposure_hours,NSB_avg)
             for b_xoff in range(0,len(xoff_list)-1):
                 for b_yoff in range(0,len(yoff_list)-1):
-                    GetShowerHistogramsFromFile(FilePath_Folder0[0],b_xoff,b_yoff)
-                    StackShowerHistograms()
-                    sum_exposure_hours += exposure_hours
+                    for b_energy in range(0,len(energy_list)-1):
+                        GetShowerHistogramsFromFile(FilePath_Folder0[0],b_xoff,b_yoff,b_energy)
+                        StackShowerHistograms()
+            sum_exposure_hours += exposure_hours
             incl_bkg_integral = Hist2D_Bkgd_SumE.Integral(binx_lower,binx_upper,biny_lower,biny_upper)
             incl_bkg_rate, incl_bkg_rate_err = Event_rate(incl_bkg_integral,sum_exposure_hours,ErecS_lower_cut,ErecS_upper_cut,False)
             Hist_MDM_InclBkg_Rate[len(Hist_MDM_InclBkg_Rate)-1].SetBinContent(e+1,incl_bkg_rate)
@@ -3583,9 +3593,10 @@ def SingleSourceSpectrum(source_name_input):
         count += 1
         for b_xoff in range(0,len(xoff_list)-1):
             for b_yoff in range(0,len(yoff_list)-1):
-                GetShowerHistogramsFromFile(FilePath_Folder0[0],b_xoff,b_yoff)
-                NormalizeTheta2Histograms(FilePath_Folder0[0],b_xoff,b_yoff)
-                NormalizeSkyMapHistograms(FilePath_Folder0[0],b_xoff,b_yoff)
+                for b_energy in range(0,len(energy_list)-1):
+                    GetShowerHistogramsFromFile(FilePath_Folder0[0],b_xoff,b_yoff,b_energy)
+                    NormalizeTheta2Histograms(FilePath_Folder0[0],b_xoff,b_yoff,b_energy)
+                    NormalizeSkyMapHistograms(FilePath_Folder0[0],b_xoff,b_yoff,b_energy)
             Hist_temp = Hist_Data_Skymap.Clone()
             Hist_temp.Rebin2D(n_rebin,n_rebin)
             data_integral = SkymapHighlightIntegral(Hist_temp,Hist_Highlight_Bias_Skymap)
@@ -3698,16 +3709,17 @@ def SingleSourceSkyMap(source_name_input):
             if not os.path.isfile(FilePath_Folder0[source][path]):continue
             for b_xoff in range(0,len(xoff_list)-1):
                 for b_yoff in range(0,len(yoff_list)-1):
-                    GetShowerHistogramsFromFile(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                    StackShowerHistograms()
-                    NormalizeTheta2Histograms(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                    StackTheta2Histograms()
-                    NormalizeEnergyHistograms(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                    StackEnergyHistograms()
-                    NormalizeCameraFoVHistograms(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                    StackCameraFoVHistograms()
-                    NormalizeSkyMapHistograms(FilePath_Folder0[source][path],b_xoff,b_yoff)
-                    StackSkymapHistograms()
+                    for b_energy in range(0,len(energy_list)-1):
+                        GetShowerHistogramsFromFile(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                        StackShowerHistograms()
+                        NormalizeTheta2Histograms(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                        StackTheta2Histograms()
+                        NormalizeEnergyHistograms(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                        StackEnergyHistograms()
+                        NormalizeCameraFoVHistograms(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                        StackCameraFoVHistograms()
+                        NormalizeSkyMapHistograms(FilePath_Folder0[source][path],b_xoff,b_yoff,b_energy)
+                        StackSkymapHistograms()
 
         NormalizeEigenvalues()
         Hist_Eigenvalue_real_Rank += [ROOT.TH1D("Hist_Eigenvalue_real_Rank_Data","",N_bins_for_deconv,0,N_bins_for_deconv)]
@@ -3809,7 +3821,7 @@ SystDarkVsMDM() # run this to get method systematics
 #source_of_interest = 'PKS1424'
 #source_of_interest = '3C264'
 #source_of_interest = 'OJ287V6'
-source_of_interest = '1ES0229'
+#source_of_interest = '1ES0229'
 #source_of_interest = 'S3_1227_V6'
 #source_of_interest = 'MS1221V6'
 #source_of_interest = 'PKS1441V6'
@@ -3834,7 +3846,7 @@ source_of_interest = '1ES0229'
 #source_of_interest = 'IC443HotSpotV5'
 #source_of_interest = 'GemingaV6'
 #source_of_interest = 'GemingaV5'
-#source_of_interest = 'SgrAV6'
+source_of_interest = 'SgrAV6'
 #source_of_interest = 'Everything'
 
 #n_rebin = 8
@@ -3853,8 +3865,8 @@ highlight_threshold = 2.0
 #PercentCrab = "_Crab0"
 #RadialAcceptance()
 
-#ONOFF = "ON"
-ONOFF = "OFF"
+ONOFF = "ON"
+#ONOFF = "OFF"
 
 PercentCrab = "_Crab0"
 #PercentCrab = "_Crab10"

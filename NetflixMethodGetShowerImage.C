@@ -54,31 +54,17 @@ double MSCL_cut_lower = -1.0;
 double MSCL_cut_blind = 1.0;
 double MSCL_cut_upper = 1.0;
 
-//const int N_energy_bins = 11;
-//double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,2239,4467,8913};
-//double gamma_flux[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-//double gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-//double raw_gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-//int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,40,40};
-//const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] = {200,8913};
-//double gamma_flux[N_energy_bins] = {0.};
-//double gamma_count[N_energy_bins] = {0.};
-//double raw_gamma_count[N_energy_bins] = {0.};
-//int N_bins_for_deconv_at_E[N_energy_bins] = {40};
-const int N_energy_bins = 17;
-double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0)};
-double gamma_flux[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-double gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-double raw_gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-const int N_xoff_bins = 6;
-double xoff_bins[N_xoff_bins+1] = {-3.0,-2.0,-1.0,0.0,1.0,2.0,3.0};
-const int N_yoff_bins = 6;
-double yoff_bins[N_yoff_bins+1] = {-3.0,-2.0,-1.0,0.0,1.0,2.0,3.0};
-//const int N_xoff_bins = 2;
-//double xoff_bins[N_xoff_bins+1] = {-1.0,0.0,1.0};
-//const int N_yoff_bins = 2;
-//double yoff_bins[N_yoff_bins+1] = {-1.0,0.0,1.0};
+const int N_energy_bins = 7;
+double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.9),pow(10,3.1),pow(10,4.0)};
+double gamma_flux[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.};
+double gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.};
+double raw_gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.};
+const int N_xoff_bins = 1;
+double xoff_bins[N_xoff_bins+1] = {-3.0,3.0};
+const int N_yoff_bins = 2;
+double yoff_bins[N_yoff_bins+1] = {-3.0,0.,3.0};
+const int N_energy_fine_bins = 17;
+double energy_fine_bins[N_energy_fine_bins+1] = {pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0)};
 
 int N_bins_for_deconv = 40;
 double MSCW_plot_lower = -1.;
@@ -819,11 +805,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     TH2D Hist_Dark_ShowerDirection = TH2D("Hist_Dark_ShowerDirection","",180,0,360,90,0,90);
     TH2D Hist_Data_ShowerDirection = TH2D("Hist_Data_ShowerDirection","",180,0,360,90,0,90);
     TH2D Hist_Data_MSCLW_incl = TH2D("Hist_Data_MSCLW_incl","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
-    TH2D Hist_GammaData_MSCLW = TH2D("Hist_GammaData_MSCLW","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
-    TH2D Hist_GammaDataON_MSCLW = TH2D("Hist_GammaDataON_MSCLW","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
-    TH2D Hist_GammaDataOFF_MSCLW = TH2D("Hist_GammaDataOFF_MSCLW","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
-    TH2D Hist_GammaDark_MSCLW = TH2D("Hist_GammaDark_MSCLW","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
-    TH2D Hist_GammaMC_MSCLW = TH2D("Hist_GammaMC_MSCLW","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
+    vector<TH2D> Hist_GammaData_MSCLW;
+    vector<TH2D> Hist_GammaDataON_MSCLW;
+    vector<TH2D> Hist_GammaDataOFF_MSCLW;
+    vector<TH2D> Hist_GammaDark_MSCLW;
+    vector<TH2D> Hist_GammaMC_MSCLW;
     vector<TH2D> Hist_Data_MSCLW;
     vector<TH2D> Hist_TrueBkgd_MSCLW;
     vector<TH2D> Hist_Dark_MSCLW;
@@ -851,48 +837,65 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     vector<TH2D> Hist_Dark_CR_CameraFoV;
     vector<TH1D> Hist_Dark_SR_Theta2;
     vector<TH1D> Hist_Dark_CR_Theta2;
+    for (int b_energy=0;b_energy<N_energy_bins;b_energy++) 
+    {
+        char e_bin[50];
+        sprintf(e_bin, "%i", b_energy);
+
+        Hist_GammaData_MSCLW.push_back(TH2D("Hist_GammaData_MSCLW_E"+TString(e_bin),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_GammaDataON_MSCLW.push_back(TH2D("Hist_GammaDataON_MSCLW_E"+TString(e_bin),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_GammaDataOFF_MSCLW.push_back(TH2D("Hist_GammaDataOFF_MSCLW_E"+TString(e_bin),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_GammaDark_MSCLW.push_back(TH2D("Hist_GammaDark_MSCLW_E"+TString(e_bin),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_GammaMC_MSCLW.push_back(TH2D("Hist_GammaMC_MSCLW_E"+TString(e_bin),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+
+    }
     for (int b_xoff=0;b_xoff<N_xoff_bins;b_xoff++) 
     {
         for (int b_yoff=0;b_yoff<N_yoff_bins;b_yoff++) 
         {
+            for (int b_energy=0;b_energy<N_energy_bins;b_energy++) 
+            {
 
-            char x_bin[50];
-            sprintf(x_bin, "%i", b_xoff);
-            char y_bin[50];
-            sprintf(y_bin, "%i", b_yoff);
+                char x_bin[50];
+                sprintf(x_bin, "%i", b_xoff);
+                char y_bin[50];
+                sprintf(y_bin, "%i", b_yoff);
+                char e_bin[50];
+                sprintf(e_bin, "%i", b_energy);
 
-            Hist_Data_MSCLW.push_back(TH2D("Hist_Data_MSCLW_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-            Hist_TrueBkgd_MSCLW.push_back(TH2D("Hist_TrueBkgd_MSCLW_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-            Hist_Dark_MSCLW.push_back(TH2D("Hist_Dark_MSCLW_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-            Hist_Dark_Syst_MSCLW.push_back(TH2D("Hist_Dark_Syst_MSCLW_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
-            Hist_TrueBkgd_SR_Skymap_Energy.push_back(TH1D("Hist_TrueBkgd_SR_Skymap_Energy_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",N_energy_bins,energy_bins));
-            Hist_Data_SR_Skymap_Energy.push_back(TH1D("Hist_Data_SR_Skymap_Energy_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",N_energy_bins,energy_bins));
-            Hist_Data_CR_Skymap_Energy.push_back(TH1D("Hist_Data_CR_Skymap_Energy_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",N_energy_bins,energy_bins));
-            Hist_Dark_SR_Skymap_Energy.push_back(TH1D("Hist_Dark_SR_Skymap_Energy_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",N_energy_bins,energy_bins));
-            Hist_Dark_CR_Skymap_Energy.push_back(TH1D("Hist_Dark_CR_Skymap_Energy_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",N_energy_bins,energy_bins));
-            Hist_TrueBkgd_SR_Skymap_Theta2.push_back(TH1D("Hist_TrueBkgd_SR_Skymap_Theta2_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",50,0,10));
-            Hist_Data_SR_Skymap_Theta2.push_back(TH1D("Hist_Data_SR_Skymap_Theta2_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",50,0,10));
-            Hist_Data_CR_Skymap_Theta2.push_back(TH1D("Hist_Data_CR_Skymap_Theta2_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",50,0,10));
-            Hist_Data_CR_Skymap_Theta2_Raw.push_back(TH1D("Hist_Data_CR_Skymap_Theta2_Raw_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",50,0,10));
-            Hist_Data_CR_CameraFoV_Theta2.push_back(TH1D("Hist_Data_CR_CameraFoV_Theta2_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",50,0,10));
-            Hist_Data_CR_CameraFoV_Theta2_Raw.push_back(TH1D("Hist_Data_CR_CameraFoV_Theta2_Raw_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",50,0,10));
-            Hist_Data_SR_Skymap.push_back(TH2D("Hist_Data_SR_Skymap_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
-            Hist_Data_CR_Skymap.push_back(TH2D("Hist_Data_CR_Skymap_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
-            Hist_Data_CR_Skymap_Raw.push_back(TH2D("Hist_Data_CR_Skymap_Raw_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
+                Hist_Data_MSCLW.push_back(TH2D("Hist_Data_MSCLW_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_TrueBkgd_MSCLW.push_back(TH2D("Hist_TrueBkgd_MSCLW_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_Dark_MSCLW.push_back(TH2D("Hist_Dark_MSCLW_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_Dark_Syst_MSCLW.push_back(TH2D("Hist_Dark_Syst_MSCLW_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+                Hist_TrueBkgd_SR_Skymap_Energy.push_back(TH1D("Hist_TrueBkgd_SR_Skymap_Energy_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",N_energy_fine_bins,energy_fine_bins));
+                Hist_Data_SR_Skymap_Energy.push_back(TH1D("Hist_Data_SR_Skymap_Energy_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",N_energy_fine_bins,energy_fine_bins));
+                Hist_Data_CR_Skymap_Energy.push_back(TH1D("Hist_Data_CR_Skymap_Energy_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",N_energy_fine_bins,energy_fine_bins));
+                Hist_Dark_SR_Skymap_Energy.push_back(TH1D("Hist_Dark_SR_Skymap_Energy_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",N_energy_fine_bins,energy_fine_bins));
+                Hist_Dark_CR_Skymap_Energy.push_back(TH1D("Hist_Dark_CR_Skymap_Energy_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",N_energy_fine_bins,energy_fine_bins));
+                Hist_TrueBkgd_SR_Skymap_Theta2.push_back(TH1D("Hist_TrueBkgd_SR_Skymap_Theta2_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",50,0,10));
+                Hist_Data_SR_Skymap_Theta2.push_back(TH1D("Hist_Data_SR_Skymap_Theta2_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",50,0,10));
+                Hist_Data_CR_Skymap_Theta2.push_back(TH1D("Hist_Data_CR_Skymap_Theta2_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",50,0,10));
+                Hist_Data_CR_Skymap_Theta2_Raw.push_back(TH1D("Hist_Data_CR_Skymap_Theta2_Raw_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",50,0,10));
+                Hist_Data_CR_CameraFoV_Theta2.push_back(TH1D("Hist_Data_CR_CameraFoV_Theta2_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",50,0,10));
+                Hist_Data_CR_CameraFoV_Theta2_Raw.push_back(TH1D("Hist_Data_CR_CameraFoV_Theta2_Raw_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",50,0,10));
+                Hist_Data_SR_Skymap.push_back(TH2D("Hist_Data_SR_Skymap_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
+                Hist_Data_CR_Skymap.push_back(TH2D("Hist_Data_CR_Skymap_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
+                Hist_Data_CR_Skymap_Raw.push_back(TH2D("Hist_Data_CR_Skymap_Raw_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
 
-            pair<double,double> tele_point_l_b = ConvertRaDecToGalactic(mean_tele_point_ra, mean_tele_point_dec);
-            mean_tele_point_l = tele_point_l_b.first;
-            mean_tele_point_b = tele_point_l_b.second;
-            Hist_Data_SR_Skymap_Galactic.push_back(TH2D("Hist_Data_SR_Skymap_Galactic_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",150,tele_point_l_b.first-3,tele_point_l_b.first+3,150,tele_point_l_b.second-3,tele_point_l_b.second+3));
-            Hist_Data_CR_Skymap_Galactic.push_back(TH2D("Hist_Data_CR_Skymap_Galactic_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",150,tele_point_l_b.first-3,tele_point_l_b.first+3,150,tele_point_l_b.second-3,tele_point_l_b.second+3));
+                pair<double,double> tele_point_l_b = ConvertRaDecToGalactic(mean_tele_point_ra, mean_tele_point_dec);
+                mean_tele_point_l = tele_point_l_b.first;
+                mean_tele_point_b = tele_point_l_b.second;
+                Hist_Data_SR_Skymap_Galactic.push_back(TH2D("Hist_Data_SR_Skymap_Galactic_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",150,tele_point_l_b.first-3,tele_point_l_b.first+3,150,tele_point_l_b.second-3,tele_point_l_b.second+3));
+                Hist_Data_CR_Skymap_Galactic.push_back(TH2D("Hist_Data_CR_Skymap_Galactic_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",150,tele_point_l_b.first-3,tele_point_l_b.first+3,150,tele_point_l_b.second-3,tele_point_l_b.second+3));
 
-            Hist_Data_SR_CameraFoV.push_back(TH2D("Hist_Data_SR_CameraFoV_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",150,-3,3,150,-3,3));
-            Hist_Data_CR_CameraFoV.push_back(TH2D("Hist_Data_CR_CameraFoV_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",150,-3,3,150,-3,3));
-            Hist_Data_CR_CameraFoV_Raw.push_back(TH2D("Hist_Data_CR_CameraFoV_Raw_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",150,-3,3,150,-3,3));
-            Hist_Dark_SR_CameraFoV.push_back(TH2D("Hist_Dark_SR_CameraFoV_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",20,0,5,6,0,2*M_PI));
-            Hist_Dark_CR_CameraFoV.push_back(TH2D("Hist_Dark_CR_CameraFoV_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",20,0,5,6,0,2*M_PI));
-            Hist_Dark_SR_Theta2.push_back(TH1D("Hist_Dark_SR_Theta2_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",20,0,10));
-            Hist_Dark_CR_Theta2.push_back(TH1D("Hist_Dark_CR_Theta2_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin),"",20,0,10));
+                Hist_Data_SR_CameraFoV.push_back(TH2D("Hist_Data_SR_CameraFoV_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",150,-3,3,150,-3,3));
+                Hist_Data_CR_CameraFoV.push_back(TH2D("Hist_Data_CR_CameraFoV_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",150,-3,3,150,-3,3));
+                Hist_Data_CR_CameraFoV_Raw.push_back(TH2D("Hist_Data_CR_CameraFoV_Raw_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",150,-3,3,150,-3,3));
+                Hist_Dark_SR_CameraFoV.push_back(TH2D("Hist_Dark_SR_CameraFoV_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",20,0,5,6,0,2*M_PI));
+                Hist_Dark_CR_CameraFoV.push_back(TH2D("Hist_Dark_CR_CameraFoV_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",20,0,5,6,0,2*M_PI));
+                Hist_Dark_SR_Theta2.push_back(TH1D("Hist_Dark_SR_Theta2_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",20,0,10));
+                Hist_Dark_CR_Theta2.push_back(TH1D("Hist_Dark_CR_Theta2_Xoff"+TString(x_bin)+TString("Yoff")+TString(y_bin)+TString("E")+TString(e_bin),"",20,0,10));
+            }
         }
     }
 
@@ -968,13 +971,16 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             Dark_tree->GetEntry(entry);
             R2off = Xoff*Xoff+Yoff*Yoff;
             Phioff = atan2(Yoff,Xoff)+M_PI;
+            int b_energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
             int b_xoff = Hist_Xoff.FindBin(Xoff)-1;
             int b_yoff = Hist_Yoff.FindBin(Yoff)-1;
+            int index = (b_xoff*N_yoff_bins+b_yoff)*N_energy_bins+b_energy;
             if (b_xoff<0) continue;
             if (b_xoff>=N_xoff_bins) continue;
             if (b_yoff<0) continue;
             if (b_yoff>=N_yoff_bins) continue;
-            int index = b_xoff*N_yoff_bins+b_yoff;
+            if (b_energy<0) continue;
+            if (b_energy>=N_energy_bins) continue;
             if (!SelectNImages(3,4)) continue;
             if (SizeSecondMax<600.) continue;
             if (ErecS*1000.<200.) continue;
@@ -1105,13 +1111,16 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
                 dec_sky = Yoff;
             }
             pair<double,double> evt_l_b = ConvertRaDecToGalactic(ra_sky,dec_sky);
+            int b_energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
             int b_xoff = Hist_Xoff.FindBin(Xoff)-1;
             int b_yoff = Hist_Yoff.FindBin(Yoff)-1;
+            int index = (b_xoff*N_yoff_bins+b_yoff)*N_energy_bins+b_energy;
             if (b_xoff<0) continue;
             if (b_xoff>=N_xoff_bins) continue;
             if (b_yoff<0) continue;
             if (b_yoff>=N_yoff_bins) continue;
-            int index = b_xoff*N_yoff_bins+b_yoff;
+            if (b_energy<0) continue;
+            if (b_energy>=N_energy_bins) continue;
             if (!SelectNImages(3,4)) continue;
             if (SizeSecondMax<600.) continue;
             if (ErecS*1000.<200.) continue;
@@ -1292,15 +1301,18 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
             //photon_weight = gamma_count[energy]/raw_gamma_count[energy];
             photon_weight = 0.;
+            int b_energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
             int b_xoff = Hist_Xoff.FindBin(Xoff)-1;
             int b_yoff = Hist_Yoff.FindBin(Yoff)-1;
+            int index = (b_xoff*N_yoff_bins+b_yoff)*N_energy_bins+b_energy;
             if (b_xoff<0) continue;
             if (b_xoff>=N_xoff_bins) continue;
             if (b_yoff<0) continue;
             if (b_yoff>=N_yoff_bins) continue;
-            int index = b_xoff*N_yoff_bins+b_yoff;
+            if (b_energy<0) continue;
+            if (b_energy>=N_energy_bins) continue;
             if (!SelectNImages(3,4)) continue;
-            if (theta2<0.3) Hist_GammaMC_MSCLW.Fill(MSCL,MSCW,1.);
+            if (theta2<0.3) Hist_GammaMC_MSCLW.at(b_energy).Fill(MSCL,MSCW,1.);
             Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze,photon_weight);
             if (FoV() && GammaFoV())
             {
@@ -1396,97 +1408,104 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             R2off = 0;
             Data_tree->GetEntry(entry);
             R2off = Xoff*Xoff+Yoff*Yoff;
-            int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
+            int b_energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
             int b_xoff = Hist_Xoff.FindBin(Xoff)-1;
             int b_yoff = Hist_Yoff.FindBin(Yoff)-1;
+            int index = (b_xoff*N_yoff_bins+b_yoff)*N_energy_bins+b_energy;
             if (b_xoff<0) continue;
             if (b_xoff>=N_xoff_bins) continue;
             if (b_yoff<0) continue;
             if (b_yoff>=N_yoff_bins) continue;
-            int index = b_xoff*N_yoff_bins+b_yoff;
+            if (b_energy<0) continue;
+            if (b_energy>=N_energy_bins) continue;
             if (!SelectNImages(3,4)) continue;
             if (SizeSecondMax<600.) continue;
             if (ErecS*1000.<200.) continue;
             Hist_Data_ShowerDirection.Fill(Shower_Az,Shower_Ze);
             if (theta2<0.3)
             {
-                Hist_GammaDataON_MSCLW.Fill(MSCL,MSCW);
+                Hist_GammaDataON_MSCLW.at(b_energy).Fill(MSCL,MSCW);
             }
             else if (theta2>0.3 && theta2<0.5)
             {
-                Hist_GammaDataOFF_MSCLW.Fill(MSCL,MSCW);
+                Hist_GammaDataOFF_MSCLW.at(b_energy).Fill(MSCL,MSCW);
             }
         }
         input_file->Close();
     }
 
-    int binx_blind = Hist_GammaDataON_MSCLW.GetXaxis()->FindBin(1.);
-    int binx_lower = Hist_GammaDataON_MSCLW.GetXaxis()->FindBin(MSCL_plot_lower);
-    int biny_blind = Hist_GammaDataON_MSCLW.GetYaxis()->FindBin(1.);
-    int biny_lower = Hist_GammaDataON_MSCLW.GetYaxis()->FindBin(MSCW_plot_lower);
-    double GammaDataON_SR_Integral = Hist_GammaDataON_MSCLW.Integral(binx_lower,binx_blind,biny_lower,biny_blind);
-    double GammaDataOFF_SR_Integral = Hist_GammaDataOFF_MSCLW.Integral(binx_lower,binx_blind,biny_lower,biny_blind);
-    double GammaDataON_all_Integral = Hist_GammaDataON_MSCLW.Integral();
-    double GammaDataOFF_all_Integral = Hist_GammaDataOFF_MSCLW.Integral();
-    double GammaDataON_CR_Integral = GammaDataON_all_Integral-GammaDataON_SR_Integral;
-    double GammaDataOFF_CR_Integral = GammaDataOFF_all_Integral-GammaDataOFF_SR_Integral;
-    double scale = GammaDataON_CR_Integral/GammaDataOFF_CR_Integral;
-    Hist_GammaDataOFF_MSCLW.Scale(scale);
-    Hist_GammaData_MSCLW.Add(&Hist_GammaDataON_MSCLW);
-    Hist_GammaData_MSCLW.Add(&Hist_GammaDataOFF_MSCLW,-1.);
-    for (int binx=0;binx<Hist_GammaData_MSCLW.GetNbinsX();binx++)
+    for (int b_energy=0;b_energy<N_energy_bins;b_energy++) 
     {
-        for (int biny=0;biny<Hist_GammaData_MSCLW.GetNbinsY();biny++)
+        int binx_blind = Hist_GammaDataON_MSCLW.at(b_energy).GetXaxis()->FindBin(1.);
+        int binx_lower = Hist_GammaDataON_MSCLW.at(b_energy).GetXaxis()->FindBin(MSCL_plot_lower);
+        int biny_blind = Hist_GammaDataON_MSCLW.at(b_energy).GetYaxis()->FindBin(1.);
+        int biny_lower = Hist_GammaDataON_MSCLW.at(b_energy).GetYaxis()->FindBin(MSCW_plot_lower);
+        double GammaDataON_SR_Integral = Hist_GammaDataON_MSCLW.at(b_energy).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        double GammaDataOFF_SR_Integral = Hist_GammaDataOFF_MSCLW.at(b_energy).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        double GammaDataON_all_Integral = Hist_GammaDataON_MSCLW.at(b_energy).Integral();
+        double GammaDataOFF_all_Integral = Hist_GammaDataOFF_MSCLW.at(b_energy).Integral();
+        double GammaDataON_CR_Integral = GammaDataON_all_Integral-GammaDataON_SR_Integral;
+        double GammaDataOFF_CR_Integral = GammaDataOFF_all_Integral-GammaDataOFF_SR_Integral;
+        double scale = GammaDataON_CR_Integral/GammaDataOFF_CR_Integral;
+        Hist_GammaDataOFF_MSCLW.at(b_energy).Scale(scale);
+        Hist_GammaData_MSCLW.at(b_energy).Add(&Hist_GammaDataON_MSCLW.at(b_energy));
+        Hist_GammaData_MSCLW.at(b_energy).Add(&Hist_GammaDataOFF_MSCLW.at(b_energy),-1.);
+        for (int binx=0;binx<Hist_GammaData_MSCLW.at(b_energy).GetNbinsX();binx++)
         {
-            double old_content = Hist_GammaData_MSCLW.GetBinContent(binx+1,biny+1);
-            double old_error = Hist_GammaData_MSCLW.GetBinError(binx+1,biny+1);
-            if (old_content<0)
+            for (int biny=0;biny<Hist_GammaData_MSCLW.at(b_energy).GetNbinsY();biny++)
             {
-                Hist_GammaData_MSCLW.SetBinContent(binx+1,biny+1,0);
-                Hist_GammaData_MSCLW.SetBinError(binx+1,biny+1,0);
+                double old_content = Hist_GammaData_MSCLW.at(b_energy).GetBinContent(binx+1,biny+1);
+                double old_error = Hist_GammaData_MSCLW.at(b_energy).GetBinError(binx+1,biny+1);
+                if (old_content<0)
+                {
+                    Hist_GammaData_MSCLW.at(b_energy).SetBinContent(binx+1,biny+1,0);
+                    Hist_GammaData_MSCLW.at(b_energy).SetBinError(binx+1,biny+1,0);
+                }
             }
         }
     }
 
-    Hist_GammaDark_MSCLW.Reset();
     for (int b_xoff=0;b_xoff<N_xoff_bins;b_xoff++) 
     {
         for (int b_yoff=0;b_yoff<N_yoff_bins;b_yoff++) 
         {
-
-            int index = b_xoff*N_yoff_bins+b_yoff;
-
-            int binx_lower = Hist_Dark_MSCLW.at(index).GetXaxis()->FindBin(MSCL_cut_lower);
-            int binx_blind = Hist_Dark_MSCLW.at(index).GetXaxis()->FindBin(MSCL_cut_blind)-1;
-            int binx_upper = Hist_Dark_MSCLW.at(index).GetXaxis()->FindBin(1.)-1;
-            int biny_lower = Hist_Dark_MSCLW.at(index).GetYaxis()->FindBin(MSCW_cut_lower);
-            int biny_blind = Hist_Dark_MSCLW.at(index).GetYaxis()->FindBin(MSCW_cut_blind)-1;
-            int biny_upper = Hist_Dark_MSCLW.at(index).GetYaxis()->FindBin(1.)-1;
-            double Dark_SR_Integral = Hist_Dark_MSCLW.at(index).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
-            double Data_SR_Integral = Hist_Data_MSCLW.at(index).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
-            double Dark_Integral = Hist_Dark_MSCLW.at(index).Integral();
-            double Data_Integral = Hist_Data_MSCLW.at(index).Integral();
-            double Dark_CR_Integral = Dark_Integral-Dark_SR_Integral;
-            double Data_CR_Integral = Data_Integral-Data_SR_Integral;
-            double Dark_CR_Error = pow(Dark_CR_Integral,0.5);
-            double Data_CR_Error = pow(Data_CR_Integral,0.5);
-            double scale = Data_CR_Integral/Dark_CR_Integral;
-            double scale_err = scale*pow(pow(Dark_CR_Error/Dark_CR_Integral,2)+pow(Data_CR_Error/Data_CR_Integral,2),0.5);
-            Hist_Dark_MSCLW.at(index).Scale(scale);
-            Hist_Dark_Syst_MSCLW.at(index).Scale(scale_err);
-            double gamma_total = Hist_Data_MSCLW.at(index).Integral(binx_lower,binx_blind,biny_lower,biny_blind)-Hist_Dark_MSCLW.at(index).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
-            gamma_total = max(0.,gamma_total);
-            if (PercentCrab>0.)
+            for (int b_energy=0;b_energy<N_energy_bins;b_energy++) 
             {
-                Hist_GammaDark_MSCLW.Add(&Hist_GammaMC_MSCLW);
-                double scale_gamma = double(gamma_total)/double(Hist_GammaDark_MSCLW.Integral(binx_lower,binx_blind,biny_lower,biny_blind));
-                Hist_GammaDark_MSCLW.Scale(scale_gamma);
-            }
-            else
-            {
-                Hist_GammaDark_MSCLW.Add(&Hist_GammaData_MSCLW);
-                double scale_gamma = double(gamma_total)/double(Hist_GammaDark_MSCLW.Integral(binx_lower,binx_blind,biny_lower,biny_blind));
-                Hist_GammaDark_MSCLW.Scale(scale_gamma);
+
+                int index = (b_xoff*N_yoff_bins+b_yoff)*N_energy_bins+b_energy;
+
+                int binx_lower = Hist_Dark_MSCLW.at(index).GetXaxis()->FindBin(MSCL_cut_lower);
+                int binx_blind = Hist_Dark_MSCLW.at(index).GetXaxis()->FindBin(MSCL_cut_blind)-1;
+                int binx_upper = Hist_Dark_MSCLW.at(index).GetXaxis()->FindBin(1.)-1;
+                int biny_lower = Hist_Dark_MSCLW.at(index).GetYaxis()->FindBin(MSCW_cut_lower);
+                int biny_blind = Hist_Dark_MSCLW.at(index).GetYaxis()->FindBin(MSCW_cut_blind)-1;
+                int biny_upper = Hist_Dark_MSCLW.at(index).GetYaxis()->FindBin(1.)-1;
+                double Dark_SR_Integral = Hist_Dark_MSCLW.at(index).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
+                double Data_SR_Integral = Hist_Data_MSCLW.at(index).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
+                double Dark_Integral = Hist_Dark_MSCLW.at(index).Integral();
+                double Data_Integral = Hist_Data_MSCLW.at(index).Integral();
+                double Dark_CR_Integral = Dark_Integral-Dark_SR_Integral;
+                double Data_CR_Integral = Data_Integral-Data_SR_Integral;
+                double Dark_CR_Error = pow(Dark_CR_Integral,0.5);
+                double Data_CR_Error = pow(Data_CR_Integral,0.5);
+                double scale = Data_CR_Integral/Dark_CR_Integral;
+                double scale_err = scale*pow(pow(Dark_CR_Error/Dark_CR_Integral,2)+pow(Data_CR_Error/Data_CR_Integral,2),0.5);
+                Hist_Dark_MSCLW.at(index).Scale(scale);
+                Hist_Dark_Syst_MSCLW.at(index).Scale(scale_err);
+                double gamma_total = Hist_Data_MSCLW.at(index).Integral(binx_lower,binx_blind,biny_lower,biny_blind)-Hist_Dark_MSCLW.at(index).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+                gamma_total = max(0.,gamma_total);
+                if (PercentCrab>0.)
+                {
+                    Hist_GammaDark_MSCLW.at(b_energy).Add(&Hist_GammaMC_MSCLW.at(b_energy));
+                    double scale_gamma = double(gamma_total)/double(Hist_GammaDark_MSCLW.at(b_energy).Integral(binx_lower,binx_blind,biny_lower,biny_blind));
+                    Hist_GammaDark_MSCLW.at(b_energy).Scale(scale_gamma);
+                }
+                else
+                {
+                    Hist_GammaDark_MSCLW.at(b_energy).Add(&Hist_GammaData_MSCLW.at(b_energy));
+                    double scale_gamma = double(gamma_total)/double(Hist_GammaDark_MSCLW.at(b_energy).Integral(binx_lower,binx_blind,biny_lower,biny_blind));
+                    Hist_GammaDark_MSCLW.at(b_energy).Scale(scale_gamma);
+                }
             }
         }
     }
@@ -1520,35 +1539,42 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     Hist_Dark_ShowerDirection.Write();
     Hist_Data_ShowerDirection.Write();
     Hist_Data_MSCLW_incl.Write();
-    Hist_GammaDark_MSCLW.Write();
-    Hist_GammaMC_MSCLW.Write();
-    Hist_GammaData_MSCLW.Write();
+    for (int b_energy=0;b_energy<N_energy_bins;b_energy++) 
+    {
+        int index = b_energy;
+        Hist_GammaDark_MSCLW.at(index).Write();
+        Hist_GammaMC_MSCLW.at(index).Write();
+        Hist_GammaData_MSCLW.at(index).Write();
+    }
     for (int b_xoff=0;b_xoff<N_xoff_bins;b_xoff++) 
     {
         for (int b_yoff=0;b_yoff<N_yoff_bins;b_yoff++) 
         {
-            int index = b_xoff*N_yoff_bins+b_yoff;
-            Hist_Data_MSCLW.at(index).Write();
-            Hist_TrueBkgd_MSCLW.at(index).Write();
-            Hist_Dark_MSCLW.at(index).Write();
-            Hist_Dark_Syst_MSCLW.at(index).Write();
-            Hist_TrueBkgd_SR_Skymap_Energy.at(index).Write();
-            Hist_Data_SR_Skymap_Energy.at(index).Write();
-            Hist_Data_CR_Skymap_Energy.at(index).Write();
-            Hist_TrueBkgd_SR_Skymap_Theta2.at(index).Write();
-            Hist_Data_SR_Skymap_Theta2.at(index).Write();
-            Hist_Data_CR_Skymap_Theta2.at(index).Write();
-            Hist_Data_CR_Skymap_Theta2_Raw.at(index).Write();
-            Hist_Data_CR_CameraFoV_Theta2.at(index).Write();
-            Hist_Data_CR_CameraFoV_Theta2_Raw.at(index).Write();
-            Hist_Data_SR_Skymap.at(index).Write();
-            Hist_Data_CR_Skymap.at(index).Write();
-            Hist_Data_CR_Skymap_Raw.at(index).Write();
-            Hist_Data_SR_Skymap_Galactic.at(index).Write();
-            Hist_Data_CR_Skymap_Galactic.at(index).Write();
-            Hist_Data_SR_CameraFoV.at(index).Write();
-            Hist_Data_CR_CameraFoV.at(index).Write();
-            Hist_Data_CR_CameraFoV_Raw.at(index).Write();
+            for (int b_energy=0;b_energy<N_energy_bins;b_energy++) 
+            {
+                int index = (b_xoff*N_yoff_bins+b_yoff)*N_energy_bins+b_energy;
+                Hist_Data_MSCLW.at(index).Write();
+                Hist_TrueBkgd_MSCLW.at(index).Write();
+                Hist_Dark_MSCLW.at(index).Write();
+                Hist_Dark_Syst_MSCLW.at(index).Write();
+                Hist_TrueBkgd_SR_Skymap_Energy.at(index).Write();
+                Hist_Data_SR_Skymap_Energy.at(index).Write();
+                Hist_Data_CR_Skymap_Energy.at(index).Write();
+                Hist_TrueBkgd_SR_Skymap_Theta2.at(index).Write();
+                Hist_Data_SR_Skymap_Theta2.at(index).Write();
+                Hist_Data_CR_Skymap_Theta2.at(index).Write();
+                Hist_Data_CR_Skymap_Theta2_Raw.at(index).Write();
+                Hist_Data_CR_CameraFoV_Theta2.at(index).Write();
+                Hist_Data_CR_CameraFoV_Theta2_Raw.at(index).Write();
+                Hist_Data_SR_Skymap.at(index).Write();
+                Hist_Data_CR_Skymap.at(index).Write();
+                Hist_Data_CR_Skymap_Raw.at(index).Write();
+                Hist_Data_SR_Skymap_Galactic.at(index).Write();
+                Hist_Data_CR_Skymap_Galactic.at(index).Write();
+                Hist_Data_SR_CameraFoV.at(index).Write();
+                Hist_Data_CR_CameraFoV.at(index).Write();
+                Hist_Data_CR_CameraFoV_Raw.at(index).Write();
+            }
         }
     }
     OutputFile.Close();
