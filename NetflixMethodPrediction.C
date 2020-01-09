@@ -457,10 +457,10 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
     //int biny_upper = hist_data->GetXaxis()->FindBin(MSCW_cut_blind+1.);
     int binx_blind = hist_data->GetXaxis()->FindBin(1.);
     int biny_blind = hist_data->GetYaxis()->FindBin(1.);
-    //int binx_upper = hist_data->GetXaxis()->FindBin(3.);
-    //int biny_upper = hist_data->GetYaxis()->FindBin(3.);
     int binx_upper = hist_data->GetXaxis()->FindBin(3.);
-    int biny_upper = hist_data->GetYaxis()->FindBin(2.);
+    int biny_upper = hist_data->GetYaxis()->FindBin(3.);
+    //int binx_upper = hist_data->GetXaxis()->FindBin(3.);
+    //int biny_upper = hist_data->GetYaxis()->FindBin(2.);
     double chi2 = 0.;
     for (int bx=1;bx<=hist_data->GetNbinsX();bx++)
     {
@@ -628,7 +628,7 @@ void NetflixParametrizeEigenvectors(const double *par)
         first_index = 1+(2*NthEigenvector-0)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int NthEigenvalue=1;NthEigenvalue<=NumberOfEigenvectors;NthEigenvalue++)
         {
-            mtx_eigenvalue(N_bins_for_deconv-NthEigenvector,N_bins_for_deconv-NthEigenvalue) += par[first_index+NthEigenvalue-1]*par[0];
+            mtx_eigenvalue(N_bins_for_deconv-NthEigenvector,N_bins_for_deconv-NthEigenvalue) = par[first_index+NthEigenvalue-1]*par[0];
         }
     }
 }
@@ -856,55 +856,55 @@ void SetInitialEigenvectors()
 
     }
 
-    bool isComplexRoot = false;
-    for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
-    {
-        if (!isComplexRoot)
-        {
-            double real_this = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector).real();
-            double imag_this = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector).imag();
-            double real_next = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector-1).real();
-            double imag_next = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector-1).imag();
-            std::cout << "At rank " << NthEigenvector << std::endl;
-            std::cout << "real_this " << real_this << std::endl;
-            std::cout << "imag_this " << imag_this << std::endl;
-            std::cout << "real_next " << real_next << std::endl;
-            std::cout << "imag_next " << imag_next << std::endl;
-            if (real_next/real_this>=0.999 && abs(imag_next/imag_this)>=0.999) // complex conjugate
-            {
-                std::cout << "Find a complex conjugate at rank " << NthEigenvector << std::endl;
-                isComplexRoot = true;
-                if (NthEigenvector==NumberOfEigenvectors)
-                {
-                    mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = 0.;
-                    mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector-1,mtx_dark.cols()-NthEigenvector-1) = 0.;
-                    mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector-1,mtx_dark.cols()-NthEigenvector) = 0.;
-                    mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector-1) = 0.;
-                }
-                else
-                {
-                    mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = real_this;
-                    mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector-1,mtx_dark.cols()-NthEigenvector-1) = real_this;
-                    mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector-1,mtx_dark.cols()-NthEigenvector) = -1.*imag_this;
-                    mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector-1) = imag_this;
-                    for (int row=0;row<N_bins_for_deconv;row++)
-                    {
-                        mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row).real();
-                        mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector-1)(row) = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row).imag();
-                    }
-                    for (int col=0;col<N_bins_for_deconv;col++)
-                    {
-                        mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col).real();
-                        mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector-1)(col) = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col).imag();
-                    }
-                }
-            }
-        }
-        else
-        {
-            isComplexRoot = false;
-        }
-    }
+    //bool isComplexRoot = false;
+    //for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
+    //{
+    //    if (!isComplexRoot)
+    //    {
+    //        double real_this = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector).real();
+    //        double imag_this = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector).imag();
+    //        double real_next = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector-1).real();
+    //        double imag_next = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector-1).imag();
+    //        std::cout << "At rank " << NthEigenvector << std::endl;
+    //        std::cout << "real_this " << real_this << std::endl;
+    //        std::cout << "imag_this " << imag_this << std::endl;
+    //        std::cout << "real_next " << real_next << std::endl;
+    //        std::cout << "imag_next " << imag_next << std::endl;
+    //        if (real_next/real_this>=0.999 && abs(imag_next/imag_this)>=0.999) // complex conjugate
+    //        {
+    //            std::cout << "Find a complex conjugate at rank " << NthEigenvector << std::endl;
+    //            isComplexRoot = true;
+    //            if (NthEigenvector==NumberOfEigenvectors)
+    //            {
+    //                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = 0.;
+    //                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector-1,mtx_dark.cols()-NthEigenvector-1) = 0.;
+    //                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector-1,mtx_dark.cols()-NthEigenvector) = 0.;
+    //                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector-1) = 0.;
+    //            }
+    //            else
+    //            {
+    //                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = real_this;
+    //                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector-1,mtx_dark.cols()-NthEigenvector-1) = real_this;
+    //                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector-1,mtx_dark.cols()-NthEigenvector) = -1.*imag_this;
+    //                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector-1) = imag_this;
+    //                for (int row=0;row<N_bins_for_deconv;row++)
+    //                {
+    //                    mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row).real();
+    //                    mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector-1)(row) = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row).imag();
+    //                }
+    //                for (int col=0;col<N_bins_for_deconv;col++)
+    //                {
+    //                    mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col).real();
+    //                    mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector-1)(col) = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col).imag();
+    //                }
+    //            }
+    //        }
+    //    }
+    //    else
+    //    {
+    //        isComplexRoot = false;
+    //    }
+    //}
     
 
 }
@@ -1165,7 +1165,7 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
     
 
     Chi2Minimizer->SetVariable(0, "par["+std::to_string(int(0))+"]", 1, 0.001);
-    Chi2Minimizer->SetVariableLimits(0,0.9,1.1);
+    Chi2Minimizer->SetVariableLimits(0,0.8,1.2);
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
     {
 
@@ -1188,21 +1188,14 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
         first_index = 1+(2*NthEigenvector-0)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int NthEigenvalue=1;NthEigenvalue<=NumberOfEigenvectors;NthEigenvalue++)
         {
-            input_value = 0.;
-            if (NthEigenvalue==NthEigenvector && NthEigenvalue==1)
+            limit = 0.;
+            input_value = eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvalue).real();
+            if (NthEigenvalue!=NthEigenvector)
             {
-                limit = 0.;
+                input_value = 0.;
             }
-            else
-            {
-                limit = 0.02*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
-                if (mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvalue)==0.)
-                {
-                    limit = 0.;
-                }
-            }
-            Chi2Minimizer->SetVariable(first_index+NthEigenvalue-1, "par["+std::to_string(int(first_index+NthEigenvalue-1))+"]", input_value, 0.01*limit);
-            Chi2Minimizer->SetVariableLimits(first_index+NthEigenvalue-1,input_value-limit,input_value+limit);
+            Chi2Minimizer->SetVariable(first_index+NthEigenvalue-1, "par["+std::to_string(int(first_index+NthEigenvalue-1))+"]", input_value, 0.01*input_value);
+            Chi2Minimizer->SetVariableLimits(first_index+NthEigenvalue-1,-limit,limit);
         }
     }
 
@@ -1598,6 +1591,8 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
           //myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
           //myfile << "inverse eigenvectors:" << std::endl;
           //myfile << eigensolver_data.eigenvectors().inverse().block(mtx_data.rows()-6,0,6,mtx_data.cols()) << std::endl << std::endl;
+          //myfile << "U^{-1}MU: "<< std::endl;
+          //myfile << eigensolver_data.eigenvectors().inverse()*mtx_data*eigensolver_data.eigenvectors() << std::endl << std::endl;
           myfile.close();
           myfile2.close();
         }
