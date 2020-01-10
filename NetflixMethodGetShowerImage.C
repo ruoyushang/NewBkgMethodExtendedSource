@@ -54,18 +54,18 @@ double MSCL_cut_lower = -1.0;
 double MSCL_cut_blind = 1.0;
 double MSCL_cut_upper = 1.0;
 
-//const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] = {100,1e4};
-//double gamma_flux[N_energy_bins] = {0.};
-//double gamma_count[N_energy_bins] = {0.};
-//double raw_gamma_count[N_energy_bins] = {0.};
-//int N_bins_for_deconv_at_E[N_energy_bins] = {40};
-const int N_energy_bins = 11;
-double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,2239,4467,8913};
-double gamma_flux[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-double gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-double raw_gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,40,40};
+const int N_energy_bins = 1;
+double energy_bins[N_energy_bins+1] = {100,1e4};
+double gamma_flux[N_energy_bins] = {0.};
+double gamma_count[N_energy_bins] = {0.};
+double raw_gamma_count[N_energy_bins] = {0.};
+int N_bins_for_deconv_at_E[N_energy_bins] = {40};
+//const int N_energy_bins = 11;
+//double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,2239,4467,8913};
+//double gamma_flux[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
+//double gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
+//double raw_gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
+//int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,40,40};
 const int N_energy_fine_bins = 20;
 double energy_fine_bins[N_energy_fine_bins+1] = {pow(10,2.0),pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0)};
 
@@ -658,7 +658,8 @@ double FitPowerLawFunction(Double_t *x, Double_t *par) {
 }
 double GetCrabFlux(double energy_gev)
 {
-    double flux = 1e-7*3.75*pow(energy_gev/1000.,-2.2);
+    //double flux = 1e-7*3.75*pow(energy_gev/1000.,-2.2);
+    double flux = 3.75*pow(10,-7)*pow(energy_gev/1000.,-2.467-0.16*log(energy_gev/1000.));
     return flux;
 }
 std::pair <double,double> GetMcGillElectronFlux(double energy)
@@ -696,7 +697,7 @@ std::pair <double,double> GetMcGillElectronFlux(double energy)
 }
 bool GammaFoV() {
     double x = ra_sky-mean_tele_point_ra;
-    double y = dec_sky-mean_tele_point_dec;
+    double y = dec_sky-(mean_tele_point_dec-0.3);
     double size1 = 0.5;
     double diff1 = pow(x*x+y*y-size1,3)-2.*(x*x*y*y*y);
     double size2 = 0.9;
@@ -817,6 +818,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     vector<TH2D> Hist_Ring_Syst_MSCLW;
     vector<TH2D> Hist_Dark_MSCLW;
     vector<TH2D> Hist_Dark_Syst_MSCLW;
+    vector<TH1D> Hist_TrueBkgd_SR_Energy;
     vector<TH1D> Hist_Data_SR_Energy;
     vector<TH1D> Hist_Data_CR_Energy;
     vector<TH1D> Hist_Dark_SR_Energy;
@@ -868,6 +870,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Dark_MSCLW.push_back(TH2D("Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Dark_MSCLW.at(e).SetBinErrorOption(TH1::kPoisson);
         Hist_Dark_Syst_MSCLW.push_back(TH2D("Hist_Dark_Syst_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_TrueBkgd_SR_Energy.push_back(TH1D("Hist_TrueBkgd_SR_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
         Hist_Data_SR_Energy.push_back(TH1D("Hist_Data_SR_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
         Hist_Data_CR_Energy.push_back(TH1D("Hist_Data_CR_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
         Hist_Dark_SR_Energy.push_back(TH1D("Hist_Dark_SR_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
@@ -1062,15 +1065,15 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         NSB_avg += (time_1-time_0)/3600.*NSB_thisrun;
         Hist_Data_NSB.Fill(NSB_thisrun);
 
-        for (int e=0;e<N_energy_bins;e++) 
+        for (int e=0;e<N_energy_fine_bins;e++) 
         {
-            double eff_area = i_hEffAreaP->GetBinContent( i_hEffAreaP->FindBin( log10(0.5*(energy_bins[e]+energy_bins[e+1])/1000.)));
-            //std::pair <double,double> mcgillflux = GetMcGillElectronFlux((energy_bins[e+1]+energy_bins[e])/2.);
+            double eff_area = i_hEffAreaP->GetBinContent( i_hEffAreaP->FindBin( log10(0.5*(energy_fine_bins[e]+energy_fine_bins[e+1])/1000.)));
+            //std::pair <double,double> mcgillflux = GetMcGillElectronFlux((energy_fine_bins[e+1]+energy_fine_bins[e])/2.);
             //gamma_flux[e] = mcgillflux.first;
-            gamma_flux[e] = PercentCrab/100.*GetCrabFlux((energy_bins[e+1]+energy_bins[e])/2.);
-            //std::cout << "energy = " << (energy_bins[e+1]+energy_bins[e])/2. << std::endl;
+            gamma_flux[e] = PercentCrab/100.*GetCrabFlux((energy_fine_bins[e+1]+energy_fine_bins[e])/2.);
+            //std::cout << "energy = " << (energy_fine_bins[e+1]+energy_fine_bins[e])/2. << std::endl;
             //std::cout << "gamma_flux[e] = " << gamma_flux[e] << std::endl;
-            double expected_electrons = gamma_flux[e]*eff_area*(time_1-time_0)*(energy_bins[e+1]-energy_bins[e])/1000.;
+            double expected_electrons = gamma_flux[e]*eff_area*(time_1-time_0)*(energy_fine_bins[e+1]-energy_fine_bins[e])/1000.;
             //std::cout << "expected_electrons = " << expected_electrons << std::endl;
             gamma_count[e] += expected_electrons; // this is used to normalize MC electron template.
 
@@ -1131,6 +1134,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             {
                 if (FoV() || Data_runlist[run].first.find("Proton")!=std::string::npos)
                 {
+                    Hist_TrueBkgd_SR_Energy.at(e).Fill(ErecS*1000.);
                     Hist_Data_SR_Energy.at(e).Fill(ErecS*1000.);
                     Hist_TrueBkgd_SR_Skymap_Theta2.at(e).Fill(theta2);
                     Hist_Data_SR_Skymap_Theta2.at(e).Fill(theta2);
@@ -1468,10 +1472,10 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         int biny_lower = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_lower);
         int biny_blind = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind)-1;
         int biny_upper = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(1.)-1;
-        //double Dark_SR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
-        //double Data_SR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
-        double Dark_SR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
-        double Data_SR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
+        double Dark_SR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        double Data_SR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        //double Dark_SR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
+        //double Data_SR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
         double Dark_Integral = Hist_Dark_MSCLW.at(e).Integral();
         double Data_Integral = Hist_Data_MSCLW.at(e).Integral();
         double Dark_CR_Integral = Dark_Integral-Dark_SR_Integral;
@@ -1540,6 +1544,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Ring_Syst_MSCLW.at(e).Write();
         Hist_Dark_MSCLW.at(e).Write();
         Hist_Dark_Syst_MSCLW.at(e).Write();
+        Hist_TrueBkgd_SR_Energy.at(e).Write();
         Hist_Data_SR_Energy.at(e).Write();
         Hist_Data_CR_Energy.at(e).Write();
         Hist_TrueBkgd_SR_Skymap_Theta2.at(e).Write();

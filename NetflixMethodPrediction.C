@@ -451,14 +451,14 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
 
 double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
 {
-    //int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
-    //int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
-    //int binx_upper = hist_data->GetXaxis()->FindBin(MSCL_cut_blind+1.);
-    //int biny_upper = hist_data->GetXaxis()->FindBin(MSCW_cut_blind+1.);
-    int binx_blind = hist_data->GetXaxis()->FindBin(1.);
-    int biny_blind = hist_data->GetYaxis()->FindBin(1.);
-    int binx_upper = hist_data->GetXaxis()->FindBin(3.);
-    int biny_upper = hist_data->GetYaxis()->FindBin(3.);
+    int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
+    int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
+    int binx_upper = hist_data->GetXaxis()->FindBin(MSCL_cut_blind+1.);
+    int biny_upper = hist_data->GetXaxis()->FindBin(MSCW_cut_blind+1.);
+    //int binx_blind = hist_data->GetXaxis()->FindBin(1.);
+    //int biny_blind = hist_data->GetYaxis()->FindBin(1.);
+    //int binx_upper = hist_data->GetXaxis()->FindBin(3.);
+    //int biny_upper = hist_data->GetYaxis()->FindBin(3.);
     //int binx_upper = hist_data->GetXaxis()->FindBin(3.);
     //int biny_upper = hist_data->GetYaxis()->FindBin(2.);
     double chi2 = 0.;
@@ -466,7 +466,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
     {
         for (int by=1;by<=hist_data->GetNbinsY();by++)
         {
-            if (bx>=binx_blind || by>=biny_blind)
+            if (bx>=binx_blind || by>=biny_blind || signalfree_model)
             {
                 if (bx>=binx_upper || by>=biny_upper) continue;
                 //if (bx>=binx_blind && by>=biny_blind) continue;
@@ -480,7 +480,8 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
                 double width = 0.1;
                 double data_err = max(1.0,pow(data,0.5));
                 double model_err = max(1.0,pow(abs(model),0.5));
-                weight = 1./(data_err*data_err+model_err*model_err);
+                //weight = 1./(data_err*data_err+model_err*model_err);
+                weight = 1./(data_err*data_err);
                 double chi2_this = weight*pow(data-model,2);
                 if (isnan(chi2_this))
                 {
@@ -671,11 +672,11 @@ double NetflixChi2Function(const double *par)
     double scale = gamma_total/double(hist_gamma.Integral(binx_lower,binx_blind,biny_lower,biny_blind));
     //double scale = gamma_total/double(hist_gamma.Integral());
     hist_gamma.Scale(scale);
-    if (signalfree_model) hist_gamma.Scale(0);
 
     double chi2 = BlindedChi2(&hist_data,&hist_dark,&hist_model);
-    chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
-    //
+    //chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
+    
+    
     //double chi2 = BlindedLogLikelihood(&hist_data,&hist_dark,&hist_model);
     //chi2 += SignalLogLikelihood(&hist_data,&hist_gamma,&hist_model);
     //
@@ -1164,8 +1165,8 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
     const double *par_1D;
     
 
-    Chi2Minimizer->SetVariable(0, "par["+std::to_string(int(0))+"]", 1, 0.001);
-    Chi2Minimizer->SetVariableLimits(0,0.8,1.2);
+    Chi2Minimizer->SetVariable(0, "par["+std::to_string(int(0))+"]", 1., 0.001);
+    Chi2Minimizer->SetVariableLimits(0,1.,1.);
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
     {
 
@@ -1307,7 +1308,6 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
 {
 
     signalfree_model = false;
-    //if (target_data=="Proton") signalfree_model = true;
 
     TH1::SetDefaultSumw2();
     sprintf(target, "%s", target_data.c_str());
@@ -1527,75 +1527,75 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
 
         double count_gamma_like = Hist_Data->Integral(binx_lower,binx_blind,biny_lower,biny_blind);
         double count_total = Hist_Data->Integral();
-        if (file_tag == "OFF")
-        {
-            char textfile[50] = "";
-            sprintf(textfile, "../eigenvector_%s_E%i_Elev%i.txt", target, int(energy_bins[e]), int(TelElev_lower));
-            std::ofstream myfile;
-            myfile.open (textfile);
-            sprintf(textfile, "../eigenvector_%s_E%i_Elev%i_coma.txt", target, int(energy_bins[e]), int(TelElev_lower));
-            std::ofstream myfile2;
-            myfile2.open (textfile);
-            myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-            myfile << "NSB:" << NSB << std::endl;
-            myfile << "total counts:" << count_total << std::endl;
-            myfile << "gamma-like counts:" << count_gamma_like << std::endl;
-            myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-            myfile << "eigenvalues:" << std::endl;
-            myfile << eigensolver_data.eigenvalues() << std::endl << std::endl;
-            bool is_complex_pair = false;
-            for (int r=0;r<N_bins_for_deconv;r++)
-            {
-                is_complex_pair = false;
-                MatrixXcd mtx_eigenval_data_temp(Hist_Data_incl->GetNbinsX(),Hist_Data_incl->GetNbinsY());
-                for (int i=0;i<mtx_data.cols();i++)
-                {
-                    for (int j=0;j<mtx_data.rows();j++)
-                    {
-                        if (i==j && i==mtx_data.cols()-r-1) 
-                        {
-                            mtx_eigenval_data_temp(i,j) = eigensolver_data.eigenvalues()(i);
-                        }
-                        //else if (i==j && i==mtx_data.cols()-r-2)
-                        //{
-                        //    double real_this = eigensolver_data.eigenvalues()(i).real();
-                        //    double imag_this = eigensolver_data.eigenvalues()(i).imag();
-                        //    double real_next = eigensolver_data.eigenvalues()(i+1).real();
-                        //    double imag_next = eigensolver_data.eigenvalues()(i+1).imag();
-                        //    if (real_this/real_next>=0.999 && abs(imag_this/imag_next)>=0.999) // complex conjugate
-                        //    {
-                        //        mtx_eigenval_data_temp(i,j) = eigensolver_data.eigenvalues()(i);
-                        //        is_complex_pair = true;
-                        //    }
-                        //    else
-                        //    {
-                        //        mtx_eigenval_data_temp(i,j) = 0;
-                        //    }
-                        //}
-                        else
-                        {
-                            mtx_eigenval_data_temp(i,j) = 0;
-                        }
-                    }
-                }
-                mtx_data_redu = eigensolver_data.eigenvectors()*mtx_eigenval_data_temp*eigensolver_data.eigenvectors().inverse();
-                myfile << r << "th largest eigenvalue, contribution in total and in gamma-ray region:" << std::endl;
-                myfile << "eigenvalue: " << eigensolver_data.eigenvalues()(mtx_data.cols()-r-1) << std::endl;
-                myfile << "total region: " << MatrixIntegral(mtx_data_redu,0,N_bins_for_deconv-1,0,N_bins_for_deconv-1) << std::endl;
-                myfile << "signal region: " << MatrixIntegral(mtx_data_redu,binx_lower-1,binx_blind-1,biny_lower-1,biny_blind-1) << std::endl;
-                myfile2 << eigensolver_data.eigenvalues()(mtx_data.cols()-r-1).real() << "," << eigensolver_data.eigenvalues()(mtx_data.cols()-r-1).imag() << "," << MatrixIntegral(mtx_data_redu,0,N_bins_for_deconv-1,0,N_bins_for_deconv-1).real() << "," << MatrixIntegral(mtx_data_redu,0,N_bins_for_deconv-1,0,N_bins_for_deconv-1).imag() << "," << MatrixIntegral(mtx_data_redu,binx_lower-1,binx_blind-1,biny_lower-1,biny_blind-1).real() << "," << MatrixIntegral(mtx_data_redu,binx_lower-1,binx_blind-1,biny_lower-1,biny_blind-1).imag() << std::endl;
-            }
-          //myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-          //myfile << "eigenvectors:" << std::endl;
-          //myfile << eigensolver_data.eigenvectors().block(0,mtx_data.cols()-6,mtx_data.rows(),6) << std::endl << std::endl;
-          //myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-          //myfile << "inverse eigenvectors:" << std::endl;
-          //myfile << eigensolver_data.eigenvectors().inverse().block(mtx_data.rows()-6,0,6,mtx_data.cols()) << std::endl << std::endl;
-          //myfile << "U^{-1}MU: "<< std::endl;
-          //myfile << eigensolver_data.eigenvectors().inverse()*mtx_data*eigensolver_data.eigenvectors() << std::endl << std::endl;
-          myfile.close();
-          myfile2.close();
-        }
+        //if (file_tag == "OFF")
+        //{
+        //    char textfile[50] = "";
+        //    sprintf(textfile, "../eigenvector_%s_E%i_Elev%i.txt", target, int(energy_bins[e]), int(TelElev_lower));
+        //    std::ofstream myfile;
+        //    myfile.open (textfile);
+        //    sprintf(textfile, "../eigenvector_%s_E%i_Elev%i_coma.txt", target, int(energy_bins[e]), int(TelElev_lower));
+        //    std::ofstream myfile2;
+        //    myfile2.open (textfile);
+        //    myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+        //    myfile << "NSB:" << NSB << std::endl;
+        //    myfile << "total counts:" << count_total << std::endl;
+        //    myfile << "gamma-like counts:" << count_gamma_like << std::endl;
+        //    myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+        //    myfile << "eigenvalues:" << std::endl;
+        //    myfile << eigensolver_data.eigenvalues() << std::endl << std::endl;
+        //    bool is_complex_pair = false;
+        //    for (int r=0;r<N_bins_for_deconv;r++)
+        //    {
+        //        is_complex_pair = false;
+        //        MatrixXcd mtx_eigenval_data_temp(Hist_Data_incl->GetNbinsX(),Hist_Data_incl->GetNbinsY());
+        //        for (int i=0;i<mtx_data.cols();i++)
+        //        {
+        //            for (int j=0;j<mtx_data.rows();j++)
+        //            {
+        //                if (i==j && i==mtx_data.cols()-r-1) 
+        //                {
+        //                    mtx_eigenval_data_temp(i,j) = eigensolver_data.eigenvalues()(i);
+        //                }
+        //                //else if (i==j && i==mtx_data.cols()-r-2)
+        //                //{
+        //                //    double real_this = eigensolver_data.eigenvalues()(i).real();
+        //                //    double imag_this = eigensolver_data.eigenvalues()(i).imag();
+        //                //    double real_next = eigensolver_data.eigenvalues()(i+1).real();
+        //                //    double imag_next = eigensolver_data.eigenvalues()(i+1).imag();
+        //                //    if (real_this/real_next>=0.999 && abs(imag_this/imag_next)>=0.999) // complex conjugate
+        //                //    {
+        //                //        mtx_eigenval_data_temp(i,j) = eigensolver_data.eigenvalues()(i);
+        //                //        is_complex_pair = true;
+        //                //    }
+        //                //    else
+        //                //    {
+        //                //        mtx_eigenval_data_temp(i,j) = 0;
+        //                //    }
+        //                //}
+        //                else
+        //                {
+        //                    mtx_eigenval_data_temp(i,j) = 0;
+        //                }
+        //            }
+        //        }
+        //        mtx_data_redu = eigensolver_data.eigenvectors()*mtx_eigenval_data_temp*eigensolver_data.eigenvectors().inverse();
+        //        myfile << r << "th largest eigenvalue, contribution in total and in gamma-ray region:" << std::endl;
+        //        myfile << "eigenvalue: " << eigensolver_data.eigenvalues()(mtx_data.cols()-r-1) << std::endl;
+        //        myfile << "total region: " << MatrixIntegral(mtx_data_redu,0,N_bins_for_deconv-1,0,N_bins_for_deconv-1) << std::endl;
+        //        myfile << "signal region: " << MatrixIntegral(mtx_data_redu,binx_lower-1,binx_blind-1,biny_lower-1,biny_blind-1) << std::endl;
+        //        myfile2 << eigensolver_data.eigenvalues()(mtx_data.cols()-r-1).real() << "," << eigensolver_data.eigenvalues()(mtx_data.cols()-r-1).imag() << "," << MatrixIntegral(mtx_data_redu,0,N_bins_for_deconv-1,0,N_bins_for_deconv-1).real() << "," << MatrixIntegral(mtx_data_redu,0,N_bins_for_deconv-1,0,N_bins_for_deconv-1).imag() << "," << MatrixIntegral(mtx_data_redu,binx_lower-1,binx_blind-1,biny_lower-1,biny_blind-1).real() << "," << MatrixIntegral(mtx_data_redu,binx_lower-1,binx_blind-1,biny_lower-1,biny_blind-1).imag() << std::endl;
+        //    }
+        //  //myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+        //  //myfile << "eigenvectors:" << std::endl;
+        //  //myfile << eigensolver_data.eigenvectors().block(0,mtx_data.cols()-6,mtx_data.rows(),6) << std::endl << std::endl;
+        //  //myfile << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+        //  //myfile << "inverse eigenvectors:" << std::endl;
+        //  //myfile << eigensolver_data.eigenvectors().inverse().block(mtx_data.rows()-6,0,6,mtx_data.cols()) << std::endl << std::endl;
+        //  //myfile << "U^{-1}MU: "<< std::endl;
+        //  //myfile << eigensolver_data.eigenvectors().inverse()*mtx_data*eigensolver_data.eigenvectors() << std::endl << std::endl;
+        //  myfile.close();
+        //  myfile2.close();
+        //}
 
         for (int NthEigenvalue=1;NthEigenvalue<=N_bins_for_deconv;NthEigenvalue++)
         {
@@ -1664,6 +1664,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         ROOT::Math::Functor Chi2Func(&NetflixChi2Function,1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors*NumberOfEigenvectors); 
         std::cout << "total n paramters = " << 1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors << std::endl;
 
+        signalfree_model = true;
         ROOT::Math::GSLMinimizer Chi2Minimizer_0th( ROOT::Math::kSteepestDescent );
         Chi2Minimizer_0th.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
         Chi2Minimizer_0th.SetMaxIterations(100); // for GSL
@@ -1679,8 +1680,30 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         Chi2Minimizer_0th.SetTolerance(0.01*double(N_bins_for_deconv*N_bins_for_deconv));
         Chi2Minimizer_0th.Minimize();
         par_0th = Chi2Minimizer_0th.X();
-        std::cout << "final chi2 = " << NetflixChi2Function(par_0th) << std::endl;
+        std::cout << "final (0) chi2 = " << NetflixChi2Function(par_0th) << std::endl;
         NetflixParametrizeEigenvectors(par_0th);
+
+        mtx_eigenvector_init = mtx_eigenvector;
+        mtx_eigenvalue_init = mtx_eigenvalue;
+        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+
+        signalfree_model = false;
+        ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
+        Chi2Minimizer_1st.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
+        Chi2Minimizer_1st.SetMaxIterations(100); // for GSL
+        Chi2Minimizer_1st.SetTolerance(0.001);
+        Chi2Minimizer_1st.SetPrintLevel(1);
+        //Chi2Minimizer_1st.SetPrintLevel(2);
+        Chi2Minimizer_1st.SetFunction(Chi2Func);
+        NetflixSetInitialVariables(&Chi2Minimizer_1st);
+        const double *par_1st = Chi2Minimizer_1st.X();
+        NthIteration = 0;
+        std::cout << "initial chi2 = " << NetflixChi2Function(par_1st) << std::endl;
+        Chi2Minimizer_1st.SetTolerance(0.01*double(N_bins_for_deconv*N_bins_for_deconv));
+        Chi2Minimizer_1st.Minimize();
+        par_1st = Chi2Minimizer_1st.X();
+        std::cout << "final (1) chi2 = " << NetflixChi2Function(par_1st) << std::endl;
+        NetflixParametrizeEigenvectors(par_1st);
 
         mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
 
@@ -1708,7 +1731,6 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         gamma_total = max(0.,gamma_total);
         double scale_gamma = double(gamma_total)/double(Hist_GammaRDBM_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind));
         Hist_GammaRDBM_MSCLW.at(e).Scale(scale_gamma);
-        if (signalfree_model) Hist_GammaRDBM_MSCLW.at(e).Scale(0);
 
         std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,20,1,20) << std::endl;
         std::cout << "eigensolver_data.eigenvalues()(mtx_data.cols()-1):" << std::endl;
