@@ -401,10 +401,10 @@ double FirstDerivative(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
 
 double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
 {
-    //int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
-    //int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
-    int binx_blind = hist_data->GetXaxis()->FindBin(1.);
-    int biny_blind = hist_data->GetYaxis()->FindBin(1.);
+    int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
+    int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
+    //int binx_blind = hist_data->GetXaxis()->FindBin(1.);
+    //int biny_blind = hist_data->GetYaxis()->FindBin(1.);
     double chi2 = 0.;
     for (int bx=1;bx<=hist_data->GetNbinsX();bx++)
     {
@@ -429,9 +429,7 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
                 double data_err = max(1.0,pow(data,0.5));
                 double model_err = max(1.0,pow(abs(model),0.5));
                 weight = 1./(data_err*data_err+model_err*model_err);
-                //double data_err = max(1.0,pow(max(0.,data-gamma),0.5));
-                //double model_err = max(1.0,pow(max(0.,model),0.5));
-                //weight = 1./(data_err*data_err+model_err*model_err);
+                //weight = 1./(data_err*data_err);
                 double chi2_this = weight*pow(data-model-gamma,2);
                 if (isnan(chi2_this))
                 {
@@ -453,12 +451,12 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
 {
     int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
     int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
-    int binx_upper = hist_data->GetXaxis()->FindBin(MSCL_cut_blind+1.);
-    int biny_upper = hist_data->GetXaxis()->FindBin(MSCW_cut_blind+1.);
+    //int binx_upper = hist_data->GetXaxis()->FindBin(MSCL_cut_blind+1.);
+    //int biny_upper = hist_data->GetXaxis()->FindBin(MSCW_cut_blind+1.);
     //int binx_blind = hist_data->GetXaxis()->FindBin(1.);
     //int biny_blind = hist_data->GetYaxis()->FindBin(1.);
-    //int binx_upper = hist_data->GetXaxis()->FindBin(3.);
-    //int biny_upper = hist_data->GetYaxis()->FindBin(3.);
+    int binx_upper = hist_data->GetXaxis()->FindBin(3.);
+    int biny_upper = hist_data->GetYaxis()->FindBin(3.);
     //int binx_upper = hist_data->GetXaxis()->FindBin(3.);
     //int biny_upper = hist_data->GetYaxis()->FindBin(2.);
     double chi2 = 0.;
@@ -466,10 +464,14 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
     {
         for (int by=1;by<=hist_data->GetNbinsY();by++)
         {
-            if (bx>=binx_blind || by>=biny_blind || signalfree_model)
+            //if (bx>=binx_blind || by>=biny_blind || signalfree_model)
+            if (bx>=binx_blind || by>=biny_blind)
             {
                 if (bx>=binx_upper || by>=biny_upper) continue;
-                //if (bx>=binx_blind && by>=biny_blind) continue;
+                //if (!signalfree_model) 
+                //{
+                //    if (bx>=binx_blind && by>=biny_blind) continue;
+                //}
                 double data = hist_data->GetBinContent(bx,by);
                 double dark = hist_dark->GetBinContent(bx,by);
                 double model = hist_model->GetBinContent(bx,by);
@@ -480,8 +482,8 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
                 double width = 0.1;
                 double data_err = max(1.0,pow(data,0.5));
                 double model_err = max(1.0,pow(abs(model),0.5));
-                //weight = 1./(data_err*data_err+model_err*model_err);
-                weight = 1./(data_err*data_err);
+                weight = 1./(data_err*data_err+model_err*model_err);
+                //weight = 1./(data_err*data_err);
                 double chi2_this = weight*pow(data-model,2);
                 if (isnan(chi2_this))
                 {
@@ -629,7 +631,8 @@ void NetflixParametrizeEigenvectors(const double *par)
         first_index = 1+(2*NthEigenvector-0)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int NthEigenvalue=1;NthEigenvalue<=NumberOfEigenvectors;NthEigenvalue++)
         {
-            mtx_eigenvalue(N_bins_for_deconv-NthEigenvector,N_bins_for_deconv-NthEigenvalue) = par[first_index+NthEigenvalue-1]*par[0];
+            //mtx_eigenvalue(N_bins_for_deconv-NthEigenvector,N_bins_for_deconv-NthEigenvalue) = par[first_index+NthEigenvalue-1]*par[0];
+            mtx_eigenvalue(N_bins_for_deconv-NthEigenvector,N_bins_for_deconv-NthEigenvalue) += par[first_index+NthEigenvalue-1];
         }
     }
 }
@@ -674,7 +677,7 @@ double NetflixChi2Function(const double *par)
     hist_gamma.Scale(scale);
 
     double chi2 = BlindedChi2(&hist_data,&hist_dark,&hist_model);
-    //chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
+    if (signalfree_model) chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
     
     
     //double chi2 = BlindedLogLikelihood(&hist_data,&hist_dark,&hist_model);
@@ -842,17 +845,36 @@ void SetInitialEigenvectors()
     }
 
 
-    for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
+    for (int NthEigenvector=1;NthEigenvector<=N_bins_for_deconv;NthEigenvector++)
     {
 
-        mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector);
+        if (NthEigenvector<=NumberOfEigenvectors)
+        {
+            mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector);
+        }
         for (int row=0;row<N_bins_for_deconv;row++)
         {
-            mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row);
+            //mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row);
+            if (NthEigenvector<=NumberOfEigenvectors || row<double(N_bins_for_deconv)/2.)
+            {
+                mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row);
+            }
+            else
+            {
+                mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row);
+            }
         }
         for (int col=0;col<N_bins_for_deconv;col++)
         {
-            mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col);
+            //mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col);
+            if (NthEigenvector<=NumberOfEigenvectors || col<double(N_bins_for_deconv)/2.)
+            {
+                mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col);
+            }
+            else
+            {
+                mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = eigensolver_data.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col);
+            }
         }
 
     }
@@ -1170,18 +1192,26 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
     {
 
-        limit = 0.2;
+        limit = 0.0;
         first_index = 1+(2*NthEigenvector-2)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.01);
+            if (row>double(N_bins_for_deconv)/2.) 
+            {
+                Chi2Minimizer->SetVariableLimits(first_index+row,-limit,limit);
+            }
         }
 
-        limit = 0.2;
+        limit = 0.0;
         first_index = 1+(2*NthEigenvector-1)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.01);
+            if (col>double(N_bins_for_deconv)/2.) 
+            {
+                Chi2Minimizer->SetVariableLimits(first_index+col,-limit,limit);
+            }
         }
 
         // eigenvalues
@@ -1189,14 +1219,26 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer)
         first_index = 1+(2*NthEigenvector-0)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int NthEigenvalue=1;NthEigenvalue<=NumberOfEigenvectors;NthEigenvalue++)
         {
+            input_value = 0.;
             limit = 0.;
-            input_value = eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvalue).real();
-            if (NthEigenvalue!=NthEigenvector)
+            if (NthEigenvalue==NthEigenvector && NthEigenvalue==1)
             {
-                input_value = 0.;
+                limit = 0.;
             }
-            Chi2Minimizer->SetVariable(first_index+NthEigenvalue-1, "par["+std::to_string(int(first_index+NthEigenvalue-1))+"]", input_value, 0.01*input_value);
-            Chi2Minimizer->SetVariableLimits(first_index+NthEigenvalue-1,-limit,limit);
+            else if (NthEigenvalue!=NthEigenvector)
+            {
+                limit = 0.;
+            }
+            else
+            {
+                limit = 0.02*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
+                if (mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvalue)==0.)
+                {
+                    limit = 0.;
+                }
+            }
+            Chi2Minimizer->SetVariable(first_index+NthEigenvalue-1, "par["+std::to_string(int(first_index+NthEigenvalue-1))+"]", input_value, 0.01*limit);
+            Chi2Minimizer->SetVariableLimits(first_index+NthEigenvalue-1,input_value-limit,input_value+limit);
         }
     }
 
@@ -1434,9 +1476,11 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         if (PercentCrab>0.) filename_gamma  = "Hist_GammaMC_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TString filename_data  = "Hist_Data_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TString filename_dark  = "Hist_Dark_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
+        TString filename_true  = "Hist_TrueBkgd_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up);
         TH2D* Hist_GammaMC = (TH2D*)InputDataFile.Get(filename_gamma);
         TH2D* Hist_Data = (TH2D*)InputDataFile.Get(filename_data);
         TH2D* Hist_Dark = (TH2D*)InputDataFile.Get(filename_dark);
+        TH2D* Hist_TrueBkgd = (TH2D*)InputDataFile.Get(filename_true);
         Hist_Bkgd_MSCLW.push_back(TH2D("Hist_Bkgd_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_GammaRDBM_MSCLW.push_back(TH2D("Hist_GammaRDBM_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Data_Eigenvalues_real.push_back(TH1D("Hist_Data_Eigenvalues_real_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,0,N_bins_for_deconv));
@@ -1659,6 +1703,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         // kVectorBFGS2, kSteepestDescent
 
         SetInitialEigenvectors();
+        //mtx_data_bkgd = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
 
         n_fourier_modes = 6;
         ROOT::Math::Functor Chi2Func(&NetflixChi2Function,1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors*NumberOfEigenvectors); 
@@ -1683,29 +1728,35 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         std::cout << "final (0) chi2 = " << NetflixChi2Function(par_0th) << std::endl;
         NetflixParametrizeEigenvectors(par_0th);
 
-        mtx_eigenvector_init = mtx_eigenvector;
-        mtx_eigenvalue_init = mtx_eigenvalue;
-        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
-
-        signalfree_model = false;
-        ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
-        Chi2Minimizer_1st.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
-        Chi2Minimizer_1st.SetMaxIterations(100); // for GSL
-        Chi2Minimizer_1st.SetTolerance(0.001);
-        Chi2Minimizer_1st.SetPrintLevel(1);
-        //Chi2Minimizer_1st.SetPrintLevel(2);
-        Chi2Minimizer_1st.SetFunction(Chi2Func);
-        NetflixSetInitialVariables(&Chi2Minimizer_1st);
-        const double *par_1st = Chi2Minimizer_1st.X();
-        NthIteration = 0;
-        std::cout << "initial chi2 = " << NetflixChi2Function(par_1st) << std::endl;
-        Chi2Minimizer_1st.SetTolerance(0.01*double(N_bins_for_deconv*N_bins_for_deconv));
-        Chi2Minimizer_1st.Minimize();
-        par_1st = Chi2Minimizer_1st.X();
-        std::cout << "final (1) chi2 = " << NetflixChi2Function(par_1st) << std::endl;
-        NetflixParametrizeEigenvectors(par_1st);
-
         mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
+
+        //mtx_eigenvector_init = mtx_eigenvector;
+        //mtx_eigenvalue_init = mtx_eigenvalue;
+        //mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+
+        //signalfree_model = false;
+        //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
+        //Chi2Minimizer_1st.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
+        //Chi2Minimizer_1st.SetMaxIterations(100); // for GSL
+        //Chi2Minimizer_1st.SetTolerance(0.001);
+        //Chi2Minimizer_1st.SetPrintLevel(1);
+        ////Chi2Minimizer_1st.SetPrintLevel(2);
+        //Chi2Minimizer_1st.SetFunction(Chi2Func);
+        //NetflixSetInitialVariables(&Chi2Minimizer_1st);
+        //const double *par_1st = Chi2Minimizer_1st.X();
+        //NthIteration = 0;
+        //std::cout << "initial chi2 = " << NetflixChi2Function(par_1st) << std::endl;
+        //fill2DHistogramAbs(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
+        //std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,20,1,20) << std::endl;
+        //Chi2Minimizer_1st.SetTolerance(0.01*double(N_bins_for_deconv*N_bins_for_deconv));
+        //Chi2Minimizer_1st.Minimize();
+        //par_1st = Chi2Minimizer_1st.X();
+        //std::cout << "final (1) chi2 = " << NetflixChi2Function(par_1st) << std::endl;
+        //NetflixParametrizeEigenvectors(par_1st);
+
+        //mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
+        //fill2DHistogramAbs(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
+        //std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,20,1,20) << std::endl;
 
         for (int NthEigenvalue=1;NthEigenvalue<=N_bins_for_deconv;NthEigenvalue++)
         {
@@ -1732,6 +1783,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         double scale_gamma = double(gamma_total)/double(Hist_GammaRDBM_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind));
         Hist_GammaRDBM_MSCLW.at(e).Scale(scale_gamma);
 
+        std::cout << "Hist_TrueBkgd->Integral() = " << Hist_TrueBkgd->Integral(1,20,1,20) << std::endl;
         std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,20,1,20) << std::endl;
         std::cout << "eigensolver_data.eigenvalues()(mtx_data.cols()-1):" << std::endl;
         std::cout << eigensolver_data.eigenvalues()(mtx_data.cols()-1) << std::endl;

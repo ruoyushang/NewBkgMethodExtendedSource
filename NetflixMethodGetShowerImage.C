@@ -54,20 +54,21 @@ double MSCL_cut_lower = -1.0;
 double MSCL_cut_blind = 1.0;
 double MSCL_cut_upper = 1.0;
 
-const int N_energy_bins = 1;
-double energy_bins[N_energy_bins+1] = {100,1e4};
-double gamma_flux[N_energy_bins] = {0.};
-double gamma_count[N_energy_bins] = {0.};
-double raw_gamma_count[N_energy_bins] = {0.};
-int N_bins_for_deconv_at_E[N_energy_bins] = {40};
+//const int N_energy_bins = 1;
+//double energy_bins[N_energy_bins+1] = {100,1e4};
+//int N_bins_for_deconv_at_E[N_energy_bins] = {40};
 //const int N_energy_bins = 11;
 //double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,2239,4467,8913};
-//double gamma_flux[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-//double gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-//double raw_gamma_count[N_energy_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
 //int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,40,40};
+const int N_energy_bins = 10;
+double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,3.0),pow(10,4.0)};
+int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,40};
+
 const int N_energy_fine_bins = 20;
 double energy_fine_bins[N_energy_fine_bins+1] = {pow(10,2.0),pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0)};
+double gamma_flux[N_energy_fine_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
+double gamma_count[N_energy_fine_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
+double raw_gamma_count[N_energy_fine_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
 
 int N_bins_for_deconv = 40;
 double MSCW_plot_lower = -1.;
@@ -772,7 +773,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
 
     vector<pair<string,int>> PhotonMC_runlist = GetRunList("Photon");
     vector<pair<string,int>> PhotonData_runlist = GetRunList("Crab");
-    if (TString(target).Contains("Mrk421")) PhotonData_runlist = GetRunList("Mrk421");
+    if (TString(target).Contains("Mrk421")) PhotonData_runlist = GetRunList("Crab");
+    if (TString(target).Contains("Crab")) PhotonData_runlist = GetRunList("Mrk421");
     if (TString(target).Contains("V5")) PhotonData_runlist = GetRunList("CrabV5");
     PhotonData_runlist = SelectONRunList(PhotonData_runlist,TelElev_lower,TelElev_upper,0,360);
 
@@ -801,7 +803,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     mean_tele_point_dec = source_ra_dec.second;
 
     TH1D Hist_ErecS = TH1D("Hist_ErecS","",N_energy_bins,energy_bins);
-    TH1D Hist_EffArea = TH1D("Hist_EffArea","",N_energy_bins,energy_bins);
+    TH1D Hist_ErecS_fine = TH1D("Hist_ErecS_fine","",N_energy_fine_bins,energy_fine_bins);
+    TH1D Hist_EffArea = TH1D("Hist_EffArea","",N_energy_fine_bins,energy_fine_bins);
     TH1D Hist_Dark_NSB = TH1D("Hist_Dark_NSB","",20,4,14);
     TH1D Hist_Data_NSB = TH1D("Hist_Data_NSB","",20,4,14);
     TH2D Hist_Dark_ShowerDirection = TH2D("Hist_Dark_ShowerDirection","",180,0,360,90,0,90);
@@ -973,6 +976,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             R2off = Xoff*Xoff+Yoff*Yoff;
             Phioff = atan2(Yoff,Xoff)+M_PI;
             int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
+            int energy_fine = Hist_ErecS_fine.FindBin(ErecS*1000.)-1;
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
             int e = energy;
@@ -1106,6 +1110,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             }
             pair<double,double> evt_l_b = ConvertRaDecToGalactic(ra_sky,dec_sky);
             int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
+            int energy_fine = Hist_ErecS_fine.FindBin(ErecS*1000.)-1;
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
             int e = energy;
@@ -1221,11 +1226,12 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             ra_sky = mean_tele_point_ra+ra_sky;
             dec_sky = mean_tele_point_dec+dec_sky;
             int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
+            int energy_fine = Hist_ErecS_fine.FindBin(ErecS*1000.)-1;
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
             int e = energy;
             if (!SelectNImages(3,4)) continue;
-            if (FoV() && GammaFoV()) raw_gamma_count[energy] += 1.;
+            if (FoV() && GammaFoV()) raw_gamma_count[energy_fine] += 1.;
         }
 
     }
@@ -1291,7 +1297,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             }
             pair<double,double> evt_l_b = ConvertRaDecToGalactic(ra_sky,dec_sky);
             int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
-            photon_weight = gamma_count[energy]/raw_gamma_count[energy];
+            int energy_fine = Hist_ErecS_fine.FindBin(ErecS*1000.)-1;
+            photon_weight = gamma_count[energy_fine]/raw_gamma_count[energy_fine];
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
             int e = energy;
@@ -1399,6 +1406,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             Data_tree->GetEntry(entry);
             R2off = Xoff*Xoff+Yoff*Yoff;
             int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
+            int energy_fine = Hist_ErecS_fine.FindBin(ErecS*1000.)-1;
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
             int e = energy;
@@ -1506,7 +1514,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
 
     NSB_avg = NSB_avg/exposure_hours;
     NSB_avg_dark = NSB_avg_dark/exposure_hours_dark;
-    for (int e=0;e<N_energy_bins;e++) 
+    for (int e=0;e<N_energy_fine_bins;e++) 
     {
         Hist_EffArea.SetBinContent(e+1,Hist_EffArea.GetBinContent(e+1)/(3600.*exposure_hours));
     }
