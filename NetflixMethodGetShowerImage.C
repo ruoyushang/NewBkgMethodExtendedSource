@@ -60,9 +60,9 @@ double MSCL_cut_upper = 1.0;
 //const int N_energy_bins = 11;
 //double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,2239,4467,8913};
 //int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,40,40};
-const int N_energy_bins = 10;
-double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,3.0),pow(10,4.0)};
-int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,40};
+const int N_energy_bins = 12;
+double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,3.0),pow(10,3.2),pow(10,3.6),pow(10,4.0)};
+int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,40,40,40};
 
 const int N_energy_fine_bins = 20;
 double energy_fine_bins[N_energy_fine_bins+1] = {pow(10,2.0),pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0)};
