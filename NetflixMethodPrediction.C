@@ -80,7 +80,7 @@ VectorXcd vtr_data(N_bins_for_deconv);
 ComplexEigenSolver<MatrixXcd> eigensolver_dark;
 ComplexEigenSolver<MatrixXcd> eigensolver_data;
 double init_deriv_at_zero;
-bool signalfree_model;
+bool signal_model;
 
 void fill2DHistogram(TH2D* hist,MatrixXcd mtx)
 {
@@ -464,14 +464,9 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
     {
         for (int by=1;by<=hist_data->GetNbinsY();by++)
         {
-            //if (bx>=binx_blind || by>=biny_blind || signalfree_model)
             if (bx>=binx_blind || by>=biny_blind)
             {
                 if (bx>=binx_upper || by>=biny_upper) continue;
-                //if (!signalfree_model) 
-                //{
-                //    if (bx>=binx_blind && by>=biny_blind) continue;
-                //}
                 double data = hist_data->GetBinContent(bx,by);
                 double dark = hist_dark->GetBinContent(bx,by);
                 double model = hist_model->GetBinContent(bx,by);
@@ -510,76 +505,6 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
         }
     }
     return chi2;
-}
-
-void TaylorParametrizeEigenvectors(const double *par)
-{
-    for (int col=0;col<N_bins_for_deconv;col++)
-    {
-        for (int row=0;row<N_bins_for_deconv;row++)
-        {
-            mtx_eigenvector(row,col) = 0.;
-            mtx_eigenvector_inv(row,col) = 0.;
-            mtx_eigenvalue(row,col) = 0.;
-        }
-    }
-    const std::complex<double> If(0.0, 1.0);
-    // build eigenvector matrix
-    int col_fix = 0;
-    int row_fix = 0;
-    int first_index = 0;
-    for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
-    {
-        col_fix = N_bins_for_deconv-NthEigenvector;
-        first_index = (4*NthEigenvector-4)*(1+2*n_taylor_modes)+(NthEigenvector-1);
-        for (int row=0;row<N_bins_for_deconv;row++)
-        {
-            double x = double(row+1)*(MSCW_plot_upper-MSCW_plot_lower)/double(N_bins_for_deconv)+MSCW_plot_lower;
-            double x_norm = (x-MSCL_plot_lower)/(MSCW_plot_upper-MSCW_plot_lower);
-            mtx_eigenvector(row,col_fix) += par[first_index];
-            for (int mode=1;mode<=n_taylor_modes;mode++)
-            {
-                mtx_eigenvector(row,col_fix) += par[first_index+2*mode-1]*pow(x_norm-par[first_index+2*mode],mode);
-            }
-        }
-        first_index = (4*NthEigenvector-3)*(1+2*n_taylor_modes)+(NthEigenvector-1);
-        for (int row=0;row<N_bins_for_deconv;row++)
-        {
-            double x = double(row+1)*(MSCW_plot_upper-MSCW_plot_lower)/double(N_bins_for_deconv)+MSCW_plot_lower;
-            double x_norm = (x-MSCL_plot_lower)/(MSCW_plot_upper-MSCW_plot_lower);
-            mtx_eigenvector(row,col_fix) += If*par[first_index];
-            for (int mode=1;mode<=n_taylor_modes;mode++)
-            {
-                mtx_eigenvector(row,col_fix) += If*par[first_index+2*mode-1]*pow(x_norm-par[first_index+2*mode],mode);
-            }
-        }
-        row_fix = N_bins_for_deconv-NthEigenvector;
-        first_index = (4*NthEigenvector-2)*(1+2*n_taylor_modes)+(NthEigenvector-1);
-        for (int col=0;col<N_bins_for_deconv;col++)
-        {
-            double x = double(col+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
-            double x_norm = (x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
-            mtx_eigenvector_inv(row_fix,col) += par[first_index];
-            for (int mode=1;mode<=n_taylor_modes;mode++)
-            {
-                mtx_eigenvector_inv(row_fix,col) += par[first_index+2*mode-1]*pow(x_norm-par[first_index+2*mode],mode);
-            }
-        }
-        first_index = (4*NthEigenvector-1)*(1+2*n_taylor_modes)+(NthEigenvector-1);
-        for (int col=0;col<N_bins_for_deconv;col++)
-        {
-            double x = double(col+1)*(MSCL_plot_upper-MSCL_plot_lower)/double(N_bins_for_deconv)+MSCL_plot_lower;
-            double x_norm = (x-MSCL_plot_lower)/(MSCL_plot_upper-MSCL_plot_lower);
-            mtx_eigenvector_inv(row_fix,col) += If*par[first_index];
-            for (int mode=1;mode<=n_taylor_modes;mode++)
-            {
-                mtx_eigenvector_inv(row_fix,col) += If*par[first_index+2*mode-1]*pow(x_norm-par[first_index+2*mode],mode);
-            }
-        }
-        // build eigenvalue matrix
-        first_index = (4*NthEigenvector-0)*(1+2*n_taylor_modes)+(NthEigenvector-1);
-        mtx_eigenvalue(N_bins_for_deconv-NthEigenvector,N_bins_for_deconv-NthEigenvector) = par[first_index];
-    }
 }
 
 void NetflixParametrizeEigenvectors(const double *par)
@@ -677,7 +602,7 @@ double NetflixChi2Function(const double *par)
     hist_gamma.Scale(scale);
 
     double chi2 = BlindedChi2(&hist_data,&hist_dark,&hist_model);
-    if (signalfree_model) chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
+    if (signal_model) chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
     
     
     //double chi2 = BlindedLogLikelihood(&hist_data,&hist_dark,&hist_model);
@@ -855,9 +780,14 @@ void SetInitialEigenvectors()
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             //mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row);
+            double sign = 1.;
+            if (eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector).dot(eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector)).real()<0.)
+            {
+                sign = -1.;
+            }
             if (NthEigenvector<=NumberOfEigenvectors || row<double(N_bins_for_deconv)/2.)
             {
-                mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row);
+                mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = sign*eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row);
             }
             else
             {
@@ -867,9 +797,14 @@ void SetInitialEigenvectors()
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             //mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col);
+            double sign = 1.;
+            if (eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector).dot(eigensolver_data.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)).real()<0.)
+            {
+                sign = -1.;
+            }
             if (NthEigenvector<=NumberOfEigenvectors || col<double(N_bins_for_deconv)/2.)
             {
-                mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col);
+                mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = sign*eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col);
             }
             else
             {
@@ -1349,7 +1284,7 @@ MatrixXcd MakeSmoothSplineFunction(MatrixXcd mtx_origin)
 void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_elev_lower_input, double tel_elev_upper_input, bool isON, double MSCW_cut_input, double MSCL_cut_input, int rank)
 {
 
-    signalfree_model = false;
+    signal_model = false;
 
     TH1::SetDefaultSumw2();
     sprintf(target, "%s", target_data.c_str());
@@ -1641,6 +1576,19 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         //  myfile2.close();
         //}
 
+
+        for (int col=0;col<N_bins_for_deconv;col++)
+        {
+            for (int row=0;row<N_bins_for_deconv;row++)
+            {
+                mtx_eigenvector(row,col) = 0.;
+                mtx_eigenvector_inv(row,col) = 0.;
+                mtx_eigenvalue(row,col) = 0.;
+            }
+        }
+        SetInitialEigenvectors();
+        //mtx_data_bkgd = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+
         for (int NthEigenvalue=1;NthEigenvalue<=N_bins_for_deconv;NthEigenvalue++)
         {
             Hist_Data_Eigenvalues_real.at(e).SetBinContent(NthEigenvalue,eigensolver_data.eigenvalues()(N_bins_for_deconv-NthEigenvalue).real());
@@ -1655,61 +1603,39 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         fill1DHistogram(&Hist_Data_InvEigenvectorReal_0.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-1).real());
         fill1DHistogram(&Hist_Data_InvEigenvectorReal_1.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-2).real());
         fill1DHistogram(&Hist_Data_InvEigenvectorReal_2.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-3).real());
-        fill1DHistogram(&Hist_Dark_EigenvectorReal_0.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-1).real());
-        fill1DHistogram(&Hist_Dark_EigenvectorReal_1.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-2).real());
-        fill1DHistogram(&Hist_Dark_EigenvectorReal_2.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-3).real());
-        fill1DHistogram(&Hist_Dark_InvEigenvectorReal_0.at(e),eigensolver_dark.eigenvectors().inverse().row(mtx_data.cols()-1).real());
-        fill1DHistogram(&Hist_Dark_InvEigenvectorReal_1.at(e),eigensolver_dark.eigenvectors().inverse().row(mtx_data.cols()-2).real());
-        fill1DHistogram(&Hist_Dark_InvEigenvectorReal_2.at(e),eigensolver_dark.eigenvectors().inverse().row(mtx_data.cols()-3).real());
+        fill1DHistogram(&Hist_Dark_EigenvectorReal_0.at(e),mtx_eigenvector_init.col(mtx_data.cols()-1).real());
+        fill1DHistogram(&Hist_Dark_EigenvectorReal_1.at(e),mtx_eigenvector_init.col(mtx_data.cols()-2).real());
+        fill1DHistogram(&Hist_Dark_EigenvectorReal_2.at(e),mtx_eigenvector_init.col(mtx_data.cols()-3).real());
+        fill1DHistogram(&Hist_Dark_InvEigenvectorReal_0.at(e),mtx_eigenvector_inv_init.row(mtx_data.cols()-1).real());
+        fill1DHistogram(&Hist_Dark_InvEigenvectorReal_1.at(e),mtx_eigenvector_inv_init.row(mtx_data.cols()-2).real());
+        fill1DHistogram(&Hist_Dark_InvEigenvectorReal_2.at(e),mtx_eigenvector_inv_init.row(mtx_data.cols()-3).real());
         fill1DHistogram(&Hist_Data_EigenvectorImag_0.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-1).imag());
         fill1DHistogram(&Hist_Data_EigenvectorImag_1.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-2).imag());
         fill1DHistogram(&Hist_Data_EigenvectorImag_2.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-3).imag());
         fill1DHistogram(&Hist_Data_InvEigenvectorImag_0.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-1).imag());
         fill1DHistogram(&Hist_Data_InvEigenvectorImag_1.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-2).imag());
         fill1DHistogram(&Hist_Data_InvEigenvectorImag_2.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-3).imag());
-        fill1DHistogram(&Hist_Dark_EigenvectorImag_0.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-1).imag());
-        fill1DHistogram(&Hist_Dark_EigenvectorImag_1.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-2).imag());
-        fill1DHistogram(&Hist_Dark_EigenvectorImag_2.at(e),eigensolver_dark.eigenvectors().col(mtx_data.cols()-3).imag());
-        fill1DHistogram(&Hist_Dark_InvEigenvectorImag_0.at(e),eigensolver_dark.eigenvectors().inverse().row(mtx_data.cols()-1).imag());
-        fill1DHistogram(&Hist_Dark_InvEigenvectorImag_1.at(e),eigensolver_dark.eigenvectors().inverse().row(mtx_data.cols()-2).imag());
-        fill1DHistogram(&Hist_Dark_InvEigenvectorImag_2.at(e),eigensolver_dark.eigenvectors().inverse().row(mtx_data.cols()-3).imag());
+        fill1DHistogram(&Hist_Dark_EigenvectorImag_0.at(e),mtx_eigenvector_init.col(mtx_data.cols()-1).imag());
+        fill1DHistogram(&Hist_Dark_EigenvectorImag_1.at(e),mtx_eigenvector_init.col(mtx_data.cols()-2).imag());
+        fill1DHistogram(&Hist_Dark_EigenvectorImag_2.at(e),mtx_eigenvector_init.col(mtx_data.cols()-3).imag());
+        fill1DHistogram(&Hist_Dark_InvEigenvectorImag_0.at(e),mtx_eigenvector_inv_init.row(mtx_data.cols()-1).imag());
+        fill1DHistogram(&Hist_Dark_InvEigenvectorImag_1.at(e),mtx_eigenvector_inv_init.row(mtx_data.cols()-2).imag());
+        fill1DHistogram(&Hist_Dark_InvEigenvectorImag_2.at(e),mtx_eigenvector_inv_init.row(mtx_data.cols()-3).imag());
 
-        for (int col=0;col<N_bins_for_deconv;col++)
-        {
-            for (int row=0;row<N_bins_for_deconv;row++)
-            {
-                mtx_eigenvector(row,col) = 0.;
-                mtx_eigenvector_inv(row,col) = 0.;
-                mtx_eigenvalue(row,col) = 0.;
-            }
-        }
-        
         int col_fix = 0;
         int row_fix = 0;
         int first_index = 0;
-
-        for (int col=0;col<N_bins_for_deconv;col++)
-        {
-            for (int row=0;row<N_bins_for_deconv;row++)
-            {
-                mtx_eigenvector(row,col) = 0.;
-                mtx_eigenvector_inv(row,col) = 0.;
-                mtx_eigenvalue(row,col) = 0.;
-            }
-        }
 
         // Choose method upon creation between:
         // kConjugateFR, kConjugatePR, kVectorBFGS,
         // kVectorBFGS2, kSteepestDescent
 
-        SetInitialEigenvectors();
-        //mtx_data_bkgd = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
 
         n_fourier_modes = 6;
         ROOT::Math::Functor Chi2Func(&NetflixChi2Function,1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors*NumberOfEigenvectors); 
         std::cout << "total n paramters = " << 1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors << std::endl;
 
-        signalfree_model = true;
+        signal_model = true;
         ROOT::Math::GSLMinimizer Chi2Minimizer_0th( ROOT::Math::kSteepestDescent );
         Chi2Minimizer_0th.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
         Chi2Minimizer_0th.SetMaxIterations(100); // for GSL
@@ -1734,7 +1660,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         //mtx_eigenvalue_init = mtx_eigenvalue;
         //mtx_eigenvector_inv_init = mtx_eigenvector_inv;
 
-        //signalfree_model = false;
+        //signal_model = false;
         //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
         //Chi2Minimizer_1st.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
         //Chi2Minimizer_1st.SetMaxIterations(100); // for GSL
