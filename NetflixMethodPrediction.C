@@ -1639,7 +1639,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         ROOT::Math::Functor Chi2Func(&NetflixChi2Function,1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors*NumberOfEigenvectors); 
         std::cout << "total n paramters = " << 1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors << std::endl;
 
-        signal_model = false;
+        signal_model = true;
         ROOT::Math::GSLMinimizer Chi2Minimizer_0th( ROOT::Math::kSteepestDescent );
         Chi2Minimizer_0th.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
         Chi2Minimizer_0th.SetMaxIterations(100); // for GSL

@@ -711,16 +711,16 @@ bool DarkFoV() {
     //if (R2off<Theta2_cut_lower) return false;
     //if (R2off>Theta2_cut_upper) return false;
     if (theta2<0.3) return false;
-    if (theta2>10.) return false;
-    if (R2off<DarkRun_theta2_lower) return false;
-    if (R2off>DarkRun_theta2_upper) return false;
+    //if (theta2>10.) return false;
+    //if (R2off<DarkRun_theta2_lower) return false;
+    //if (R2off>DarkRun_theta2_upper) return false;
     return true;
 }
 bool FoV() {
     //if (R2off<Theta2_cut_lower) return false;
     //if (R2off>Theta2_cut_upper) return false;
     if (theta2<Theta2_cut_lower) return false;
-    if (theta2>Theta2_cut_upper) return false;
+    //if (theta2>Theta2_cut_upper) return false;
     return true;
 }
 bool RingFoV() {
@@ -762,7 +762,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     TelElev_lower = tel_elev_lower_input;
     TelElev_upper = tel_elev_upper_input;
     Theta2_cut_lower = 0.3;
-    Theta2_cut_upper = Theta2_cut_input;
+    //Theta2_cut_upper = Theta2_cut_input;
+    Theta2_cut_upper = 1e4;
     if (isON) Theta2_cut_lower = 0.;
     else Theta2_cut_upper = max(Theta2_cut_input,1.0);
     TString file_tag;
