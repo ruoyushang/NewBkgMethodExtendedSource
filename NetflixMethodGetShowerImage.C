@@ -1513,10 +1513,10 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         int biny_lower = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_lower);
         int biny_blind = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(MSCW_cut_blind)-1;
         int biny_upper = Hist_Dark_MSCLW.at(e).GetYaxis()->FindBin(1.)-1;
-        //double Dark_SR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
-        //double Data_SR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
-        double Dark_SR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
-        double Data_SR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
+        double Dark_SR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        double Data_SR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_blind,biny_lower,biny_blind);
+        //double Dark_SR_Integral = Hist_Dark_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
+        //double Data_SR_Integral = Hist_Data_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
         double Dark_Integral = Hist_Dark_MSCLW.at(e).Integral();
         double Data_Integral = Hist_Data_MSCLW.at(e).Integral();
         double Dark_CR_Integral = Dark_Integral-Dark_SR_Integral;

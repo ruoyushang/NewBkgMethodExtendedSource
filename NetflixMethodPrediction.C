@@ -401,10 +401,10 @@ double FirstDerivative(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
 
 double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
 {
-    //int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
-    //int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
-    int binx_blind = hist_data->GetXaxis()->FindBin(1.);
-    int biny_blind = hist_data->GetYaxis()->FindBin(1.);
+    int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
+    int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
+    //int binx_blind = hist_data->GetXaxis()->FindBin(1.);
+    //int biny_blind = hist_data->GetYaxis()->FindBin(1.);
     double chi2 = 0.;
     for (int bx=1;bx<=hist_data->GetNbinsX();bx++)
     {
@@ -449,12 +449,12 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
 
 double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
 {
-    //int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
-    //int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
+    int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
+    int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
     //int binx_upper = hist_data->GetXaxis()->FindBin(MSCL_cut_blind+1.);
     //int biny_upper = hist_data->GetXaxis()->FindBin(MSCW_cut_blind+1.);
-    int binx_blind = hist_data->GetXaxis()->FindBin(1.);
-    int biny_blind = hist_data->GetYaxis()->FindBin(1.);
+    //int binx_blind = hist_data->GetXaxis()->FindBin(1.);
+    //int biny_blind = hist_data->GetYaxis()->FindBin(1.);
     //int binx_upper = hist_data->GetXaxis()->FindBin(3.);
     //int biny_upper = hist_data->GetYaxis()->FindBin(3.);
     int binx_upper = hist_data->GetXaxis()->FindBin(3.);
@@ -1588,7 +1588,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
                 mtx_eigenvalue(row,col) = 0.;
             }
         }
-        SetInitialEigenvectors(binx_upper,biny_upper);
+        SetInitialEigenvectors(binx_blind,biny_blind);
         mtx_data_bkgd = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
 
         for (int NthEigenvalue=1;NthEigenvalue<=N_bins_for_deconv;NthEigenvalue++)
@@ -1637,7 +1637,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         ROOT::Math::Functor Chi2Func(&NetflixChi2Function,1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors*NumberOfEigenvectors); 
         std::cout << "total n paramters = " << 1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors << std::endl;
 
-        signal_model = false;
+        signal_model = true;
         ROOT::Math::GSLMinimizer Chi2Minimizer_0th( ROOT::Math::kSteepestDescent );
         Chi2Minimizer_0th.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
         Chi2Minimizer_0th.SetMaxIterations(100); // for GSL
@@ -1645,7 +1645,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         Chi2Minimizer_0th.SetPrintLevel(1);
         //Chi2Minimizer_0th.SetPrintLevel(2);
         Chi2Minimizer_0th.SetFunction(Chi2Func);
-        NetflixSetInitialVariables(&Chi2Minimizer_0th,binx_upper,biny_upper);
+        NetflixSetInitialVariables(&Chi2Minimizer_0th,binx_blind,biny_blind);
         const double *par_0th = Chi2Minimizer_0th.X();
         NthIteration = 0;
         double init_chi2 = NetflixChi2Function(par_0th);
@@ -1670,7 +1670,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         //Chi2Minimizer_1st.SetPrintLevel(1);
         ////Chi2Minimizer_1st.SetPrintLevel(2);
         //Chi2Minimizer_1st.SetFunction(Chi2Func);
-        //NetflixSetInitialVariables(&Chi2Minimizer_1st,binx_upper,biny_upper);
+        //NetflixSetInitialVariables(&Chi2Minimizer_1st,binx_blind,biny_blind);
         //const double *par_1st = Chi2Minimizer_1st.X();
         //NthIteration = 0;
         //std::cout << "initial chi2 = " << NetflixChi2Function(par_1st) << std::endl;
