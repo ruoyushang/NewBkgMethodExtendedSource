@@ -1160,7 +1160,8 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
             limit = 0.;
             if (NthEigenvalue==NthEigenvector && NthEigenvalue==1)
             {
-                limit = 0.;
+                //limit = 0.;
+                limit = 0.02*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
             }
             else if (NthEigenvalue!=NthEigenvector)
             {
