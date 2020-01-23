@@ -54,18 +54,18 @@ double MSCL_cut_lower = -1.0;
 double MSCL_cut_blind = 1.0;
 double MSCL_cut_upper = 1.0;
 
-//const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] = {100,1e4};
-//int N_bins_for_deconv_at_E[N_energy_bins] = {40};
+const int N_energy_bins = 1;
+double energy_bins[N_energy_bins+1] = {100,1e4};
+int N_bins_for_deconv_at_E[N_energy_bins] = {30};
 //const int N_energy_bins = 11;
 //double energy_bins[N_energy_bins+1] = {200,237,282,335,398,473,562,794,1122,2239,4467,8913};
 //int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,40,40};
 //const int N_energy_bins = 5;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.2),pow(10,2.4),pow(10,2.6),pow(10,2.8),pow(10,4.0)};
 //int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40};
-const int N_energy_bins = 12;
-double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,3.0),pow(10,3.2),pow(10,3.6),pow(10,4.0)};
-int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,40,40,40};
+//const int N_energy_bins = 12;
+//double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,3.0),pow(10,3.2),pow(10,3.6),pow(10,4.0)};
+//int N_bins_for_deconv_at_E[N_energy_bins] = {40,40,40,40,40,40,40,40,40,40,40,40};
 
 const int N_energy_fine_bins = 20;
 double energy_fine_bins[N_energy_fine_bins+1] = {pow(10,2.0),pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,2.9),pow(10,3.0),pow(10,3.1),pow(10,3.2),pow(10,3.3),pow(10,3.4),pow(10,3.5),pow(10,3.6),pow(10,3.7),pow(10,3.8),pow(10,3.9),pow(10,4.0)};
@@ -73,11 +73,11 @@ double gamma_flux[N_energy_fine_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
 double gamma_count[N_energy_fine_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
 double raw_gamma_count[N_energy_fine_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
 
-int N_bins_for_deconv = 40;
+int N_bins_for_deconv = 30;
 double MSCW_plot_lower = -1.;
-double MSCW_plot_upper = 3.;
+double MSCW_plot_upper = 2.;
 double MSCL_plot_lower = -1.;
-double MSCL_plot_upper = 3.;
+double MSCL_plot_upper = 2.;
 double Theta2_cut_lower = 0;
 double Theta2_cut_upper = 0;
 double Theta2_upper_limit = 10;
@@ -757,12 +757,12 @@ bool SignalSelectionTheta2()
 }
 bool ControlSelectionTheta2()
 {
-    //if (SignalSelectionTheta2()) return false;
-    //if (MSCL>MSCL_cut_blind+1.0) return false;
-    //if (MSCW>MSCW_cut_blind+1.0) return false;
-    if (MSCL<1.0 && MSCW<1.0) return false;
-    if (MSCL>3.0) return false;
-    if (MSCW>2.0) return false;
+    if (SignalSelectionTheta2()) return false;
+    if (MSCL>MSCL_cut_blind+1.0) return false;
+    if (MSCW>MSCW_cut_blind+1.0) return false;
+    //if (MSCL<1.0 && MSCW<1.0) return false;
+    //if (MSCL>3.0) return false;
+    //if (MSCW>2.0) return false;
     return true;
 }
 void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double tel_elev_lower_input, double tel_elev_upper_input, double Elev_diff, double NSB_diff, bool isON, double MSCW_cut_input, double MSCL_cut_input, double Theta2_cut_input)
