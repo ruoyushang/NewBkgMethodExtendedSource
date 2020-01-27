@@ -1138,7 +1138,6 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.01);
-            //if (row>=double(N_bins_for_deconv)/2.) 
             if (row>=biny_blind) 
             {
                 Chi2Minimizer->SetVariableLimits(first_index+row,-limit,limit);
@@ -1150,7 +1149,6 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.01);
-            //if (col>=double(N_bins_for_deconv)/2.) 
             if (col>=binx_blind) 
             {
                 Chi2Minimizer->SetVariableLimits(first_index+col,-limit,limit);
@@ -1719,7 +1717,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         ROOT::Math::Functor Chi2Func(&NetflixChi2Function,1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors*NumberOfEigenvectors); 
         std::cout << "total n paramters = " << 1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors << std::endl;
 
-        signal_model = false;
+        signal_model = true;
         ROOT::Math::GSLMinimizer Chi2Minimizer_0th( ROOT::Math::kSteepestDescent );
         Chi2Minimizer_0th.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
         Chi2Minimizer_0th.SetMaxIterations(100); // for GSL
@@ -1742,31 +1740,31 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         fill2DHistogramAbs(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
         std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,20,1,20) << std::endl;
 
-        //mtx_eigenvector_init = mtx_eigenvector;
-        //mtx_eigenvalue_init = mtx_eigenvalue;
-        //mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+        mtx_eigenvector_init = mtx_eigenvector;
+        mtx_eigenvalue_init = mtx_eigenvalue;
+        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
 
-        //signal_model = false;
-        //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
-        //Chi2Minimizer_1st.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
-        //Chi2Minimizer_1st.SetMaxIterations(100); // for GSL
-        //Chi2Minimizer_1st.SetTolerance(0.001);
-        //Chi2Minimizer_1st.SetPrintLevel(1);
-        ////Chi2Minimizer_1st.SetPrintLevel(2);
-        //Chi2Minimizer_1st.SetFunction(Chi2Func);
-        //NetflixSetInitialVariables(&Chi2Minimizer_1st,binx_blind,biny_blind);
-        //const double *par_1st = Chi2Minimizer_1st.X();
-        //NthIteration = 0;
-        //std::cout << "initial chi2 = " << NetflixChi2Function(par_1st) << std::endl;
-        //Chi2Minimizer_1st.SetTolerance(0.01*double(N_bins_for_deconv*N_bins_for_deconv));
-        //Chi2Minimizer_1st.Minimize();
-        //par_1st = Chi2Minimizer_1st.X();
-        //std::cout << "final (1) chi2 = " << NetflixChi2Function(par_1st) << std::endl;
-        //NetflixParametrizeEigenvectors(par_1st);
+        signal_model = false;
+        ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
+        Chi2Minimizer_1st.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
+        Chi2Minimizer_1st.SetMaxIterations(100); // for GSL
+        Chi2Minimizer_1st.SetTolerance(0.001);
+        Chi2Minimizer_1st.SetPrintLevel(1);
+        //Chi2Minimizer_1st.SetPrintLevel(2);
+        Chi2Minimizer_1st.SetFunction(Chi2Func);
+        NetflixSetInitialVariables(&Chi2Minimizer_1st,binx_blind,biny_blind);
+        const double *par_1st = Chi2Minimizer_1st.X();
+        NthIteration = 0;
+        std::cout << "initial chi2 = " << NetflixChi2Function(par_1st) << std::endl;
+        Chi2Minimizer_1st.SetTolerance(0.01*double(N_bins_for_deconv*N_bins_for_deconv));
+        Chi2Minimizer_1st.Minimize();
+        par_1st = Chi2Minimizer_1st.X();
+        std::cout << "final (1) chi2 = " << NetflixChi2Function(par_1st) << std::endl;
+        NetflixParametrizeEigenvectors(par_1st);
 
-        //mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
-        //fill2DHistogramAbs(&Hist_BkgdBlind_MSCLW.at(e),mtx_data_bkgd);
-        //std::cout << "Hist_BkgdBlind_MSCLW.at(e).Integral() = " << Hist_BkgdBlind_MSCLW.at(e).Integral(1,20,1,20) << std::endl;
+        mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
+        fill2DHistogramAbs(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
+        std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,20,1,20) << std::endl;
 
         for (int NthEigenvalue=1;NthEigenvalue<=N_bins_for_deconv;NthEigenvalue++)
         {
