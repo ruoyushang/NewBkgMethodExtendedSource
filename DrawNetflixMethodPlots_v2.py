@@ -15,6 +15,11 @@ ROOT.TH1.SetDefaultSumw2()
 ROOT.TH1.AddDirectory(False) # without this, the histograms returned from a function will be non-type
 ROOT.gStyle.SetPaintTextFormat("0.3f")
 
+isBlind = True
+#isBlind = False
+
+energy_fine_bin_cut_low = 10
+energy_fine_bin_cut_up = 20
 
 #ONOFF = "ON"
 ONOFF = "OFF"
@@ -34,8 +39,12 @@ Syst_MDM = 0.026
 Syst_Dark = 0.
 
 #FileFolder += ['output_test']
-#FileTag += ['test']
-#FileLabel += ['test']
+#if isBlind:
+#    FileTag += ['blind']
+#    FileLabel += ['blind']
+#else:
+#    FileTag += ['unblind']
+#    FileLabel += ['unblind']
 
 #FileFolder += ['output_blind_tight']
 #FileTag += ['tight']
@@ -203,23 +212,10 @@ energy_list = []
 energy_list += [100]
 energy_list += [10000]
 #energy_list += [int(pow(10,2.0))]
-#energy_list += [int(pow(10,2.1))]
 #energy_list += [int(pow(10,2.2))]
-#energy_list += [int(pow(10,2.3))]
 #energy_list += [int(pow(10,2.4))]
-#energy_list += [int(pow(10,2.5))]
 #energy_list += [int(pow(10,2.6))]
-#energy_list += [int(pow(10,2.7))]
-#energy_list += [int(pow(10,2.8))]
 #energy_list += [int(pow(10,3.0))]
-#energy_list += [int(pow(10,3.2))]
-#energy_list += [int(pow(10,3.6))]
-#energy_list += [int(pow(10,4.0))]
-#energy_list += [int(pow(10,2.0))]
-#energy_list += [int(pow(10,2.2))]
-#energy_list += [int(pow(10,2.4))]
-#energy_list += [int(pow(10,2.6))]
-#energy_list += [int(pow(10,2.8))]
 #energy_list += [int(pow(10,4.0))]
 
 exposure_hours = 0.
@@ -1979,13 +1975,16 @@ def NormalizeCameraFoVHistograms(FilePath):
     bin_lower = Hist2D_Data.GetYaxis().FindBin(MSCW_lower_cut)
     bin_upper = Hist2D_Data.GetYaxis().FindBin(MSCW_blind_cut)-1
 
-    HistName = "Hist_Data_SR_CameraFoV_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    ErecS_lower_cut_int = int(ErecS_lower_cut)
+    ErecS_upper_cut_int = int(ErecS_upper_cut)
+
+    HistName = "Hist_Data_SR_CameraFoV_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Data_CameraFoV.Reset()
     Hist_Data_CameraFoV.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_CameraFoV_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Data_CR_CameraFoV_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Bkgd_CameraFoV.Reset()
     Hist_Bkgd_CameraFoV.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_CameraFoV_Raw_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Data_CR_CameraFoV_Raw_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Bkgd_CameraFoV_Raw.Reset()
     Hist_Bkgd_CameraFoV_Raw.Add(InputFile.Get(HistName))
 
@@ -2001,6 +2000,11 @@ def NormalizeCameraFoVHistograms(FilePath):
     #bkg_total, bkg_err = IntegralAndError(Hist_Data_MSCW,bin_lower,bin_upper)
     bkg_total = Hist_Data_CameraFoV.Integral()
     bkg_err = 0
+    if bkg_total==0.:
+        Hist_Data_CameraFoV.Reset()
+        Hist_Bkgd_CameraFoV.Reset()
+        Hist_Bkgd_CameraFoV_Raw.Reset()
+        return
 
     old_integral = Hist_Bkgd_R2off.Integral()
     scale = 0
@@ -2039,25 +2043,28 @@ def NormalizeSkyMapHistograms(FilePath):
     InfoTree.GetEntry(0)
     MSCW_blind_cut = InfoTree.MSCW_cut_blind
     MSCL_blind_cut = InfoTree.MSCL_cut_blind
-    bin_lower = Hist2D_Data.GetYaxis().FindBin(MSCW_lower_cut)
-    bin_upper = Hist2D_Data.GetYaxis().FindBin(MSCW_blind_cut)-1
+    bin_lower = Hist_Data_Energy.FindBin(ErecS_lower_cut)
+    bin_upper = Hist_Data_Energy.FindBin(ErecS_upper_cut)-1
 
-    HistName = "Hist_Data_SR_Skymap_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    ErecS_lower_cut_int = int(ErecS_lower_cut)
+    ErecS_upper_cut_int = int(ErecS_upper_cut)
+
+    HistName = "Hist_Data_SR_Skymap_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Data_Skymap.Reset()
     Hist_Data_Skymap.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_SR_Skymap_Galactic_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Data_SR_Skymap_Galactic_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Data_Skymap_Galactic.Reset()
     Hist_Data_Skymap_Galactic.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Skymap_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Data_CR_Skymap_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Dark_Skymap.Reset()
     Hist_Dark_Skymap.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Skymap_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Data_CR_Skymap_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Bkgd_Skymap.Reset()
     Hist_Bkgd_Skymap.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Skymap_Galactic_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Data_CR_Skymap_Galactic_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Bkgd_Skymap_Galactic.Reset()
     Hist_Bkgd_Skymap_Galactic.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Skymap_Raw_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Data_CR_Skymap_Raw_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Bkgd_Skymap_Raw.Reset()
     Hist_Bkgd_Skymap_Raw.Add(InputFile.Get(HistName))
 
@@ -2076,8 +2083,16 @@ def NormalizeSkyMapHistograms(FilePath):
         Hist_Bkgd_Skymap_Galactic.Reset()
         Hist_Bkgd_Skymap_Raw.Reset()
 
-    bkg_total, bkg_err = IntegralAndError(Hist_Bkgd_MSCW,bin_lower,bin_upper)
-    dark_bkg_total, dark_bkg_err = IntegralAndError(Hist_Dark_MSCW,bin_lower,bin_upper)
+    bkg_total, bkg_err = IntegralAndError(Hist_Bkgd_Energy,bin_lower,bin_upper)
+    dark_bkg_total, dark_bkg_err = IntegralAndError(Hist_Dark_Energy,bin_lower,bin_upper)
+    if bkg_total==0.:
+        Hist_Data_Skymap.Reset()
+        Hist_Data_Skymap_Galactic.Reset()
+        Hist_Dark_Skymap.Reset()
+        Hist_Bkgd_Skymap.Reset()
+        Hist_Bkgd_Skymap_Galactic.Reset()
+        Hist_Bkgd_Skymap_Raw.Reset()
+        return
 
     old_integral = Hist_Bkgd_R2off.Integral()
     scale = 0
@@ -2135,22 +2150,25 @@ def NormalizeEnergyHistograms(FilePath):
     bin_lower = Hist2D_Data.GetYaxis().FindBin(MSCW_lower_cut)
     bin_upper = Hist2D_Data.GetYaxis().FindBin(MSCW_blind_cut)-1
 
-    HistName = "Hist_Data_SR_Energy_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    ErecS_lower_cut_int = int(ErecS_lower_cut)
+    ErecS_upper_cut_int = int(ErecS_upper_cut)
+
+    HistName = "Hist_Data_SR_Energy_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Data_Energy.Reset()
     Hist_Data_Energy.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Energy_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Data_CR_Energy_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Bkgd_Energy.Reset()
     Hist_Bkgd_Energy.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Energy_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Data_CR_Energy_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Dark_Energy.Reset()
     Hist_Dark_Energy.Add(InputFile.Get(HistName))
-    HistName = "Hist_TrueBkgd_SR_Energy_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_TrueBkgd_SR_Energy_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_TrueBkgd_Energy.Reset()
     Hist_TrueBkgd_Energy.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_SR_RoI_Energy_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Data_SR_RoI_Energy_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Data_RoI_Energy.Reset()
     Hist_Data_RoI_Energy.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_RoI_Energy_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Data_CR_RoI_Energy_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Bkgd_RoI_Energy.Reset()
     Hist_Bkgd_RoI_Energy.Add(InputFile.Get(HistName))
 
@@ -2210,28 +2228,32 @@ def NormalizeTheta2Histograms(FilePath):
     InfoTree.GetEntry(0)
     MSCW_blind_cut = InfoTree.MSCW_cut_blind
     MSCL_blind_cut = InfoTree.MSCL_cut_blind
-    bin_lower = Hist2D_Data.GetYaxis().FindBin(MSCW_lower_cut)
-    bin_upper = Hist2D_Data.GetYaxis().FindBin(MSCW_blind_cut)-1
+    bin_lower = Hist_Data_Energy.FindBin(ErecS_lower_cut)
+    bin_upper = Hist_Data_Energy.FindBin(ErecS_upper_cut)-1
 
-    HistName = "Hist_Data_SR_Skymap_Theta2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    ErecS_lower_cut_int = int(ErecS_lower_cut)
+    ErecS_upper_cut_int = int(ErecS_upper_cut)
+
+    HistName = "Hist_Data_SR_Skymap_Theta2_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
+    print 'Getting histogram %s'%(HistName)
     Hist_Data_Theta2.Reset()
     Hist_Data_Theta2.Add(InputFile.Get(HistName))
-    HistName = "Hist_TrueBkgd_SR_Skymap_Theta2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_TrueBkgd_SR_Skymap_Theta2_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_TrueBkgd_Theta2.Reset()
     Hist_TrueBkgd_Theta2.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Skymap_Theta2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Data_CR_Skymap_Theta2_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Dark_Theta2.Reset()
     Hist_Dark_Theta2.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Skymap_Theta2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Data_CR_Skymap_Theta2_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Bkgd_Theta2.Reset()
     Hist_Bkgd_Theta2.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_Skymap_Theta2_Raw_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Data_CR_Skymap_Theta2_Raw_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Bkgd_Theta2_Raw.Reset()
     Hist_Bkgd_Theta2_Raw.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_CameraFoV_Theta2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Data_CR_CameraFoV_Theta2_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Bkgd_R2off.Reset()
     Hist_Bkgd_R2off.Add(InputFile.Get(HistName))
-    HistName = "Hist_Data_CR_CameraFoV_Theta2_Raw_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Data_CR_CameraFoV_Theta2_Raw_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist_Bkgd_R2off_Raw.Reset()
     Hist_Bkgd_R2off_Raw.Add(InputFile.Get(HistName))
 
@@ -2250,7 +2272,15 @@ def NormalizeTheta2Histograms(FilePath):
         Hist_Bkgd_R2off.Reset()
         Hist_Bkgd_R2off_Raw.Reset()
 
-    bkg_total, bkg_err = IntegralAndError(Hist_Bkgd_MSCW,bin_lower,bin_upper)
+    bkg_total, bkg_err = IntegralAndError(Hist_Bkgd_Energy,bin_lower,bin_upper)
+    if bkg_total==0.:
+        Hist_Data_Theta2.Reset()
+        Hist_TrueBkgd_Theta2.Reset()
+        Hist_Dark_Theta2.Reset()
+        Hist_Bkgd_Theta2.Reset()
+        Hist_Bkgd_R2off.Reset()
+        Hist_Bkgd_R2off_Raw.Reset()
+        return
 
     old_integral = Hist_Bkgd_R2off.Integral()
     old_integral_raw = Hist_Bkgd_R2off_Raw.Integral()
@@ -2275,7 +2305,7 @@ def NormalizeTheta2Histograms(FilePath):
         Hist_Bkgd_Theta2.Scale(0)
         Hist_Bkgd_Theta2_Raw.Scale(0)
 
-    bkg_total, bkg_err = IntegralAndError(Hist_Dark_MSCW,bin_lower,bin_upper)
+    bkg_total, bkg_err = IntegralAndError(Hist_Dark_Energy,bin_lower,bin_upper)
     old_integral = Hist_Bkgd_R2off.Integral()
     bkgd_scale = 0
     bkgd_scale_err = 0
@@ -2327,36 +2357,39 @@ def GetShowerHistogramsFromFile(FilePath):
     bin_lower_y = Hist2D_Data.GetYaxis().FindBin(MSCW_lower_cut)
     bin_upper_y = Hist2D_Data.GetYaxis().FindBin(MSCW_blind_cut)-1
 
-    HistName = "Hist_Data_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    ErecS_lower_cut_int = int(ErecS_lower_cut)
+    ErecS_upper_cut_int = int(ErecS_upper_cut)
+
+    HistName = "Hist_Data_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     print 'Getting histogram %s'%(HistName)
     Hist2D_Data.Reset()
     Hist2D_Data.Add(InputFile.Get(HistName))
-    HistName = "Hist_Dark_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Dark_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist2D_Dark.Reset()
     Hist2D_Dark.Add(InputFile.Get(HistName))
-    HistName = "Hist_TrueBkgd_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_TrueBkgd_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist2D_TrueBkgd.Reset()
     Hist2D_TrueBkgd.Add(InputFile.Get(HistName))
-    HistName = "Hist_GammaDark_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_GammaDark_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist2D_GammaDark.Reset()
     Hist2D_GammaDark.Add(InputFile.Get(HistName))
-    HistName = "Hist_GammaRDBM_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_GammaRDBM_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist2D_GammaRDBM.Reset()
     Hist2D_GammaRDBM.Add(InputFile.Get(HistName))
-    HistName = "Hist_Rank0_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Rank0_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist2D_Rank0.Reset()
     Hist2D_Rank0.Add(InputFile.Get(HistName))
-    HistName = "Hist_Rank1_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Rank1_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist2D_Rank1.Reset()
     Hist2D_Rank1.Add(InputFile.Get(HistName))
-    HistName = "Hist_Rank2_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Rank2_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist2D_Rank2.Reset()
     Hist2D_Rank2.Add(InputFile.Get(HistName))
-    HistName = "Hist_Rank3_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Rank3_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist2D_Rank3.Reset()
     Hist2D_Rank3.Add(InputFile.Get(HistName))
-    HistName = "Hist_Bkgd_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
-    #HistName = "Hist_BkgdBlind_MSCLW_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Bkgd_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
+    if isBlind: HistName = "Hist_BkgdBlind_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist2D_Bkgd.Reset()
     Hist2D_Bkgd.Add(InputFile.Get(HistName))
     for bx in range(1,Hist2D_Bkgd.GetNbinsX()+1):
@@ -2662,10 +2695,17 @@ def SystAsFunctionOfSignal():
                 for e in range(0,len(energy_list)-1):
                     ErecS_lower_cut = energy_list[e]
                     ErecS_upper_cut = energy_list[e+1]
+                    if ErecS_upper_cut<=energy_fine_bin[energy_fine_bin_cut_low]: continue
+                    if ErecS_lower_cut>=energy_fine_bin[energy_fine_bin_cut_up]: continue
                     GetShowerHistogramsFromFile(FilePath_Folder0[0])
                     StackShowerHistograms()
-                    NormalizeTheta2Histograms(FilePath_Folder0[0])
-                    StackTheta2Histograms()
+                    NormalizeEnergyHistograms(FilePath_Folder0[0])
+                    StackEnergyHistograms()
+                    for e2 in range(energy_fine_bin_cut_low,energy_fine_bin_cut_up):
+                        ErecS_lower_cut = energy_fine_bin[e2]
+                        ErecS_upper_cut = energy_fine_bin[e2+1]
+                        NormalizeTheta2Histograms(FilePath_Folder0[0])
+                        StackTheta2Histograms()
 
             NormalizeEigenvalues()
             Hist_Eigenvalue_2ndRank[len(Hist_Eigenvalue_2ndRank)-1].SetBinContent(flux+1,Hist_Data_Eigenvalues_real_SumE.GetBinContent(2))
@@ -2731,10 +2771,17 @@ def SystAsFunctionOfSignal():
                 for e in range(0,len(energy_list)-1):
                     ErecS_lower_cut = energy_list[e]
                     ErecS_upper_cut = energy_list[e+1]
+                    if ErecS_upper_cut<=energy_fine_bin[energy_fine_bin_cut_low]: continue
+                    if ErecS_lower_cut>=energy_fine_bin[energy_fine_bin_cut_up]: continue
                     GetShowerHistogramsFromFile(FilePath_Folder0[0])
                     StackShowerHistograms()
-                    NormalizeTheta2Histograms(FilePath_Folder0[0])
-                    StackTheta2Histograms()
+                    NormalizeEnergyHistograms(FilePath_Folder0[0])
+                    StackEnergyHistograms()
+                    for e2 in range(energy_fine_bin_cut_low,energy_fine_bin_cut_up):
+                        ErecS_lower_cut = energy_fine_bin[e2]
+                        ErecS_upper_cut = energy_fine_bin[e2+1]
+                        NormalizeTheta2Histograms(FilePath_Folder0[0])
+                        StackTheta2Histograms()
 
         scale_norm = 1./Hist_Data_Eigenvalues_real_SumE.GetBinContent(1)
         Hist_Data_Eigenvector_0_real_SumE.Scale(scale_norm) # this makes sure they all have the same sign
@@ -2819,12 +2866,19 @@ def RadialAcceptance():
             for e in range(0,len(energy_list)-1):
                 ErecS_lower_cut = energy_list[e]
                 ErecS_upper_cut = energy_list[e+1]
+                if ErecS_upper_cut<=energy_fine_bin[energy_fine_bin_cut_low]: continue
+                if ErecS_lower_cut>=energy_fine_bin[energy_fine_bin_cut_up]: continue
                 GetShowerHistogramsFromFile(FilePath_Folder0[0])
                 StackShowerHistograms()
-                NormalizeTheta2Histograms(FilePath_Folder0[0])
-                StackTheta2Histograms()
-                NormalizeCameraFoVHistograms(FilePath_Folder0[0])
-                StackCameraFoVHistograms()
+                NormalizeEnergyHistograms(FilePath_Folder0[0])
+                StackEnergyHistograms()
+                for e2 in range(energy_fine_bin_cut_low,energy_fine_bin_cut_up):
+                    ErecS_lower_cut = energy_fine_bin[e2]
+                    ErecS_upper_cut = energy_fine_bin[e2+1]
+                    NormalizeTheta2Histograms(FilePath_Folder0[0])
+                    StackTheta2Histograms()
+                    NormalizeCameraFoVHistograms(FilePath_Folder0[0])
+                    StackCameraFoVHistograms()
 
     Hist_Data_CameraFoV_SumE.Rebin2D(n_rebin,n_rebin)
     Hist_Bkgd_CameraFoV_SumE.Rebin2D(n_rebin,n_rebin)
@@ -2884,10 +2938,17 @@ def SystAsFunctionOfElevation():
             for e in range(0,len(energy_list)-1):
                 ErecS_lower_cut = energy_list[e]
                 ErecS_upper_cut = energy_list[e+1]
+                if ErecS_upper_cut<=energy_fine_bin[energy_fine_bin_cut_low]: continue
+                if ErecS_lower_cut>=energy_fine_bin[energy_fine_bin_cut_up]: continue
                 GetShowerHistogramsFromFile(FilePath_Folder0[0])
                 StackShowerHistograms()
-                NormalizeTheta2Histograms(FilePath_Folder0[0])
-                StackTheta2Histograms()
+                NormalizeEnergyHistograms(FilePath_Folder0[0])
+                StackEnergyHistograms()
+                for e2 in range(energy_fine_bin_cut_low,energy_fine_bin_cut_up):
+                    ErecS_lower_cut = energy_fine_bin[e2]
+                    ErecS_upper_cut = energy_fine_bin[e2+1]
+                    NormalizeTheta2Histograms(FilePath_Folder0[0])
+                    StackTheta2Histograms()
 
             NormalizeEigenvalues()
             Hist_Eigenvalue_2ndRank[len(Hist_Eigenvalue_2ndRank)-1].SetBinContent(elev+1,Hist_Data_Eigenvalues_real_SumE.GetBinContent(2))
@@ -2951,10 +3012,17 @@ def SystAsFunctionOfElevation():
             for e in range(0,len(energy_list)-1):
                 ErecS_lower_cut = energy_list[e]
                 ErecS_upper_cut = energy_list[e+1]
+                if ErecS_upper_cut<=energy_fine_bin[energy_fine_bin_cut_low]: continue
+                if ErecS_lower_cut>=energy_fine_bin[energy_fine_bin_cut_up]: continue
                 GetShowerHistogramsFromFile(FilePath_Folder0[0])
                 StackShowerHistograms()
-                NormalizeTheta2Histograms(FilePath_Folder0[0])
-                StackTheta2Histograms()
+                NormalizeEnergyHistograms(FilePath_Folder0[0])
+                StackEnergyHistograms()
+                for e2 in range(energy_fine_bin_cut_low,energy_fine_bin_cut_up):
+                    ErecS_lower_cut = energy_fine_bin[e2]
+                    ErecS_upper_cut = energy_fine_bin[e2+1]
+                    NormalizeTheta2Histograms(FilePath_Folder0[0])
+                    StackTheta2Histograms()
 
         Make2DSignificancePlotShowerShape(Hist2D_Data_SumE,Hist2D_Bkgd_SumE,Hist2D_GammaRDBM_SumE,'MSCL','MSCW','MSCLW_Elev%sto%s_%s'%(file_elev_lower,file_elev_upper,folder_tag))
 
@@ -3051,15 +3119,22 @@ def SystAsFunctionOfGalLat():
         color_idx = min(color_idx,len(color_code)-1)
         color_S2B += [color_code[color_idx]]
         ResetStackedShowerHistograms()
-        for e in range(0,len(energy_list)-1):
-            ErecS_lower_cut = energy_list[e]
-            ErecS_upper_cut = energy_list[e+1]
-            for path in range(1,len(FilePath_Folder0[source])):
-                if not os.path.isfile(FilePath_Folder0[source][path]):continue
+        for path in range(1,len(FilePath_Folder0[source])):
+            if not os.path.isfile(FilePath_Folder0[source][path]):continue
+            for e in range(0,len(energy_list)-1):
+                ErecS_lower_cut = energy_list[e]
+                ErecS_upper_cut = energy_list[e+1]
+                if ErecS_upper_cut<=energy_fine_bin[energy_fine_bin_cut_low]: continue
+                if ErecS_lower_cut>=energy_fine_bin[energy_fine_bin_cut_up]: continue
                 GetShowerHistogramsFromFile(FilePath_Folder0[source][path])
                 StackShowerHistograms()
-                NormalizeTheta2Histograms(FilePath_Folder0[source][path])
-                StackTheta2Histograms()
+                NormalizeEnergyHistograms(FilePath_Folder0[source][path])
+                StackEnergyHistograms()
+                for e2 in range(energy_fine_bin_cut_low,energy_fine_bin_cut_up):
+                    ErecS_lower_cut = energy_fine_bin[e2]
+                    ErecS_upper_cut = energy_fine_bin[e2+1]
+                    NormalizeTheta2Histograms(FilePath_Folder0[source][path])
+                    StackTheta2Histograms()
         s2b = 0.
         s2b_err = 0.
         if not "_Crab0" in PercentCrab:
@@ -3134,10 +3209,17 @@ def SensitivityAsFunctionOfExposure():
                 ErecS_upper_cut = energy_list[e+1]
                 for path in range(1,len(FilePath_Folder0[source])):
                     if not os.path.isfile(FilePath_Folder0[source][path]):continue
+                    if ErecS_upper_cut<=energy_fine_bin[energy_fine_bin_cut_low]: continue
+                    if ErecS_lower_cut>=energy_fine_bin[energy_fine_bin_cut_up]: continue
                     GetShowerHistogramsFromFile(FilePath_Folder0[source][path])
                     StackShowerHistograms()
-                    NormalizeTheta2Histograms(FilePath_Folder0[source][path])
-                    StackTheta2Histograms()
+                    NormalizeEnergyHistograms(FilePath_Folder0[source][path])
+                    StackEnergyHistograms()
+                    for e2 in range(energy_fine_bin_cut_low,energy_fine_bin_cut_up):
+                        ErecS_lower_cut = energy_fine_bin[e2]
+                        ErecS_upper_cut = energy_fine_bin[e2+1]
+                        NormalizeTheta2Histograms(FilePath_Folder0[source][path])
+                        StackTheta2Histograms()
 
         NormalizeEigenvalues()
         Hist_Eigenvalue_real_Rank[len(Hist_Eigenvalue_real_Rank)-1].Add(Hist_Data_Eigenvalues_real_SumE)
@@ -3198,10 +3280,17 @@ def SystAsFunctionOfNSB():
             ErecS_upper_cut = energy_list[e+1]
             for path in range(1,len(FilePath_Folder0[source])):
                 if not os.path.isfile(FilePath_Folder0[source][path]):continue
+                if ErecS_upper_cut<=energy_fine_bin[energy_fine_bin_cut_low]: continue
+                if ErecS_lower_cut>=energy_fine_bin[energy_fine_bin_cut_up]: continue
                 GetShowerHistogramsFromFile(FilePath_Folder0[source][path])
                 StackShowerHistograms()
-                NormalizeTheta2Histograms(FilePath_Folder0[source][path])
-                StackTheta2Histograms()
+                NormalizeEnergyHistograms(FilePath_Folder0[source][path])
+                StackEnergyHistograms()
+                for e2 in range(energy_fine_bin_cut_low,energy_fine_bin_cut_up):
+                    ErecS_lower_cut = energy_fine_bin[e2]
+                    ErecS_upper_cut = energy_fine_bin[e2+1]
+                    NormalizeTheta2Histograms(FilePath_Folder0[source][path])
+                    StackTheta2Histograms()
         s2b = 0.
         s2b_err = 0.
         if not "_Crab0" in PercentCrab:
@@ -3254,10 +3343,17 @@ def SystAsFunctionOfNSB():
                 ErecS_upper_cut = energy_list[e+1]
                 for path in range(1,len(FilePath_Folder0[source])):
                     if not os.path.isfile(FilePath_Folder0[source][path]):continue
+                    if ErecS_upper_cut<=energy_fine_bin[energy_fine_bin_cut_low]: continue
+                    if ErecS_lower_cut>=energy_fine_bin[energy_fine_bin_cut_up]: continue
                     GetShowerHistogramsFromFile(FilePath_Folder0[source][path])
                     StackShowerHistograms()
-                    NormalizeTheta2Histograms(FilePath_Folder0[source][path])
-                    StackTheta2Histograms()
+                    NormalizeEnergyHistograms(FilePath_Folder0[source][path])
+                    StackEnergyHistograms()
+                    for e2 in range(energy_fine_bin_cut_low,energy_fine_bin_cut_up):
+                        ErecS_lower_cut = energy_fine_bin[e2]
+                        ErecS_upper_cut = energy_fine_bin[e2+1]
+                        NormalizeTheta2Histograms(FilePath_Folder0[source][path])
+                        StackTheta2Histograms()
 
         NormalizeEigenvalues()
         Hist_Eigenvalue_real_Rank[len(Hist_Eigenvalue_real_Rank)-1].Add(Hist_Data_Eigenvalues_real_SumE)
@@ -3317,12 +3413,13 @@ def SystAsFunctionOfEnergy():
             ErecS_upper_cut = energy_list[e+1]
             for path in range(1,len(FilePath_Folder0[source])):
                 if not os.path.isfile(FilePath_Folder0[source][path]):continue
+                if ErecS_upper_cut<=energy_fine_bin[energy_fine_bin_cut_low]: continue
+                if ErecS_lower_cut>=energy_fine_bin[energy_fine_bin_cut_up]: continue
                 GetShowerHistogramsFromFile(FilePath_Folder0[source][path])
                 StackShowerHistograms()
-                NormalizeTheta2Histograms(FilePath_Folder0[source][path])
-                StackTheta2Histograms()
                 NormalizeEnergyHistograms(FilePath_Folder0[source][path])
                 StackEnergyHistograms()
+
         Hist_Syst_Energy = ROOT.TH1D("Hist_Data_Energy","",len(energy_fine_bin)-1,array('d',energy_fine_bin))
         Hist_Syst_Energy.Reset()
         Hist_Syst_Energy.Add(Hist_TrueBkgd_Energy_SumE)
@@ -3335,52 +3432,6 @@ def SystAsFunctionOfEnergy():
     MakeComparisonPlotSigDist(Hist_MDM_S2B_Energy,legend_S2B,color_S2B,'E [GeV]','Systematics_MDM_Energy%s_%s'%(PercentCrab,folder_tag),0.6,1.4,True,False)
     MakeComparisonPlotSigDist(Hist_Dark_S2B_Energy,legend_S2B,color_S2B,'E [GeV]','Systematics_Dark_Energy%s_%s'%(PercentCrab,folder_tag),0.6,1.4,True,False)
 
-    #big_energy_bin = []
-    #big_energy_bin += [200]
-    #big_energy_bin += [500]
-    #big_energy_bin += [1000]
-    #big_energy_bin += [4000]
-    #Hist_Eigenvalue_real_Rank = []
-    #Hist_Eigenvalue_imag_Rank = []
-    #legend_S2B = []
-    #color_S2B = []
-    #for big_e in range(0,len(big_energy_bin)-1):
-    #    legend_S2B += ['%s GeV'%(big_energy_bin[big_e])]
-    #    color_idx = int(big_e*len(color_code)/max(1,len(big_energy_bin)-2))
-    #    color_idx = min(color_idx,len(color_code)-1)
-    #    color_S2B += [color_code[color_idx]]
-    #    Hist_Eigenvalue_real_Rank += [ROOT.TH1D("Hist_Eigenvalue_real_Rank_E%s"%(big_energy_bin[big_e]),"",N_bins_for_deconv,0,N_bins_for_deconv)]
-    #    Hist_Eigenvalue_imag_Rank += [ROOT.TH1D("Hist_Eigenvalue_imag_Rank_E%s"%(big_energy_bin[big_e]),"",N_bins_for_deconv,0,N_bins_for_deconv)]
-    #    ResetStackedShowerHistograms()
-    #    for source in range(0,len(FilePath_Folder0)):
-    #        source_name = FilePath_Folder0[source][0]
-    #        exposure_hours = 0.
-    #        exposure_hours_dark = 0.
-    #        NSB_avg = 0.
-    #        NSB_avg_dark = 0.
-    #        GetSourceInfo(FilePath_Folder0[source])
-    #        print 'Source %s, exposure = %s, NSB = %s'%(source_name,exposure_hours,NSB_avg)
-    #        for e in range(0,len(energy_list)-1):
-    #            ErecS_lower_cut = energy_list[e]
-    #            ErecS_upper_cut = energy_list[e+1]
-    #            if ErecS_lower_cut<big_energy_bin[big_e]: continue
-    #            if ErecS_upper_cut>big_energy_bin[big_e+1]: continue
-    #            for path in range(1,len(FilePath_Folder0[source])):
-    #                if not os.path.isfile(FilePath_Folder0[source][path]):continue
-    #                GetShowerHistogramsFromFile(FilePath_Folder0[source][path])
-    #                StackShowerHistograms()
-    #                NormalizeTheta2Histograms(FilePath_Folder0[source][path])
-    #                StackTheta2Histograms()
-
-    #    NormalizeEigenvalues()
-    #    Hist_Eigenvalue_real_Rank[len(Hist_Eigenvalue_real_Rank)-1].Add(Hist_Data_Eigenvalues_real_SumE)
-    #    Hist_Eigenvalue_imag_Rank[len(Hist_Eigenvalue_imag_Rank)-1].Add(Hist_Data_Eigenvalues_imag_SumE)
-
-    #for hist in range(0,len(Hist_Eigenvalue_real_Rank)):
-    #    Hist_Eigenvalue_real_Rank[hist].GetXaxis().SetRangeUser(0,16)
-    #    Hist_Eigenvalue_imag_Rank[hist].GetXaxis().SetRangeUser(0,16)
-    #MakeComparisonPlot(Hist_Eigenvalue_real_Rank,legend_S2B,color_S2B,'k','Re(#lambda_{k})/Re(#lambda_{0})','Eigenvalue_real_Rank_Energy_%s'%(folder_tag),0.,0.,False,True)
-    #MakeComparisonPlot(Hist_Eigenvalue_imag_Rank,legend_S2B,color_S2B,'k','Im(#lambda_{k})/Re(#lambda_{0})','Eigenvalue_imag_Rank_Energy_%s'%(folder_tag),0.,0.,False,False)
 
 def SystAsFunctionOfRank():
 
@@ -3518,10 +3569,17 @@ def SystDarkVsMDM():
             for e in range(0,len(energy_list)-1):
                 ErecS_lower_cut = energy_list[e]
                 ErecS_upper_cut = energy_list[e+1]
+                if ErecS_upper_cut<=energy_fine_bin[energy_fine_bin_cut_low]: continue
+                if ErecS_lower_cut>=energy_fine_bin[energy_fine_bin_cut_up]: continue
                 GetShowerHistogramsFromFile(FilePath_Folder0[source][path])
                 StackShowerHistograms()
-                NormalizeTheta2Histograms(FilePath_Folder0[source][path])
-                StackTheta2Histograms()
+                NormalizeEnergyHistograms(FilePath_Folder0[source][path])
+                StackEnergyHistograms()
+                for e2 in range(energy_fine_bin_cut_low,energy_fine_bin_cut_up):
+                    ErecS_lower_cut = energy_fine_bin[e2]
+                    ErecS_upper_cut = energy_fine_bin[e2+1]
+                    NormalizeTheta2Histograms(FilePath_Folder0[source][path])
+                    StackTheta2Histograms()
             #PlotsStackedHistograms('%s_%s_%s'%(source_name,path,folder_tag))
 
         scale_norm = 1./Hist_Data_Eigenvalues_real_SumE.GetBinContent(1)
@@ -3643,10 +3701,17 @@ def CompareDiffFolders():
                 for e in range(0,len(energy_list)-1):
                     ErecS_lower_cut = energy_list[e]
                     ErecS_upper_cut = energy_list[e+1]
+                    if ErecS_upper_cut<=energy_fine_bin[energy_fine_bin_cut_low]: continue
+                    if ErecS_lower_cut>=energy_fine_bin[energy_fine_bin_cut_up]: continue
                     GetShowerHistogramsFromFile(FilePath_AllFolders[folder][source][path])
                     StackShowerHistograms()
-                    NormalizeTheta2Histograms(FilePath_AllFolders[folder][source][path])
-                    StackTheta2Histograms()
+                    NormalizeEnergyHistograms(FilePath_AllFolders[folder][source][path])
+                    StackEnergyHistograms()
+                    for e2 in range(energy_fine_bin_cut_low,energy_fine_bin_cut_up):
+                        ErecS_lower_cut = energy_fine_bin[e2]
+                        ErecS_upper_cut = energy_fine_bin[e2+1]
+                        NormalizeTheta2Histograms(FilePath_AllFolders[folder][source][path])
+                        StackTheta2Histograms()
                 #PlotsStackedHistograms('%s_%s_%s'%(source_name,path,folder_tag))
             s2b = 0.
             s2b_err = 0.
@@ -3819,10 +3884,13 @@ def SingleSourceSpectrum(source_name_input):
             ErecS_lower_cut = energy_list[e]
             ErecS_upper_cut = energy_list[e+1]
             GetShowerHistogramsFromFile(FilePath_Folder0[0])
-            NormalizeTheta2Histograms(FilePath_Folder0[0])
-            NormalizeSkyMapHistograms(FilePath_Folder0[0])
             NormalizeEnergyHistograms(FilePath_Folder0[0])
             StackEnergyHistograms()
+        for e in range(energy_fine_bin_cut_low,energy_fine_bin_cut_up):
+            ErecS_lower_cut = energy_fine_bin[e]
+            ErecS_upper_cut = energy_fine_bin[e+1]
+            NormalizeTheta2Histograms(FilePath_Folder0[0])
+            NormalizeSkyMapHistograms(FilePath_Folder0[0])
             Hist_temp = Hist_Data_Skymap.Clone()
             Hist_temp.Rebin2D(n_rebin,n_rebin)
             data_integral = SkymapHighlightIntegral(Hist_temp,Hist_Highlight_Bias_Skymap)
@@ -3848,7 +3916,7 @@ def SingleSourceSpectrum(source_name_input):
                 norm_sig_rate_err = sig_rate_err/incl_bkg_rate*Hist_MDM_InclBkg_Rate[len(Hist_MDM_InclBkg_Rate)-1].GetBinContent(e+1)/eff_area_ref
                 Hist_MDM_NormSig_Rate[len(Hist_MDM_NormSig_Rate)-1].SetBinContent(e+1,norm_sig_rate)
                 Hist_MDM_NormSig_Rate[len(Hist_MDM_NormSig_Rate)-1].SetBinError(e+1,norm_sig_rate_err)
-        for e in range(0,len(energy_fine_bin)-1):
+        for e in range(energy_fine_bin_cut_low,energy_fine_bin_cut_up):
             ErecS_lower_cut = energy_fine_bin[e]
             ErecS_upper_cut = energy_fine_bin[e+1]
             Hist_Diff = Hist_Data_RoI_Energy_SumE.Clone()
@@ -3966,16 +4034,21 @@ def SingleSourceSkyMap(source_name_input):
             for e in range(0,len(energy_list)-1):
                 ErecS_lower_cut = energy_list[e]
                 ErecS_upper_cut = energy_list[e+1]
+                if ErecS_upper_cut<=energy_fine_bin[energy_fine_bin_cut_low]: continue
+                if ErecS_lower_cut>=energy_fine_bin[energy_fine_bin_cut_up]: continue
                 GetShowerHistogramsFromFile(FilePath_Folder0[source][path])
                 StackShowerHistograms()
-                NormalizeTheta2Histograms(FilePath_Folder0[source][path])
-                StackTheta2Histograms()
                 NormalizeEnergyHistograms(FilePath_Folder0[source][path])
                 StackEnergyHistograms()
-                NormalizeCameraFoVHistograms(FilePath_Folder0[source][path])
-                StackCameraFoVHistograms()
-                NormalizeSkyMapHistograms(FilePath_Folder0[source][path])
-                StackSkymapHistograms()
+                for e2 in range(energy_fine_bin_cut_low,energy_fine_bin_cut_up):
+                    ErecS_lower_cut = energy_fine_bin[e2]
+                    ErecS_upper_cut = energy_fine_bin[e2+1]
+                    NormalizeTheta2Histograms(FilePath_Folder0[source][path])
+                    StackTheta2Histograms()
+                    NormalizeCameraFoVHistograms(FilePath_Folder0[source][path])
+                    StackCameraFoVHistograms()
+                    NormalizeSkyMapHistograms(FilePath_Folder0[source][path])
+                    StackSkymapHistograms()
 
         NormalizeEigenvalues()
         Hist_Eigenvalue_real_Rank += [ROOT.TH1D("Hist_Eigenvalue_real_Rank_Data","",N_bins_for_deconv,0,N_bins_for_deconv)]
@@ -4026,7 +4099,8 @@ def SingleSourceSkyMap(source_name_input):
         MakeComparisonPlot(Hist_Eigenvector_0,legend_S2B,color_S2B,'k','amplitude','ONOFF_Eigenvector_real_0_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag),0.,0.,False,False)
         MakeComparisonPlot(Hist_Eigenvector_1,legend_S2B,color_S2B,'k','amplitude','ONOFF_Eigenvector_real_1_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag),0.,0.,False,False)
 
-        ErecS_lower_cut = energy_list[0]
+        #ErecS_lower_cut = energy_list[0]
+        ErecS_lower_cut = energy_fine_bin[energy_fine_bin_cut_low]
         PlotsStackedHistograms('%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
 
         Make2DSignificancePlotShowerShape(Hist2D_Data_SumE,Hist2D_Bkgd_SumE,Hist2D_GammaRDBM_SumE,'MSCL','MSCW','MSCLW_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
@@ -4117,11 +4191,11 @@ SystAsFunctionOfEnergy()
 #source_of_interest = 'G079'
 #source_of_interest = 'WComaeV6'
 #source_of_interest = '1ES1218V6'
-#source_of_interest = 'MGRO_J1908_V6'
+source_of_interest = 'MGRO_J1908_V6'
 #source_of_interest = 'MGRO_J1908_V5'
 #source_of_interest = 'IC443HotSpotV5'
 #source_of_interest = 'GemingaV6'
-source_of_interest = 'GemingaV5'
+#source_of_interest = 'GemingaV5'
 #source_of_interest = 'SgrAV6'
 #source_of_interest = 'Everything'
 

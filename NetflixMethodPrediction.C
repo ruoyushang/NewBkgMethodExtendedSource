@@ -1738,11 +1738,11 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
 
         mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
         fill2DHistogramAbs(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
-        std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,20,1,20) << std::endl;
+        std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,15,1,15) << std::endl;
 
-        mtx_eigenvector_init = mtx_eigenvector;
-        mtx_eigenvalue_init = mtx_eigenvalue;
-        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+        //mtx_eigenvector_init = mtx_eigenvector;
+        //mtx_eigenvalue_init = mtx_eigenvalue;
+        //mtx_eigenvector_inv_init = mtx_eigenvector_inv;
 
         signal_model = false;
         ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
@@ -1763,8 +1763,8 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         NetflixParametrizeEigenvectors(par_1st);
 
         mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
-        fill2DHistogramAbs(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
-        std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,20,1,20) << std::endl;
+        fill2DHistogramAbs(&Hist_BkgdBlind_MSCLW.at(e),mtx_data_bkgd);
+        std::cout << "Hist_BkgdBlind_MSCLW.at(e).Integral() = " << Hist_BkgdBlind_MSCLW.at(e).Integral(1,15,1,15) << std::endl;
 
         for (int NthEigenvalue=1;NthEigenvalue<=N_bins_for_deconv;NthEigenvalue++)
         {
@@ -1790,7 +1790,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         double scale_gamma = double(gamma_total)/double(Hist_GammaRDBM_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper));
         Hist_GammaRDBM_MSCLW.at(e).Scale(scale_gamma);
 
-        std::cout << "Hist_TrueBkgd->Integral() = " << Hist_TrueBkgd->Integral(1,20,1,20) << std::endl;
+        std::cout << "Hist_TrueBkgd->Integral() = " << Hist_TrueBkgd->Integral(1,15,1,15) << std::endl;
         std::cout << "eigensolver_data.eigenvalues()(mtx_data.cols()-1):" << std::endl;
         std::cout << eigensolver_data.eigenvalues()(mtx_data.cols()-1) << std::endl;
         std::cout << "eigensolver_data.eigenvalues()(mtx_data.cols()-2):" << std::endl;
@@ -1825,7 +1825,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         Hist_Rank2_MSCLW.at(e).Write();
         Hist_Rank3_MSCLW.at(e).Write();
         Hist_Bkgd_MSCLW.at(e).Write();
-        //Hist_BkgdBlind_MSCLW.at(e).Write();
+        Hist_BkgdBlind_MSCLW.at(e).Write();
         Hist_Data_Eigenvalues_real.at(e).Write();
         Hist_Dark_Eigenvalues_real.at(e).Write();
         Hist_Data_Eigenvalues_imag.at(e).Write();
