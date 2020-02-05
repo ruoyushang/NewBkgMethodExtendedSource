@@ -71,7 +71,9 @@ MatrixXcd mtx_data_err(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_dark_err(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvalue_init(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvector_init(N_bins_for_deconv,N_bins_for_deconv);
+MatrixXcd mtx_eigenvector_vari(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvector_inv_init(N_bins_for_deconv,N_bins_for_deconv);
+MatrixXcd mtx_eigenvector_inv_vari(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvector(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvector_inv(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvalue(N_bins_for_deconv,N_bins_for_deconv);
@@ -465,7 +467,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
     //int biny_blind = hist_data->GetYaxis()->FindBin(1.);
     //int binx_upper = hist_data->GetXaxis()->FindBin(3.);
     //int biny_upper = hist_data->GetYaxis()->FindBin(3.);
-    //int binx_upper = hist_data->GetXaxis()->FindBin(3.);
+    //int binx_upper = hist_data->GetXaxis()->FindBin(2.);
     //int biny_upper = hist_data->GetYaxis()->FindBin(2.);
     double chi2 = 0.;
     for (int bx=1;bx<=hist_data->GetNbinsX();bx++)
@@ -485,8 +487,8 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
                 double width = 0.1;
                 double data_err = max(1.0,pow(data,0.5));
                 double model_err = max(1.0,pow(abs(model),0.5));
-                //weight = 1./(data_err*data_err+model_err*model_err);
-                weight = 1./(data_err*data_err);
+                weight = 1./(data_err*data_err+model_err*model_err);
+                //weight = 1./(data_err*data_err);
                 double chi2_this = weight*pow(data-model,2);
                 if (isnan(chi2_this))
                 {
@@ -770,7 +772,9 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             mtx_eigenvector_init(row,col) = 0.;
+            mtx_eigenvector_vari(row,col) = 0.;
             mtx_eigenvector_inv_init(row,col) = 0.;
+            mtx_eigenvector_inv_vari(row,col) = 0.;
             mtx_eigenvalue_init(row,col) = 0.;
         }
     }
@@ -799,6 +803,16 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
             {
                 mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row);
             }
+            int row_lower = max(0,row-3);
+            int row_upper = min(N_bins_for_deconv-1,row+3);
+            double vari = 0.;
+            for (int row2=row_lower;row2<=row_upper;row2++)
+            {
+                vari += pow(eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row2).real()-eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row).real(),2);
+            }
+            vari = vari/double(row_upper-row_lower+1);
+            vari = pow(vari,0.5);
+            mtx_eigenvector_vari.col(mtx_dark.cols()-NthEigenvector)(row) = vari;
         }
         for (int col=0;col<N_bins_for_deconv;col++)
         {
@@ -816,6 +830,16 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
             {
                 mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = eigensolver_data.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col);
             }
+            int col_lower = max(0,col-3);
+            int col_upper = min(N_bins_for_deconv-1,col+3);
+            double vari = 0.;
+            for (int col2=col_lower;col2<=col_upper;col2++)
+            {
+                vari += pow(eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col2).real()-eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col).real(),2);
+            }
+            vari = vari/double(col_upper-col_lower+1);
+            vari = pow(vari,0.5);
+            mtx_eigenvector_inv_vari.row(mtx_dark.cols()-NthEigenvector)(col) = vari;
         }
 
     }
@@ -1134,24 +1158,36 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
     {
 
         limit = 0.0;
+        int col_fix = N_bins_for_deconv-NthEigenvector;
         first_index = 1+(2*NthEigenvector-2)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.01);
             if (row>=biny_blind) 
             {
-                Chi2Minimizer->SetVariableLimits(first_index+row,-limit,limit);
+                Chi2Minimizer->SetVariableLimits(first_index+row,0.0,0.0);
+            }
+            else
+            {
+                double vari = mtx_eigenvector_vari(row,col_fix).real();
+                Chi2Minimizer->SetVariableLimits(first_index+row,-vari,vari);
             }
         }
 
         limit = 0.0;
+        int row_fix = N_bins_for_deconv-NthEigenvector;
         first_index = 1+(2*NthEigenvector-1)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.01);
             if (col>=binx_blind) 
             {
-                Chi2Minimizer->SetVariableLimits(first_index+col,-limit,limit);
+                Chi2Minimizer->SetVariableLimits(first_index+col,0.0,0.0);
+            }
+            else
+            {
+                double vari = mtx_eigenvector_vari(row_fix,col).real();
+                Chi2Minimizer->SetVariableLimits(first_index+col,-vari,vari);
             }
         }
 
