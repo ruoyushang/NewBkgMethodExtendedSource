@@ -54,12 +54,12 @@ double MSCL_cut_lower = -1.0;
 double MSCL_cut_blind = 1.0;
 double MSCL_cut_upper = 1.0;
 
-//const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] = {100,1e4};
-//int N_bins_for_deconv_at_E[N_energy_bins] = {30};
-const int N_energy_bins = 5;
-double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.2),pow(10,2.4),pow(10,2.6),pow(10,3.0),pow(10,4.0)};
-int N_bins_for_deconv_at_E[N_energy_bins] = {30,30,30,30,30};
+const int N_energy_bins = 1;
+double energy_bins[N_energy_bins+1] = {100,1e4};
+int N_bins_for_deconv_at_E[N_energy_bins] = {30};
+//const int N_energy_bins = 5;
+//double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.2),pow(10,2.4),pow(10,2.6),pow(10,3.0),pow(10,4.0)};
+//int N_bins_for_deconv_at_E[N_energy_bins] = {30,30,30,30,30};
 //const int N_energy_bins = 12;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,3.0),pow(10,3.2),pow(10,3.6),pow(10,4.0)};
 //int N_bins_for_deconv_at_E[N_energy_bins] = {30,30,30,30,30,30,30,30,30,30,30,30};
@@ -130,6 +130,55 @@ double DarkRun_theta2_lower = 0.;
 double DarkRun_theta2_upper = 10.;
 
 vector<pair<double,double>> ON_pointing_radec_for_DarkRun;
+vector<vector<double>> BrightStars_Data;
+
+bool CoincideWithBrightStars(double ra, double dec)
+{
+    bool isCoincident = false;
+    double brightness_cut = 7.0;
+    double radius_cut = 0.25;
+    for (int star=0;star<BrightStars_Data.size();star++)
+    {
+        double star_ra = BrightStars_Data.at(star).at(0);
+        double star_dec = BrightStars_Data.at(star).at(1);
+        double star_brightness = BrightStars_Data.at(star).at(3);
+        double radius = pow((ra-star_ra)*(ra-star_ra)+(dec-star_dec)*(dec-star_dec),0.5);
+        if (star_brightness>brightness_cut) continue;
+        if (radius>radius_cut) continue;
+        isCoincident = true;
+    }
+    return isCoincident;
+}
+void GetBrightStars()
+{
+    double brightness_cut = 7.0;
+    std::ifstream astro_file("/home/rshang/EventDisplay/aux/AstroData/Catalogues/Hipparcos_MAG8_1997.dat");
+    std::string line;
+    // Read one line at a time into the variable line:
+    while(std::getline(astro_file, line))
+    {
+        if (line.find("#")!=std::string::npos) continue;
+        if (line.find("*")!=std::string::npos) continue;
+        if (line.empty()) continue;
+        std::vector<double>   lineData;
+        std::stringstream  lineStream(line);
+        double value;
+        // Read an integer at a time from the line
+        while(lineStream >> value)
+        {
+            // Add the integers from a line to a 1D array (vector)
+            lineData.push_back(value);
+        }
+        if (lineData.size()!=5) continue;
+        double star_ra = lineData.at(0);
+        double star_dec = lineData.at(1);
+        double star_brightness = lineData.at(3);
+        if (star_brightness>brightness_cut) continue;
+        if (pow((mean_tele_point_ra-star_ra)*(mean_tele_point_ra-star_ra)+(mean_tele_point_dec-star_dec)*(mean_tele_point_dec-star_dec),0.5)>6.) continue;
+        BrightStars_Data.push_back(lineData);
+    }
+    std::cout << "I found " << BrightStars_Data.size() << " bright stars" << std::endl;
+}
 
 pair<double,double> GetSourceRaDec(TString source_name)
 {
@@ -713,6 +762,7 @@ bool GammaFoV() {
     return true;
 }
 bool DarkFoV() {
+    if (CoincideWithBrightStars(ra_sky,dec_sky)) return false;
     //if (R2off<Theta2_cut_lower) return false;
     //if (R2off>Theta2_cut_upper) return false;
     if (theta2<0.3) return false;
@@ -722,6 +772,7 @@ bool DarkFoV() {
     return true;
 }
 bool FoV() {
+    if (CoincideWithBrightStars(ra_sky,dec_sky)) return false;
     //if (R2off<Theta2_cut_lower) return false;
     //if (R2off>Theta2_cut_upper) return false;
     if (theta2<Theta2_cut_lower) return false;
@@ -768,6 +819,9 @@ double GetAreaAlphaWeighted(double rov_radius, double ring_radius)
         for (int j=0;j<200;j++)
         {
             double y = double(j-100)*2./100.;
+            double bin_ra = x+run_tele_point_ra;
+            double bin_dec = y+run_tele_point_dec;
+            if (CoincideWithBrightStars(bin_ra,bin_dec)) continue;
             double r = pow(x*x+y*y,0.5);
             double radial_accptance = TF1_RadialAcc->Eval(r);
             double distance_to_rov_center = pow((x-rov_center_x)*(x-rov_center_x)+(y-rov_center_y)*(y-rov_center_y),0.5);
@@ -858,6 +912,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     pair<double,double> source_ra_dec = GetSourceRaDec(TString(target));
     mean_tele_point_ra = source_ra_dec.first;
     mean_tele_point_dec = source_ra_dec.second;
+
+    GetBrightStars();
 
     roi_ra = mean_tele_point_ra;
     roi_dec = mean_tele_point_dec;
