@@ -39,7 +39,7 @@
 
 #include "/home/rshang/EventDisplay/EVNDISP-480e/inc/VEvndispRunParameter.h"
 
-#include "GetRunList.h"
+#include "GetRunList_v2.h"
 
 #include <complex>
 #include "/home/rshang/Eigen/eigen-eigen-323c052e1731/Eigen/Dense"
@@ -54,12 +54,12 @@ double MSCL_cut_lower = -1.0;
 double MSCL_cut_blind = 1.0;
 double MSCL_cut_upper = 1.0;
 
-const int N_energy_bins = 1;
-double energy_bins[N_energy_bins+1] = {100,1e4};
-int N_bins_for_deconv_at_E[N_energy_bins] = {30};
-//const int N_energy_bins = 5;
-//double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.2),pow(10,2.4),pow(10,2.6),pow(10,3.0),pow(10,4.0)};
-//int N_bins_for_deconv_at_E[N_energy_bins] = {30,30,30,30,30};
+//const int N_energy_bins = 1;
+//double energy_bins[N_energy_bins+1] = {100,1e4};
+//int N_bins_for_deconv_at_E[N_energy_bins] = {30};
+const int N_energy_bins = 3;
+double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.3),pow(10,2.7),pow(10,4.0)};
+int N_bins_for_deconv_at_E[N_energy_bins] = {30,30,30};
 //const int N_energy_bins = 12;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,3.0),pow(10,3.2),pow(10,3.6),pow(10,4.0)};
 //int N_bins_for_deconv_at_E[N_energy_bins] = {30,30,30,30,30,30,30,30,30,30,30,30};
@@ -461,6 +461,60 @@ bool PointingSelection(string file_name,int run, double Elev_cut_lower, double E
     return true;
 }
 
+double GetRunPedestalVar(int run_number)
+{
+    string line;
+    char delimiter = ' ';
+    string acc_runnumber = "";
+    string acc_nsb = "";
+    int nth_line = 0;
+    int nth_delimiter = 0;
+    std::string::size_type sz;
+    double NSB = 0.;
+
+    ifstream myfile ("/home/rshang/EventDisplay/NewBkgMethodExtendedSource/allrunsdiagnostic.txt");
+    if (myfile.is_open())
+    {
+        while ( getline(myfile,line) )
+        {
+            acc_runnumber = "";
+            acc_nsb = "";
+            nth_delimiter = 0;
+            for(int i = 0; i < line.size(); i++)
+            {
+                if (nth_line<84) continue;
+                if(line[i] == delimiter)
+                {
+                    //if (nth_delimiter==1 && std::stoi(acc_runnumber,nullptr,10)==run_number) 
+                    //{
+                    //    cout << "run = " << acc_runnumber << '\n';
+                    //}
+                    if (nth_delimiter==103 && std::stoi(acc_runnumber,nullptr,10)==run_number) 
+                    {
+                        //cout << "acc_nsb = " << acc_nsb << '\n';
+                        NSB = std::stod(acc_nsb,&sz);
+                        //std::cout << "NSB = " << NSB << std::endl;
+                    }
+                    nth_delimiter += 1;
+                }
+                else if (nth_delimiter==0)
+                {
+                    acc_runnumber += line[i];
+                }
+                else if (nth_delimiter==103)
+                {
+                    acc_nsb += line[i];
+                }
+            }
+            nth_line += 1;
+        }
+        myfile.close();
+    }
+    else cout << "Unable to open file"; 
+
+    return NSB;
+}
+
 double GetRunNSB(int run_number)
 {
     string line;
@@ -522,7 +576,8 @@ vector<pair<string,int>> SelectONRunList(vector<pair<string,int>> Data_runlist, 
         char Data_observation[50];
         sprintf(run_number, "%i", int(Data_runlist[run].second));
         sprintf(Data_observation, "%s", Data_runlist[run].first.c_str());
-        double NSB_thisrun = GetRunNSB(int(Data_runlist[run].second));
+        //double NSB_thisrun = GetRunNSB(int(Data_runlist[run].second));
+        double NSB_thisrun = GetRunPedestalVar(int(Data_runlist[run].second));
         if (TString(Data_observation).Contains("NSB075")) NSB_thisrun = 3.30;
         if (TString(Data_observation).Contains("NSB100")) NSB_thisrun = 3.84;
         if (TString(Data_observation).Contains("NSB150")) NSB_thisrun = 4.69;
@@ -563,7 +618,8 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
         else ON_pointing.push_back(GetRunElevAzim(ON_filename,int(ON_runlist[on_run].second)));
         if (TString(ON_observation).Contains("Proton")) ON_pointing_radec.push_back(std::make_pair(0,0));
         else ON_pointing_radec.push_back(GetRunRaDec(ON_filename,int(ON_runlist[on_run].second)));
-        double NSB_thisrun = GetRunNSB(int(ON_runlist[on_run].second));
+        //double NSB_thisrun = GetRunNSB(int(ON_runlist[on_run].second));
+        double NSB_thisrun = GetRunPedestalVar(int(ON_runlist[on_run].second));
         if (TString(ON_observation).Contains("NSB075")) NSB_thisrun = 3.30;
         if (TString(ON_observation).Contains("NSB100")) NSB_thisrun = 3.84;
         if (TString(ON_observation).Contains("NSB150")) NSB_thisrun = 4.69;
@@ -589,7 +645,8 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
         OFF_filename = TString("$VERITAS_USER_DATA_DIR/"+TString(OFF_observation)+"_V6_Moderate-TMVA-BDT.RB."+TString(OFF_runnumber)+".root");
         if (TString(OFF_observation).Contains("Proton")) OFF_pointing.push_back(std::make_pair(70,0));
         else OFF_pointing.push_back(GetRunElevAzim(OFF_filename,int(OFF_runlist[off_run].second)));
-        double NSB_thisrun = GetRunNSB(int(OFF_runlist[off_run].second));
+        //double NSB_thisrun = GetRunNSB(int(OFF_runlist[off_run].second));
+        double NSB_thisrun = GetRunPedestalVar(int(OFF_runlist[off_run].second));
         if (TString(OFF_observation).Contains("NSB075")) NSB_thisrun = 3.30;
         if (TString(OFF_observation).Contains("NSB100")) NSB_thisrun = 3.84;
         if (TString(OFF_observation).Contains("NSB150")) NSB_thisrun = 4.69;
@@ -626,7 +683,15 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
                 }
                 if (already_used_run) continue;
                 double chi2 = pow(ON_pointing[on_run].first+Elev_diff_dark-OFF_pointing[off_run].first,2);
-                chi2 += 20.*pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2);
+                //chi2 += 20.*pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2);
+                if (pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2)>0.2*0.2)
+                {
+                    chi2 += 10000.;
+                }
+                else
+                {
+                    chi2 += 0.;
+                }
                 if (best_chi2>chi2)
                 {
                     best_chi2 = chi2;
@@ -762,7 +827,7 @@ bool GammaFoV() {
     return true;
 }
 bool DarkFoV() {
-    if (CoincideWithBrightStars(ra_sky,dec_sky)) return false;
+    //if (CoincideWithBrightStars(ra_sky,dec_sky)) return false;
     //if (R2off<Theta2_cut_lower) return false;
     //if (R2off>Theta2_cut_upper) return false;
     if (theta2<0.3) return false;
@@ -772,7 +837,7 @@ bool DarkFoV() {
     return true;
 }
 bool FoV() {
-    if (CoincideWithBrightStars(ra_sky,dec_sky)) return false;
+    //if (CoincideWithBrightStars(ra_sky,dec_sky)) return false;
     //if (R2off<Theta2_cut_lower) return false;
     //if (R2off>Theta2_cut_upper) return false;
     if (theta2<Theta2_cut_lower) return false;
@@ -821,7 +886,7 @@ double GetAreaAlphaWeighted(double rov_radius, double ring_radius)
             double y = double(j-100)*2./100.;
             double bin_ra = x+run_tele_point_ra;
             double bin_dec = y+run_tele_point_dec;
-            if (CoincideWithBrightStars(bin_ra,bin_dec)) continue;
+            //if (CoincideWithBrightStars(bin_ra,bin_dec)) continue;
             double r = pow(x*x+y*y,0.5);
             double radial_accptance = TF1_RadialAcc->Eval(r);
             double distance_to_rov_center = pow((x-rov_center_x)*(x-rov_center_x)+(y-rov_center_y)*(y-rov_center_y),0.5);
@@ -882,15 +947,15 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     Elev_diff_dark = Elev_diff;
     NSB_diff_dark = NSB_diff;
 
-    vector<pair<string,int>> PhotonMC_runlist = GetRunList("Photon");
-    vector<pair<string,int>> PhotonData_runlist = GetRunList("Crab");
-    if (TString(target).Contains("Mrk421")) PhotonData_runlist = GetRunList("Crab");
-    if (TString(target).Contains("Crab")) PhotonData_runlist = GetRunList("Mrk421");
-    if (TString(target).Contains("V5")) PhotonData_runlist = GetRunList("CrabV5");
+    vector<pair<string,int>> PhotonMC_runlist = GetRunList_v2("Photon");
+    vector<pair<string,int>> PhotonData_runlist = GetRunList_v2("Crab");
+    if (TString(target).Contains("Mrk421")) PhotonData_runlist = GetRunList_v2("Crab");
+    if (TString(target).Contains("Crab")) PhotonData_runlist = GetRunList_v2("Mrk421");
+    if (TString(target).Contains("V5")) PhotonData_runlist = GetRunList_v2("CrabV5");
     PhotonData_runlist = SelectONRunList(PhotonData_runlist,TelElev_lower,TelElev_upper,0,360);
 
     // Get a list of target observation runs
-    vector<pair<string,int>> Data_runlist_init = GetRunList(target);
+    vector<pair<string,int>> Data_runlist_init = GetRunList_v2(target);
     vector<pair<string,int>> Data_runlist;
     if (!TString(target).Contains("Proton")) Data_runlist = SelectONRunList(Data_runlist_init,TelElev_lower,TelElev_upper,0,360);
     else Data_runlist = Data_runlist_init;
@@ -898,14 +963,14 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     if (Data_runlist.size()==0) return;
 
     // Get a list of dark observation runs
-    vector<pair<string,int>> Dark_runlist_init = GetRunList("Everything");
-    if (TString(target).Contains("V5")) Dark_runlist_init = GetRunList("EverythingV5");
-    if (TString(target).Contains("Proton")) Dark_runlist_init = GetRunList("EverythingProton");
+    vector<pair<string,int>> Dark_runlist_init = GetRunList_v2("Everything");
+    if (TString(target).Contains("V5")) Dark_runlist_init = GetRunList_v2("EverythingV5");
+    if (TString(target).Contains("Proton")) Dark_runlist_init = GetRunList_v2("EverythingProton");
     vector<pair<string,int>> Dark_runlist;
     std::cout << "initial Dark_runlist size = " << Dark_runlist_init.size() << std::endl;
     Dark_runlist = SelectOFFRunList(Data_runlist, Dark_runlist_init);
     std::cout << "final Dark_runlist size = " << Dark_runlist.size() << std::endl;
-    //vector<pair<string,int>> Dark_runlist = GetRunList("Proton");
+    //vector<pair<string,int>> Dark_runlist = GetRunList_v2("Proton");
 
     mean_tele_point_ra = 0.;
     mean_tele_point_dec = 0.;
@@ -917,8 +982,16 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
 
     roi_ra = mean_tele_point_ra;
     roi_dec = mean_tele_point_dec;
-    roi_radius = 0.5;
+    roi_radius = 0.15;
+    if (TString(target).Contains("IC443")) 
+    {
+        roi_radius = 0.5;
+    }
     if (TString(target).Contains("Geminga")) 
+    {
+        roi_radius = 1.265;
+    }
+    if (TString(target).Contains("MGRO_J1908")) 
     {
         roi_radius = 1.0;
     }
@@ -926,7 +999,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     {
         roi_ra = 151.8;
         roi_dec = 16.7;
-        roi_radius = 0.5;
+        roi_radius = 0.3;
     }
 
     TH1D Hist_ErecS = TH1D("Hist_ErecS","",N_energy_bins,energy_bins);
@@ -1113,7 +1186,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Dark_tree->GetEntry(Dark_tree->GetEntries()-1);
         double time_1 = Time;
         exposure_hours_dark += (time_1-time_0)/3600.;
-        double NSB_thisrun = GetRunNSB(int(Dark_runlist[run].second));
+        //double NSB_thisrun = GetRunNSB(int(Dark_runlist[run].second));
+        double NSB_thisrun = GetRunPedestalVar(int(Dark_runlist[run].second));
         if (TString(Dark_observation).Contains("NSB075")) NSB_thisrun = 3.30;
         if (TString(Dark_observation).Contains("NSB100")) NSB_thisrun = 3.84;
         if (TString(Dark_observation).Contains("NSB150")) NSB_thisrun = 4.69;
@@ -1221,7 +1295,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Data_tree->GetEntry(Data_tree->GetEntries()-1);
         double time_1 = Time;
         exposure_hours += (time_1-time_0)/3600.;
-        double NSB_thisrun = GetRunNSB(int(Data_runlist[run].second));
+        //double NSB_thisrun = GetRunNSB(int(Data_runlist[run].second));
+        double NSB_thisrun = GetRunPedestalVar(int(Data_runlist[run].second));
         if (TString(Data_observation).Contains("NSB075")) NSB_thisrun = 3.30;
         if (TString(Data_observation).Contains("NSB100")) NSB_thisrun = 3.84;
         if (TString(Data_observation).Contains("NSB150")) NSB_thisrun = 4.69;

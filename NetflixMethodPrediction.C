@@ -488,6 +488,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
                 double data_err = max(1.0,pow(data,0.5));
                 double model_err = max(1.0,pow(abs(model),0.5));
                 weight = 1./(data_err*data_err+model_err*model_err);
+                //weight = 1./(data*data+model*model);
                 //weight = 1./(data_err*data_err);
                 double chi2_this = weight*pow(data-model,2);
                 if (isnan(chi2_this))
@@ -1163,15 +1164,17 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.01);
-            if (row>=biny_blind) 
-            {
-                Chi2Minimizer->SetVariableLimits(first_index+row,0.0,0.0);
-            }
-            else
-            {
-                double vari = mtx_eigenvector_vari(row,col_fix).real();
-                Chi2Minimizer->SetVariableLimits(first_index+row,-vari,vari);
-            }
+            double vari = mtx_eigenvector_vari(row,col_fix).real();
+            Chi2Minimizer->SetVariableLimits(first_index+row,-vari,vari);
+            //if (row>=biny_blind) 
+            //{
+            //    Chi2Minimizer->SetVariableLimits(first_index+row,0.0,0.0);
+            //}
+            //else
+            //{
+            //    double vari = mtx_eigenvector_vari(row,col_fix).real();
+            //    Chi2Minimizer->SetVariableLimits(first_index+row,-vari,vari);
+            //}
         }
 
         limit = 0.0;
@@ -1180,15 +1183,17 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.01);
-            if (col>=binx_blind) 
-            {
-                Chi2Minimizer->SetVariableLimits(first_index+col,0.0,0.0);
-            }
-            else
-            {
-                double vari = mtx_eigenvector_vari(row_fix,col).real();
-                Chi2Minimizer->SetVariableLimits(first_index+col,-vari,vari);
-            }
+            double vari = mtx_eigenvector_vari(row_fix,col).real();
+            Chi2Minimizer->SetVariableLimits(first_index+col,-vari,vari);
+            //if (col>=binx_blind) 
+            //{
+            //    Chi2Minimizer->SetVariableLimits(first_index+col,0.0,0.0);
+            //}
+            //else
+            //{
+            //    double vari = mtx_eigenvector_vari(row_fix,col).real();
+            //    Chi2Minimizer->SetVariableLimits(first_index+col,-vari,vari);
+            //}
         }
 
         // eigenvalues
