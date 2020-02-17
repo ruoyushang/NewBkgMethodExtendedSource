@@ -55,10 +55,10 @@ double MSCL_cut_blind = 1.0;
 double MSCL_cut_upper = 1.0;
 
 //const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] = {100,1e4};
+//double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,4.0)};
 //int N_bins_for_deconv_at_E[N_energy_bins] = {30};
 const int N_energy_bins = 3;
-double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.3),pow(10,2.7),pow(10,4.0)};
+double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,2.5),pow(10,3.0),pow(10,4.0)};
 int N_bins_for_deconv_at_E[N_energy_bins] = {30,30,30};
 //const int N_energy_bins = 12;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,3.0),pow(10,3.2),pow(10,3.6),pow(10,4.0)};
@@ -851,6 +851,14 @@ bool RoIFoV() {
     if (radius>roi_radius) return false;
     return true;
 }
+bool RoIRingFoV() {
+    double x = ra_sky-roi_ra;
+    double y = dec_sky-roi_dec;
+    double radius = pow(x*x+y*y,0.5);
+    if (radius<roi_radius) return false;
+    if (radius>roi_radius+0.5) return false;
+    return true;
+}
 bool RoVFoV(double rov_radius) {
     double x = ra_sky-(mean_tele_point_ra+1.);
     double y = dec_sky-mean_tele_point_dec;
@@ -983,6 +991,14 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     roi_ra = mean_tele_point_ra;
     roi_dec = mean_tele_point_dec;
     roi_radius = 0.15;
+    if (TString(target).Contains("Crab")) 
+    {
+        roi_radius = 0.5;
+    }
+    if (TString(target).Contains("Mrk421")) 
+    {
+        roi_radius = 0.5;
+    }
     if (TString(target).Contains("IC443")) 
     {
         roi_radius = 0.5;
@@ -1022,12 +1038,19 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     vector<TH1D> Hist_Data_SR_Energy;
     vector<TH1D> Hist_Data_CR_Energy;
     vector<TH1D> Hist_Data_SR_RoI_Energy;
+    vector<TH1D> Hist_Data_SR_RoIRing_Energy;
     vector<TH1D> Hist_Data_CR_RoI_Energy;
+    vector<TH1D> Hist_Data_CR_RoIRing_Energy;
     vector<TH1D> Hist_Data_CR_RoV0_Energy;
     vector<TH1D> Hist_Data_CR_RoV1_Energy;
     vector<TH1D> Hist_Data_CR_RoV2_Energy;
     vector<TH1D> Hist_Data_CR_RoV3_Energy;
     vector<TH1D> Hist_Data_CR_RoV4_Energy;
+    vector<TH1D> Hist_Data_CR_RoV0Ring_Energy;
+    vector<TH1D> Hist_Data_CR_RoV1Ring_Energy;
+    vector<TH1D> Hist_Data_CR_RoV2Ring_Energy;
+    vector<TH1D> Hist_Data_CR_RoV3Ring_Energy;
+    vector<TH1D> Hist_Data_CR_RoV4Ring_Energy;
     vector<TH1D> Hist_Data_SR_RoV0_Energy;
     vector<TH1D> Hist_Data_SR_RoV0Ring_Energy;
     vector<TH1D> Hist_Data_SR_RoV1_Energy;
@@ -1088,12 +1111,19 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Data_SR_Energy.push_back(TH1D("Hist_Data_SR_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
         Hist_Data_CR_Energy.push_back(TH1D("Hist_Data_CR_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
         Hist_Data_SR_RoI_Energy.push_back(TH1D("Hist_Data_SR_RoI_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
+        Hist_Data_SR_RoIRing_Energy.push_back(TH1D("Hist_Data_SR_RoIRing_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
         Hist_Data_CR_RoI_Energy.push_back(TH1D("Hist_Data_CR_RoI_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
+        Hist_Data_CR_RoIRing_Energy.push_back(TH1D("Hist_Data_CR_RoIRing_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
         Hist_Data_CR_RoV0_Energy.push_back(TH1D("Hist_Data_CR_RoV0_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
         Hist_Data_CR_RoV1_Energy.push_back(TH1D("Hist_Data_CR_RoV1_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
         Hist_Data_CR_RoV2_Energy.push_back(TH1D("Hist_Data_CR_RoV2_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
         Hist_Data_CR_RoV3_Energy.push_back(TH1D("Hist_Data_CR_RoV3_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
         Hist_Data_CR_RoV4_Energy.push_back(TH1D("Hist_Data_CR_RoV4_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
+        Hist_Data_CR_RoV0Ring_Energy.push_back(TH1D("Hist_Data_CR_RoV0Ring_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
+        Hist_Data_CR_RoV1Ring_Energy.push_back(TH1D("Hist_Data_CR_RoV1Ring_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
+        Hist_Data_CR_RoV2Ring_Energy.push_back(TH1D("Hist_Data_CR_RoV2Ring_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
+        Hist_Data_CR_RoV3Ring_Energy.push_back(TH1D("Hist_Data_CR_RoV3Ring_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
+        Hist_Data_CR_RoV4Ring_Energy.push_back(TH1D("Hist_Data_CR_RoV4Ring_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
         Hist_Data_SR_RoV0_Energy.push_back(TH1D("Hist_Data_SR_RoV0_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
         Hist_Data_SR_RoV0Ring_Energy.push_back(TH1D("Hist_Data_SR_RoV0Ring_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
         Hist_Data_SR_RoV1_Energy.push_back(TH1D("Hist_Data_SR_RoV1_Energy_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_energy_fine_bins,energy_fine_bins));
@@ -1328,11 +1358,18 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         //std::cout << "Finished getting effective area and livetime..." << std::endl;
 
 
-        double area_alpha_RoV0 = GetAreaAlphaWeighted(0.1,0.1+0.0);
-        double area_alpha_RoV1 = GetAreaAlphaWeighted(0.5,0.5+0.0);
-        double area_alpha_RoV2 = GetAreaAlphaWeighted(1.0,1.0+0.0);
-        double area_alpha_RoV3 = GetAreaAlphaWeighted(1.5,1.5+0.0);
-        double area_alpha_RoV4 = GetAreaAlphaWeighted(2.0,2.0+0.0);
+        //double area_alpha_RoI = GetAreaAlphaWeighted(roi_radius,roi_radius+0.0);
+        //double area_alpha_RoV0 = GetAreaAlphaWeighted(0.1,0.1+0.0);
+        //double area_alpha_RoV1 = GetAreaAlphaWeighted(0.5,0.5+0.0);
+        //double area_alpha_RoV2 = GetAreaAlphaWeighted(1.0,1.0+0.0);
+        //double area_alpha_RoV3 = GetAreaAlphaWeighted(1.5,1.5+0.0);
+        //double area_alpha_RoV4 = GetAreaAlphaWeighted(2.0,2.0+0.0);
+        double area_alpha_RoI = 1.;
+        double area_alpha_RoV0 = 1.;
+        double area_alpha_RoV1 = 1.;
+        double area_alpha_RoV2 = 1.;
+        double area_alpha_RoV3 = 1.;
+        double area_alpha_RoV4 = 1.;
         for (int entry=0;entry<Data_tree->GetEntries();entry++) 
         {
             ErecS = 0;
@@ -1382,6 +1419,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
                     Hist_TrueBkgd_SR_Energy.at(energy).Fill(ErecS*1000.);
                     Hist_Data_SR_Energy.at(energy).Fill(ErecS*1000.);
                     if (RoIFoV()) Hist_Data_SR_RoI_Energy.at(energy).Fill(ErecS*1000.);
+                    if (RoIRingFoV()) Hist_Data_SR_RoIRing_Energy.at(energy).Fill(ErecS*1000.,area_alpha_RoI);
                     if (RoVFoV(0.1)) Hist_Data_SR_RoV0_Energy.at(energy).Fill(ErecS*1000.);
                     if (RoVRingFoV(0.1+0.0)) Hist_Data_SR_RoV0Ring_Energy.at(energy).Fill(ErecS*1000.,area_alpha_RoV0);
                     if (RoVFoV(0.5)) Hist_Data_SR_RoV1_Energy.at(energy).Fill(ErecS*1000.);
@@ -1416,11 +1454,17 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
                     if (dark_cr_content_e>0.) weight_e = dark_sr_content_e/dark_cr_content_e;
                     Hist_Data_CR_Energy.at(energy).Fill(ErecS*1000.,weight_e);
                     if (RoIFoV()) Hist_Data_CR_RoI_Energy.at(energy).Fill(ErecS*1000.,weight_e);
+                    if (RoIRingFoV()) Hist_Data_CR_RoIRing_Energy.at(energy).Fill(ErecS*1000.,weight_e);
                     if (RoVFoV(0.1)) Hist_Data_CR_RoV0_Energy.at(energy).Fill(ErecS*1000.,weight_e);
                     if (RoVFoV(0.5)) Hist_Data_CR_RoV1_Energy.at(energy).Fill(ErecS*1000.,weight_e);
                     if (RoVFoV(1.0)) Hist_Data_CR_RoV2_Energy.at(energy).Fill(ErecS*1000.,weight_e);
                     if (RoVFoV(1.5)) Hist_Data_CR_RoV3_Energy.at(energy).Fill(ErecS*1000.,weight_e);
                     if (RoVFoV(2.0)) Hist_Data_CR_RoV4_Energy.at(energy).Fill(ErecS*1000.,weight_e);
+                    if (RoVRingFoV(0.1+0.0)) Hist_Data_CR_RoV0Ring_Energy.at(energy).Fill(ErecS*1000.,weight_e);
+                    if (RoVRingFoV(0.5+0.0)) Hist_Data_CR_RoV1Ring_Energy.at(energy).Fill(ErecS*1000.,weight_e);
+                    if (RoVRingFoV(1.0+0.0)) Hist_Data_CR_RoV2Ring_Energy.at(energy).Fill(ErecS*1000.,weight_e);
+                    if (RoVRingFoV(1.5+0.0)) Hist_Data_CR_RoV3Ring_Energy.at(energy).Fill(ErecS*1000.,weight_e);
+                    if (RoVRingFoV(2.0+0.0)) Hist_Data_CR_RoV4Ring_Energy.at(energy).Fill(ErecS*1000.,weight_e);
                     Hist_Data_CR_Skymap_Theta2.at(energy_fine).Fill(theta2,weight);
                     Hist_Data_CR_Skymap_Theta2_Raw.at(energy_fine).Fill(theta2,1.);
                     Hist_Data_CR_CameraFoV_Theta2.at(energy_fine).Fill(R2off,weight);
@@ -1571,6 +1615,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
                 {
                     Hist_Data_SR_Energy.at(energy).Fill(ErecS*1000.,photon_weight);
                     if (RoIFoV()) Hist_Data_SR_RoI_Energy.at(energy).Fill(ErecS*1000.,photon_weight);
+                    if (RoIRingFoV()) Hist_Data_SR_RoIRing_Energy.at(energy).Fill(ErecS*1000.,photon_weight);
                     if (RoVFoV(0.1)) Hist_Data_SR_RoV0_Energy.at(energy).Fill(ErecS*1000.,photon_weight);
                     if (RoVRingFoV(0.1+0.0)) Hist_Data_SR_RoV0Ring_Energy.at(energy).Fill(ErecS*1000.,photon_weight);
                     if (RoVFoV(0.5)) Hist_Data_SR_RoV1_Energy.at(energy).Fill(ErecS*1000.,photon_weight);
@@ -1603,11 +1648,17 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
                     if (dark_cr_content_e>0.) weight_e = dark_sr_content_e/dark_cr_content_e;
                     Hist_Data_CR_Energy.at(energy).Fill(ErecS*1000.,weight_e*photon_weight);
                     if (RoIFoV()) Hist_Data_CR_RoI_Energy.at(energy).Fill(ErecS*1000.,weight_e*photon_weight);
+                    if (RoIRingFoV()) Hist_Data_CR_RoIRing_Energy.at(energy).Fill(ErecS*1000.,weight_e*photon_weight);
                     if (RoVFoV(0.1)) Hist_Data_CR_RoV0_Energy.at(energy).Fill(ErecS*1000.,weight_e*photon_weight);
                     if (RoVFoV(0.5)) Hist_Data_CR_RoV1_Energy.at(energy).Fill(ErecS*1000.,weight_e*photon_weight);
                     if (RoVFoV(1.0)) Hist_Data_CR_RoV2_Energy.at(energy).Fill(ErecS*1000.,weight_e*photon_weight);
                     if (RoVFoV(1.5)) Hist_Data_CR_RoV3_Energy.at(energy).Fill(ErecS*1000.,weight_e*photon_weight);
                     if (RoVFoV(2.0)) Hist_Data_CR_RoV4_Energy.at(energy).Fill(ErecS*1000.,weight_e*photon_weight);
+                    if (RoVRingFoV(0.1+0.0)) Hist_Data_CR_RoV0Ring_Energy.at(energy).Fill(ErecS*1000.,weight_e*photon_weight);
+                    if (RoVRingFoV(0.5+0.0)) Hist_Data_CR_RoV1Ring_Energy.at(energy).Fill(ErecS*1000.,weight_e*photon_weight);
+                    if (RoVRingFoV(1.0+0.0)) Hist_Data_CR_RoV2Ring_Energy.at(energy).Fill(ErecS*1000.,weight_e*photon_weight);
+                    if (RoVRingFoV(1.5+0.0)) Hist_Data_CR_RoV3Ring_Energy.at(energy).Fill(ErecS*1000.,weight_e*photon_weight);
+                    if (RoVRingFoV(2.0+0.0)) Hist_Data_CR_RoV4Ring_Energy.at(energy).Fill(ErecS*1000.,weight_e*photon_weight);
                     Hist_Data_CR_Skymap_Theta2.at(energy_fine).Fill(theta2,weight*photon_weight);
                     Hist_Data_CR_Skymap_Theta2_Raw.at(energy_fine).Fill(theta2,photon_weight);
                     Hist_Data_CR_CameraFoV_Theta2.at(energy_fine).Fill(R2off,weight*photon_weight);
@@ -1762,6 +1813,22 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         }
     }
 
+    for (int e=0;e<N_energy_bins;e++) 
+    {
+        double scale_roi_ring = Hist_Data_CR_RoI_Energy.at(e).Integral()/Hist_Data_CR_RoIRing_Energy.at(e).Integral();
+        Hist_Data_SR_RoIRing_Energy.at(e).Scale(scale_roi_ring);
+        double scale_rov0_ring = Hist_Data_CR_RoV0_Energy.at(e).Integral()/Hist_Data_CR_RoV0Ring_Energy.at(e).Integral();
+        Hist_Data_SR_RoV0Ring_Energy.at(e).Scale(scale_rov0_ring);
+        double scale_rov1_ring = Hist_Data_CR_RoV1_Energy.at(e).Integral()/Hist_Data_CR_RoV1Ring_Energy.at(e).Integral();
+        Hist_Data_SR_RoV1Ring_Energy.at(e).Scale(scale_rov1_ring);
+        double scale_rov2_ring = Hist_Data_CR_RoV2_Energy.at(e).Integral()/Hist_Data_CR_RoV2Ring_Energy.at(e).Integral();
+        Hist_Data_SR_RoV2Ring_Energy.at(e).Scale(scale_rov2_ring);
+        double scale_rov3_ring = Hist_Data_CR_RoV3_Energy.at(e).Integral()/Hist_Data_CR_RoV3Ring_Energy.at(e).Integral();
+        Hist_Data_SR_RoV3Ring_Energy.at(e).Scale(scale_rov3_ring);
+        double scale_rov4_ring = Hist_Data_CR_RoV4_Energy.at(e).Integral()/Hist_Data_CR_RoV4Ring_Energy.at(e).Integral();
+        Hist_Data_SR_RoV4Ring_Energy.at(e).Scale(scale_rov4_ring);
+    }
+
     NSB_avg = NSB_avg/exposure_hours;
     NSB_avg_dark = NSB_avg_dark/exposure_hours_dark;
     for (int e=0;e<N_energy_fine_bins;e++) 
@@ -1803,6 +1870,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Data_SR_Energy.at(e).Write();
         Hist_Data_CR_Energy.at(e).Write();
         Hist_Data_SR_RoI_Energy.at(e).Write();
+        Hist_Data_SR_RoIRing_Energy.at(e).Write();
         Hist_Data_CR_RoI_Energy.at(e).Write();
         Hist_Data_CR_RoV0_Energy.at(e).Write();
         Hist_Data_CR_RoV1_Energy.at(e).Write();

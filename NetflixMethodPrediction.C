@@ -439,6 +439,7 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
                 double data_err = max(1.0,pow(data,0.5));
                 double model_err = max(1.0,pow(abs(model),0.5));
                 weight = 1./(data_err*data_err+model_err*model_err);
+                //weight = 1./(data*data+model*model);
                 //weight = 1./(data_err*data_err);
                 double chi2_this = weight*pow(data-model-gamma,2);
                 if (isnan(chi2_this))
@@ -796,7 +797,8 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
             {
                 sign = -1.;
             }
-            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1 && row<biny_blind)
+            //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1 && row<biny_blind)
+            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1)
             {
                 mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = sign*eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row);
             }
@@ -823,7 +825,8 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
             {
                 sign = -1.;
             }
-            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1 && col<binx_blind)
+            //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1 && col<binx_blind)
+            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1)
             {
                 mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = sign*eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col);
             }
@@ -1164,8 +1167,8 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.01);
-            double vari = mtx_eigenvector_vari(row,col_fix).real();
-            Chi2Minimizer->SetVariableLimits(first_index+row,-vari,vari);
+            //double vari = mtx_eigenvector_vari(row,col_fix).real();
+            //Chi2Minimizer->SetVariableLimits(first_index+row,-vari,vari);
             //if (row>=biny_blind) 
             //{
             //    Chi2Minimizer->SetVariableLimits(first_index+row,0.0,0.0);
@@ -1183,8 +1186,8 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.01);
-            double vari = mtx_eigenvector_vari(row_fix,col).real();
-            Chi2Minimizer->SetVariableLimits(first_index+col,-vari,vari);
+            //double vari = mtx_eigenvector_vari(row_fix,col).real();
+            //Chi2Minimizer->SetVariableLimits(first_index+col,-vari,vari);
             //if (col>=binx_blind) 
             //{
             //    Chi2Minimizer->SetVariableLimits(first_index+col,0.0,0.0);
@@ -1781,9 +1784,9 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         fill2DHistogramAbs(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
         std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,15,1,15) << std::endl;
 
-        //mtx_eigenvector_init = mtx_eigenvector;
-        //mtx_eigenvalue_init = mtx_eigenvalue;
-        //mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+        mtx_eigenvector_init = mtx_eigenvector;
+        mtx_eigenvalue_init = mtx_eigenvalue;
+        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
 
         signal_model = false;
         ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
