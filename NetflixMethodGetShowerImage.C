@@ -54,12 +54,12 @@ double MSCL_cut_lower = -1.0;
 double MSCL_cut_blind = 1.0;
 double MSCL_cut_upper = 1.0;
 
-//const int N_energy_bins = 1;
-//double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,4.0)};
-//int N_bins_for_deconv_at_E[N_energy_bins] = {30};
-const int N_energy_bins = 3;
-double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,2.5),pow(10,3.0),pow(10,4.0)};
-int N_bins_for_deconv_at_E[N_energy_bins] = {30,30,30};
+const int N_energy_bins = 1;
+double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,4.0)};
+int N_bins_for_deconv_at_E[N_energy_bins] = {30};
+//const int N_energy_bins = 3;
+//double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,2.5),pow(10,3.0),pow(10,4.0)};
+//int N_bins_for_deconv_at_E[N_energy_bins] = {30,30,30};
 //const int N_energy_bins = 12;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,3.0),pow(10,3.2),pow(10,3.6),pow(10,4.0)};
 //int N_bins_for_deconv_at_E[N_energy_bins] = {30,30,30,30,30,30,30,30,30,30,30,30};
@@ -874,6 +874,75 @@ bool RoVRingFoV(double ring_radius) {
     if (radius>ring_radius+0.5) return false;
     return true;
 }
+void FillAcceptanceMap(TH2* skymap_output, double exposure)
+{
+    TFile InputDataFile("/home/rshang/EventDisplay/aux/RadialAcceptances/radialAcceptance-v470-auxv01-CARE_June1425-Cut-NTel3-Moderate-GEO-V6-T1234.root");
+    TF1* TF1_RadialAcc = (TF1*)InputDataFile.Get("fAccZe_0");
+    double mask_radius = pow(Theta2_cut_lower,0.5);
+    for (int binx_o=1; binx_o<=skymap_output->GetNbinsX(); binx_o++)
+    {
+        for (int biny_o=1; biny_o<=skymap_output->GetNbinsY(); biny_o++)
+        {
+            double binx_o_ra = skymap_output->GetXaxis()->GetBinCenter(binx_o);
+            double biny_o_dec = skymap_output->GetYaxis()->GetBinCenter(biny_o);
+            //if (CoincideWithBrightStars(binx_o_ra,biny_o_dec)) continue;
+            double distance_to_source = pow((binx_o_ra-mean_tele_point_ra)*(binx_o_ra-mean_tele_point_ra)+(biny_o_dec-mean_tele_point_dec)*(biny_o_dec-mean_tele_point_dec),0.5);
+            if (distance_to_source<mask_radius) continue;
+            double bin_o_x_in_camera = binx_o_ra-run_tele_point_ra;
+            double bin_o_y_in_camera = biny_o_dec-run_tele_point_dec;
+            double bin_o_r_in_camera = pow(bin_o_x_in_camera*bin_o_x_in_camera+bin_o_y_in_camera*bin_o_y_in_camera,0.5);
+            double weight_o = TF1_RadialAcc->Eval(bin_o_r_in_camera);
+            skymap_output->Fill(binx_o_ra,biny_o_dec,weight_o*exposure);
+        }
+    }
+}
+void FillRingOFFMap(TH2* skymap_output, TH2* skymap_input, TH2* skymap_acceptance, double inner_radius, double outer_radius)
+{
+    double mask_radius = pow(Theta2_cut_lower,0.5);
+    for (int binx_o=1; binx_o<=skymap_output->GetNbinsX(); binx_o++)
+    {
+        for (int biny_o=1; biny_o<=skymap_output->GetNbinsY(); biny_o++)
+        {
+            double binx_o_ra = skymap_output->GetXaxis()->GetBinCenter(binx_o);
+            double biny_o_dec = skymap_output->GetYaxis()->GetBinCenter(biny_o);
+            //if (CoincideWithBrightStars(binx_o_ra,biny_o_dec)) continue;
+            double distance_to_source_o = pow((binx_o_ra-mean_tele_point_ra)*(binx_o_ra-mean_tele_point_ra)+(biny_o_dec-mean_tele_point_dec)*(biny_o_dec-mean_tele_point_dec),0.5);
+            if (distance_to_source_o<mask_radius) continue;
+            double bin_o_x_in_camera = binx_o_ra-run_tele_point_ra;
+            double bin_o_y_in_camera = biny_o_dec-run_tele_point_dec;
+            double bin_o_r_in_camera = pow(bin_o_x_in_camera*bin_o_x_in_camera+bin_o_y_in_camera*bin_o_y_in_camera,0.5);
+            double weight_o = skymap_acceptance->GetBinContent(binx_o,biny_o);
+            double weight_ring = 0.;
+            double nbins_included = 0.;
+            for (int binx_i=1; binx_i<=skymap_input->GetNbinsX(); binx_i++)
+            {
+                for (int biny_i=1; biny_i<=skymap_input->GetNbinsY(); biny_i++)
+                {
+                    double binx_i_ra = skymap_input->GetXaxis()->GetBinCenter(binx_i);
+                    double biny_i_dec = skymap_input->GetYaxis()->GetBinCenter(biny_i);
+                    //if (CoincideWithBrightStars(binx_i_ra,biny_i_dec)) continue;
+                    double distance_to_source_i = pow((binx_i_ra-mean_tele_point_ra)*(binx_i_ra-mean_tele_point_ra)+(biny_i_dec-mean_tele_point_dec)*(biny_i_dec-mean_tele_point_dec),0.5);
+                    if (distance_to_source_i<mask_radius) continue;
+                    double distance_io = pow((binx_o_ra-binx_i_ra)*(binx_o_ra-binx_i_ra)+(biny_o_dec-biny_i_dec)*(biny_o_dec-biny_i_dec),0.5);
+                    if (distance_io>inner_radius && distance_io<outer_radius)
+                    {
+                        double bin_i_x_in_camera = binx_i_ra-run_tele_point_ra;
+                        double bin_i_y_in_camera = biny_i_dec-run_tele_point_dec;
+                        double bin_i_r_in_camera = pow(bin_i_x_in_camera*bin_i_x_in_camera+bin_i_y_in_camera*bin_i_y_in_camera,0.5);
+                        double weight_i = skymap_acceptance->GetBinContent(binx_i,biny_i);
+                        if (weight_i!=0.)
+                        {
+                            double weight_add = weight_o/weight_i*skymap_input->GetBinContent(binx_i,biny_i);
+                            weight_ring += weight_add;
+                            nbins_included += 1.;
+                        }
+                    }
+                }
+            }
+            if (nbins_included>0.) skymap_output->Fill(binx_o_ra,biny_o_dec,weight_ring/nbins_included);
+        }
+    }
+}
 double GetAreaAlphaWeighted(double rov_radius, double ring_radius)
 {
     TFile InputDataFile("/home/rshang/EventDisplay/aux/RadialAcceptances/radialAcceptance-v470-auxv01-CARE_June1425-Cut-NTel3-Moderate-GEO-V6-T1234.root");
@@ -1070,6 +1139,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     vector<TH1D> Hist_Data_CR_CameraFoV_Theta2;
     vector<TH1D> Hist_Data_CR_CameraFoV_Theta2_Raw;
     vector<TH2D> Hist_Data_SR_Skymap;
+    vector<TH2D> Hist_Data_RingOFF_Skymap;
+    vector<TH2D> Hist_Acceptance_Skymap;
     vector<TH2D> Hist_Data_CR_Skymap;
     vector<TH2D> Hist_Data_CR_Skymap_Raw;
     vector<TH2D> Hist_Data_SR_Skymap_Galactic;
@@ -1154,6 +1225,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Data_CR_CameraFoV_Theta2.push_back(TH1D("Hist_Data_CR_CameraFoV_Theta2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",50,0,10));
         Hist_Data_CR_CameraFoV_Theta2_Raw.push_back(TH1D("Hist_Data_CR_CameraFoV_Theta2_Raw_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",50,0,10));
         Hist_Data_SR_Skymap.push_back(TH2D("Hist_Data_SR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
+        Hist_Data_RingOFF_Skymap.push_back(TH2D("Hist_Data_RingOFF_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
+        Hist_Acceptance_Skymap.push_back(TH2D("Hist_Acceptance_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
         Hist_Data_CR_Skymap.push_back(TH2D("Hist_Data_CR_Skymap_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
         Hist_Data_CR_Skymap_Raw.push_back(TH2D("Hist_Data_CR_Skymap_Raw_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",150,mean_tele_point_ra-3,mean_tele_point_ra+3,150,mean_tele_point_dec-3,mean_tele_point_dec+3));
 
@@ -1358,18 +1431,18 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         //std::cout << "Finished getting effective area and livetime..." << std::endl;
 
 
-        //double area_alpha_RoI = GetAreaAlphaWeighted(roi_radius,roi_radius+0.0);
-        //double area_alpha_RoV0 = GetAreaAlphaWeighted(0.1,0.1+0.0);
-        //double area_alpha_RoV1 = GetAreaAlphaWeighted(0.5,0.5+0.0);
-        //double area_alpha_RoV2 = GetAreaAlphaWeighted(1.0,1.0+0.0);
-        //double area_alpha_RoV3 = GetAreaAlphaWeighted(1.5,1.5+0.0);
-        //double area_alpha_RoV4 = GetAreaAlphaWeighted(2.0,2.0+0.0);
-        double area_alpha_RoI = 1.;
-        double area_alpha_RoV0 = 1.;
-        double area_alpha_RoV1 = 1.;
-        double area_alpha_RoV2 = 1.;
-        double area_alpha_RoV3 = 1.;
-        double area_alpha_RoV4 = 1.;
+        double area_alpha_RoI = GetAreaAlphaWeighted(roi_radius,roi_radius+0.0);
+        double area_alpha_RoV0 = GetAreaAlphaWeighted(0.1,0.1+0.0);
+        double area_alpha_RoV1 = GetAreaAlphaWeighted(0.5,0.5+0.0);
+        double area_alpha_RoV2 = GetAreaAlphaWeighted(1.0,1.0+0.0);
+        double area_alpha_RoV3 = GetAreaAlphaWeighted(1.5,1.5+0.0);
+        double area_alpha_RoV4 = GetAreaAlphaWeighted(2.0,2.0+0.0);
+        //double area_alpha_RoI = 1.;
+        //double area_alpha_RoV0 = 1.;
+        //double area_alpha_RoV1 = 1.;
+        //double area_alpha_RoV2 = 1.;
+        //double area_alpha_RoV3 = 1.;
+        //double area_alpha_RoV4 = 1.;
         for (int entry=0;entry<Data_tree->GetEntries();entry++) 
         {
             ErecS = 0;
@@ -1478,6 +1551,10 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             }
         }
         input_file->Close();
+        for (int e_bin=0;e_bin<Hist_ErecS_fine.GetNbinsX();e_bin++)
+        {
+            FillAcceptanceMap(&Hist_Acceptance_Skymap.at(e_bin),(time_1-time_0));
+        }
     }
 
 
@@ -1599,6 +1676,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
             int energy = Hist_ErecS.FindBin(ErecS*1000.)-1;
             int energy_fine = Hist_ErecS_fine.FindBin(ErecS*1000.)-1;
             photon_weight = gamma_count[energy_fine]/raw_gamma_count[energy_fine];
+            if (photon_weight==0.) continue;
             if (energy<0) continue;
             if (energy>=N_energy_bins) continue;
             if (!SelectNImages(3,4)) continue;
@@ -1813,21 +1891,27 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         }
     }
 
-    for (int e=0;e<N_energy_bins;e++) 
-    {
-        double scale_roi_ring = Hist_Data_CR_RoI_Energy.at(e).Integral()/Hist_Data_CR_RoIRing_Energy.at(e).Integral();
-        Hist_Data_SR_RoIRing_Energy.at(e).Scale(scale_roi_ring);
-        double scale_rov0_ring = Hist_Data_CR_RoV0_Energy.at(e).Integral()/Hist_Data_CR_RoV0Ring_Energy.at(e).Integral();
-        Hist_Data_SR_RoV0Ring_Energy.at(e).Scale(scale_rov0_ring);
-        double scale_rov1_ring = Hist_Data_CR_RoV1_Energy.at(e).Integral()/Hist_Data_CR_RoV1Ring_Energy.at(e).Integral();
-        Hist_Data_SR_RoV1Ring_Energy.at(e).Scale(scale_rov1_ring);
-        double scale_rov2_ring = Hist_Data_CR_RoV2_Energy.at(e).Integral()/Hist_Data_CR_RoV2Ring_Energy.at(e).Integral();
-        Hist_Data_SR_RoV2Ring_Energy.at(e).Scale(scale_rov2_ring);
-        double scale_rov3_ring = Hist_Data_CR_RoV3_Energy.at(e).Integral()/Hist_Data_CR_RoV3Ring_Energy.at(e).Integral();
-        Hist_Data_SR_RoV3Ring_Energy.at(e).Scale(scale_rov3_ring);
-        double scale_rov4_ring = Hist_Data_CR_RoV4_Energy.at(e).Integral()/Hist_Data_CR_RoV4Ring_Energy.at(e).Integral();
-        Hist_Data_SR_RoV4Ring_Energy.at(e).Scale(scale_rov4_ring);
-    }
+    //for (int e=0;e<N_energy_bins;e++) 
+    //{
+    //    double scale_roi_ring = Hist_Data_CR_RoI_Energy.at(e).Integral()/Hist_Data_CR_RoIRing_Energy.at(e).Integral();
+    //    Hist_Data_SR_RoIRing_Energy.at(e).Scale(scale_roi_ring);
+    //    double scale_rov0_ring = Hist_Data_CR_RoV0_Energy.at(e).Integral()/Hist_Data_CR_RoV0Ring_Energy.at(e).Integral();
+    //    Hist_Data_SR_RoV0Ring_Energy.at(e).Scale(scale_rov0_ring);
+    //    double scale_rov1_ring = Hist_Data_CR_RoV1_Energy.at(e).Integral()/Hist_Data_CR_RoV1Ring_Energy.at(e).Integral();
+    //    Hist_Data_SR_RoV1Ring_Energy.at(e).Scale(scale_rov1_ring);
+    //    double scale_rov2_ring = Hist_Data_CR_RoV2_Energy.at(e).Integral()/Hist_Data_CR_RoV2Ring_Energy.at(e).Integral();
+    //    Hist_Data_SR_RoV2Ring_Energy.at(e).Scale(scale_rov2_ring);
+    //    double scale_rov3_ring = Hist_Data_CR_RoV3_Energy.at(e).Integral()/Hist_Data_CR_RoV3Ring_Energy.at(e).Integral();
+    //    Hist_Data_SR_RoV3Ring_Energy.at(e).Scale(scale_rov3_ring);
+    //    double scale_rov4_ring = Hist_Data_CR_RoV4_Energy.at(e).Integral()/Hist_Data_CR_RoV4Ring_Energy.at(e).Integral();
+    //    Hist_Data_SR_RoV4Ring_Energy.at(e).Scale(scale_rov4_ring);
+    //}
+
+    //for (int e_bin=0;e_bin<Hist_ErecS_fine.GetNbinsX();e_bin++)
+    //{
+    //    std::cout << "working on " << e_bin << "-th Ring Background Model Map..." << std::endl;
+    //    FillRingOFFMap(&Hist_Data_RingOFF_Skymap.at(e_bin),&Hist_Data_SR_Skymap.at(e_bin),&Hist_Acceptance_Skymap.at(e_bin),1.0,1.2);
+    //}
 
     NSB_avg = NSB_avg/exposure_hours;
     NSB_avg_dark = NSB_avg_dark/exposure_hours_dark;
@@ -1897,6 +1981,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Hist_Data_CR_CameraFoV_Theta2.at(e).Write();
         Hist_Data_CR_CameraFoV_Theta2_Raw.at(e).Write();
         Hist_Data_SR_Skymap.at(e).Write();
+        Hist_Data_RingOFF_Skymap.at(e).Write();
         Hist_Data_CR_Skymap.at(e).Write();
         Hist_Data_CR_Skymap_Raw.at(e).Write();
         Hist_Data_SR_Skymap_Galactic.at(e).Write();

@@ -785,9 +785,11 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
     for (int NthEigenvector=1;NthEigenvector<=N_bins_for_deconv;NthEigenvector++)
     {
 
+        double first_eigenvalue_dark = eigensolver_dark.eigenvalues()(mtx_dark.cols()-1).real();
+        double first_eigenvalue_data = eigensolver_data.eigenvalues()(mtx_dark.cols()-1).real();
         if (NthEigenvector<=NumberOfEigenvectors)
         {
-            mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector);
+            mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector)*first_eigenvalue_data/first_eigenvalue_dark;
         }
         for (int row=0;row<N_bins_for_deconv;row++)
         {
@@ -797,8 +799,8 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
             {
                 sign = -1.;
             }
-            //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1 && row<biny_blind)
-            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1)
+            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1 && row<biny_blind)
+            //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1)
             {
                 mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = sign*eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row);
             }
@@ -825,8 +827,8 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
             {
                 sign = -1.;
             }
-            //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1 && col<binx_blind)
-            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1)
+            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1 && col<binx_blind)
+            //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1)
             {
                 mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = sign*eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col);
             }
@@ -1167,9 +1169,9 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.01);
-            //double vari = mtx_eigenvector_vari(row,col_fix).real();
+            double vari = mtx_eigenvector_vari(row,col_fix).real();
             //Chi2Minimizer->SetVariableLimits(first_index+row,-vari,vari);
-            //if (row>=biny_blind) 
+            //if (row>=biny_blind && NthEigenvector==1) 
             //{
             //    Chi2Minimizer->SetVariableLimits(first_index+row,0.0,0.0);
             //}
@@ -1186,9 +1188,9 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.01);
-            //double vari = mtx_eigenvector_vari(row_fix,col).real();
+            double vari = mtx_eigenvector_vari(row_fix,col).real();
             //Chi2Minimizer->SetVariableLimits(first_index+col,-vari,vari);
-            //if (col>=binx_blind) 
+            //if (col>=binx_blind && NthEigenvector==1) 
             //{
             //    Chi2Minimizer->SetVariableLimits(first_index+col,0.0,0.0);
             //}
