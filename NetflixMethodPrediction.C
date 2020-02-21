@@ -789,7 +789,14 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
         double first_eigenvalue_data = eigensolver_data.eigenvalues()(mtx_dark.cols()-1).real();
         if (NthEigenvector<=NumberOfEigenvectors)
         {
-            mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector)*first_eigenvalue_data/first_eigenvalue_dark;
+            if (NthEigenvector==2)
+            {
+                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector)*first_eigenvalue_data/first_eigenvalue_dark;
+            }
+            else
+            {
+                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_data.eigenvalues()(mtx_dark.cols()-NthEigenvector);
+            }
         }
         for (int row=0;row<N_bins_for_deconv;row++)
         {
@@ -799,7 +806,7 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
             {
                 sign = -1.;
             }
-            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1 && row<biny_blind)
+            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector==2 && row<biny_blind)
             //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1)
             {
                 mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = sign*eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row);
@@ -827,7 +834,7 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
             {
                 sign = -1.;
             }
-            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1 && col<binx_blind)
+            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector==2 && col<binx_blind)
             //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>1)
             {
                 mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = sign*eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col);

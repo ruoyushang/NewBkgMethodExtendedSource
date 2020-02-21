@@ -898,7 +898,8 @@ void FillAcceptanceMap(TH2* skymap_output, double exposure)
 }
 void FillRingOFFMap(TH2* skymap_output, TH2* skymap_input, TH2* skymap_acceptance, double inner_radius, double outer_radius)
 {
-    double mask_radius = pow(Theta2_cut_lower,0.5);
+    double mask_radius_o = pow(Theta2_cut_lower,0.5);
+    double mask_radius_i = pow(0.3,0.5);
     for (int binx_o=1; binx_o<=skymap_output->GetNbinsX(); binx_o++)
     {
         for (int biny_o=1; biny_o<=skymap_output->GetNbinsY(); biny_o++)
@@ -907,7 +908,7 @@ void FillRingOFFMap(TH2* skymap_output, TH2* skymap_input, TH2* skymap_acceptanc
             double biny_o_dec = skymap_output->GetYaxis()->GetBinCenter(biny_o);
             //if (CoincideWithBrightStars(binx_o_ra,biny_o_dec)) continue;
             double distance_to_source_o = pow((binx_o_ra-mean_tele_point_ra)*(binx_o_ra-mean_tele_point_ra)+(biny_o_dec-mean_tele_point_dec)*(biny_o_dec-mean_tele_point_dec),0.5);
-            if (distance_to_source_o<mask_radius) continue;
+            if (distance_to_source_o<mask_radius_o) continue;
             double bin_o_x_in_camera = binx_o_ra-run_tele_point_ra;
             double bin_o_y_in_camera = biny_o_dec-run_tele_point_dec;
             double bin_o_r_in_camera = pow(bin_o_x_in_camera*bin_o_x_in_camera+bin_o_y_in_camera*bin_o_y_in_camera,0.5);
@@ -922,7 +923,7 @@ void FillRingOFFMap(TH2* skymap_output, TH2* skymap_input, TH2* skymap_acceptanc
                     double biny_i_dec = skymap_input->GetYaxis()->GetBinCenter(biny_i);
                     //if (CoincideWithBrightStars(binx_i_ra,biny_i_dec)) continue;
                     double distance_to_source_i = pow((binx_i_ra-mean_tele_point_ra)*(binx_i_ra-mean_tele_point_ra)+(biny_i_dec-mean_tele_point_dec)*(biny_i_dec-mean_tele_point_dec),0.5);
-                    if (distance_to_source_i<mask_radius) continue;
+                    if (distance_to_source_i<mask_radius_i) continue;
                     double distance_io = pow((binx_o_ra-binx_i_ra)*(binx_o_ra-binx_i_ra)+(biny_o_dec-biny_i_dec)*(biny_o_dec-biny_i_dec),0.5);
                     if (distance_io>inner_radius && distance_io<outer_radius)
                     {
@@ -951,7 +952,8 @@ double GetAreaAlphaWeighted(double rov_radius, double ring_radius)
     double rov_center_y = mean_tele_point_dec-run_tele_point_dec;
     double roi_center_x = mean_tele_point_ra-run_tele_point_ra;
     double roi_center_y = mean_tele_point_dec-run_tele_point_dec;
-    double mask_radius = pow(Theta2_cut_lower,0.5);
+    //double mask_radius = pow(Theta2_cut_lower,0.5);
+    double mask_radius = pow(0.3,0.5);
     double area_rov = 0.;
     double area_ring = 0.;
     double area_alpha = 0.;
@@ -1907,11 +1909,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     //    Hist_Data_SR_RoV4Ring_Energy.at(e).Scale(scale_rov4_ring);
     //}
 
-    //for (int e_bin=0;e_bin<Hist_ErecS_fine.GetNbinsX();e_bin++)
-    //{
-    //    std::cout << "working on " << e_bin << "-th Ring Background Model Map..." << std::endl;
-    //    FillRingOFFMap(&Hist_Data_RingOFF_Skymap.at(e_bin),&Hist_Data_SR_Skymap.at(e_bin),&Hist_Acceptance_Skymap.at(e_bin),1.0,1.2);
-    //}
+    for (int e_bin=0;e_bin<Hist_ErecS_fine.GetNbinsX();e_bin++)
+    {
+        std::cout << "working on " << e_bin << "-th Ring Background Model Map..." << std::endl;
+        FillRingOFFMap(&Hist_Data_RingOFF_Skymap.at(e_bin),&Hist_Data_SR_Skymap.at(e_bin),&Hist_Acceptance_Skymap.at(e_bin),0.4,0.6);
+    }
 
     NSB_avg = NSB_avg/exposure_hours;
     NSB_avg_dark = NSB_avg_dark/exposure_hours_dark;
