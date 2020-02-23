@@ -144,9 +144,20 @@ void fill1DHistogram(TH1D* hist,VectorXcd vtr)
 {
     for (int binx=0;binx<hist->GetNbinsX();binx++)
     {
-        hist->SetBinContent(binx+1,vtr(binx).real());
-        hist->SetBinError(binx+1,0.01*abs(vtr(binx).real()));
+        double real = vtr(binx).real();
+        double imag = vtr(binx).imag();
+        double ampl = real/abs(real)*pow(real*real+imag*imag,0.5);
+        hist->SetBinContent(binx+1,ampl);
+        hist->SetBinError(binx+1,0.01*ampl);
     }
+}
+double NormalizationFactorForEigenvector(VectorXcd vtr)
+{
+    TH1D hist_ampl = TH1D("hist_ampl","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
+    fill1DHistogram(&hist_ampl,vtr);
+    int bin_blind = hist_ampl.GetXaxis()->FindBin(1.);
+    double integral_1 = hist_ampl.Integral(bin_blind,hist_ampl.GetNbinsX());
+    return integral_1;
 }
 VectorXd fillVector(TH1D* hist)
 {
@@ -462,14 +473,14 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
 {
     int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
     int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
-    int binx_upper = hist_data->GetXaxis()->FindBin(MSCL_cut_blind+1.);
-    int biny_upper = hist_data->GetXaxis()->FindBin(MSCW_cut_blind+1.);
+    //int binx_upper = hist_data->GetXaxis()->FindBin(MSCL_cut_blind+1.);
+    //int biny_upper = hist_data->GetXaxis()->FindBin(MSCW_cut_blind+1.);
     //int binx_blind = hist_data->GetXaxis()->FindBin(1.);
     //int biny_blind = hist_data->GetYaxis()->FindBin(1.);
     //int binx_upper = hist_data->GetXaxis()->FindBin(3.);
     //int biny_upper = hist_data->GetYaxis()->FindBin(3.);
-    //int binx_upper = hist_data->GetXaxis()->FindBin(2.);
-    //int biny_upper = hist_data->GetYaxis()->FindBin(2.);
+    int binx_upper = hist_data->GetXaxis()->FindBin(2.);
+    int biny_upper = hist_data->GetYaxis()->FindBin(2.);
     double chi2 = 0.;
     for (int bx=1;bx<=hist_data->GetNbinsX();bx++)
     {
@@ -782,38 +793,47 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
     }
 
 
-    for (int NthEigenvector=1;NthEigenvector<=N_bins_for_deconv;NthEigenvector++)
+    double first_eigenvalue_dark = eigensolver_dark.eigenvalues()(mtx_dark.cols()-1).real();
+    double first_eigenvalue_data = eigensolver_data.eigenvalues()(mtx_dark.cols()-1).real();
+    double eigenvalue_ratio = first_eigenvalue_data/first_eigenvalue_dark;
+    std::cout << "eigenvalue_ratio = " << eigenvalue_ratio << std::endl;
+    //for (int NthEigenvector=1;NthEigenvector<=N_bins_for_deconv;NthEigenvector++)
+    for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
     {
 
-        double first_eigenvalue_dark = eigensolver_dark.eigenvalues()(mtx_dark.cols()-1).real();
-        double first_eigenvalue_data = eigensolver_data.eigenvalues()(mtx_dark.cols()-1).real();
         if (NthEigenvector<=NumberOfEigenvectors)
         {
             //mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector);
-            if (NthEigenvector==2)
+            if (NthEigenvector>=2)
             {
-                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector)*first_eigenvalue_data/first_eigenvalue_dark;
+                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector)*eigenvalue_ratio;
             }
             else
             {
                 mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_data.eigenvalues()(mtx_dark.cols()-NthEigenvector);
             }
         }
+        double norm_data = NormalizationFactorForEigenvector(eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector));
+        double norm_dark = NormalizationFactorForEigenvector(eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector));
+        std::cout << NthEigenvector << "-th eigenvector, norm_data = " << norm_data << std::endl;
+        std::cout << NthEigenvector << "-th eigenvector, norm_dark = " << norm_dark << std::endl;
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             //mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row);
-            double sign = 1.;
-            if (eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector).dot(eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector)).real()<0.)
+            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=2 && row<biny_blind)
+            //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=2)
             {
-                sign = -1.;
-            }
-            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector==2 && row<biny_blind)
-            {
-                mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = sign*eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row);
+                double real = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row).real();
+                double imag = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row).imag();
+                double ampl = real/abs(real)*pow(real*real+imag*imag,0.5);
+                mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = ampl*norm_data/norm_dark;
             }
             else
             {
-                mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row);
+                double real = eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row).real();
+                double imag = eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row).imag();
+                double ampl = real/abs(real)*pow(real*real+imag*imag,0.5);
+                mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = ampl;
             }
             int row_lower = max(0,row-3);
             int row_upper = min(N_bins_for_deconv-1,row+3);
@@ -826,21 +846,27 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
             vari = pow(vari,0.5);
             mtx_eigenvector_vari.col(mtx_dark.cols()-NthEigenvector)(row) = vari;
         }
+        double norm_data_inv = NormalizationFactorForEigenvector(eigensolver_data.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector));
+        double norm_dark_inv = NormalizationFactorForEigenvector(eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector));
+        std::cout << NthEigenvector << "-th inv. eigenvector, norm_data_inv = " << norm_data_inv << std::endl;
+        std::cout << NthEigenvector << "-th inv. eigenvector, norm_dark_inv = " << norm_dark_inv << std::endl;
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             //mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col);
-            double sign = 1.;
-            if (eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector).dot(eigensolver_data.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)).real()<0.)
+            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=2 && col<binx_blind)
+            //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=2)
             {
-                sign = -1.;
-            }
-            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector==2 && col<binx_blind)
-            {
-                mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = sign*eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col);
+                double real = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col).real();
+                double imag = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col).imag();
+                double ampl = real/abs(real)*pow(real*real+imag*imag,0.5);
+                mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = ampl*norm_data_inv/norm_dark_inv;
             }
             else
             {
-                mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = eigensolver_data.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col);
+                double real = eigensolver_data.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col).real();
+                double imag = eigensolver_data.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col).imag();
+                double ampl = real/abs(real)*pow(real*real+imag*imag,0.5);
+                mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = ampl;
             }
             int col_lower = max(0,col-3);
             int col_upper = min(N_bins_for_deconv-1,col+3);
@@ -1177,10 +1203,10 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
             Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.01);
             double vari = mtx_eigenvector_vari(row,col_fix).real();
             //Chi2Minimizer->SetVariableLimits(first_index+row,-vari,vari);
-            //if (row>=biny_blind && NthEigenvector==1) 
-            //{
-            //    Chi2Minimizer->SetVariableLimits(first_index+row,0.0,0.0);
-            //}
+            if (row>=biny_blind) 
+            {
+                Chi2Minimizer->SetVariableLimits(first_index+row,0.0,0.0);
+            }
             //else
             //{
             //    double vari = mtx_eigenvector_vari(row,col_fix).real();
@@ -1200,18 +1226,14 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.01);
             double vari = mtx_eigenvector_vari(row_fix,col).real();
             //Chi2Minimizer->SetVariableLimits(first_index+col,-vari,vari);
-            //if (col>=binx_blind && NthEigenvector==1) 
-            //{
-            //    Chi2Minimizer->SetVariableLimits(first_index+col,0.0,0.0);
-            //}
+            if (col>=binx_blind || NthEigenvector==1) 
+            {
+                Chi2Minimizer->SetVariableLimits(first_index+col,0.0,0.0);
+            }
             //else
             //{
             //    double vari = mtx_eigenvector_vari(row_fix,col).real();
             //    Chi2Minimizer->SetVariableLimits(first_index+col,-vari,vari);
-            //}
-            //if (NthEigenvector>=3) 
-            //{
-            //    Chi2Minimizer->SetVariableLimits(first_index+col,0.0,0.0);
             //}
         }
 
@@ -1222,26 +1244,22 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
         {
             input_value = 0.;
             limit = 0.;
-            if (NthEigenvalue==NthEigenvector && NthEigenvalue==1)
-            {
-                //limit = 0.;
-                limit = 0.02*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
-            }
-            else if (NthEigenvalue!=NthEigenvector)
-            {
-                limit = 0.;
-            }
-            else
-            {
-                limit = 0.02*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
-                if (mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvalue)==0.)
-                {
-                    limit = 0.;
-                }
-            }
-            //if (NthEigenvalue==NthEigenvector && NthEigenvalue>=3)
+            //if (NthEigenvalue==NthEigenvector && NthEigenvalue==1)
+            //{
+            //    //limit = 0.;
+            //    limit = 0.02*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
+            //}
+            //else if (NthEigenvalue!=NthEigenvector)
             //{
             //    limit = 0.;
+            //}
+            //else
+            //{
+            //    limit = 0.02*eigensolver_dark.eigenvalues()(N_bins_for_deconv-1).real();
+            //    if (mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvalue)==0.)
+            //    {
+            //        limit = 0.;
+            //    }
             //}
             Chi2Minimizer->SetVariable(first_index+NthEigenvalue-1, "par["+std::to_string(int(first_index+NthEigenvalue-1))+"]", input_value, 0.01*limit);
             Chi2Minimizer->SetVariableLimits(first_index+NthEigenvalue-1,input_value-limit,input_value+limit);
@@ -1709,18 +1727,18 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
             Hist_Dark_Eigenvalues_real.at(e).SetBinContent(NthEigenvalue,eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvalue).real());
         }
 
-        fill1DHistogram(&Hist_Data_EigenvectorReal_0.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-1).real());
-        fill1DHistogram(&Hist_Data_EigenvectorReal_1.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-2).real());
-        fill1DHistogram(&Hist_Data_EigenvectorReal_2.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-3).real());
-        fill1DHistogram(&Hist_Data_InvEigenvectorReal_0.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-1).real());
-        fill1DHistogram(&Hist_Data_InvEigenvectorReal_1.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-2).real());
-        fill1DHistogram(&Hist_Data_InvEigenvectorReal_2.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-3).real());
-        fill1DHistogram(&Hist_Dark_EigenvectorReal_0.at(e),mtx_eigenvector_init.col(mtx_data.cols()-1).real());
-        fill1DHistogram(&Hist_Dark_EigenvectorReal_1.at(e),mtx_eigenvector_init.col(mtx_data.cols()-2).real());
-        fill1DHistogram(&Hist_Dark_EigenvectorReal_2.at(e),mtx_eigenvector_init.col(mtx_data.cols()-3).real());
-        fill1DHistogram(&Hist_Dark_InvEigenvectorReal_0.at(e),mtx_eigenvector_inv_init.row(mtx_data.cols()-1).real());
-        fill1DHistogram(&Hist_Dark_InvEigenvectorReal_1.at(e),mtx_eigenvector_inv_init.row(mtx_data.cols()-2).real());
-        fill1DHistogram(&Hist_Dark_InvEigenvectorReal_2.at(e),mtx_eigenvector_inv_init.row(mtx_data.cols()-3).real());
+        fill1DHistogram(&Hist_Data_EigenvectorReal_0.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-1));
+        fill1DHistogram(&Hist_Data_EigenvectorReal_1.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-2));
+        fill1DHistogram(&Hist_Data_EigenvectorReal_2.at(e),eigensolver_data.eigenvectors().col(mtx_data.cols()-3));
+        fill1DHistogram(&Hist_Data_InvEigenvectorReal_0.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-1));
+        fill1DHistogram(&Hist_Data_InvEigenvectorReal_1.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-2));
+        fill1DHistogram(&Hist_Data_InvEigenvectorReal_2.at(e),eigensolver_data.eigenvectors().inverse().row(mtx_data.cols()-3));
+        fill1DHistogram(&Hist_Dark_EigenvectorReal_0.at(e),mtx_eigenvector_init.col(mtx_data.cols()-1));
+        fill1DHistogram(&Hist_Dark_EigenvectorReal_1.at(e),mtx_eigenvector_init.col(mtx_data.cols()-2));
+        fill1DHistogram(&Hist_Dark_EigenvectorReal_2.at(e),mtx_eigenvector_init.col(mtx_data.cols()-3));
+        fill1DHistogram(&Hist_Dark_InvEigenvectorReal_0.at(e),mtx_eigenvector_inv_init.row(mtx_data.cols()-1));
+        fill1DHistogram(&Hist_Dark_InvEigenvectorReal_1.at(e),mtx_eigenvector_inv_init.row(mtx_data.cols()-2));
+        fill1DHistogram(&Hist_Dark_InvEigenvectorReal_2.at(e),mtx_eigenvector_inv_init.row(mtx_data.cols()-3));
 
         int col_fix = 0;
         int row_fix = 0;
@@ -1833,12 +1851,12 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
             Hist_Fit_Eigenvalues_real.at(e).SetBinContent(NthEigenvalue,mtx_eigenvalue(N_bins_for_deconv-NthEigenvalue,N_bins_for_deconv-NthEigenvalue).real());
         }
 
-        fill1DHistogram(&Hist_Fit_EigenvectorReal_0.at(e),mtx_eigenvector.col(mtx_data.cols()-1).real());
-        fill1DHistogram(&Hist_Fit_EigenvectorReal_1.at(e),mtx_eigenvector.col(mtx_data.cols()-2).real());
-        fill1DHistogram(&Hist_Fit_EigenvectorReal_2.at(e),mtx_eigenvector.col(mtx_data.cols()-3).real());
-        fill1DHistogram(&Hist_Fit_InvEigenvectorReal_0.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-1).real());
-        fill1DHistogram(&Hist_Fit_InvEigenvectorReal_1.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-2).real());
-        fill1DHistogram(&Hist_Fit_InvEigenvectorReal_2.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-3).real());
+        fill1DHistogram(&Hist_Fit_EigenvectorReal_0.at(e),mtx_eigenvector.col(mtx_data.cols()-1));
+        fill1DHistogram(&Hist_Fit_EigenvectorReal_1.at(e),mtx_eigenvector.col(mtx_data.cols()-2));
+        fill1DHistogram(&Hist_Fit_EigenvectorReal_2.at(e),mtx_eigenvector.col(mtx_data.cols()-3));
+        fill1DHistogram(&Hist_Fit_InvEigenvectorReal_0.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-1));
+        fill1DHistogram(&Hist_Fit_InvEigenvectorReal_1.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-2));
+        fill1DHistogram(&Hist_Fit_InvEigenvectorReal_2.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-3));
         fill2DHistogramAbs(&Hist_GammaRDBM_MSCLW.at(e),mtx_gamma);
 
         double gamma_total = Hist_Data->Integral(binx_lower,binx_upper,biny_lower,biny_upper)-Hist_Bkgd_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
