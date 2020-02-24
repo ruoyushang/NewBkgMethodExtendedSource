@@ -45,9 +45,9 @@ blind_tag = 'blind'
 if not isBlind:
     blind_tag = 'unblind'
 
-#FileFolder += ['output_test']
-#FileTag += ['test_%s'%(blind_tag)]
-#FileLabel += ['test']
+FileFolder += ['output_test']
+FileTag += ['test_%s'%(blind_tag)]
+FileLabel += ['test']
 
 #FileFolder += ['output_E3bins_medium']
 #FileTag += ['E3bins_high']
@@ -62,9 +62,9 @@ if not isBlind:
 #FileFolder += ['output_nominal_medium']
 #FileTag += ['medium_%s'%(blind_tag)]
 #FileLabel += ['medium']
-FileFolder += ['output_nominal_loose']
-FileTag += ['loose_%s'%(blind_tag)]
-FileLabel += ['loose']
+#FileFolder += ['output_nominal_loose']
+#FileTag += ['loose_%s'%(blind_tag)]
+#FileLabel += ['loose']
 
 #FileFolder += ['output_unblind_4x4_dNSBm3_loose']
 #FileTag += ['dNSBm3']
@@ -91,8 +91,8 @@ elev_range = []
 #elev_range += [[35,45]]
 #elev_range += [[45,55]]
 #elev_range += [[55,65]]
-#elev_range += [[65,75]]
-elev_range += [[75,85]]
+elev_range += [[65,75]]
+#elev_range += [[75,85]]
 
 
 source_list = []
@@ -213,7 +213,7 @@ energy_list = []
 energy_list += [int(pow(10,2.3))]
 energy_list += [int(pow(10,4.0))]
 #energy_list += [int(pow(10,2.3))]
-#energy_list += [int(pow(10,2.5))]
+#energy_list += [int(pow(10,2.6))]
 #energy_list += [int(pow(10,3.0))]
 #energy_list += [int(pow(10,4.0))]
 
@@ -285,9 +285,15 @@ Hist_Data_InvEigenvector_2_real = ROOT.TH1D("Hist_Data_InvEigenvector_2_real",""
 Hist_Dark_Eigenvector_0_real = ROOT.TH1D("Hist_Dark_Eigenvector_0_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 Hist_Dark_Eigenvector_1_real = ROOT.TH1D("Hist_Dark_Eigenvector_1_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 Hist_Dark_Eigenvector_2_real = ROOT.TH1D("Hist_Dark_Eigenvector_2_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Dark_InvEigenvector_0_real = ROOT.TH1D("Hist_Dark_InvEigenvector_0_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Dark_InvEigenvector_1_real = ROOT.TH1D("Hist_Dark_InvEigenvector_1_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Dark_InvEigenvector_2_real = ROOT.TH1D("Hist_Dark_InvEigenvector_2_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 Hist_Fit_Eigenvector_0_real = ROOT.TH1D("Hist_Fit_Eigenvector_0_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 Hist_Fit_Eigenvector_1_real = ROOT.TH1D("Hist_Fit_Eigenvector_1_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 Hist_Fit_Eigenvector_2_real = ROOT.TH1D("Hist_Fit_Eigenvector_2_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Fit_InvEigenvector_0_real = ROOT.TH1D("Hist_Fit_InvEigenvector_0_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Fit_InvEigenvector_1_real = ROOT.TH1D("Hist_Fit_InvEigenvector_1_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Fit_InvEigenvector_2_real = ROOT.TH1D("Hist_Fit_InvEigenvector_2_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 
 Hist2D_Data_SumE = ROOT.TH2D("Hist2D_Data_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 Hist2D_Dark_SumE = ROOT.TH2D("Hist2D_Dark_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
@@ -335,9 +341,15 @@ Hist_Data_InvEigenvector_2_real_SumE = ROOT.TH1D("Hist_Data_InvEigenvector_2_rea
 Hist_Dark_Eigenvector_0_real_SumE = ROOT.TH1D("Hist_Dark_Eigenvector_0_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 Hist_Dark_Eigenvector_1_real_SumE = ROOT.TH1D("Hist_Dark_Eigenvector_1_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 Hist_Dark_Eigenvector_2_real_SumE = ROOT.TH1D("Hist_Dark_Eigenvector_2_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Dark_InvEigenvector_0_real_SumE = ROOT.TH1D("Hist_Dark_InvEigenvector_0_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Dark_InvEigenvector_1_real_SumE = ROOT.TH1D("Hist_Dark_InvEigenvector_1_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Dark_InvEigenvector_2_real_SumE = ROOT.TH1D("Hist_Dark_InvEigenvector_2_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 Hist_Fit_Eigenvector_0_real_SumE = ROOT.TH1D("Hist_Fit_Eigenvector_0_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 Hist_Fit_Eigenvector_1_real_SumE = ROOT.TH1D("Hist_Fit_Eigenvector_1_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 Hist_Fit_Eigenvector_2_real_SumE = ROOT.TH1D("Hist_Fit_Eigenvector_2_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Fit_InvEigenvector_0_real_SumE = ROOT.TH1D("Hist_Fit_InvEigenvector_0_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Fit_InvEigenvector_1_real_SumE = ROOT.TH1D("Hist_Fit_InvEigenvector_1_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Fit_InvEigenvector_2_real_SumE = ROOT.TH1D("Hist_Fit_InvEigenvector_2_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 
 Hist_Data_CameraFoV = ROOT.TH2D("Hist_Data_CameraFoV","",150,-3,3,150,-3,3)
 Hist_Bkgd_CameraFoV = ROOT.TH2D("Hist_Bkgd_CameraFoV","",150,-3,3,150,-3,3)
@@ -2060,9 +2072,15 @@ def ResetStackedShowerHistograms():
     Hist_Dark_Eigenvector_0_real_SumE.Reset()
     Hist_Dark_Eigenvector_1_real_SumE.Reset()
     Hist_Dark_Eigenvector_2_real_SumE.Reset()
+    Hist_Dark_InvEigenvector_0_real_SumE.Reset()
+    Hist_Dark_InvEigenvector_1_real_SumE.Reset()
+    Hist_Dark_InvEigenvector_2_real_SumE.Reset()
     Hist_Fit_Eigenvector_0_real_SumE.Reset()
     Hist_Fit_Eigenvector_1_real_SumE.Reset()
     Hist_Fit_Eigenvector_2_real_SumE.Reset()
+    Hist_Fit_InvEigenvector_0_real_SumE.Reset()
+    Hist_Fit_InvEigenvector_1_real_SumE.Reset()
+    Hist_Fit_InvEigenvector_2_real_SumE.Reset()
 
 def StackRingHistograms():
 
@@ -2112,7 +2130,6 @@ def StackShowerHistograms():
     Hist_Data_Eigenvector_0_real_SumE.Add(Hist_Data_Eigenvector_0_real)
     Hist_Data_Eigenvector_1_real_SumE.Add(Hist_Data_Eigenvector_1_real)
     Hist_Data_Eigenvector_2_real_SumE.Add(Hist_Data_Eigenvector_2_real)
-
     #Hist_Data_InvEigenvector_0_real.Scale(1./Hist_Data_InvEigenvector_0_real.Integral())
     #Hist_Data_InvEigenvector_1_real.Scale(1./Hist_Data_InvEigenvector_1_real.Integral())
     #Hist_Data_InvEigenvector_2_real.Scale(1./Hist_Data_InvEigenvector_2_real.Integral())
@@ -2120,22 +2137,32 @@ def StackShowerHistograms():
     Hist_Data_InvEigenvector_1_real_SumE.Add(Hist_Data_InvEigenvector_1_real)
     Hist_Data_InvEigenvector_2_real_SumE.Add(Hist_Data_InvEigenvector_2_real)
 
-    Hist_Dark_Eigenvector_0_real.Scale(1./Hist_Dark_Eigenvector_0_real.Integral())
-    Hist_Dark_Eigenvector_1_real.Scale(1./Hist_Dark_Eigenvector_1_real.Integral())
-    Hist_Dark_Eigenvector_2_real.Scale(1./Hist_Dark_Eigenvector_0_real.Integral())
+    #Hist_Dark_Eigenvector_0_real.Scale(1./Hist_Dark_Eigenvector_0_real.Integral())
+    #Hist_Dark_Eigenvector_1_real.Scale(1./Hist_Dark_Eigenvector_1_real.Integral())
+    #Hist_Dark_Eigenvector_2_real.Scale(1./Hist_Dark_Eigenvector_2_real.Integral())
     Hist_Dark_Eigenvector_0_real_SumE.Add(Hist_Dark_Eigenvector_0_real)
     Hist_Dark_Eigenvector_1_real_SumE.Add(Hist_Dark_Eigenvector_1_real)
     Hist_Dark_Eigenvector_2_real_SumE.Add(Hist_Dark_Eigenvector_2_real)
+    #Hist_Dark_InvEigenvector_0_real.Scale(1./Hist_Dark_InvEigenvector_0_real.Integral())
+    #Hist_Dark_InvEigenvector_1_real.Scale(1./Hist_Dark_InvEigenvector_1_real.Integral())
+    #Hist_Dark_InvEigenvector_2_real.Scale(1./Hist_Dark_InvEigenvector_2_real.Integral())
+    Hist_Dark_InvEigenvector_0_real_SumE.Add(Hist_Dark_InvEigenvector_0_real)
+    Hist_Dark_InvEigenvector_1_real_SumE.Add(Hist_Dark_InvEigenvector_1_real)
+    Hist_Dark_InvEigenvector_2_real_SumE.Add(Hist_Dark_InvEigenvector_2_real)
 
     #Hist_Fit_Eigenvector_0_real.Scale(1./Hist_Fit_Eigenvector_0_real.Integral())
-    #Hist_Fit_Eigenvector_0_real.Scale(Hist_Fit_Eigenvalues_real.GetBinContent(1))
-    #Hist_Fit_Eigenvector_0_real_SumE.Add(Hist_Fit_Eigenvector_0_real)
     #Hist_Fit_Eigenvector_1_real.Scale(1./Hist_Fit_Eigenvector_1_real.Integral())
-    #Hist_Fit_Eigenvector_1_real.Scale(Hist_Fit_Eigenvalues_real.GetBinContent(2))
-    #Hist_Fit_Eigenvector_1_real_SumE.Add(Hist_Fit_Eigenvector_1_real)
     #Hist_Fit_Eigenvector_2_real.Scale(1./Hist_Fit_Eigenvector_2_real.Integral())
-    #Hist_Fit_Eigenvector_2_real.Scale(Hist_Fit_Eigenvalues_real.GetBinContent(3))
-    #Hist_Fit_Eigenvector_2_real_SumE.Add(Hist_Fit_Eigenvector_2_real)
+    Hist_Fit_Eigenvector_0_real_SumE.Add(Hist_Fit_Eigenvector_0_real)
+    Hist_Fit_Eigenvector_1_real_SumE.Add(Hist_Fit_Eigenvector_1_real)
+    Hist_Fit_Eigenvector_2_real_SumE.Add(Hist_Fit_Eigenvector_2_real)
+    #Hist_Fit_InvEigenvector_0_real.Scale(1./Hist_Fit_InvEigenvector_0_real.Integral())
+    #Hist_Fit_InvEigenvector_1_real.Scale(1./Hist_Fit_InvEigenvector_1_real.Integral())
+    #Hist_Fit_InvEigenvector_2_real.Scale(1./Hist_Fit_InvEigenvector_2_real.Integral())
+    Hist_Fit_InvEigenvector_0_real_SumE.Add(Hist_Fit_InvEigenvector_0_real)
+    Hist_Fit_InvEigenvector_1_real_SumE.Add(Hist_Fit_InvEigenvector_1_real)
+    Hist_Fit_InvEigenvector_2_real_SumE.Add(Hist_Fit_InvEigenvector_2_real)
+
 
 def Theta2HistScale(Hist,scale,scale_err):
 
@@ -2868,24 +2895,43 @@ def GetShowerHistogramsFromFile(FilePath):
     Hist_Data_InvEigenvector_2_real.Reset()
     Hist_Data_InvEigenvector_2_real.Add(InputFile.Get(HistName))
 
-    HistName = "Hist_Dark_InvEigenvectorReal_0_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Dark_EigenvectorReal_0_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
     Hist_Dark_Eigenvector_0_real.Reset()
     Hist_Dark_Eigenvector_0_real.Add(InputFile.Get(HistName))
-    HistName = "Hist_Dark_InvEigenvectorReal_1_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Dark_EigenvectorReal_1_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
     Hist_Dark_Eigenvector_1_real.Reset()
     Hist_Dark_Eigenvector_1_real.Add(InputFile.Get(HistName))
-    HistName = "Hist_Dark_InvEigenvectorReal_2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Dark_EigenvectorReal_2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
     Hist_Dark_Eigenvector_2_real.Reset()
     Hist_Dark_Eigenvector_2_real.Add(InputFile.Get(HistName))
     HistName = "Hist_Dark_InvEigenvectorReal_0_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    Hist_Dark_InvEigenvector_0_real.Reset()
+    Hist_Dark_InvEigenvector_0_real.Add(InputFile.Get(HistName))
+    HistName = "Hist_Dark_InvEigenvectorReal_1_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    Hist_Dark_InvEigenvector_1_real.Reset()
+    Hist_Dark_InvEigenvector_1_real.Add(InputFile.Get(HistName))
+    HistName = "Hist_Dark_InvEigenvectorReal_2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    Hist_Dark_InvEigenvector_2_real.Reset()
+    Hist_Dark_InvEigenvector_2_real.Add(InputFile.Get(HistName))
+
+    HistName = "Hist_Fit_EigenvectorReal_0_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
     Hist_Fit_Eigenvector_0_real.Reset()
     Hist_Fit_Eigenvector_0_real.Add(InputFile.Get(HistName))
-    HistName = "Hist_Fit_InvEigenvectorReal_1_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Fit_EigenvectorReal_1_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
     Hist_Fit_Eigenvector_1_real.Reset()
     Hist_Fit_Eigenvector_1_real.Add(InputFile.Get(HistName))
-    HistName = "Hist_Fit_InvEigenvectorReal_2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    HistName = "Hist_Fit_EigenvectorReal_2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
     Hist_Fit_Eigenvector_2_real.Reset()
     Hist_Fit_Eigenvector_2_real.Add(InputFile.Get(HistName))
+    HistName = "Hist_Fit_InvEigenvectorReal_0_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    Hist_Fit_InvEigenvector_0_real.Reset()
+    Hist_Fit_InvEigenvector_0_real.Add(InputFile.Get(HistName))
+    HistName = "Hist_Fit_InvEigenvectorReal_1_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    Hist_Fit_InvEigenvector_1_real.Reset()
+    Hist_Fit_InvEigenvector_1_real.Add(InputFile.Get(HistName))
+    HistName = "Hist_Fit_InvEigenvectorReal_2_ErecS%sto%s"%(ErecS_lower_cut,ErecS_upper_cut)
+    Hist_Fit_InvEigenvector_2_real.Reset()
+    Hist_Fit_InvEigenvector_2_real.Add(InputFile.Get(HistName))
 
     InputFile.Close()
 
@@ -5021,6 +5067,10 @@ def SingleSourceSkyMap(source_name_input,doMap):
         Hist_Eigenvalue_real_Rank = []
         Hist_Eigenvector_0 = []
         Hist_Eigenvector_1 = []
+        Hist_Eigenvector_2 = []
+        Hist_InvEigenvector_0 = []
+        Hist_InvEigenvector_1 = []
+        Hist_InvEigenvector_2 = []
         legend_S2B = []
         color_S2B = []
         for path in range(1,len(FilePath_Folder0[source])):
@@ -5059,6 +5109,14 @@ def SingleSourceSkyMap(source_name_input,doMap):
         Hist_Eigenvector_0[len(Hist_Eigenvector_0)-1].Add(Hist_Data_Eigenvector_0_real_SumE)
         Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
         Hist_Eigenvector_1[len(Hist_Eigenvector_1)-1].Add(Hist_Data_Eigenvector_1_real_SumE)
+        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_2[len(Hist_Eigenvector_2)-1].Add(Hist_Data_Eigenvector_2_real_SumE)
+        Hist_InvEigenvector_0 += [ROOT.TH1D("Hist_InvEigenvector_0","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_0[len(Hist_InvEigenvector_0)-1].Add(Hist_Data_InvEigenvector_0_real_SumE)
+        Hist_InvEigenvector_1 += [ROOT.TH1D("Hist_InvEigenvector_1","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_1[len(Hist_InvEigenvector_1)-1].Add(Hist_Data_InvEigenvector_1_real_SumE)
+        Hist_InvEigenvector_2 += [ROOT.TH1D("Hist_InvEigenvector_2","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_2[len(Hist_InvEigenvector_2)-1].Add(Hist_Data_InvEigenvector_2_real_SumE)
         legend_S2B += ['ON data']
         color_idx = int(0*len(color_code)/2)
         color_idx = min(color_idx,len(color_code)-1)
@@ -5069,6 +5127,14 @@ def SingleSourceSkyMap(source_name_input,doMap):
         Hist_Eigenvector_0[len(Hist_Eigenvector_0)-1].Add(Hist_Dark_Eigenvector_0_real_SumE)
         Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
         Hist_Eigenvector_1[len(Hist_Eigenvector_1)-1].Add(Hist_Dark_Eigenvector_1_real_SumE)
+        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_2[len(Hist_Eigenvector_2)-1].Add(Hist_Dark_Eigenvector_2_real_SumE)
+        Hist_InvEigenvector_0 += [ROOT.TH1D("Hist_InvEigenvector_0","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_0[len(Hist_InvEigenvector_0)-1].Add(Hist_Dark_InvEigenvector_0_real_SumE)
+        Hist_InvEigenvector_1 += [ROOT.TH1D("Hist_InvEigenvector_1","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_1[len(Hist_InvEigenvector_1)-1].Add(Hist_Dark_InvEigenvector_1_real_SumE)
+        Hist_InvEigenvector_2 += [ROOT.TH1D("Hist_InvEigenvector_2","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_2[len(Hist_InvEigenvector_2)-1].Add(Hist_Dark_InvEigenvector_2_real_SumE)
         legend_S2B += ['OFF data']
         color_idx = int(1*len(color_code)/2)
         color_idx = min(color_idx,len(color_code)-1)
@@ -5079,6 +5145,14 @@ def SingleSourceSkyMap(source_name_input,doMap):
         Hist_Eigenvector_0[len(Hist_Eigenvector_0)-1].Add(Hist_Fit_Eigenvector_0_real_SumE)
         Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
         Hist_Eigenvector_1[len(Hist_Eigenvector_1)-1].Add(Hist_Fit_Eigenvector_1_real_SumE)
+        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_2[len(Hist_Eigenvector_2)-1].Add(Hist_Fit_Eigenvector_2_real_SumE)
+        Hist_InvEigenvector_0 += [ROOT.TH1D("Hist_InvEigenvector_0","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_0[len(Hist_InvEigenvector_0)-1].Add(Hist_Fit_InvEigenvector_0_real_SumE)
+        Hist_InvEigenvector_1 += [ROOT.TH1D("Hist_InvEigenvector_1","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_1[len(Hist_InvEigenvector_1)-1].Add(Hist_Fit_InvEigenvector_1_real_SumE)
+        Hist_InvEigenvector_2 += [ROOT.TH1D("Hist_InvEigenvector_2","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_2[len(Hist_InvEigenvector_2)-1].Add(Hist_Fit_InvEigenvector_2_real_SumE)
         legend_S2B += ['Fit']
         color_idx = int(2*len(color_code)/2)
         color_idx = min(color_idx,len(color_code)-1)
@@ -5091,6 +5165,10 @@ def SingleSourceSkyMap(source_name_input,doMap):
 
         MakeComparisonPlot(Hist_Eigenvector_0,legend_S2B,color_S2B,'k','amplitude','ONOFF_Eigenvector_real_0_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag),0.,0.,False,False)
         MakeComparisonPlot(Hist_Eigenvector_1,legend_S2B,color_S2B,'k','amplitude','ONOFF_Eigenvector_real_1_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag),0.,0.,False,False)
+        MakeComparisonPlot(Hist_Eigenvector_2,legend_S2B,color_S2B,'k','amplitude','ONOFF_Eigenvector_real_2_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag),0.,0.,False,False)
+        MakeComparisonPlot(Hist_InvEigenvector_0,legend_S2B,color_S2B,'k','amplitude','ONOFF_InvEigenvector_real_0_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag),0.,0.,False,False)
+        MakeComparisonPlot(Hist_InvEigenvector_1,legend_S2B,color_S2B,'k','amplitude','ONOFF_InvEigenvector_real_1_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag),0.,0.,False,False)
+        MakeComparisonPlot(Hist_InvEigenvector_2,legend_S2B,color_S2B,'k','amplitude','ONOFF_InvEigenvector_real_2_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag),0.,0.,False,False)
 
         #ErecS_lower_cut = energy_list[0]
         ErecS_lower_cut = energy_fine_bin[energy_fine_bin_cut_low]
@@ -5155,8 +5233,8 @@ def HMS2deg(ra='', dec=''):
     else:
         return RA or DEC
 
-SystDarkVsMDM() # run this to get method systematics
-SystAsFunctionOfEnergy()
+#SystDarkVsMDM() # run this to get method systematics
+#SystAsFunctionOfEnergy()
 #SystAsFunctionOfRadius()
 #SystAsFunctionOfElevation()
 #SystAsFunctionOfNSB()
@@ -5280,6 +5358,6 @@ Hist_Highlight_Skymap_Galactic_zoomin = ROOT.TH2D("Hist_Highlight_Skymap_Galacti
 Hist_Skymap_Galactic_zoomin = ROOT.TH2D("Hist_Skymap_Galactic_zoomin","",50,source_l-1,source_l+1,50,source_b-1,source_b+1)
 
 
-#SingleSourceSkyMap(source_of_interest,False)
+SingleSourceSkyMap(source_of_interest,False)
 #SingleSourceSpectrum(source_of_interest)
 
