@@ -1292,7 +1292,7 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.01);
             double vari = mtx_eigenvector_vari(row_fix,col).real();
             //Chi2Minimizer->SetVariableLimits(first_index+col,-vari,vari);
-            if (col>=binx_blind || NthEigenvector==1) 
+            if (col>=binx_blind) 
             {
                 Chi2Minimizer->SetVariableLimits(first_index+col,0.0,0.0);
             }
