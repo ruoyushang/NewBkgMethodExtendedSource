@@ -70,6 +70,7 @@ MatrixXcd mtx_data_redu(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_data_err(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_dark_err(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvalue_init(N_bins_for_deconv,N_bins_for_deconv);
+MatrixXcd mtx_eigenvalue_vari(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvector_init(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvector_vari(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvector_inv_init(N_bins_for_deconv,N_bins_for_deconv);
@@ -570,22 +571,21 @@ void NetflixParametrizeEigenvectors(const double *par)
         first_index = 1+(2*NthEigenvector-2)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int row=0;row<N_bins_for_deconv;row++)
         {
-            mtx_eigenvector(row,col_fix) += par[first_index+row];
+            mtx_eigenvector_vari(row,col_fix) = par[first_index+row];
         }
 
         row_fix = N_bins_for_deconv-NthEigenvector;
         first_index = 1+(2*NthEigenvector-1)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int col=0;col<N_bins_for_deconv;col++)
         {
-            mtx_eigenvector_inv(row_fix,col) += par[first_index+col];
+            mtx_eigenvector_inv_vari(row_fix,col) = par[first_index+col];
         }
 
         // build eigenvalue matrix
         first_index = 1+(2*NthEigenvector-0)*(N_bins_for_deconv)+NumberOfEigenvectors*(NthEigenvector-1);
         for (int NthEigenvalue=1;NthEigenvalue<=NumberOfEigenvectors;NthEigenvalue++)
         {
-            //mtx_eigenvalue(N_bins_for_deconv-NthEigenvector,N_bins_for_deconv-NthEigenvalue) = par[first_index+NthEigenvalue-1]*par[0];
-            mtx_eigenvalue(N_bins_for_deconv-NthEigenvector,N_bins_for_deconv-NthEigenvalue) += par[first_index+NthEigenvalue-1];
+            mtx_eigenvalue_vari(N_bins_for_deconv-NthEigenvector,N_bins_for_deconv-NthEigenvalue) = par[first_index+NthEigenvalue-1];
         }
     }
 }
@@ -601,7 +601,10 @@ double NetflixChi2Function(const double *par)
     
     // build model
     MatrixXcd mtx_model(N_bins_for_deconv,N_bins_for_deconv);
-    mtx_model = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
+    mtx_model = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+    mtx_model += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+    mtx_model += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
+    mtx_model += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
 
     TH2D hist_gamma = TH2D("hist_gamma","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_diff = TH2D("hist_diff","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
@@ -817,6 +820,7 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
             mtx_eigenvector_inv_init(row,col) = 0.;
             mtx_eigenvector_inv_vari(row,col) = 0.;
             mtx_eigenvalue_init(row,col) = 0.;
+            mtx_eigenvalue_vari(row,col) = 0.;
         }
     }
 
@@ -1269,19 +1273,19 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
             Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.01);
             double vari = mtx_eigenvector_vari(row,col_fix).real();
             //Chi2Minimizer->SetVariableLimits(first_index+row,-vari,vari);
-            if (row>=biny_blind) 
-            {
-                Chi2Minimizer->SetVariableLimits(first_index+row,0.0,0.0);
-            }
+            //if (row>=biny_blind) 
+            //{
+            //    Chi2Minimizer->SetVariableLimits(first_index+row,0.0,0.0);
+            //}
             //else
             //{
             //    double vari = mtx_eigenvector_vari(row,col_fix).real();
             //    Chi2Minimizer->SetVariableLimits(first_index+row,-vari,vari);
             //}
-            if (ratio_empty_bins>0.6) 
-            {
-                Chi2Minimizer->SetVariableLimits(first_index+row,0.0,0.0);
-            }
+            //if (ratio_empty_bins>0.6) 
+            //{
+            //    Chi2Minimizer->SetVariableLimits(first_index+row,0.0,0.0);
+            //}
         }
 
         limit = 0.0;
@@ -1292,19 +1296,19 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.01);
             double vari = mtx_eigenvector_vari(row_fix,col).real();
             //Chi2Minimizer->SetVariableLimits(first_index+col,-vari,vari);
-            if (col>=binx_blind) 
-            {
-                Chi2Minimizer->SetVariableLimits(first_index+col,0.0,0.0);
-            }
+            //if (col>=binx_blind) 
+            //{
+            //    Chi2Minimizer->SetVariableLimits(first_index+col,0.0,0.0);
+            //}
             //else
             //{
             //    double vari = mtx_eigenvector_vari(row_fix,col).real();
             //    Chi2Minimizer->SetVariableLimits(first_index+col,-vari,vari);
             //}
-            if (ratio_empty_bins>0.6) 
-            {
-                Chi2Minimizer->SetVariableLimits(first_index+col,0.0,0.0);
-            }
+            //if (ratio_empty_bins>0.6) 
+            //{
+            //    Chi2Minimizer->SetVariableLimits(first_index+col,0.0,0.0);
+            //}
         }
 
         // eigenvalues
@@ -1846,7 +1850,10 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         std::cout << "final (0) chi2 = " << NetflixChi2Function(par_0th) << std::endl;
         NetflixParametrizeEigenvectors(par_0th);
 
-        mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
+        mtx_data_bkgd = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+        mtx_data_bkgd += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+        mtx_data_bkgd += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
+        mtx_data_bkgd += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
         fill2DHistogramAbs(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
         std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,15,1,15) << std::endl;
 
@@ -1872,7 +1879,10 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         std::cout << "final (1) chi2 = " << NetflixChi2Function(par_1st) << std::endl;
         NetflixParametrizeEigenvectors(par_1st);
 
-        mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
+        mtx_data_bkgd = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+        mtx_data_bkgd += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+        mtx_data_bkgd += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
+        mtx_data_bkgd += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
         fill2DHistogramAbs(&Hist_BkgdBlind_MSCLW.at(e),mtx_data_bkgd);
         std::cout << "Hist_BkgdBlind_MSCLW.at(e).Integral() = " << Hist_BkgdBlind_MSCLW.at(e).Integral(1,15,1,15) << std::endl;
 
@@ -1883,8 +1893,12 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
                 mtx_eigenval_data_redu(row,col) = 0.;
             }
         }
-        mtx_eigenval_data_redu(N_bins_for_deconv-1,N_bins_for_deconv-1) = mtx_eigenvalue(N_bins_for_deconv-1,N_bins_for_deconv-1);
-        mtx_data_redu = mtx_eigenvector*mtx_eigenval_data_redu*mtx_eigenvector_inv;
+        mtx_eigenval_data_redu(N_bins_for_deconv-1,N_bins_for_deconv-1) = mtx_eigenvalue_init(N_bins_for_deconv-1,N_bins_for_deconv-1);
+        mtx_eigenval_data_redu(N_bins_for_deconv-1,N_bins_for_deconv-1) += mtx_eigenvalue_vari(N_bins_for_deconv-1,N_bins_for_deconv-1);
+        mtx_data_redu = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+        mtx_data_redu += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+        mtx_data_redu += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
+        mtx_data_redu += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
         fill2DHistogramAbs(&Hist_Bkgd_Rank0_MSCLW.at(e),mtx_data_redu);
 
         for (int col=0;col<N_bins_for_deconv;col++)
@@ -1894,8 +1908,12 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
                 mtx_eigenval_data_redu(row,col) = 0.;
             }
         }
-        mtx_eigenval_data_redu(N_bins_for_deconv-2,N_bins_for_deconv-2) = mtx_eigenvalue(N_bins_for_deconv-2,N_bins_for_deconv-2);
-        mtx_data_redu = mtx_eigenvector*mtx_eigenval_data_redu*mtx_eigenvector_inv;
+        mtx_eigenval_data_redu(N_bins_for_deconv-2,N_bins_for_deconv-2) = mtx_eigenvalue_init(N_bins_for_deconv-2,N_bins_for_deconv-2);
+        mtx_eigenval_data_redu(N_bins_for_deconv-2,N_bins_for_deconv-2) += mtx_eigenvalue_vari(N_bins_for_deconv-2,N_bins_for_deconv-2);
+        mtx_data_redu = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+        mtx_data_redu += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+        mtx_data_redu += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
+        mtx_data_redu += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
         fill2DHistogramAbs(&Hist_Bkgd_Rank1_MSCLW.at(e),mtx_data_redu);
 
         for (int col=0;col<N_bins_for_deconv;col++)
@@ -1905,8 +1923,12 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
                 mtx_eigenval_data_redu(row,col) = 0.;
             }
         }
-        mtx_eigenval_data_redu(N_bins_for_deconv-3,N_bins_for_deconv-3) = mtx_eigenvalue(N_bins_for_deconv-3,N_bins_for_deconv-3);
-        mtx_data_redu = mtx_eigenvector*mtx_eigenval_data_redu*mtx_eigenvector_inv;
+        mtx_eigenval_data_redu(N_bins_for_deconv-3,N_bins_for_deconv-3) = mtx_eigenvalue_init(N_bins_for_deconv-3,N_bins_for_deconv-3);
+        mtx_eigenval_data_redu(N_bins_for_deconv-3,N_bins_for_deconv-3) += mtx_eigenvalue_vari(N_bins_for_deconv-3,N_bins_for_deconv-3);
+        mtx_data_redu = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+        mtx_data_redu += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+        mtx_data_redu += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
+        mtx_data_redu += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
         fill2DHistogramAbs(&Hist_Bkgd_Rank2_MSCLW.at(e),mtx_data_redu);
 
         for (int col=0;col<N_bins_for_deconv;col++)
@@ -1916,21 +1938,25 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
                 mtx_eigenval_data_redu(row,col) = 0.;
             }
         }
-        mtx_eigenval_data_redu(N_bins_for_deconv-4,N_bins_for_deconv-4) = mtx_eigenvalue(N_bins_for_deconv-4,N_bins_for_deconv-4);
-        mtx_data_redu = mtx_eigenvector*mtx_eigenval_data_redu*mtx_eigenvector_inv;
+        mtx_eigenval_data_redu(N_bins_for_deconv-4,N_bins_for_deconv-4) = mtx_eigenvalue_init(N_bins_for_deconv-4,N_bins_for_deconv-4);
+        mtx_eigenval_data_redu(N_bins_for_deconv-4,N_bins_for_deconv-4) += mtx_eigenvalue_vari(N_bins_for_deconv-4,N_bins_for_deconv-4);
+        mtx_data_redu = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+        mtx_data_redu += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+        mtx_data_redu += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
+        mtx_data_redu += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
         fill2DHistogramAbs(&Hist_Bkgd_Rank3_MSCLW.at(e),mtx_data_redu);
 
         for (int NthEigenvalue=1;NthEigenvalue<=N_bins_for_deconv;NthEigenvalue++)
         {
-            Hist_Fit_Eigenvalues_real.at(e).SetBinContent(NthEigenvalue,mtx_eigenvalue(N_bins_for_deconv-NthEigenvalue,N_bins_for_deconv-NthEigenvalue).real());
+            Hist_Fit_Eigenvalues_real.at(e).SetBinContent(NthEigenvalue,mtx_eigenvalue_init(N_bins_for_deconv-NthEigenvalue,N_bins_for_deconv-NthEigenvalue).real()+NthEigenvalue,mtx_eigenvalue_vari(N_bins_for_deconv-NthEigenvalue,N_bins_for_deconv-NthEigenvalue).real());
         }
 
-        fill1DHistogram(&Hist_Fit_EigenvectorReal_0.at(e),mtx_eigenvector.col(mtx_data.cols()-1));
-        fill1DHistogram(&Hist_Fit_EigenvectorReal_1.at(e),mtx_eigenvector.col(mtx_data.cols()-2));
-        fill1DHistogram(&Hist_Fit_EigenvectorReal_2.at(e),mtx_eigenvector.col(mtx_data.cols()-3));
-        fill1DHistogram(&Hist_Fit_InvEigenvectorReal_0.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-1));
-        fill1DHistogram(&Hist_Fit_InvEigenvectorReal_1.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-2));
-        fill1DHistogram(&Hist_Fit_InvEigenvectorReal_2.at(e),mtx_eigenvector_inv.row(mtx_data.cols()-3));
+        fill1DHistogram(&Hist_Fit_EigenvectorReal_0.at(e),mtx_eigenvector_init.col(mtx_data.cols()-1)+mtx_eigenvector_vari.col(mtx_data.cols()-1));
+        fill1DHistogram(&Hist_Fit_EigenvectorReal_1.at(e),mtx_eigenvector_init.col(mtx_data.cols()-2)+mtx_eigenvector_vari.col(mtx_data.cols()-2));
+        fill1DHistogram(&Hist_Fit_EigenvectorReal_2.at(e),mtx_eigenvector_init.col(mtx_data.cols()-3)+mtx_eigenvector_vari.col(mtx_data.cols()-3));
+        fill1DHistogram(&Hist_Fit_InvEigenvectorReal_0.at(e),mtx_eigenvector_inv_init.row(mtx_data.cols()-1)+mtx_eigenvector_inv_vari.row(mtx_data.cols()-1));
+        fill1DHistogram(&Hist_Fit_InvEigenvectorReal_1.at(e),mtx_eigenvector_inv_init.row(mtx_data.cols()-2)+mtx_eigenvector_inv_vari.row(mtx_data.cols()-2));
+        fill1DHistogram(&Hist_Fit_InvEigenvectorReal_2.at(e),mtx_eigenvector_inv_init.row(mtx_data.cols()-3)+mtx_eigenvector_inv_vari.row(mtx_data.cols()-3));
         fill2DHistogramAbs(&Hist_GammaRDBM_MSCLW.at(e),mtx_gamma);
 
         double gamma_total = Hist_Data->Integral(binx_lower,binx_upper,biny_lower,biny_upper)-Hist_Bkgd_MSCLW.at(e).Integral(binx_lower,binx_upper,biny_lower,biny_upper);
