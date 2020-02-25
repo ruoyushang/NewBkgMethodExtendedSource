@@ -787,7 +787,7 @@ double RatioEmptyBins(MatrixXcd mtx, int binx_blind, int biny_blind)
         {
             if (row<=binx_blind && col<=biny_blind) continue; // signal region
             if (row>binx_blind && col>biny_blind) continue;
-            if (mtx(row,col)==0.)
+            if (mtx(row,col).real()<=100.)
             {
                 n_empty_bins += 1.;
             }
@@ -1278,7 +1278,7 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
             //    double vari = mtx_eigenvector_vari(row,col_fix).real();
             //    Chi2Minimizer->SetVariableLimits(first_index+row,-vari,vari);
             //}
-            if (ratio_empty_bins>(10./400.)) 
+            if (ratio_empty_bins>0.6) 
             {
                 Chi2Minimizer->SetVariableLimits(first_index+row,0.0,0.0);
             }
@@ -1301,7 +1301,7 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
             //    double vari = mtx_eigenvector_vari(row_fix,col).real();
             //    Chi2Minimizer->SetVariableLimits(first_index+col,-vari,vari);
             //}
-            if (ratio_empty_bins>(10./400.)) 
+            if (ratio_empty_bins>0.6) 
             {
                 Chi2Minimizer->SetVariableLimits(first_index+col,0.0,0.0);
             }
@@ -1713,7 +1713,10 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         //  myfile2.close();
         //}
 
-        ratio_empty_bins = RatioEmptyBins(mtx_data,binx_blind,biny_blind);
+        int binx_cut = Hist_Data->GetXaxis()->FindBin(1.)-1;
+        int biny_cut = Hist_Data->GetYaxis()->FindBin(1.)-1;
+        ratio_empty_bins = RatioEmptyBins(mtx_data,binx_cut,biny_cut);
+        std::cout << "ratio_empty_bins = " << ratio_empty_bins << std::endl;
 
         for (int col=0;col<N_bins_for_deconv;col++)
         {
