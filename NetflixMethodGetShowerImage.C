@@ -56,10 +56,10 @@ double MSCL_cut_upper = 1.0;
 
 const int N_energy_bins = 1;
 double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,4.0)};
-int N_bins_for_deconv_at_E[N_energy_bins] = {30};
+int N_bins_for_deconv_at_E[N_energy_bins] = {40};
 //const int N_energy_bins = 3;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,2.6),pow(10,3.0),pow(10,4.0)};
-//int N_bins_for_deconv_at_E[N_energy_bins] = {30,30,30};
+//int N_bins_for_deconv_at_E[N_energy_bins] = {16,16,16};
 //const int N_energy_bins = 12;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,3.0),pow(10,3.2),pow(10,3.6),pow(10,4.0)};
 //int N_bins_for_deconv_at_E[N_energy_bins] = {30,30,30,30,30,30,30,30,30,30,30,30};
@@ -70,11 +70,14 @@ double gamma_flux[N_energy_fine_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
 double gamma_count[N_energy_fine_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
 double raw_gamma_count[N_energy_fine_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
 
-int N_bins_for_deconv = 30;
+int N_bins_for_deconv = 40;
+//int N_bins_for_deconv = 16;
 double MSCW_plot_lower = -1.;
-double MSCW_plot_upper = 2.;
+//double MSCW_plot_upper = 2.;
+double MSCW_plot_upper = 3.;
 double MSCL_plot_lower = -1.;
-double MSCL_plot_upper = 2.;
+//double MSCL_plot_upper = 2.;
+double MSCL_plot_upper = 3.;
 double Theta2_cut_lower = 0;
 double Theta2_cut_upper = 0;
 double Theta2_upper_limit = 10;
@@ -855,8 +858,8 @@ bool RoIRingFoV() {
     double x = ra_sky-roi_ra;
     double y = dec_sky-roi_dec;
     double radius = pow(x*x+y*y,0.5);
-    if (radius<roi_radius) return false;
-    if (radius>roi_radius+0.5) return false;
+    if (radius<max(0.5,roi_radius)) return false;
+    if (radius>max(0.5,roi_radius)+0.5) return false;
     return true;
 }
 bool RoVFoV(double rov_radius) {
@@ -1064,11 +1067,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     roi_radius = 0.15;
     if (TString(target).Contains("Crab")) 
     {
-        roi_radius = 0.5;
+        roi_radius = 0.15;
     }
     if (TString(target).Contains("Mrk421")) 
     {
-        roi_radius = 0.5;
+        roi_radius = 0.15;
     }
     if (TString(target).Contains("IC443")) 
     {
@@ -1439,7 +1442,7 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         //std::cout << "Finished getting effective area and livetime..." << std::endl;
 
 
-        double area_alpha_RoI = GetAreaAlphaWeighted(roi_radius,roi_radius+0.0);
+        double area_alpha_RoI = GetAreaAlphaWeighted(roi_radius,max(0.5,roi_radius));
         double area_alpha_RoV0 = GetAreaAlphaWeighted(0.1,0.1+0.0);
         double area_alpha_RoV1 = GetAreaAlphaWeighted(0.5,0.5+0.0);
         double area_alpha_RoV2 = GetAreaAlphaWeighted(1.0,1.0+0.0);
