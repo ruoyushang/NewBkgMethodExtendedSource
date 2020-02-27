@@ -85,6 +85,7 @@ ComplexEigenSolver<MatrixXcd> eigensolver_data;
 double init_deriv_at_zero;
 bool signal_model;
 double ratio_empty_bins;
+bool invert_y = false;
 
 void fill2DHistogram(TH2D* hist,MatrixXcd mtx)
 {
@@ -92,7 +93,8 @@ void fill2DHistogram(TH2D* hist,MatrixXcd mtx)
     {
         for (int biny=0;biny<hist->GetNbinsY();biny++)
         {
-            hist->SetBinContent(binx+1,biny+1,mtx(binx,biny).real());
+            if (!invert_y) hist->SetBinContent(binx+1,biny+1,mtx(binx,biny).real());
+            else hist->SetBinContent(binx+1,hist->GetNbinsY()-biny,mtx(binx,biny).real());
         }
     }
 }
@@ -114,7 +116,8 @@ void fill2DHistogramAbs(TH2D* hist,MatrixXcd mtx)
     {
         for (int biny=0;biny<hist->GetNbinsY();biny++)
         {
-            hist->SetBinContent(binx+1,biny+1,max(0.,mtx(binx,biny).real()));
+            if (!invert_y) hist->SetBinContent(binx+1,biny+1,max(0.,mtx(binx,biny).real()));
+            else hist->SetBinContent(binx+1,hist->GetNbinsY()-biny,max(0.,mtx(binx,biny).real()));
         }
     }
 }
@@ -157,12 +160,14 @@ void fill1DHistogram(TH1D* hist,VectorXcd vtr)
         hist->SetBinError(binx+1,0.01*ampl);
     }
 }
-double NormalizationFactorForEigenvector(VectorXcd vtr)
+double NormalizationFactorForEigenvector(VectorXcd vtr, bool invert)
 {
     TH1D hist_ampl = TH1D("hist_ampl","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
     fill1DHistogram(&hist_ampl,vtr);
     int bin_blind = hist_ampl.GetXaxis()->FindBin(1.);
-    double integral_1 = hist_ampl.Integral(bin_blind,hist_ampl.GetNbinsX());
+    double integral_1 = 0.;
+    if (!invert) integral_1 = hist_ampl.Integral(bin_blind,hist_ampl.GetNbinsX());
+    else integral_1 = hist_ampl.Integral(1,bin_blind);
     return integral_1;
 }
 VectorXd fillVector(TH1D* hist)
@@ -198,7 +203,8 @@ MatrixXcd fillMatrix(TH2D* hist)
     {
         for (int biny=0;biny<hist->GetNbinsY();biny++)
         {
-            matrix(binx,biny) = hist->GetBinContent(binx+1,biny+1);
+            if (!invert_y) matrix(binx,biny) = hist->GetBinContent(binx+1,biny+1);
+            else matrix(binx,biny) = hist->GetBinContent(binx+1,hist->GetNbinsY()-biny);
         }
     }
     return matrix;
@@ -210,7 +216,8 @@ MatrixXcd fillMatrixError(TH2D* hist)
     {
         for (int biny=0;biny<hist->GetNbinsY();biny++)
         {
-            matrix(binx,biny) = hist->GetBinError(binx+1,biny+1);
+            if (!invert_y) matrix(binx,biny) = hist->GetBinContent(binx+1,biny+1);
+            else matrix(binx,biny) = hist->GetBinContent(binx+1,hist->GetNbinsY()-biny);
         }
     }
     return matrix;
@@ -835,15 +842,15 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
 
         if (NthEigenvector<=NumberOfEigenvectors)
         {
-            mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector)*eigenvalue_ratio;
-            //if (NthEigenvector>=2)
-            //{
-            //    mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector)*eigenvalue_ratio;
-            //}
-            //else
-            //{
-            //    mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_data.eigenvalues()(mtx_dark.cols()-NthEigenvector);
-            //}
+            //mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector);
+            if (NthEigenvector>=2)
+            {
+                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector)*eigenvalue_ratio;
+            }
+            else
+            {
+                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_data.eigenvalues()(mtx_dark.cols()-NthEigenvector);
+            }
         }
         double sign = 1.;
         if (eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector).dot(eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector)).real()<0.)
@@ -855,12 +862,12 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
         {
             sign_inv = -1.;
         }
-        double norm_data = NormalizationFactorForEigenvector(eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector));
-        double norm_dark = NormalizationFactorForEigenvector(eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector));
+        double norm_data = NormalizationFactorForEigenvector(eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector),false);
+        double norm_dark = NormalizationFactorForEigenvector(eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector),false);
         std::cout << NthEigenvector << "-th eigenvector, norm_data = " << norm_data << std::endl;
         std::cout << NthEigenvector << "-th eigenvector, norm_dark = " << norm_dark << std::endl;
-        double norm_data_inv = NormalizationFactorForEigenvector(eigensolver_data.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector));
-        double norm_dark_inv = NormalizationFactorForEigenvector(eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector));
+        double norm_data_inv = NormalizationFactorForEigenvector(eigensolver_data.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector),invert_y);
+        double norm_dark_inv = NormalizationFactorForEigenvector(eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector),invert_y);
         std::cout << NthEigenvector << "-th inv. eigenvector, norm_data_inv = " << norm_data_inv << std::endl;
         std::cout << NthEigenvector << "-th inv. eigenvector, norm_dark_inv = " << norm_dark_inv << std::endl;
         double norm_scale = norm_data/norm_dark;
@@ -879,7 +886,7 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
         {
             //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=2 && row<biny_blind)
             if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=2)
-            //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector<0)
+            //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=0)
             {
                 double real = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row).real();
                 double imag = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row).imag();
@@ -906,7 +913,7 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
         {
             //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=2 && col<binx_blind)
             if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=2)
-            //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector<0)
+            //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=0)
             {
                 double real = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col).real();
                 double imag = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col).imag();
@@ -1599,8 +1606,6 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         //    //if (CurrentEnergy<794.) continue;
         //}
 
-        MatrixXcd mtx_data_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
-        MatrixXcd mtx_dark_blind(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         MatrixXcd mtx_data_bkgd(Hist_Data->GetNbinsX(),Hist_Data->GetNbinsY());
         mtx_gamma = fillMatrix(Hist_GammaMC);
         mtx_data = fillMatrix(Hist_Data);
@@ -1613,8 +1618,6 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         int biny_lower = Hist_Data->GetYaxis()->FindBin(MSCW_cut_lower);
         int biny_blind = Hist_Data->GetYaxis()->FindBin(MSCW_cut_blind)-1;
         int biny_upper = Hist_Data->GetYaxis()->FindBin(1.)-1;
-        mtx_data_blind = MatrixBlind(mtx_data, binx_lower, biny_lower, binx_blind, biny_blind);
-        mtx_dark_blind = MatrixBlind(mtx_dark, binx_lower, biny_lower, binx_blind, biny_blind);
 
         n_fourier_modes = 6;
         n_taylor_modes = 6;

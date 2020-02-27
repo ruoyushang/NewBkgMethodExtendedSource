@@ -56,7 +56,7 @@ double MSCL_cut_upper = 1.0;
 
 const int N_energy_bins = 1;
 double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,4.0)};
-int N_bins_for_deconv_at_E[N_energy_bins] = {40};
+int N_bins_for_deconv_at_E[N_energy_bins] = {30};
 //const int N_energy_bins = 3;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,2.6),pow(10,3.0),pow(10,4.0)};
 //int N_bins_for_deconv_at_E[N_energy_bins] = {16,16,16};
@@ -70,14 +70,11 @@ double gamma_flux[N_energy_fine_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
 double gamma_count[N_energy_fine_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
 double raw_gamma_count[N_energy_fine_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
 
-int N_bins_for_deconv = 40;
-//int N_bins_for_deconv = 16;
+int N_bins_for_deconv = 30;
 double MSCW_plot_lower = -1.;
-//double MSCW_plot_upper = 2.;
-double MSCW_plot_upper = 3.;
+double MSCW_plot_upper = 2.;
 double MSCL_plot_lower = -1.;
-//double MSCL_plot_upper = 2.;
-double MSCL_plot_upper = 3.;
+double MSCL_plot_upper = 2.;
 double Theta2_cut_lower = 0;
 double Theta2_cut_upper = 0;
 double Theta2_upper_limit = 10;
