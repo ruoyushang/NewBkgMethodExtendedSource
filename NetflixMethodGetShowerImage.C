@@ -47,6 +47,11 @@
 using namespace Eigen;
 //using Eigen::MatrixXd;
 
+int dark_vector = 2;
+bool linear = true;
+bool invert_y = false;
+bool transpose = true;
+
 double MSCW_cut_lower = -1.0;
 double MSCW_cut_blind = 1.0;
 double MSCW_cut_upper = 1.0;
@@ -56,7 +61,7 @@ double MSCL_cut_upper = 1.0;
 
 const int N_energy_bins = 1;
 double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,4.0)};
-int N_bins_for_deconv_at_E[N_energy_bins] = {30};
+int N_bins_for_deconv_at_E[N_energy_bins] = {40};
 //const int N_energy_bins = 3;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,2.6),pow(10,3.0),pow(10,4.0)};
 //int N_bins_for_deconv_at_E[N_energy_bins] = {16,16,16};
@@ -70,11 +75,11 @@ double gamma_flux[N_energy_fine_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
 double gamma_count[N_energy_fine_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
 double raw_gamma_count[N_energy_fine_bins] = {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
 
-int N_bins_for_deconv = 30;
+int N_bins_for_deconv = 40;
 double MSCW_plot_lower = -1.;
-double MSCW_plot_upper = 2.;
+double MSCW_plot_upper = 3.;
 double MSCL_plot_lower = -1.;
-double MSCL_plot_upper = 2.;
+double MSCL_plot_upper = 3.;
 double Theta2_cut_lower = 0;
 double Theta2_cut_upper = 0;
 double Theta2_upper_limit = 10;
@@ -1284,6 +1289,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Dark_tree->SetBranchAddress("EChi2S",&EChi2S);
         Dark_tree->SetBranchAddress("MSCW",&MSCW);
         Dark_tree->SetBranchAddress("MSCL",&MSCL);
+        if (transpose)
+        {
+            Dark_tree->SetBranchAddress("MSCW",&MSCL);
+            Dark_tree->SetBranchAddress("MSCL",&MSCW);
+        }
         Dark_tree->SetBranchAddress("NImages",&NImages);
         Dark_tree->SetBranchAddress("Xcore",&Xcore);
         Dark_tree->SetBranchAddress("Ycore",&Ycore);
@@ -1390,6 +1400,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Data_tree->SetBranchAddress("EChi2S",&EChi2S);
         Data_tree->SetBranchAddress("MSCW",&MSCW);
         Data_tree->SetBranchAddress("MSCL",&MSCL);
+        if (transpose)
+        {
+            Data_tree->SetBranchAddress("MSCW",&MSCL);
+            Data_tree->SetBranchAddress("MSCL",&MSCW);
+        }
         Data_tree->SetBranchAddress("NImages",&NImages);
         Data_tree->SetBranchAddress("Xcore",&Xcore);
         Data_tree->SetBranchAddress("Ycore",&Ycore);
@@ -1589,6 +1604,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Data_tree->SetBranchAddress("EChi2S",&EChi2S);
         Data_tree->SetBranchAddress("MSCW",&MSCW);
         Data_tree->SetBranchAddress("MSCL",&MSCL);
+        if (transpose)
+        {
+            Data_tree->SetBranchAddress("MSCW",&MSCL);
+            Data_tree->SetBranchAddress("MSCL",&MSCW);
+        }
         Data_tree->SetBranchAddress("NImages",&NImages);
         Data_tree->SetBranchAddress("Xcore",&Xcore);
         Data_tree->SetBranchAddress("Ycore",&Ycore);
@@ -1646,6 +1666,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Data_tree->SetBranchAddress("EChi2S",&EChi2S);
         Data_tree->SetBranchAddress("MSCW",&MSCW);
         Data_tree->SetBranchAddress("MSCL",&MSCL);
+        if (transpose)
+        {
+            Data_tree->SetBranchAddress("MSCW",&MSCL);
+            Data_tree->SetBranchAddress("MSCL",&MSCW);
+        }
         Data_tree->SetBranchAddress("NImages",&NImages);
         Data_tree->SetBranchAddress("Xcore",&Xcore);
         Data_tree->SetBranchAddress("Ycore",&Ycore);
@@ -1784,6 +1809,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         Data_tree->SetBranchAddress("EChi2S",&EChi2S);
         Data_tree->SetBranchAddress("MSCW",&MSCW);
         Data_tree->SetBranchAddress("MSCL",&MSCL);
+        if (transpose)
+        {
+            Data_tree->SetBranchAddress("MSCW",&MSCL);
+            Data_tree->SetBranchAddress("MSCL",&MSCW);
+        }
         Data_tree->SetBranchAddress("NImages",&NImages);
         Data_tree->SetBranchAddress("Xcore",&Xcore);
         Data_tree->SetBranchAddress("Ycore",&Ycore);

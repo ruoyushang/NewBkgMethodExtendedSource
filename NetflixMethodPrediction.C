@@ -67,8 +67,6 @@ MatrixXcd mtx_gamma(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_data(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_dark(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_data_redu(N_bins_for_deconv,N_bins_for_deconv);
-MatrixXcd mtx_data_err(N_bins_for_deconv,N_bins_for_deconv);
-MatrixXcd mtx_dark_err(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvalue_init(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvalue_vari(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvector_init(N_bins_for_deconv,N_bins_for_deconv);
@@ -82,10 +80,11 @@ VectorXcd vtr_fit(N_bins_for_deconv);
 VectorXcd vtr_data(N_bins_for_deconv);
 ComplexEigenSolver<MatrixXcd> eigensolver_dark;
 ComplexEigenSolver<MatrixXcd> eigensolver_data;
+ComplexEigenSolver<MatrixXcd> eigensolver_dark_transpose;
+ComplexEigenSolver<MatrixXcd> eigensolver_data_transpose;
 double init_deriv_at_zero;
 bool signal_model;
 double ratio_empty_bins;
-bool invert_y = false;
 
 void fill2DHistogram(TH2D* hist,MatrixXcd mtx)
 {
@@ -608,10 +607,20 @@ double NetflixChi2Function(const double *par)
     
     // build model
     MatrixXcd mtx_model(N_bins_for_deconv,N_bins_for_deconv);
-    mtx_model = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-    mtx_model += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-    mtx_model += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
-    mtx_model += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
+    if (linear) 
+    {
+        mtx_model = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+        mtx_model += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+        mtx_model += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
+        mtx_model += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
+    }
+    else
+    {
+        mtx_eigenvalue = mtx_eigenvalue_init+mtx_eigenvalue_vari;
+        mtx_eigenvector = mtx_eigenvector_init+mtx_eigenvector_vari;
+        mtx_eigenvector_inv = mtx_eigenvector_inv_init+mtx_eigenvector_inv_vari;
+        mtx_model = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
+    }
 
     TH2D hist_gamma = TH2D("hist_gamma","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_diff = TH2D("hist_diff","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
@@ -704,88 +713,6 @@ void FourierFitEigenvector(TH1* Hist_vtr, TH1* Hist_fit)
         Hist_fit->SetBinContent(bx+1,func->Eval(Hist_fit->GetBinCenter(bx+1)));
     }
 }
-void TaylorSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, MatrixXcd mtx_input)
-{
-    ComplexEigenSolver<MatrixXcd> eigensolver_data(mtx_input);
-    TF1 *func = new TF1("func",TaylorEigenvectorFunction,MSCL_plot_lower,MSCL_plot_upper,1+2*n_taylor_modes);
-    TH1D Hist_Data_Eigenvector = TH1D("Hist_Data_Eigenvector","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
-
-    int col_fix = 0;
-    int row_fix = 0;
-    int first_index = 0;
-
-    // 1st eigenvector
-    
-    for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
-    {
-
-        fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().col(mtx_input.cols()-NthEigenvector).real());
-        func->SetParameter(0,0.);
-        for (int mode=1;mode<=n_taylor_modes;mode++)
-        {
-            func->SetParameter(mode,1.);
-        }
-        Hist_Data_Eigenvector.Fit("func","","",MSCL_plot_lower,MSCL_plot_upper);
-        first_index = (4*NthEigenvector-4)*(1+2*n_taylor_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",func->GetParameter(0),0.01);
-        for (int mode=1;mode<=n_taylor_modes;mode++)
-        {
-            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]", func->GetParameter(2*mode-1), 0.01);
-            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]", func->GetParameter(2*mode), 0.01);
-        }
-
-        fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().col(mtx_input.cols()-NthEigenvector).imag());
-        func->SetParameter(0,0.);
-        for (int mode=1;mode<=n_taylor_modes;mode++)
-        {
-            func->SetParameter(mode,1.);
-        }
-        Hist_Data_Eigenvector.Fit("func","","",MSCL_plot_lower,MSCL_plot_upper);
-        first_index = (4*NthEigenvector-3)*(1+2*n_taylor_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",func->GetParameter(0),0.01);
-        for (int mode=1;mode<=n_taylor_modes;mode++)
-        {
-            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]", func->GetParameter(2*mode-1), 0.01);
-            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]", func->GetParameter(2*mode), 0.01);
-        }
-
-        fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().inverse().row(mtx_input.cols()-NthEigenvector).real());
-        func->SetParameter(0,0.);
-        for (int mode=1;mode<=n_taylor_modes;mode++)
-        {
-            func->SetParameter(mode,1.);
-        }
-        Hist_Data_Eigenvector.Fit("func","","",MSCL_plot_lower,MSCL_plot_upper);
-        first_index = (4*NthEigenvector-2)*(1+2*n_taylor_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",func->GetParameter(0),0.01);
-        for (int mode=1;mode<=n_taylor_modes;mode++)
-        {
-            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]", func->GetParameter(2*mode-1), 0.01);
-            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]", func->GetParameter(2*mode), 0.01);
-        }
-
-        fill1DHistogram(&Hist_Data_Eigenvector,eigensolver_data.eigenvectors().inverse().row(mtx_input.cols()-NthEigenvector).imag());
-        func->SetParameter(0,0.);
-        for (int mode=1;mode<=n_taylor_modes;mode++)
-        {
-            func->SetParameter(mode,1.);
-        }
-        Hist_Data_Eigenvector.Fit("func","","",MSCL_plot_lower,MSCL_plot_upper);
-        first_index = (4*NthEigenvector-1)*(1+2*n_taylor_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index,"par["+std::to_string(int(first_index))+"]",func->GetParameter(0),0.01);
-        for (int mode=1;mode<=n_taylor_modes;mode++)
-        {
-            Chi2Minimizer->SetVariable(first_index+2*mode-1,"par["+std::to_string(int(first_index+2*mode-1))+"]", func->GetParameter(2*mode-1), 0.01);
-            Chi2Minimizer->SetVariable(first_index+2*mode,"par["+std::to_string(int(first_index+2*mode))+"]", func->GetParameter(2*mode), 0.01);
-        }
-
-        // eigenvalues
-        first_index = (4*NthEigenvector-0)*(1+2*n_taylor_modes)+(NthEigenvector-1);
-        Chi2Minimizer->SetVariable(first_index, "par["+std::to_string(int(first_index))+"]", eigensolver_data.eigenvalues()(N_bins_for_deconv-NthEigenvector).real(), 0.01);
-        Chi2Minimizer->FixVariable(first_index);
-    }
-
-}
 double RatioEmptyBins(MatrixXcd mtx, int binx_blind, int biny_blind)
 {
     double ratio = 0.;
@@ -835,6 +762,7 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
     double first_eigenvalue_dark = eigensolver_dark.eigenvalues()(mtx_dark.cols()-1).real();
     double first_eigenvalue_data = eigensolver_data.eigenvalues()(mtx_dark.cols()-1).real();
     double eigenvalue_ratio = first_eigenvalue_data/first_eigenvalue_dark;
+    //if (dark_vector<2) eigenvalue_ratio = 1.;
     std::cout << "eigenvalue_ratio = " << eigenvalue_ratio << std::endl;
     //for (int NthEigenvector=1;NthEigenvector<=N_bins_for_deconv;NthEigenvector++)
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
@@ -842,15 +770,15 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
 
         if (NthEigenvector<=NumberOfEigenvectors)
         {
-            //mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector);
-            if (NthEigenvector>=2)
-            {
-                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector)*eigenvalue_ratio;
-            }
-            else
-            {
-                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_data.eigenvalues()(mtx_dark.cols()-NthEigenvector);
-            }
+            mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector)*eigenvalue_ratio;
+            //if (NthEigenvector>=2)
+            //{
+            //    mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector)*eigenvalue_ratio;
+            //}
+            //else
+            //{
+            //    mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_data.eigenvalues()(mtx_dark.cols()-NthEigenvector);
+            //}
         }
         double sign = 1.;
         if (eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector).dot(eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector)).real()<0.)
@@ -882,11 +810,16 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
             norm_scale = sign;
             norm_scale_inv = sign_inv;
         }
+        //if (dark_vector<2)
+        //{
+        //    norm_scale = 1.;
+        //    norm_scale_inv = 1.;
+        //}
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=2 && row<biny_blind)
-            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=2)
-            //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=0)
+            //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=2)
+            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=dark_vector)
             {
                 double real = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row).real();
                 double imag = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row).imag();
@@ -912,8 +845,8 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
         for (int col=0;col<N_bins_for_deconv;col++)
         {
             //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=2 && col<binx_blind)
-            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=2)
-            //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=0)
+            //if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=2)
+            if (NthEigenvector<=NumberOfEigenvectors && NthEigenvector>=dark_vector)
             {
                 double real = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col).real();
                 double imag = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col).imag();
@@ -1610,8 +1543,6 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         mtx_gamma = fillMatrix(Hist_GammaMC);
         mtx_data = fillMatrix(Hist_Data);
         mtx_dark = fillMatrix(Hist_Dark);
-        mtx_data_err = fillMatrixError(Hist_Data);
-        mtx_dark_err = fillMatrixError(Hist_Dark);
         int binx_lower = Hist_Data->GetXaxis()->FindBin(MSCL_cut_lower);
         int binx_blind = Hist_Data->GetXaxis()->FindBin(MSCL_cut_blind)-1;
         int binx_upper = Hist_Data->GetXaxis()->FindBin(1.)-1;
@@ -1627,6 +1558,41 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
 
         eigensolver_data = ComplexEigenSolver<MatrixXcd>(mtx_data);
         eigensolver_dark = ComplexEigenSolver<MatrixXcd>(mtx_dark);
+        eigensolver_data_transpose = ComplexEigenSolver<MatrixXcd>(mtx_data.transpose());
+        eigensolver_dark_transpose = ComplexEigenSolver<MatrixXcd>(mtx_dark.transpose());
+        std::cout << "eigensolver_data.eigenvalues()(mtx_dark.cols()-1) = " <<
+        eigensolver_data.eigenvalues()(mtx_dark.cols()-1)
+        << std::endl;
+        std::cout << "eigensolver_data_transpose.eigenvalues()(mtx_dark.cols()-1) = " <<
+        eigensolver_data_transpose.eigenvalues()(mtx_dark.cols()-1)
+        << std::endl;
+        std::cout << "eigensolver_data.eigenvalues()(mtx_dark.cols()-2) = " <<
+        eigensolver_data.eigenvalues()(mtx_dark.cols()-2)
+        << std::endl;
+        std::cout << "eigensolver_data_transpose.eigenvalues()(mtx_dark.cols()-2) = " <<
+        eigensolver_data_transpose.eigenvalues()(mtx_dark.cols()-2)
+        << std::endl;
+        std::cout << "eigensolver_data.eigenvalues()(mtx_dark.cols()-3) = " <<
+        eigensolver_data.eigenvalues()(mtx_dark.cols()-3)
+        << std::endl;
+        std::cout << "eigensolver_data_transpose.eigenvalues()(mtx_dark.cols()-3) = " <<
+        eigensolver_data_transpose.eigenvalues()(mtx_dark.cols()-3)
+        << std::endl;
+        std::cout << "R^{*}_{1} dot R_{1} = " <<
+        eigensolver_data.eigenvectors().col(mtx_dark.cols()-1).dot(eigensolver_data.eigenvectors().col(mtx_dark.cols()-1))
+        << std::endl;
+        std::cout << "R^{*}_{2} dot R_{2} = " <<
+        eigensolver_data.eigenvectors().col(mtx_dark.cols()-2).dot(eigensolver_data.eigenvectors().col(mtx_dark.cols()-2))
+        << std::endl;
+        std::cout << "L^{*}_{1} dot L_{1} = " <<
+        //eigensolver_data_transpose.eigenvectors().col(mtx_dark.cols()-1).dot(eigensolver_data_transpose.eigenvectors().col(mtx_dark.cols()-1))
+        eigensolver_data.eigenvectors().inverse().row(mtx_dark.cols()-1).dot(eigensolver_data.eigenvectors().inverse().row(mtx_dark.cols()-1))
+        << std::endl;
+        std::cout << "L^{*}_{2} dot L_{2} = " <<
+        //eigensolver_data_transpose.eigenvectors().col(mtx_dark.cols()-2).dot(eigensolver_data_transpose.eigenvectors().col(mtx_dark.cols()-2))
+        eigensolver_data.eigenvectors().inverse().row(mtx_dark.cols()-2).dot(eigensolver_data.eigenvectors().inverse().row(mtx_dark.cols()-2))
+        << std::endl;
+
 
         double count_gamma_like = Hist_Data->Integral(binx_lower,binx_blind,biny_lower,biny_blind);
         double count_total = Hist_Data->Integral();
@@ -1816,6 +1782,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
 
         signal_model = true;
         ROOT::Math::GSLMinimizer Chi2Minimizer_0th( ROOT::Math::kSteepestDescent );
+        //ROOT::Math::GSLMinimizer Chi2Minimizer_0th( ROOT::Math::kVectorBFGS2 );
         Chi2Minimizer_0th.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
         Chi2Minimizer_0th.SetMaxIterations(100); // for GSL
         Chi2Minimizer_0th.SetTolerance(0.001);
@@ -1833,10 +1800,20 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         std::cout << "final (0) chi2 = " << NetflixChi2Function(par_0th) << std::endl;
         NetflixParametrizeEigenvectors(par_0th);
 
-        mtx_data_bkgd = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-        mtx_data_bkgd += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-        mtx_data_bkgd += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
-        mtx_data_bkgd += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
+        if (linear)
+        {
+            mtx_data_bkgd = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+            mtx_data_bkgd += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+            mtx_data_bkgd += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
+            mtx_data_bkgd += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
+        }
+        else
+        {
+            mtx_eigenvalue = mtx_eigenvalue_init+mtx_eigenvalue_vari;
+            mtx_eigenvector = mtx_eigenvector_init+mtx_eigenvector_vari;
+            mtx_eigenvector_inv = mtx_eigenvector_inv_init+mtx_eigenvector_inv_vari;
+            mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
+        }
         fill2DHistogramAbs(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
         std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,15,1,15) << std::endl;
 
@@ -1846,6 +1823,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
 
         signal_model = false;
         ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
+        //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kVectorBFGS2 );
         Chi2Minimizer_1st.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
         Chi2Minimizer_1st.SetMaxIterations(100); // for GSL
         Chi2Minimizer_1st.SetTolerance(0.001);
@@ -1862,10 +1840,20 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         std::cout << "final (1) chi2 = " << NetflixChi2Function(par_1st) << std::endl;
         NetflixParametrizeEigenvectors(par_1st);
 
-        mtx_data_bkgd = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-        mtx_data_bkgd += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-        mtx_data_bkgd += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
-        mtx_data_bkgd += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
+        if (linear)
+        {
+            mtx_data_bkgd = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+            mtx_data_bkgd += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+            mtx_data_bkgd += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
+            mtx_data_bkgd += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
+        }
+        else
+        {
+            mtx_eigenvalue = mtx_eigenvalue_init+mtx_eigenvalue_vari;
+            mtx_eigenvector = mtx_eigenvector_init+mtx_eigenvector_vari;
+            mtx_eigenvector_inv = mtx_eigenvector_inv_init+mtx_eigenvector_inv_vari;
+            mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
+        }
         fill2DHistogramAbs(&Hist_BkgdBlind_MSCLW.at(e),mtx_data_bkgd);
         std::cout << "Hist_BkgdBlind_MSCLW.at(e).Integral() = " << Hist_BkgdBlind_MSCLW.at(e).Integral(1,15,1,15) << std::endl;
 
@@ -1878,10 +1866,18 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         }
         mtx_eigenval_data_redu(N_bins_for_deconv-1,N_bins_for_deconv-1) = mtx_eigenvalue_init(N_bins_for_deconv-1,N_bins_for_deconv-1);
         mtx_eigenval_data_redu(N_bins_for_deconv-1,N_bins_for_deconv-1) += mtx_eigenvalue_vari(N_bins_for_deconv-1,N_bins_for_deconv-1);
-        mtx_data_redu = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-        mtx_data_redu += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-        mtx_data_redu += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
-        mtx_data_redu += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
+        if (linear)
+        {
+            mtx_data_redu = mtx_eigenvector_init*mtx_eigenval_data_redu*mtx_eigenvector_inv_init;
+            mtx_data_redu += mtx_eigenvector_vari*mtx_eigenval_data_redu*mtx_eigenvector_inv_init;
+            mtx_data_redu += mtx_eigenvector_init*mtx_eigenval_data_redu*mtx_eigenvector_inv_vari;
+        }
+        else
+        {
+            mtx_eigenvector = mtx_eigenvector_init+mtx_eigenvector_vari;
+            mtx_eigenvector_inv = mtx_eigenvector_inv_init+mtx_eigenvector_inv_vari;
+            mtx_data_redu = mtx_eigenvector*mtx_eigenval_data_redu*mtx_eigenvector_inv;
+        }
         fill2DHistogramAbs(&Hist_Bkgd_Rank0_MSCLW.at(e),mtx_data_redu);
 
         for (int col=0;col<N_bins_for_deconv;col++)
@@ -1893,10 +1889,18 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         }
         mtx_eigenval_data_redu(N_bins_for_deconv-2,N_bins_for_deconv-2) = mtx_eigenvalue_init(N_bins_for_deconv-2,N_bins_for_deconv-2);
         mtx_eigenval_data_redu(N_bins_for_deconv-2,N_bins_for_deconv-2) += mtx_eigenvalue_vari(N_bins_for_deconv-2,N_bins_for_deconv-2);
-        mtx_data_redu = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-        mtx_data_redu += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-        mtx_data_redu += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
-        mtx_data_redu += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
+        if (linear)
+        {
+            mtx_data_redu = mtx_eigenvector_init*mtx_eigenval_data_redu*mtx_eigenvector_inv_init;
+            mtx_data_redu += mtx_eigenvector_vari*mtx_eigenval_data_redu*mtx_eigenvector_inv_init;
+            mtx_data_redu += mtx_eigenvector_init*mtx_eigenval_data_redu*mtx_eigenvector_inv_vari;
+        }
+        else
+        {
+            mtx_eigenvector = mtx_eigenvector_init+mtx_eigenvector_vari;
+            mtx_eigenvector_inv = mtx_eigenvector_inv_init+mtx_eigenvector_inv_vari;
+            mtx_data_redu = mtx_eigenvector*mtx_eigenval_data_redu*mtx_eigenvector_inv;
+        }
         fill2DHistogramAbs(&Hist_Bkgd_Rank1_MSCLW.at(e),mtx_data_redu);
 
         for (int col=0;col<N_bins_for_deconv;col++)
@@ -1908,10 +1912,18 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         }
         mtx_eigenval_data_redu(N_bins_for_deconv-3,N_bins_for_deconv-3) = mtx_eigenvalue_init(N_bins_for_deconv-3,N_bins_for_deconv-3);
         mtx_eigenval_data_redu(N_bins_for_deconv-3,N_bins_for_deconv-3) += mtx_eigenvalue_vari(N_bins_for_deconv-3,N_bins_for_deconv-3);
-        mtx_data_redu = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-        mtx_data_redu += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-        mtx_data_redu += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
-        mtx_data_redu += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
+        if (linear)
+        {
+            mtx_data_redu = mtx_eigenvector_init*mtx_eigenval_data_redu*mtx_eigenvector_inv_init;
+            mtx_data_redu += mtx_eigenvector_vari*mtx_eigenval_data_redu*mtx_eigenvector_inv_init;
+            mtx_data_redu += mtx_eigenvector_init*mtx_eigenval_data_redu*mtx_eigenvector_inv_vari;
+        }
+        else
+        {
+            mtx_eigenvector = mtx_eigenvector_init+mtx_eigenvector_vari;
+            mtx_eigenvector_inv = mtx_eigenvector_inv_init+mtx_eigenvector_inv_vari;
+            mtx_data_redu = mtx_eigenvector*mtx_eigenval_data_redu*mtx_eigenvector_inv;
+        }
         fill2DHistogramAbs(&Hist_Bkgd_Rank2_MSCLW.at(e),mtx_data_redu);
 
         for (int col=0;col<N_bins_for_deconv;col++)
@@ -1923,10 +1935,18 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         }
         mtx_eigenval_data_redu(N_bins_for_deconv-4,N_bins_for_deconv-4) = mtx_eigenvalue_init(N_bins_for_deconv-4,N_bins_for_deconv-4);
         mtx_eigenval_data_redu(N_bins_for_deconv-4,N_bins_for_deconv-4) += mtx_eigenvalue_vari(N_bins_for_deconv-4,N_bins_for_deconv-4);
-        mtx_data_redu = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-        mtx_data_redu += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-        mtx_data_redu += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
-        mtx_data_redu += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
+        if (linear)
+        {
+            mtx_data_redu = mtx_eigenvector_init*mtx_eigenval_data_redu*mtx_eigenvector_inv_init;
+            mtx_data_redu += mtx_eigenvector_vari*mtx_eigenval_data_redu*mtx_eigenvector_inv_init;
+            mtx_data_redu += mtx_eigenvector_init*mtx_eigenval_data_redu*mtx_eigenvector_inv_vari;
+        }
+        else
+        {
+            mtx_eigenvector = mtx_eigenvector_init+mtx_eigenvector_vari;
+            mtx_eigenvector_inv = mtx_eigenvector_inv_init+mtx_eigenvector_inv_vari;
+            mtx_data_redu = mtx_eigenvector*mtx_eigenval_data_redu*mtx_eigenvector_inv;
+        }
         fill2DHistogramAbs(&Hist_Bkgd_Rank3_MSCLW.at(e),mtx_data_redu);
 
         for (int NthEigenvalue=1;NthEigenvalue<=N_bins_for_deconv;NthEigenvalue++)
