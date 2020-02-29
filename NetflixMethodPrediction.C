@@ -716,7 +716,7 @@ double NetflixChi2Function(const double *par)
 
     double chi2 = 0.;
     chi2 += BlindedChi2(&hist_data,&hist_dark,&hist_model);
-    if (signal_model) chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
+    //if (signal_model) chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
     
     
     //double chi2 = BlindedLogLikelihood(&hist_data,&hist_dark,&hist_model);
@@ -1273,7 +1273,6 @@ void NetflixSetInitialVariablesEigenBasis(ROOT::Math::GSLMinimizer* Chi2Minimize
         {
             Chi2Minimizer->SetVariable(first_index+entry,"par["+std::to_string(int(first_index+entry))+"]",0.,0.001);
             if (fix_which==0) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
-            //if (entry+1==NthEigenvector) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
         }
 
         limit = 0.0;
@@ -1282,7 +1281,6 @@ void NetflixSetInitialVariablesEigenBasis(ROOT::Math::GSLMinimizer* Chi2Minimize
         {
             Chi2Minimizer->SetVariable(first_index+entry,"par["+std::to_string(int(first_index+entry))+"]",0.,0.001);
             if (fix_which==1) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
-            //if (entry+1==NthEigenvector) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
         }
 
         // eigenvalues
@@ -1630,6 +1628,7 @@ void SingleTimeMinimization(int fix_which)
 
     //std::cout << "total n paramters = " << 1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors << std::endl;
     //ROOT::Math::Functor Chi2Func(&NetflixChi2Function,1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors*NumberOfEigenvectors); 
+    // use this is you use EigenBasis
     std::cout << "total n paramters = " << 1+2*NumberOfEigenvectors*(NumberOfEigenvectors)+NumberOfEigenvectors << std::endl;
     ROOT::Math::Functor Chi2Func(&NetflixChi2Function,1+2*NumberOfEigenvectors*(NumberOfEigenvectors)+NumberOfEigenvectors*NumberOfEigenvectors); 
 

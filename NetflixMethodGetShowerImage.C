@@ -49,7 +49,7 @@ using namespace Eigen;
 
 int dark_vector = 1;
 bool linear = false;
-bool invert_y = true;
+bool invert_y = false;
 bool transpose = false;
 
 double MSCW_cut_lower = -1.0;
@@ -59,16 +59,16 @@ double MSCL_cut_lower = -1.0;
 double MSCL_cut_blind = 1.0;
 double MSCL_cut_upper = 1.0;
 
-//int N_bins_for_deconv = 40;
-//double MSCW_plot_lower = -1.;
-//double MSCW_plot_upper = 3.;
-//double MSCL_plot_lower = -1.;
-//double MSCL_plot_upper = 3.;
-int N_bins_for_deconv = 30;
+int N_bins_for_deconv = 40;
 double MSCW_plot_lower = -1.;
-double MSCW_plot_upper = 2.;
+double MSCW_plot_upper = 3.;
 double MSCL_plot_lower = -1.;
-double MSCL_plot_upper = 2.;
+double MSCL_plot_upper = 3.;
+//int N_bins_for_deconv = 30;
+//double MSCW_plot_lower = -1.;
+//double MSCW_plot_upper = 2.;
+//double MSCL_plot_lower = -1.;
+//double MSCL_plot_upper = 2.;
 
 const int N_energy_bins = 1;
 double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,4.0)};
