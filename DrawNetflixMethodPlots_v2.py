@@ -15,8 +15,8 @@ ROOT.TH1.SetDefaultSumw2()
 ROOT.TH1.AddDirectory(False) # without this, the histograms returned from a function will be non-type
 ROOT.gStyle.SetPaintTextFormat("0.3f")
 
-isBlind = True
-#isBlind = False
+#isBlind = True
+isBlind = False
 
 energy_fine_bin_cut_low = 3
 energy_fine_bin_cut_up = 20
@@ -41,30 +41,19 @@ Syst_Ring = 0.
 Syst_MDM_Energy = []
 Syst_Ring_Energy = []
 
-blind_tag = 'blind'
-if not isBlind:
-    blind_tag = 'unblind'
-
 FileFolder += ['output_test']
-FileTag += ['test_%s'%(blind_tag)]
+FileTag += ['test']
 FileLabel += ['test']
 
-#FileFolder += ['output_E3bins_medium']
-#FileTag += ['E3bins_high']
-#FileLabel += ['E3bins']
-#FileFolder += ['output_sigmaN2_medium']
-#FileTag += ['sigmaN2']
-#FileLabel += ['sigmaN2']
-
-#FileFolder += ['output_nominal_tight']
-#FileTag += ['tight_%s'%(blind_tag)]
-#FileLabel += ['tight']
-#FileFolder += ['output_nominal_medium']
-#FileTag += ['medium_%s'%(blind_tag)]
-#FileLabel += ['medium']
-#FileFolder += ['output_nominal_loose']
-#FileTag += ['loose_%s'%(blind_tag)]
-#FileLabel += ['loose']
+analysis_cut = 'loose'
+specialty = 'nominal'
+#specialty = 'E3bins'
+#specialty = 'alldark'
+#specialty = 'reverse'
+#specialty = 'transpose'
+#FileFolder += ['output_%s_%s'%(specialty,analysis_cut)]
+#FileTag += [specialty]
+#FileLabel += [specialty]
 
 #FileFolder += ['output_unblind_4x4_dNSBm3_loose']
 #FileTag += ['dNSBm3']
@@ -91,8 +80,10 @@ elev_range = []
 #elev_range += [[35,45]]
 #elev_range += [[45,55]]
 #elev_range += [[55,65]]
-elev_range += [[65,75]]
+#elev_range += [[65,75]]
 #elev_range += [[75,85]]
+
+elev_range += [[65,85]]
 
 
 source_list = []
@@ -459,6 +450,7 @@ def set_histStyle( hist , color):
 def CalculateSignificance(s,b,err):
     if (b*b+(s+b)*err*err)==0.: return 0.
     if (s+b)*(b+err*err)==0.: return 0.
+    if ((s+b)*(b+err*err)/(b*b+(s+b)*err*err))<=0.: return 0.
     first_term = (s+b)*math.log((s+b)*(b+err*err)/(b*b+(s+b)*err*err))
     if err>0. and b>0:
         second_term = b*b/(err*err)*math.log(1.+err*err*s/(b*(b+err*err)))
@@ -672,12 +664,16 @@ def MakeSpectrumInCrabUnit(Hists,title,name,syst):
     pad1 = ROOT.TPad("pad1","pad1",0,0,1,0.7)
     pad1.SetBottomMargin(0.2)
     pad1.SetTopMargin(0.0)
+    pad1.SetLeftMargin(0.1)
+    pad1.SetRightMargin(0.1)
     pad1.SetBorderMode(0)
     pad1.SetGrid()
     pad1.Draw()
     pad3.Draw()
 
     pad1.cd()
+
+    Hist_EffArea_tmp = Hist_EffArea_SumE.Clone()
 
     # Crab https://arxiv.org/pdf/1508.06442.pdf
     func_crab = ROOT.TF1("func_crab","[0]*pow(10,-12)*pow(x/1000.,[1]+[2]*log(x/1000.))", 200, 4000)
@@ -708,8 +704,9 @@ def MakeSpectrumInCrabUnit(Hists,title,name,syst):
             Hist_Ring.SetBinContent(binx+1,Hist_Ring.GetBinContent(binx+1)*scale)
             Hist_Ring.SetBinError(binx+1,Hist_Ring.GetBinError(binx+1)*scale)
 
+    Hist_MDM.GetYaxis().SetTitle("flux in Crab unit")
     Hist_MDM.GetXaxis().SetTitle(title)
-    Hist_MDM.GetXaxis().SetTitleOffset(1.1)
+    Hist_MDM.GetXaxis().SetTitleOffset(1.3)
     Hist_MDM.GetXaxis().SetTitleSize(0.05)
     Hist_MDM.Draw("E")
     Hist_Syst.SetMarkerStyle(0)
@@ -720,6 +717,18 @@ def MakeSpectrumInCrabUnit(Hists,title,name,syst):
         Hist_Ring.SetLineColor(2)
         Hist_Ring.Draw("E same")
     Hist_MDM.Draw("E same")
+
+    rightmax = 1.1*Hist_EffArea_tmp.GetMaximum()
+    scale_effarea = ROOT.gPad.GetUymax()/rightmax
+    Hist_EffArea_tmp.Scale(scale_effarea)
+    Hist_EffArea_tmp.SetLineColor(4)
+    Hist_EffArea_tmp.Draw("hist same")
+
+    right_axis = ROOT.TGaxis(ROOT.gPad.GetUxmax()-0.5,ROOT.gPad.GetUymin(),ROOT.gPad.GetUxmax()-0.5,ROOT.gPad.GetUymax(),0,rightmax,510,"+L")
+    right_axis.SetLineColor(4)
+    right_axis.SetLabelColor(4)
+    right_axis.SetTitle("effective area")
+    right_axis.Draw();
 
     # MGRO J1908
     if 'MGRO_J1908' in name:
@@ -816,8 +825,8 @@ def MakeChi2Plot(Hists,legends,colors,title,name,doSum,doNorm,range_lower,range_
     for h in range(0,len(Hists)):
         mean += [Hists[h].GetMean()]
         rms += [Hists[h].GetRMS()]
-        if 'MSCW' in name: Hists[h].GetXaxis().SetRangeUser(-1,MSCW_blind_cut+1)
-        if 'MSCL' in name: Hists[h].GetXaxis().SetRangeUser(-1,MSCL_blind_cut+1)
+        #if 'MSCW' in name: Hists[h].GetXaxis().SetRangeUser(-1,MSCW_blind_cut+1)
+        #if 'MSCL' in name: Hists[h].GetXaxis().SetRangeUser(-1,MSCL_blind_cut+1)
         if Hists[h]!=0:
             Hists[h].SetLineColor(colors[h])
             Hists[h].GetXaxis().SetTitle(title)
@@ -1487,7 +1496,7 @@ def Make2DSignificancePlotShowerShape(Hist_SR,Hist_CR,Hist_gamma,xtitle,ytitle,n
             NSR = Hist_SR.GetBinContent(bx+1,by+1)
             NSR_Err = Hist_SR.GetBinError(bx+1,by+1)
             NBkg = Hist_Bkg.GetBinContent(bx+1,by+1)
-            NBkg_Err = Hist_Bkg.GetBinError(bx+1,by+1)
+            NBkg_Err = pow(abs(Hist_Bkg.GetBinContent(bx+1,by+1)),0.5)
             Sig = 1.*CalculateSignificance(NSR-NBkg,NBkg,NBkg_Err)
             Sig = min(5,Sig)
             Sig = max(-5,Sig)
@@ -1857,6 +1866,55 @@ def CompareWithOfficialSpectrum(Hist,legends,title_x,title_y,name,y_min,y_max,lo
 
     if logx: 
         pad1.SetLogx()
+
+    c_both.SaveAs('output_plots/%s.png'%(name))
+
+def MakeDeviationPlots(Hists,Hist_ref,legends,colors,title_x,title_y,name):
+    
+    c_both = ROOT.TCanvas("c_both","c both", 200, 10, 600, 600)
+
+    mypad = []
+    #n_entries = len(Hists)
+    n_entries = 10
+    interval = 1./float(n_entries)
+    line1 = ROOT.TLine(Hists[0].GetBinLowEdge(1),0,Hists[0].GetBinLowEdge(Hists[0].GetNbinsX()+1),0)
+    line1.SetLineStyle(1)
+    line1.SetLineColor(2)
+    line1.SetLineWidth(2)
+    for hist in range(0,n_entries):
+        mypad += [ROOT.TPad("mypad%s"%(hist),"mypad%s"%(hist),0,1-(hist+1)*interval,1,1-hist*interval)]
+        mypad[hist].SetBottomMargin(0)
+        mypad[hist].SetTopMargin(0)
+        mypad[hist].SetLeftMargin(0)
+        mypad[hist].SetRightMargin(0)
+        mypad[hist].SetBorderMode(0)
+        mypad[hist].Draw()
+    for hist in range(0,n_entries):
+        mypad[hist].cd()
+        Hists[hist].Add(Hist_ref,-1.)
+        Hists[hist].SetLineColor(4)
+        #Hists[hist].SetLineColor(colors[hist])
+        #Hists[hist].SetLineWidth(2)
+        #Hists[hist].GetXaxis().SetTitleOffset(0.8)
+        #Hists[hist].GetXaxis().SetTitleSize(0.06)
+        #Hists[hist].GetXaxis().SetLabelSize(0.06)
+        #Hists[hist].GetYaxis().SetLabelSize(0.06)
+        #Hists[hist].GetYaxis().SetTitleOffset(1.2)
+        #Hists[hist].GetYaxis().SetTitleSize(0.06)
+        #Hists[hist].GetXaxis().SetTitle(title_x)
+        #Hists[hist].GetYaxis().SetTitle(title_y)
+        Hists[hist].Draw("hist same")
+        #legend = ROOT.TLegend(0.6,0.0,0.9,0.3)
+        #legend.SetTextFont(42)
+        #legend.SetBorderSize(0)
+        #legend.SetTextSize(0.05)
+        #legend.SetFillColor(0)
+        #legend.SetFillStyle(0)
+        #legend.SetLineColor(0)
+        #legend.Clear()
+        #legend.AddEntry(Hists[hist],'%s'%(legends[hist]),"pl")
+        #legend.Draw("SAME")
+        line1.Draw("same")
 
     c_both.SaveAs('output_plots/%s.png'%(name))
 
@@ -4344,10 +4402,27 @@ def SystDarkVsMDM():
     Hist_Eigenvalue_real_Sigma = []
     Hist_Eigenvector_0 = []
     Hist_Eigenvector_1 = []
+    Hist_Eigenvector_2 = []
+    Hist_InvEigenvector_0 = []
+    Hist_InvEigenvector_1 = []
+    Hist_InvEigenvector_2 = []
     Hist_S2B = []
     Hist_S2B_Ring = []
     legend_S2B = []
+    legend_S2B_hours = []
     color_S2B = []
+    norm_avg_eigenvector_0 = 0.
+    norm_avg_eigenvector_1 = 0.
+    norm_avg_eigenvector_2 = 0.
+    Hist_Avg_Eigenvector_0 = ROOT.TH1D("Hist_Avg_Eigenvector_0","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+    Hist_Avg_Eigenvector_1 = ROOT.TH1D("Hist_Avg_Eigenvector_1","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+    Hist_Avg_Eigenvector_2 = ROOT.TH1D("Hist_Avg_Eigenvector_2","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+    norm_avg_inv_eigenvector_0 = 0.
+    norm_avg_inv_eigenvector_1 = 0.
+    norm_avg_inv_eigenvector_2 = 0.
+    Hist_Avg_InvEigenvector_0 = ROOT.TH1D("Hist_Avg_InvEigenvector_0","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+    Hist_Avg_InvEigenvector_1 = ROOT.TH1D("Hist_Avg_InvEigenvector_1","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+    Hist_Avg_InvEigenvector_2 = ROOT.TH1D("Hist_Avg_InvEigenvector_2","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
     for source in range(0,len(FilePath_Folder0)):
         source_name = FilePath_Folder0[source][0]
         exposure_hours = 0.
@@ -4368,7 +4443,11 @@ def SystDarkVsMDM():
         Hist_Eigenvalue_real_Sigma += [ROOT.TH1D("Hist_Eigenvalue_real_Sigma_%s"%(source_name),"",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0_%s"%(source_name),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
         Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1_%s"%(source_name),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
-        #legend_S2B += ['%s (%0.1f hrs)'%(source_name,exposure_hours)]
+        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2_%s"%(source_name),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_0 += [ROOT.TH1D("Hist_InvEigenvector_0_%s"%(source_name),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_1 += [ROOT.TH1D("Hist_InvEigenvector_1_%s"%(source_name),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_2 += [ROOT.TH1D("Hist_InvEigenvector_2_%s"%(source_name),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        legend_S2B_hours += ['%s (%0.1f hrs)'%(source_name,exposure_hours)]
         color_idx = int(source*len(color_code)/max(1,len(FilePath_Folder0)-1))
         color_idx = min(color_idx,len(color_code)-1)
         color_S2B += [color_code[color_idx]]
@@ -4391,23 +4470,83 @@ def SystDarkVsMDM():
                     StackTheta2Histograms()
             #PlotsStackedHistograms('%s_%s_%s'%(source_name,path,folder_tag))
 
-        scale_norm = 1./Hist_Data_Eigenvalues_real_SumE.GetBinContent(1)
-        Hist_Data_Eigenvector_0_real_SumE.Scale(scale_norm) # this makes sure they all have the same sign
+        integral = 0.
+        for binx in range(0,Hist_Data_Eigenvector_0_real_SumE.GetNbinsX()):
+            integral += Hist_Data_Eigenvector_0_real_SumE.GetBinContent(binx+1)
+        sign = integral/abs(integral)
         abs_integral = 0.
         for binx in range(0,Hist_Data_Eigenvector_0_real_SumE.GetNbinsX()):
             abs_integral += abs(Hist_Data_Eigenvector_0_real_SumE.GetBinContent(binx+1))
-        scale_norm += 1./abs_integral
-        Hist_Data_Eigenvector_0_real_SumE.Scale(scale_norm) # this makes sure they all have the same normalization
+        scale_norm = 1./abs_integral
+        Hist_Data_Eigenvector_0_real_SumE.Scale(sign*scale_norm) # this makes sure they all have the same normalization
         Hist_Eigenvector_0[len(Hist_Eigenvector_0)-1].Add(Hist_Data_Eigenvector_0_real_SumE)
+        norm_avg_eigenvector_0 += pow(exposure_hours,0.5)
+        Hist_Avg_Eigenvector_0.Add(Hist_Data_Eigenvector_0_real_SumE,pow(exposure_hours,0.5))
 
-        scale_norm = 1./Hist_Data_Eigenvalues_real_SumE.GetBinContent(2)
-        Hist_Data_Eigenvector_1_real_SumE.Scale(scale_norm) # this makes sure they all have the same sign
+        integral = 0.
+        for binx in range(0,Hist_Data_Eigenvector_1_real_SumE.GetNbinsX()):
+            integral += Hist_Data_Eigenvector_1_real_SumE.GetBinContent(binx+1)
+        sign = integral/abs(integral)
         abs_integral = 0.
         for binx in range(0,Hist_Data_Eigenvector_1_real_SumE.GetNbinsX()):
             abs_integral += abs(Hist_Data_Eigenvector_1_real_SumE.GetBinContent(binx+1))
-        scale_norm += 1./abs_integral
-        Hist_Data_Eigenvector_1_real_SumE.Scale(scale_norm) # this makes sure they all have the same normalization
+        scale_norm = 1./abs_integral
+        Hist_Data_Eigenvector_1_real_SumE.Scale(sign*scale_norm) # this makes sure they all have the same normalization
         Hist_Eigenvector_1[len(Hist_Eigenvector_1)-1].Add(Hist_Data_Eigenvector_1_real_SumE)
+        norm_avg_eigenvector_1 += pow(exposure_hours,0.5)
+        Hist_Avg_Eigenvector_1.Add(Hist_Data_Eigenvector_1_real_SumE,pow(exposure_hours,0.5))
+
+        integral = 0.
+        for binx in range(0,Hist_Data_Eigenvector_2_real_SumE.GetNbinsX()):
+            integral += Hist_Data_Eigenvector_2_real_SumE.GetBinContent(binx+1)
+        sign = integral/abs(integral)
+        abs_integral = 0.
+        for binx in range(0,Hist_Data_Eigenvector_2_real_SumE.GetNbinsX()):
+            abs_integral += abs(Hist_Data_Eigenvector_2_real_SumE.GetBinContent(binx+1))
+        scale_norm = 1./abs_integral
+        Hist_Data_Eigenvector_2_real_SumE.Scale(sign*scale_norm) # this makes sure they all have the same normalization
+        Hist_Eigenvector_2[len(Hist_Eigenvector_2)-1].Add(Hist_Data_Eigenvector_2_real_SumE)
+        norm_avg_eigenvector_2 += pow(exposure_hours,0.5)
+        Hist_Avg_Eigenvector_2.Add(Hist_Data_Eigenvector_2_real_SumE,pow(exposure_hours,0.5))
+
+        integral = 0.
+        for binx in range(0,Hist_Data_InvEigenvector_0_real_SumE.GetNbinsX()):
+            integral += Hist_Data_InvEigenvector_0_real_SumE.GetBinContent(binx+1)
+        sign = integral/abs(integral)
+        abs_integral = 0.
+        for binx in range(0,Hist_Data_InvEigenvector_0_real_SumE.GetNbinsX()):
+            abs_integral += abs(Hist_Data_InvEigenvector_0_real_SumE.GetBinContent(binx+1))
+        scale_norm = 1./abs_integral
+        Hist_Data_InvEigenvector_0_real_SumE.Scale(sign*scale_norm) # this makes sure they all have the same normalization
+        Hist_InvEigenvector_0[len(Hist_InvEigenvector_0)-1].Add(Hist_Data_InvEigenvector_0_real_SumE)
+        norm_avg_inv_eigenvector_0 += pow(exposure_hours,0.5)
+        Hist_Avg_InvEigenvector_0.Add(Hist_Data_InvEigenvector_0_real_SumE,pow(exposure_hours,0.5))
+
+        integral = 0.
+        for binx in range(0,Hist_Data_InvEigenvector_1_real_SumE.GetNbinsX()):
+            integral += Hist_Data_InvEigenvector_1_real_SumE.GetBinContent(binx+1)
+        sign = integral/abs(integral)
+        abs_integral = 0.
+        for binx in range(0,Hist_Data_InvEigenvector_1_real_SumE.GetNbinsX()):
+            abs_integral += abs(Hist_Data_InvEigenvector_1_real_SumE.GetBinContent(binx+1))
+        scale_norm = 1./abs_integral
+        Hist_Data_InvEigenvector_1_real_SumE.Scale(sign*scale_norm) # this makes sure they all have the same normalization
+        Hist_InvEigenvector_1[len(Hist_InvEigenvector_1)-1].Add(Hist_Data_InvEigenvector_1_real_SumE)
+        norm_avg_inv_eigenvector_1 += pow(exposure_hours,0.5)
+        Hist_Avg_InvEigenvector_1.Add(Hist_Data_InvEigenvector_1_real_SumE,pow(exposure_hours,0.5))
+
+        integral = 0.
+        for binx in range(0,Hist_Data_InvEigenvector_2_real_SumE.GetNbinsX()):
+            integral += Hist_Data_InvEigenvector_2_real_SumE.GetBinContent(binx+1)
+        sign = integral/abs(integral)
+        abs_integral = 0.
+        for binx in range(0,Hist_Data_InvEigenvector_2_real_SumE.GetNbinsX()):
+            abs_integral += abs(Hist_Data_InvEigenvector_2_real_SumE.GetBinContent(binx+1))
+        scale_norm = 1./abs_integral
+        Hist_Data_InvEigenvector_2_real_SumE.Scale(sign*scale_norm) # this makes sure they all have the same normalization
+        Hist_InvEigenvector_2[len(Hist_InvEigenvector_2)-1].Add(Hist_Data_InvEigenvector_2_real_SumE)
+        norm_avg_inv_eigenvector_2 += pow(exposure_hours,0.5)
+        Hist_Avg_InvEigenvector_2.Add(Hist_Data_InvEigenvector_2_real_SumE,pow(exposure_hours,0.5))
 
         NormalizeEigenvalues()
         Hist_Eigenvalue_real_Rank[len(Hist_Eigenvalue_real_Rank)-1].Add(Hist_Data_Eigenvalues_real_SumE)
@@ -4453,11 +4592,26 @@ def SystDarkVsMDM():
         Hist_Eigenvalue_ampl_Rank[hist].GetXaxis().SetRangeUser(0,16)
         Hist_Eigenvalue_real_Rank[hist].GetXaxis().SetRangeUser(0,16)
         Hist_Eigenvalue_real_Sigma[hist].GetXaxis().SetRangeUser(0,16)
-    MakeComparisonPlot(Hist_Eigenvalue_ampl_Rank,legend_S2B,color_S2B,'k','#lambda_{k}/#lambda_{0}','Eigenvalue_ampl_Rank%s_%s'%(PercentCrab,folder_tag),0.,0.,False,True)
-    MakeComparisonPlot(Hist_Eigenvalue_real_Rank,legend_S2B,color_S2B,'k','Re(#lambda_{k})/Re(#lambda_{0})','Eigenvalue_real_Rank%s_%s'%(PercentCrab,folder_tag),0.,0.,False,True)
-    MakeComparisonPlot(Hist_Eigenvalue_real_Sigma,legend_S2B,color_S2B,'k','significance of eigenvalues','Eigenvalue_real_Sigma%s_%s'%(PercentCrab,folder_tag),0.,0.,False,True)
-    MakeComparisonPlot(Hist_Eigenvector_0,legend_S2B,color_S2B,'columns','size of eigenvector','Eigenvector_0%s_%s'%(PercentCrab,folder_tag),0.,0.,False,False)
-    MakeComparisonPlot(Hist_Eigenvector_1,legend_S2B,color_S2B,'columns','size of eigenvector','Eigenvector_1%s_%s'%(PercentCrab,folder_tag),0.,0.,False,False)
+    MakeComparisonPlot(Hist_Eigenvalue_ampl_Rank,legend_S2B_hours,color_S2B,'k','#lambda_{k}/#lambda_{0}','Eigenvalue_ampl_Rank%s_%s'%(PercentCrab,folder_tag),0.,0.,False,True)
+    MakeComparisonPlot(Hist_Eigenvalue_real_Rank,legend_S2B_hours,color_S2B,'k','Re(#lambda_{k})/Re(#lambda_{0})','Eigenvalue_real_Rank%s_%s'%(PercentCrab,folder_tag),0.,0.,False,True)
+    MakeComparisonPlot(Hist_Eigenvalue_real_Sigma,legend_S2B_hours,color_S2B,'k','significance of eigenvalues','Eigenvalue_real_Sigma%s_%s'%(PercentCrab,folder_tag),0.,0.,False,True)
+    MakeComparisonPlot(Hist_Eigenvector_0,legend_S2B_hours,color_S2B,'entry','size of eigenvector','Eigenvector_0%s_%s'%(PercentCrab,folder_tag),0.,0.,False,False)
+    MakeComparisonPlot(Hist_Eigenvector_1,legend_S2B_hours,color_S2B,'entry','size of eigenvector','Eigenvector_1%s_%s'%(PercentCrab,folder_tag),0.,0.,False,False)
+    MakeComparisonPlot(Hist_Eigenvector_2,legend_S2B_hours,color_S2B,'entry','size of eigenvector','Eigenvector_2%s_%s'%(PercentCrab,folder_tag),0.,0.,False,False)
+
+    Hist_Avg_Eigenvector_0.Scale(1./norm_avg_eigenvector_0)
+    Hist_Avg_Eigenvector_1.Scale(1./norm_avg_eigenvector_1)
+    Hist_Avg_Eigenvector_2.Scale(1./norm_avg_eigenvector_2)
+    MakeDeviationPlots(Hist_Eigenvector_0,Hist_Avg_Eigenvector_0,legend_S2B_hours,color_S2B,'entry','','EigenvectorDiff_0%s_%s'%(PercentCrab,folder_tag))
+    MakeDeviationPlots(Hist_Eigenvector_1,Hist_Avg_Eigenvector_1,legend_S2B_hours,color_S2B,'entry','','EigenvectorDiff_1%s_%s'%(PercentCrab,folder_tag))
+    MakeDeviationPlots(Hist_Eigenvector_2,Hist_Avg_Eigenvector_2,legend_S2B_hours,color_S2B,'entry','','EigenvectorDiff_2%s_%s'%(PercentCrab,folder_tag))
+
+    Hist_Avg_InvEigenvector_0.Scale(1./norm_avg_inv_eigenvector_0)
+    Hist_Avg_InvEigenvector_1.Scale(1./norm_avg_inv_eigenvector_1)
+    Hist_Avg_InvEigenvector_2.Scale(1./norm_avg_inv_eigenvector_2)
+    MakeDeviationPlots(Hist_InvEigenvector_0,Hist_Avg_InvEigenvector_0,legend_S2B_hours,color_S2B,'entry','','InvEigenvectorDiff_0%s_%s'%(PercentCrab,folder_tag))
+    MakeDeviationPlots(Hist_InvEigenvector_1,Hist_Avg_InvEigenvector_1,legend_S2B_hours,color_S2B,'entry','','InvEigenvectorDiff_1%s_%s'%(PercentCrab,folder_tag))
+    MakeDeviationPlots(Hist_InvEigenvector_2,Hist_Avg_InvEigenvector_2,legend_S2B_hours,color_S2B,'entry','','InvEigenvectorDiff_2%s_%s'%(PercentCrab,folder_tag))
 
 def CompareDiffFolders():
 
@@ -4815,19 +4969,81 @@ def SingleSourceSkyMap(source_name_input,doMap):
     folder_tag = FileTag[0]
     folder_label = FileLabel[0]
 
+
+    for source in range(0,len(source_list)):
+        if not source_name_input==source_list[source]: continue
+        source_name = source_list[source]
+        Hist2D_Residual_Rank0 = ROOT.TH2D("Hist2D_Residual_Rank0","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+        Hist2D_Residual_Rank1 = ROOT.TH2D("Hist2D_Residual_Rank1","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+        Hist2D_Residual_Rank2 = ROOT.TH2D("Hist2D_Residual_Rank2","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+        Hist2D_Add_Rank0 = ROOT.TH2D("Hist2D_Add_Rank0","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+        Hist2D_Add_Rank1 = ROOT.TH2D("Hist2D_Add_Rank1","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+        Hist2D_Add_Rank2 = ROOT.TH2D("Hist2D_Add_Rank2","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+        ResetStackedShowerHistograms()
+        for elev in range(0,len(elev_range)):
+            file_elev_lower = elev_range[elev][0]
+            file_elev_upper = elev_range[elev][1]
+            FilePath_Folder0 = []
+            exposure_hours = 0.
+            exposure_hours_dark = 0.
+            NSB_avg = 0.
+            NSB_avg_dark = 0.
+            FilePath = "%s/Netflix_"%(folder_path)+source_list[source]+PercentCrab+"_TelElev%sto%s"%(int(file_elev_lower),int(file_elev_upper))+"_%s"%(ONOFF)+".root";
+            FilePath_Folder0 += [FilePath]
+            if not os.path.isfile(FilePath_Folder0[0]):continue
+            InputFile = ROOT.TFile(FilePath_Folder0[0])
+            InfoTree = InputFile.Get("InfoTree")
+            InfoTree.GetEntry(0)
+            MSCW_blind_cut = InfoTree.MSCW_cut_blind
+            MSCL_blind_cut = InfoTree.MSCL_cut_blind
+            bin_lower_x = Hist2D_Data.GetXaxis().FindBin(MSCL_lower_cut)
+            bin_upper_x = Hist2D_Data.GetXaxis().FindBin(MSCL_blind_cut)-1
+            bin_lower_y = Hist2D_Data.GetYaxis().FindBin(MSCW_lower_cut)
+            bin_upper_y = Hist2D_Data.GetYaxis().FindBin(MSCW_blind_cut)-1
+            GetSourceInfo(FilePath_Folder0)
+            for e in range(0,len(energy_list)-1):
+                ErecS_lower_cut = energy_list[e]
+                ErecS_upper_cut = energy_list[e+1]
+                if ErecS_upper_cut<=energy_fine_bin[energy_fine_bin_cut_low]: continue
+                if ErecS_lower_cut>=energy_fine_bin[energy_fine_bin_cut_up]: continue
+                GetShowerHistogramsFromFile(FilePath_Folder0[0])
+                StackShowerHistograms()
+        Hist2D_Residual_Rank0.Add(Hist2D_Data_SumE)
+        Hist2D_Residual_Rank0.Add(Hist2D_Rank0_SumE,-1.)
+        Hist2D_Residual_Rank1.Add(Hist2D_Data_SumE)
+        Hist2D_Residual_Rank1.Add(Hist2D_Rank0_SumE,-1.)
+        Hist2D_Residual_Rank1.Add(Hist2D_Rank1_SumE,-1.)
+        Hist2D_Residual_Rank2.Add(Hist2D_Data_SumE)
+        Hist2D_Residual_Rank2.Add(Hist2D_Rank0_SumE,-1.)
+        Hist2D_Residual_Rank2.Add(Hist2D_Rank1_SumE,-1.)
+        Hist2D_Residual_Rank2.Add(Hist2D_Rank2_SumE,-1.)
+        Hist2D_Add_Rank0.Add(Hist2D_Rank0_SumE)
+        Hist2D_Add_Rank1.Add(Hist2D_Rank0_SumE)
+        Hist2D_Add_Rank1.Add(Hist2D_Rank1_SumE)
+        Hist2D_Add_Rank2.Add(Hist2D_Rank0_SumE)
+        Hist2D_Add_Rank2.Add(Hist2D_Rank1_SumE)
+        Hist2D_Add_Rank2.Add(Hist2D_Rank2_SumE)
+
+        Make2DRatioPlotShowerShape(Hist2D_Data_SumE,Hist2D_Residual_Rank0,'MSCL','MSCW','Residual_Rank0_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
+        Make2DRatioPlotShowerShape(Hist2D_Data_SumE,Hist2D_Residual_Rank1,'MSCL','MSCW','Residual_Rank1_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
+        Make2DRatioPlotShowerShape(Hist2D_Data_SumE,Hist2D_Residual_Rank2,'MSCL','MSCW','Residual_Rank2_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
+        Hist2D_GammaRDBM_SumE.Reset()
+        Make2DSignificancePlotShowerShape(Hist2D_Data_SumE,Hist2D_Add_Rank0,Hist2D_GammaRDBM_SumE,'MSCL','MSCW','ResidualSig_Rank0_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
+        Make2DSignificancePlotShowerShape(Hist2D_Data_SumE,Hist2D_Add_Rank1,Hist2D_GammaRDBM_SumE,'MSCL','MSCW','ResidualSig_Rank1_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
+        Make2DSignificancePlotShowerShape(Hist2D_Data_SumE,Hist2D_Add_Rank2,Hist2D_GammaRDBM_SumE,'MSCL','MSCW','ResidualSig_Rank2_%s%s_%s_%s'%(source_name,PercentCrab,ONOFF,folder_tag))
+
     SignalFlux = []
     SignalFlux_label = []
     SignalFlux += ['_Crab0']
     SignalFlux_label += ['0.0']
-    SignalFlux += ['_Crab10']
-    SignalFlux_label += ['0.1']
-    SignalFlux += ['_Crab20']
-    SignalFlux_label += ['0.2']
-    SignalFlux += ['_Crab50']
-    SignalFlux_label += ['0.5']
-    SignalFlux += ['_Crab100']
-    SignalFlux_label += ['1.0']
-
+    #SignalFlux += ['_Crab10']
+    #SignalFlux_label += ['0.1']
+    #SignalFlux += ['_Crab20']
+    #SignalFlux_label += ['0.2']
+    #SignalFlux += ['_Crab50']
+    #SignalFlux_label += ['0.5']
+    #SignalFlux += ['_Crab100']
+    #SignalFlux_label += ['1.0']
     Hist_ResidualGamma_Rank = []
     Hist_CountGamma_Rank = []
     Hist_CountHadron1_Rank = []
@@ -5250,10 +5466,10 @@ def HMS2deg(ra='', dec=''):
 #source_of_interest = 'CrabV5'
 #source_of_interest = 'Mrk421'
 #source_of_interest = 'H1426'
-source_of_interest = 'PKS1424'
+#source_of_interest = 'PKS1424'
 #source_of_interest = '3C264'
 #source_of_interest = 'OJ287V6'
-#source_of_interest = '1ES0229'
+source_of_interest = '1ES0229'
 #source_of_interest = 'S3_1227_V6'
 #source_of_interest = 'MS1221V6'
 #source_of_interest = 'PKS1441V6'
@@ -5304,11 +5520,11 @@ highlight_threshold = 3.0
 #ONOFF = "ON"
 ONOFF = "OFF"
 
-#PercentCrab = "_Crab0"
+PercentCrab = "_Crab0"
 #PercentCrab = "_Crab10"
 #PercentCrab = "_Crab20"
 #PercentCrab = "_Crab50"
-PercentCrab = "_Crab100"
+#PercentCrab = "_Crab100"
 #PercentCrab = "_Crab200"
 
 source_ra = 0.
