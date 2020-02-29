@@ -829,8 +829,8 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
                 ampl = real/abs(real)*pow(real*real+imag*imag,0.5);
             }
             mtx_eigenvector_dark.col(col)(row) = ampl;
-            double real_inv = eigensolver_data.eigenvectors().inverse().row(row)(col).real();
-            double imag_inv = eigensolver_data.eigenvectors().inverse().row(row)(col).imag();
+            double real_inv = eigensolver_dark.eigenvectors().inverse().row(row)(col).real();
+            double imag_inv = eigensolver_dark.eigenvectors().inverse().row(row)(col).imag();
             double ampl_inv = pow(real_inv*real_inv+imag_inv*imag_inv,0.5);
             if (real_inv!=0.)
             {
@@ -1273,6 +1273,7 @@ void NetflixSetInitialVariablesEigenBasis(ROOT::Math::GSLMinimizer* Chi2Minimize
         {
             Chi2Minimizer->SetVariable(first_index+entry,"par["+std::to_string(int(first_index+entry))+"]",0.,0.001);
             if (fix_which==0) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
+            //if (entry+1==NthEigenvector) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
         }
 
         limit = 0.0;
@@ -1281,6 +1282,7 @@ void NetflixSetInitialVariablesEigenBasis(ROOT::Math::GSLMinimizer* Chi2Minimize
         {
             Chi2Minimizer->SetVariable(first_index+entry,"par["+std::to_string(int(first_index+entry))+"]",0.,0.001);
             if (fix_which==1) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
+            //if (entry+1==NthEigenvector) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
         }
 
         // eigenvalues
