@@ -47,10 +47,12 @@
 using namespace Eigen;
 //using Eigen::MatrixXd;
 
-int dark_vector = 1;
+int dark_vector = 2;
 bool linear = false;
-bool invert_y = false;
+bool invert_y = true;
 bool transpose = false;
+bool eigenbasis  = false;
+int cutoff_mode = 4;
 
 double MSCW_cut_lower = -1.0;
 double MSCW_cut_blind = 1.0;
@@ -1953,24 +1955,24 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     //    Hist_Data_SR_RoV4Ring_Energy.at(e).Scale(scale_rov4_ring);
     //}
 
-    for (int e_bin=0;e_bin<N_energy_bins;e_bin++)
-    {
-        std::cout << "working on " << e_bin << "-th Ring Background Model Map..." << std::endl;
-        FillRingOFFMap(&Hist_Data_RingOFF_Skymap2.at(e_bin),&Hist_Data_SR_Skymap2.at(e_bin),&Hist_Acceptance_Skymap2.at(e_bin),1.0,1.2);
-        for (int binx=1; binx<=Hist_Data_RingOFF_Skymap2.at(e_bin).GetNbinsX(); binx++)
-        {
-            for (int biny=1; biny<=Hist_Data_RingOFF_Skymap2.at(e_bin).GetNbinsY(); biny++)
-            {
-                double binx_ra = Hist_Data_RingOFF_Skymap2.at(e_bin).GetXaxis()->GetBinCenter(binx);
-                double biny_dec = Hist_Data_RingOFF_Skymap2.at(e_bin).GetYaxis()->GetBinCenter(biny);
-                double distance2_to_source = (binx_ra-mean_tele_point_ra)*(binx_ra-mean_tele_point_ra)+(biny_dec-mean_tele_point_dec)*(biny_dec-mean_tele_point_dec);
-                double bin_content_data = Hist_Data_SR_Skymap2.at(e_bin).GetBinContent(binx,biny);
-                double bin_content_ring = Hist_Data_RingOFF_Skymap2.at(e_bin).GetBinContent(binx,biny);
-                Hist_Data_SR_Skymap2_Theta2.at(e_bin).Fill(distance2_to_source,bin_content_data);
-                Hist_Data_RingOFF_Skymap2_Theta2.at(e_bin).Fill(distance2_to_source,bin_content_ring);
-            }
-        }
-    }
+    //for (int e_bin=0;e_bin<N_energy_bins;e_bin++)
+    //{
+    //    std::cout << "working on " << e_bin << "-th Ring Background Model Map..." << std::endl;
+    //    FillRingOFFMap(&Hist_Data_RingOFF_Skymap2.at(e_bin),&Hist_Data_SR_Skymap2.at(e_bin),&Hist_Acceptance_Skymap2.at(e_bin),1.0,1.2);
+    //    for (int binx=1; binx<=Hist_Data_RingOFF_Skymap2.at(e_bin).GetNbinsX(); binx++)
+    //    {
+    //        for (int biny=1; biny<=Hist_Data_RingOFF_Skymap2.at(e_bin).GetNbinsY(); biny++)
+    //        {
+    //            double binx_ra = Hist_Data_RingOFF_Skymap2.at(e_bin).GetXaxis()->GetBinCenter(binx);
+    //            double biny_dec = Hist_Data_RingOFF_Skymap2.at(e_bin).GetYaxis()->GetBinCenter(biny);
+    //            double distance2_to_source = (binx_ra-mean_tele_point_ra)*(binx_ra-mean_tele_point_ra)+(biny_dec-mean_tele_point_dec)*(biny_dec-mean_tele_point_dec);
+    //            double bin_content_data = Hist_Data_SR_Skymap2.at(e_bin).GetBinContent(binx,biny);
+    //            double bin_content_ring = Hist_Data_RingOFF_Skymap2.at(e_bin).GetBinContent(binx,biny);
+    //            Hist_Data_SR_Skymap2_Theta2.at(e_bin).Fill(distance2_to_source,bin_content_data);
+    //            Hist_Data_RingOFF_Skymap2_Theta2.at(e_bin).Fill(distance2_to_source,bin_content_ring);
+    //        }
+    //    }
+    //}
 
     NSB_avg = NSB_avg/exposure_hours;
     NSB_avg_dark = NSB_avg_dark/exposure_hours_dark;

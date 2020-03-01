@@ -143,16 +143,6 @@ void Smooth2DHistogram(TH2D* hist_origin, TH2D* hist_smooth, int size)
         }
     }
 }
-void fill2DHistogramError(TH2D* hist,MatrixXcd mtx)
-{
-    for (int binx=0;binx<hist->GetNbinsX();binx++)
-    {
-        for (int biny=0;biny<hist->GetNbinsY();biny++)
-        {
-            hist->SetBinError(binx+1,biny+1,mtx(binx,biny).real());
-        }
-    }
-}
 void fill1DHistogram(TH1D* hist,VectorXcd vtr)
 {
     for (int binx=0;binx<hist->GetNbinsX();binx++)
@@ -205,19 +195,6 @@ void RestoreEdge(TH2D* Hist_Origin, TH2D* Hist_Modify, double edge_x, double edg
     }
 }
 MatrixXcd fillMatrix(TH2D* hist)
-{
-    MatrixXcd matrix(hist->GetNbinsX(),hist->GetNbinsY());
-    for (int binx=0;binx<hist->GetNbinsX();binx++)
-    {
-        for (int biny=0;biny<hist->GetNbinsY();biny++)
-        {
-            if (!invert_y) matrix(binx,biny) = hist->GetBinContent(binx+1,biny+1);
-            else matrix(binx,biny) = hist->GetBinContent(binx+1,hist->GetNbinsY()-biny);
-        }
-    }
-    return matrix;
-}
-MatrixXcd fillMatrixError(TH2D* hist)
 {
     MatrixXcd matrix(hist->GetNbinsX(),hist->GetNbinsY());
     for (int binx=0;binx<hist->GetNbinsX();binx++)
@@ -503,6 +480,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
     int binx_upper = hist_data->GetNbinsX();
     int biny_upper = hist_data->GetNbinsY();
     double chi2 = 0.;
+    double nbins = 0.;
     for (int bx=1;bx<=hist_data->GetNbinsX();bx++)
     {
         for (int by=1;by<=hist_data->GetNbinsY();by++)
@@ -545,9 +523,20 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
                 {
                     chi2 += chi2_this;
                 }
+                nbins += 1.;
             }
         }
     }
+
+    mtx_data_bkgd = fillMatrix(hist_model);
+    eigensolver_bkgd = ComplexEigenSolver<MatrixXcd>(mtx_data_bkgd);
+    double error = 0.1*eigensolver_dark.eigenvalues()(mtx_dark.cols()-1).real();
+    for (int NthEigenvector=2;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
+    {
+        double eigenvalue_diff = eigensolver_bkgd.eigenvalues()(mtx_dark.cols()-NthEigenvector).real()-eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector).real();
+        chi2 += pow(eigenvalue_diff/error,2);
+    }
+    
     return chi2;
 }
 
@@ -564,9 +553,9 @@ void NetflixParametrizeEigenvectorsEigenBasis(const double *par)
         }
     }
 
-    mtx_eigenvector = mtx_eigenvector_init;
-    mtx_eigenvector_inv = mtx_eigenvector_inv_init;
-    mtx_eigenvalue = mtx_eigenvalue_init;
+    //mtx_eigenvector = mtx_eigenvector_init;
+    //mtx_eigenvector_inv = mtx_eigenvector_inv_init;
+    //mtx_eigenvalue = mtx_eigenvalue_init;
 
     const std::complex<double> If(0.0, 1.0);
     // build eigenvector matrix
@@ -626,9 +615,9 @@ void NetflixParametrizeEigenvectors(const double *par)
     //    mtx_eigenvector_inv.row(mtx_dark.cols()-NthEigenvector) = mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector);
     //    mtx_eigenvalue(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector);
     //}
-    mtx_eigenvector = mtx_eigenvector_init;
-    mtx_eigenvector_inv = mtx_eigenvector_inv_init;
-    mtx_eigenvalue = mtx_eigenvalue_init;
+    //mtx_eigenvector = mtx_eigenvector_init;
+    //mtx_eigenvector_inv = mtx_eigenvector_inv_init;
+    //mtx_eigenvalue = mtx_eigenvalue_init;
 
     const std::complex<double> If(0.0, 1.0);
     // build eigenvector matrix
@@ -665,8 +654,14 @@ void NetflixParametrizeEigenvectors(const double *par)
 double NetflixChi2Function(const double *par)
 {
 
-    //NetflixParametrizeEigenvectors(par);
-    NetflixParametrizeEigenvectorsEigenBasis(par);
+    if (eigenbasis)
+    {
+        NetflixParametrizeEigenvectorsEigenBasis(par);
+    }
+    else
+    {
+        NetflixParametrizeEigenvectors(par);
+    }
     //double deriv_at_zero = SmoothEigenvectors(&mtx_eigenvector, &mtx_eigenvector_inv);
     //if (0.8*init_deriv_at_zero>deriv_at_zero) return 1e10;
     //if (1.2*init_deriv_at_zero<deriv_at_zero) return 1e10;
@@ -717,7 +712,6 @@ double NetflixChi2Function(const double *par)
     double chi2 = 0.;
     chi2 += BlindedChi2(&hist_data,&hist_dark,&hist_model);
     //if (signal_model) chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
-    
     
     //double chi2 = BlindedLogLikelihood(&hist_data,&hist_dark,&hist_model);
     //chi2 += SignalLogLikelihood(&hist_data,&hist_gamma,&hist_model);
@@ -850,18 +844,16 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
     for (int NthEigenvector=1;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
     {
 
-        if (NthEigenvector<=NumberOfEigenvectors)
+        //mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector);
+        if (NthEigenvector>=dark_vector)
         {
-            //mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector);
-            if (NthEigenvector>=dark_vector)
-            {
-                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector);
-            }
-            else
-            {
-                mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_data.eigenvalues()(mtx_dark.cols()-NthEigenvector);
-            }
+            mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector);
         }
+        else
+        {
+            mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_data.eigenvalues()(mtx_dark.cols()-NthEigenvector);
+        }
+
         double sign = 1.;
         if (eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector).dot(eigensolver_data.eigenvectors().col(mtx_dark.cols()-NthEigenvector)).real()<0.)
         {
@@ -1273,6 +1265,7 @@ void NetflixSetInitialVariablesEigenBasis(ROOT::Math::GSLMinimizer* Chi2Minimize
         {
             Chi2Minimizer->SetVariable(first_index+entry,"par["+std::to_string(int(first_index+entry))+"]",0.,0.001);
             if (fix_which==0) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
+            if (NthEigenvector>=cutoff_mode) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
         }
 
         limit = 0.0;
@@ -1281,6 +1274,7 @@ void NetflixSetInitialVariablesEigenBasis(ROOT::Math::GSLMinimizer* Chi2Minimize
         {
             Chi2Minimizer->SetVariable(first_index+entry,"par["+std::to_string(int(first_index+entry))+"]",0.,0.001);
             if (fix_which==1) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
+            if (NthEigenvector>=cutoff_mode) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
         }
 
         // eigenvalues
@@ -1502,21 +1496,15 @@ double NuclearNormChi2Function(const double *par)
     
     // build model
     MatrixXcd mtx_model(N_bins_for_deconv,N_bins_for_deconv);
-    TH2D hist_model = TH2D("hist_model","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
-    fill2DHistogram(&hist_model,mtx_data);
+    TH2D hist_model_tmp = TH2D("hist_model_tmp","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
+    TH2D hist_gamma_tmp = TH2D("hist_gamma_tmp","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
+    fill2DHistogram(&hist_model_tmp,mtx_data);
+    fill2DHistogram(&hist_gamma_tmp,mtx_gamma);
 
     VectorXcd vtr_ref_eigenvalues = vtr_dark_eigenvalues;
 
-    int par_index = 0;
-    for (int binx=0;binx<binx_blind_global;binx++)
-    {
-        for (int biny=0;biny<biny_blind_global;biny++)
-        {
-            hist_model.SetBinContent(binx+1,biny+1,par[par_index]);
-            par_index += 1;
-        }
-    }
-    mtx_model = fillMatrix(&hist_model);
+    hist_model_tmp.Add(&hist_gamma_tmp,par[0]);
+    mtx_model = fillMatrix(&hist_model_tmp);
 
     eigensolver_bkgd = ComplexEigenSolver<MatrixXcd>(mtx_model);
     vtr_bkgd_eigenvalues = eigensolver_bkgd.eigenvalues();
@@ -1524,20 +1512,24 @@ double NuclearNormChi2Function(const double *par)
     double chi2 = 0.;
     for (int entry=1;entry<=NumberOfEigenvectors;entry++)
     {
-        double rel_error_real = 1.; // for small eigenvalues, the uncertainty is 1 order of magnitude.
-        double rel_error_imag = 1.; // for small eigenvalues, the uncertainty is 1 order of magnitude.
-        if (entry==1) rel_error_real = 0.005;
-        if (entry==2) rel_error_real = 0.01;
-        if (entry==3) rel_error_real = 0.02;
-        double eigenvalue_ampl = pow(vtr_ref_eigenvalues(N_bins_for_deconv-entry).real()*vtr_ref_eigenvalues(N_bins_for_deconv-entry).real()+vtr_ref_eigenvalues(N_bins_for_deconv-entry).imag()*vtr_ref_eigenvalues(N_bins_for_deconv-entry).imag(),0.5);
-        double error_real = rel_error_real*eigenvalue_ampl;
-        double error_imag = rel_error_imag*eigenvalue_ampl;
-        double chi2_real = vtr_bkgd_eigenvalues(N_bins_for_deconv-entry).real()-vtr_ref_eigenvalues(N_bins_for_deconv-entry).real();
-        chi2_real = chi2_real*chi2_real/error_real;
-        double chi2_imag = vtr_bkgd_eigenvalues(N_bins_for_deconv-entry).imag()-vtr_ref_eigenvalues(N_bins_for_deconv-entry).imag();
-        chi2_imag = chi2_imag*chi2_imag/error_imag;
-        chi2 += chi2_real+chi2_imag;
+        chi2 += abs(vtr_ref_eigenvalues(N_bins_for_deconv-entry).real());
     }
+    //for (int entry=1;entry<=NumberOfEigenvectors;entry++)
+    //{
+    //    double rel_error_real = 1.; // for small eigenvalues, the uncertainty is 1 order of magnitude.
+    //    double rel_error_imag = 1.; // for small eigenvalues, the uncertainty is 1 order of magnitude.
+    //    if (entry==1) rel_error_real = 0.005;
+    //    if (entry==2) rel_error_real = 0.01;
+    //    if (entry==3) rel_error_real = 0.02;
+    //    double eigenvalue_ampl = pow(vtr_ref_eigenvalues(N_bins_for_deconv-entry).real()*vtr_ref_eigenvalues(N_bins_for_deconv-entry).real()+vtr_ref_eigenvalues(N_bins_for_deconv-entry).imag()*vtr_ref_eigenvalues(N_bins_for_deconv-entry).imag(),0.5);
+    //    double error_real = rel_error_real*eigenvalue_ampl;
+    //    double error_imag = rel_error_imag*eigenvalue_ampl;
+    //    double chi2_real = vtr_bkgd_eigenvalues(N_bins_for_deconv-entry).real()-vtr_ref_eigenvalues(N_bins_for_deconv-entry).real();
+    //    chi2_real = chi2_real*chi2_real/error_real;
+    //    double chi2_imag = vtr_bkgd_eigenvalues(N_bins_for_deconv-entry).imag()-vtr_ref_eigenvalues(N_bins_for_deconv-entry).imag();
+    //    chi2_imag = chi2_imag*chi2_imag/error_imag;
+    //    chi2 += chi2_real+chi2_imag;
+    //}
 
     return chi2;
 
@@ -1561,8 +1553,13 @@ void NuclearNormMinimizationMethod(int binx_blind, int biny_blind)
     vtr_dark_eigenvalues = eigensolver_dark.eigenvalues();
     vtr_data_eigenvalues = eigensolver_data.eigenvalues();
 
-    std::cout << "total n paramters = " << binx_blind_global*biny_blind_global << std::endl;
-    ROOT::Math::Functor Chi2Func(&NuclearNormChi2Function,binx_blind_global*biny_blind_global); 
+    TH2D hist_model = TH2D("hist_model","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
+    TH2D hist_gamma = TH2D("hist_gamma","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
+    fill2DHistogram(&hist_model,mtx_data);
+    fill2DHistogram(&hist_gamma,mtx_gamma);
+
+    std::cout << "total n paramters = " << 1 << std::endl;
+    ROOT::Math::Functor Chi2Func(&NuclearNormChi2Function,1); 
 
     // Choose method upon creation between:
     // kConjugateFR, kConjugatePR, kVectorBFGS,
@@ -1573,25 +1570,14 @@ void NuclearNormMinimizationMethod(int binx_blind, int biny_blind)
     Chi2Minimizer_1st.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
     Chi2Minimizer_1st.SetMaxIterations(100); // for GSL
     Chi2Minimizer_1st.SetTolerance(0.001);
-    Chi2Minimizer_1st.SetPrintLevel(1);
+    Chi2Minimizer_1st.SetPrintLevel(0);
     //Chi2Minimizer_1st.SetPrintLevel(2);
     Chi2Minimizer_1st.SetFunction(Chi2Func);
 
-    TH2D hist_init = TH2D("hist_init","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
-    fill2DHistogram(&hist_init,mtx_dark);
-    int par_index = 0;
-    for (int binx=0;binx<binx_blind_global;binx++)
-    {
-        for (int biny=0;biny<biny_blind_global;biny++)
-        {
-            double initial = hist_init.GetBinContent(binx+1,biny+1);
-            double step_size = max(1.,0.01*initial);
-            double limit = initial;
-            Chi2Minimizer_1st.SetVariable(par_index,"par["+std::to_string(int(par_index))+"]", initial, step_size);
-            //Chi2Minimizer_1st.SetVariableLimits(par_index,initial-limit,initial);
-            par_index += 1;
-        }
-    }
+    double initial = 0.;
+    double step_size = 0.0001*hist_model.Integral()/hist_gamma.Integral();
+    Chi2Minimizer_1st.SetVariable(0,"par["+std::to_string(int(0))+"]", initial, step_size);
+    //Chi2Minimizer_1st.SetVariableLimits(0,initial-limit,initial);
 
     const double *par_1st = Chi2Minimizer_1st.X();
     std::cout << "initial chi2 = " << NuclearNormChi2Function(par_1st) << std::endl;
@@ -1599,17 +1585,7 @@ void NuclearNormMinimizationMethod(int binx_blind, int biny_blind)
     par_1st = Chi2Minimizer_1st.X();
     std::cout << "final chi2 = " << NuclearNormChi2Function(par_1st) << std::endl;
 
-    TH2D hist_model = TH2D("hist_model","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
-    fill2DHistogram(&hist_model,mtx_data);
-    par_index = 0;
-    for (int binx=0;binx<binx_blind_global;binx++)
-    {
-        for (int biny=0;biny<biny_blind_global;biny++)
-        {
-            hist_model.SetBinContent(binx+1,biny+1,par_1st[par_index]);
-            par_index += 1;
-        }
-    }
+    hist_model.Add(&hist_gamma,par_1st[0]);
     mtx_data_bkgd = fillMatrix(&hist_model);
 
     eigensolver_bkgd = ComplexEigenSolver<MatrixXcd>(mtx_data_bkgd);
@@ -1626,11 +1602,18 @@ void NuclearNormMinimizationMethod(int binx_blind, int biny_blind)
 void SingleTimeMinimization(int fix_which)
 {
 
-    //std::cout << "total n paramters = " << 1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors << std::endl;
-    //ROOT::Math::Functor Chi2Func(&NetflixChi2Function,1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors*NumberOfEigenvectors); 
+    ROOT::Math::Functor Chi2Func;
     // use this is you use EigenBasis
-    std::cout << "total n paramters = " << 1+2*NumberOfEigenvectors*(NumberOfEigenvectors)+NumberOfEigenvectors << std::endl;
-    ROOT::Math::Functor Chi2Func(&NetflixChi2Function,1+2*NumberOfEigenvectors*(NumberOfEigenvectors)+NumberOfEigenvectors*NumberOfEigenvectors); 
+    if (eigenbasis)
+    {
+        std::cout << "total n paramters = " << 1+2*NumberOfEigenvectors*(NumberOfEigenvectors)+NumberOfEigenvectors << std::endl;
+        Chi2Func = ROOT::Math::Functor(&NetflixChi2Function,1+2*NumberOfEigenvectors*(NumberOfEigenvectors)+NumberOfEigenvectors*NumberOfEigenvectors); 
+    }
+    else
+    {
+        std::cout << "total n paramters = " << 1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors << std::endl;
+        Chi2Func = ROOT::Math::Functor(&NetflixChi2Function,1+2*NumberOfEigenvectors*(N_bins_for_deconv)+NumberOfEigenvectors*NumberOfEigenvectors); 
+    }
 
     // Choose method upon creation between:
     // kConjugateFR, kConjugatePR, kVectorBFGS,
@@ -1641,10 +1624,16 @@ void SingleTimeMinimization(int fix_which)
     Chi2Minimizer_1st.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
     Chi2Minimizer_1st.SetMaxIterations(100); // for GSL
     Chi2Minimizer_1st.SetTolerance(0.001);
-    Chi2Minimizer_1st.SetPrintLevel(1);
+    Chi2Minimizer_1st.SetPrintLevel(0);
     Chi2Minimizer_1st.SetFunction(Chi2Func);
-    //NetflixSetInitialVariables(&Chi2Minimizer_1st,binx_blind_global,biny_blind_global,fix_which);
-    NetflixSetInitialVariablesEigenBasis(&Chi2Minimizer_1st,binx_blind_global,biny_blind_global,fix_which);
+    if (eigenbasis)
+    {
+        NetflixSetInitialVariablesEigenBasis(&Chi2Minimizer_1st,binx_blind_global,biny_blind_global,fix_which);
+    }
+    else
+    {
+        NetflixSetInitialVariables(&Chi2Minimizer_1st,binx_blind_global,biny_blind_global,fix_which);
+    }
     const double *par_1st = Chi2Minimizer_1st.X();
     NthIteration = 0;
     std::cout << "initial chi2 = " << NetflixChi2Function(par_1st) << std::endl;
@@ -1652,8 +1641,14 @@ void SingleTimeMinimization(int fix_which)
     Chi2Minimizer_1st.Minimize();
     par_1st = Chi2Minimizer_1st.X();
     std::cout << "final (1) chi2 = " << NetflixChi2Function(par_1st) << std::endl;
-    //NetflixParametrizeEigenvectors(par_1st);
-    NetflixParametrizeEigenvectorsEigenBasis(par_1st);
+    if (eigenbasis)
+    {
+        NetflixParametrizeEigenvectorsEigenBasis(par_1st);
+    }
+    else
+    {
+        NetflixParametrizeEigenvectors(par_1st);
+    }
 
     mtx_eigenvalue = mtx_eigenvalue_init+mtx_eigenvalue_vari;
     mtx_eigenvector = mtx_eigenvector_init+mtx_eigenvector_vari;
