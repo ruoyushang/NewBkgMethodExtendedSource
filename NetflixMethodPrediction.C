@@ -90,7 +90,6 @@ ComplexEigenSolver<MatrixXcd> eigensolver_data;
 ComplexEigenSolver<MatrixXcd> eigensolver_dark_transpose;
 ComplexEigenSolver<MatrixXcd> eigensolver_data_transpose;
 double init_deriv_at_zero;
-bool signal_model;
 double ratio_empty_bins;
 int binx_blind_global;
 int biny_blind_global;
@@ -518,9 +517,10 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
                 double width = 0.1;
                 double data_err = max(1.0,pow(data,0.5));
                 double model_err = max(1.0,pow(abs(model),0.5));
-                weight = 1./(data_err*data_err+model_err*model_err);
+                //weight = 1./(data_err*data_err+model_err*model_err);
                 //weight = 1./(data*data+model*model);
                 //weight = 1./(data_err*data_err);
+                if (data-model<0.) weight = 2.;
                 double chi2_this = weight*pow(data-model,2);
                 if (isnan(chi2_this))
                 {
@@ -718,7 +718,7 @@ double NetflixChi2Function(const double *par)
 
     double chi2 = 0.;
     chi2 += BlindedChi2(&hist_data,&hist_dark,&hist_model);
-    //if (signal_model) chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
+    if (signal_model) chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
     
     //double chi2 = BlindedLogLikelihood(&hist_data,&hist_dark,&hist_model);
     //chi2 += SignalLogLikelihood(&hist_data,&hist_gamma,&hist_model);
@@ -1669,9 +1669,8 @@ void SingleTimeMinimization(int fix_which, int which_to_fit)
     mtx_data_bkgd = BuildModelMatrix();
 
 }
-void MatrixFactorizationMethod(bool include_signal)
+void MatrixFactorizationMethod()
 {
-    signal_model = include_signal;
 
     for (int col=0;col<N_bins_for_deconv;col++)
     {
@@ -1712,13 +1711,23 @@ void MatrixFactorizationMethod(bool include_signal)
         mtx_eigenvector_init = mtx_eigenvector;
         mtx_eigenvector_inv_init = mtx_eigenvector_inv;
     }
+    for (int iteration=0;iteration<10;iteration++)
+    {
+        std::cout << "iteration = " << iteration << std::endl;
+        SingleTimeMinimization(0,1);
+        mtx_eigenvalue_init = mtx_eigenvalue;
+        mtx_eigenvector_init = mtx_eigenvector;
+        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+        SingleTimeMinimization(1,1);
+        mtx_eigenvalue_init = mtx_eigenvalue;
+        mtx_eigenvector_init = mtx_eigenvector;
+        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+    }
 
 }
 
 void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_elev_lower_input, double tel_elev_upper_input, bool isON, double MSCW_cut_input, double MSCL_cut_input, int rank)
 {
-
-    signal_model = false;
 
     TH1::SetDefaultSumw2();
     sprintf(target, "%s", target_data.c_str());
@@ -2091,8 +2100,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         int row_fix = 0;
         int first_index = 0;
 
-        signal_model = false;
-        MatrixFactorizationMethod(signal_model);
+        MatrixFactorizationMethod();
         //NuclearNormMinimizationMethod(binx_blind_global,biny_blind_global);
         fill2DHistogramAbs(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
         std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,15,1,15) << std::endl;
