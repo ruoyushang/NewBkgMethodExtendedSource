@@ -207,6 +207,26 @@ MatrixXcd fillMatrix(TH2D* hist)
     }
     return matrix;
 }
+MatrixXcd BuildModelMatrix()
+{
+    // build model
+    MatrixXcd mtx_model(N_bins_for_deconv,N_bins_for_deconv);
+    if (linear) 
+    {
+        mtx_model = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+        mtx_model += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
+        mtx_model += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
+        mtx_model += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
+    }
+    else
+    {
+        mtx_eigenvalue = mtx_eigenvalue_init+mtx_eigenvalue_vari;
+        mtx_eigenvector = mtx_eigenvector_init+mtx_eigenvector_vari;
+        mtx_eigenvector_inv = mtx_eigenvector_inv_init+mtx_eigenvector_inv_vari;
+        mtx_model = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
+    }
+    return mtx_model;
+}
 double SmoothEigenvectors(MatrixXcd* mtx, MatrixXcd* mtx_inv)
 {
     TH1D hist_ref = TH1D("hist_ref","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
@@ -528,14 +548,14 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
         }
     }
 
-    mtx_data_bkgd = fillMatrix(hist_model);
-    eigensolver_bkgd = ComplexEigenSolver<MatrixXcd>(mtx_data_bkgd);
-    double error = 0.1*eigensolver_dark.eigenvalues()(mtx_dark.cols()-1).real();
-    for (int NthEigenvector=2;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
-    {
-        double eigenvalue_diff = eigensolver_bkgd.eigenvalues()(mtx_dark.cols()-NthEigenvector).real()-eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector).real();
-        chi2 += pow(eigenvalue_diff/error,2);
-    }
+    //mtx_data_bkgd = fillMatrix(hist_model);
+    //eigensolver_bkgd = ComplexEigenSolver<MatrixXcd>(mtx_data_bkgd);
+    //double error = 0.01*eigensolver_dark.eigenvalues()(mtx_dark.cols()-1).real();
+    //for (int NthEigenvector=2;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
+    //{
+    //    double eigenvalue_diff = eigensolver_bkgd.eigenvalues()(mtx_dark.cols()-NthEigenvector).real()-eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector).real();
+    //    chi2 += pow(eigenvalue_diff/error,2);
+    //}
     
     return chi2;
 }
@@ -668,20 +688,7 @@ double NetflixChi2Function(const double *par)
     
     // build model
     MatrixXcd mtx_model(N_bins_for_deconv,N_bins_for_deconv);
-    if (linear) 
-    {
-        mtx_model = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-        mtx_model += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-        mtx_model += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
-        mtx_model += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
-    }
-    else
-    {
-        mtx_eigenvalue = mtx_eigenvalue_init+mtx_eigenvalue_vari;
-        mtx_eigenvector = mtx_eigenvector_init+mtx_eigenvector_vari;
-        mtx_eigenvector_inv = mtx_eigenvector_inv_init+mtx_eigenvector_inv_vari;
-        mtx_model = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
-    }
+    mtx_model = BuildModelMatrix();
 
     TH2D hist_gamma = TH2D("hist_gamma","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_diff = TH2D("hist_diff","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
@@ -1236,7 +1243,7 @@ double NetflixChi2Function1D_1(const double *par)
     }
     return chi2;
 }
-void NetflixSetInitialVariablesEigenBasis(ROOT::Math::GSLMinimizer* Chi2Minimizer, int binx_blind, int biny_blind, int fix_which)
+void NetflixSetInitialVariablesEigenBasis(ROOT::Math::GSLMinimizer* Chi2Minimizer, int binx_blind, int biny_blind, int fix_which, int which_to_fit)
 {
 
     eigensolver_data = ComplexEigenSolver<MatrixXcd>(mtx_data);
@@ -1265,6 +1272,7 @@ void NetflixSetInitialVariablesEigenBasis(ROOT::Math::GSLMinimizer* Chi2Minimize
         {
             Chi2Minimizer->SetVariable(first_index+entry,"par["+std::to_string(int(first_index+entry))+"]",0.,0.001);
             if (fix_which==0) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
+            if (which_to_fit!=NthEigenvector) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
             if (NthEigenvector>=cutoff_mode) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
         }
 
@@ -1274,6 +1282,7 @@ void NetflixSetInitialVariablesEigenBasis(ROOT::Math::GSLMinimizer* Chi2Minimize
         {
             Chi2Minimizer->SetVariable(first_index+entry,"par["+std::to_string(int(first_index+entry))+"]",0.,0.001);
             if (fix_which==1) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
+            if (which_to_fit!=NthEigenvector) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
             if (NthEigenvector>=cutoff_mode) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
         }
 
@@ -1290,7 +1299,7 @@ void NetflixSetInitialVariablesEigenBasis(ROOT::Math::GSLMinimizer* Chi2Minimize
     }
 
 }
-void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int binx_blind, int biny_blind, int fix_which)
+void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int binx_blind, int biny_blind, int fix_which, int which_to_fit)
 {
 
     eigensolver_data = ComplexEigenSolver<MatrixXcd>(mtx_data);
@@ -1320,6 +1329,7 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
         {
             Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.01);
             if (fix_which==0) Chi2Minimizer->SetVariableLimits(first_index+row,0.,0.);
+            if (which_to_fit!=NthEigenvector) Chi2Minimizer->SetVariableLimits(first_index+row,0.,0.);
             //if (row>=biny_blind) 
             //{
             //    Chi2Minimizer->SetVariableLimits(first_index+row,0.0,0.0);
@@ -1342,6 +1352,7 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
         {
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.01);
             if (fix_which==1) Chi2Minimizer->SetVariableLimits(first_index+col,0.,0.);
+            if (which_to_fit!=NthEigenvector) Chi2Minimizer->SetVariableLimits(first_index+col,0.,0.);
             //if (col>=binx_blind) 
             //{
             //    Chi2Minimizer->SetVariableLimits(first_index+col,0.0,0.0);
@@ -1565,11 +1576,12 @@ void NuclearNormMinimizationMethod(int binx_blind, int biny_blind)
     // kConjugateFR, kConjugatePR, kVectorBFGS,
     // kVectorBFGS2, kSteepestDescent
 
-    ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
-    //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kVectorBFGS2 );
+    //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
+    ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kVectorBFGS2 );
     Chi2Minimizer_1st.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
     Chi2Minimizer_1st.SetMaxIterations(100); // for GSL
-    Chi2Minimizer_1st.SetTolerance(0.001);
+    //Chi2Minimizer_1st.SetTolerance(0.001);
+    Chi2Minimizer_1st.SetTolerance(0.1);
     Chi2Minimizer_1st.SetPrintLevel(0);
     //Chi2Minimizer_1st.SetPrintLevel(2);
     Chi2Minimizer_1st.SetFunction(Chi2Func);
@@ -1599,7 +1611,7 @@ void NuclearNormMinimizationMethod(int binx_blind, int biny_blind)
     }
 
 }
-void SingleTimeMinimization(int fix_which)
+void SingleTimeMinimization(int fix_which, int which_to_fit)
 {
 
     ROOT::Math::Functor Chi2Func;
@@ -1619,20 +1631,21 @@ void SingleTimeMinimization(int fix_which)
     // kConjugateFR, kConjugatePR, kVectorBFGS,
     // kVectorBFGS2, kSteepestDescent
 
-    ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
-    //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kVectorBFGS2 );
+    //ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kSteepestDescent );
+    ROOT::Math::GSLMinimizer Chi2Minimizer_1st( ROOT::Math::kVectorBFGS2 );
     Chi2Minimizer_1st.SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
     Chi2Minimizer_1st.SetMaxIterations(100); // for GSL
-    Chi2Minimizer_1st.SetTolerance(0.001);
+    //Chi2Minimizer_1st.SetTolerance(0.001);
+    Chi2Minimizer_1st.SetTolerance(0.1);
     Chi2Minimizer_1st.SetPrintLevel(0);
     Chi2Minimizer_1st.SetFunction(Chi2Func);
     if (eigenbasis)
     {
-        NetflixSetInitialVariablesEigenBasis(&Chi2Minimizer_1st,binx_blind_global,biny_blind_global,fix_which);
+        NetflixSetInitialVariablesEigenBasis(&Chi2Minimizer_1st,binx_blind_global,biny_blind_global,fix_which,which_to_fit);
     }
     else
     {
-        NetflixSetInitialVariables(&Chi2Minimizer_1st,binx_blind_global,biny_blind_global,fix_which);
+        NetflixSetInitialVariables(&Chi2Minimizer_1st,binx_blind_global,biny_blind_global,fix_which,which_to_fit);
     }
     const double *par_1st = Chi2Minimizer_1st.X();
     NthIteration = 0;
@@ -1653,17 +1666,7 @@ void SingleTimeMinimization(int fix_which)
     mtx_eigenvalue = mtx_eigenvalue_init+mtx_eigenvalue_vari;
     mtx_eigenvector = mtx_eigenvector_init+mtx_eigenvector_vari;
     mtx_eigenvector_inv = mtx_eigenvector_inv_init+mtx_eigenvector_inv_vari;
-    if (linear)
-    {
-        mtx_data_bkgd = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-        mtx_data_bkgd += mtx_eigenvector_vari*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
-        mtx_data_bkgd += mtx_eigenvector_init*mtx_eigenvalue_vari*mtx_eigenvector_inv_init;
-        mtx_data_bkgd += mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_vari;
-    }
-    else
-    {
-        mtx_data_bkgd = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
-    }
+    mtx_data_bkgd = BuildModelMatrix();
 
 }
 void MatrixFactorizationMethod(bool include_signal)
@@ -1684,27 +1687,31 @@ void MatrixFactorizationMethod(bool include_signal)
     SetInitialEigenvectors(binx_blind_global,biny_blind_global);
     mtx_data_bkgd = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
 
-    SingleTimeMinimization(0);
-    mtx_eigenvalue_init = mtx_eigenvalue;
-    mtx_eigenvector_init = mtx_eigenvector;
-    mtx_eigenvector_inv_init = mtx_eigenvector_inv;
-    SingleTimeMinimization(1);
-    mtx_eigenvalue_init = mtx_eigenvalue;
-    mtx_eigenvector_init = mtx_eigenvector;
-    mtx_eigenvector_inv_init = mtx_eigenvector_inv;
-    SingleTimeMinimization(0);
-    mtx_eigenvalue_init = mtx_eigenvalue;
-    mtx_eigenvector_init = mtx_eigenvector;
-    mtx_eigenvector_inv_init = mtx_eigenvector_inv;
-    SingleTimeMinimization(1);
-    mtx_eigenvalue_init = mtx_eigenvalue;
-    mtx_eigenvector_init = mtx_eigenvector;
-    mtx_eigenvector_inv_init = mtx_eigenvector_inv;
-    SingleTimeMinimization(0);
-    mtx_eigenvalue_init = mtx_eigenvalue;
-    mtx_eigenvector_init = mtx_eigenvector;
-    mtx_eigenvector_inv_init = mtx_eigenvector_inv;
-    SingleTimeMinimization(1);
+    //SingleTimeMinimization(-1);
+    for (int iteration=0;iteration<10;iteration++)
+    {
+        std::cout << "iteration = " << iteration << std::endl;
+        SingleTimeMinimization(0,1);
+        mtx_eigenvalue_init = mtx_eigenvalue;
+        mtx_eigenvector_init = mtx_eigenvector;
+        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+        SingleTimeMinimization(1,1);
+        mtx_eigenvalue_init = mtx_eigenvalue;
+        mtx_eigenvector_init = mtx_eigenvector;
+        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+    }
+    for (int iteration=0;iteration<10;iteration++)
+    {
+        std::cout << "iteration = " << iteration << std::endl;
+        SingleTimeMinimization(0,2);
+        mtx_eigenvalue_init = mtx_eigenvalue;
+        mtx_eigenvector_init = mtx_eigenvector;
+        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+        SingleTimeMinimization(1,2);
+        mtx_eigenvalue_init = mtx_eigenvalue;
+        mtx_eigenvector_init = mtx_eigenvector;
+        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+    }
 
 }
 

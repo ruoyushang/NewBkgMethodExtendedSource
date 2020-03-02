@@ -47,11 +47,11 @@
 using namespace Eigen;
 //using Eigen::MatrixXd;
 
-int dark_vector = 2;
-bool linear = false;
-bool invert_y = true;
+int dark_vector = 1;
+bool linear = true;
+bool invert_y = false;
 bool transpose = false;
-bool eigenbasis  = false;
+bool eigenbasis  = true;
 int cutoff_mode = 4;
 
 double MSCW_cut_lower = -1.0;
@@ -61,11 +61,11 @@ double MSCL_cut_lower = -1.0;
 double MSCL_cut_blind = 1.0;
 double MSCL_cut_upper = 1.0;
 
-int N_bins_for_deconv = 40;
+int N_bins_for_deconv = 30;
 double MSCW_plot_lower = -1.;
-double MSCW_plot_upper = 3.;
+double MSCW_plot_upper = 2.;
 double MSCL_plot_lower = -1.;
-double MSCL_plot_upper = 3.;
+double MSCL_plot_upper = 2.;
 //int N_bins_for_deconv = 30;
 //double MSCW_plot_lower = -1.;
 //double MSCW_plot_upper = 2.;
@@ -697,7 +697,7 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
                 if (already_used_run) continue;
                 double chi2 = pow(ON_pointing[on_run].first+Elev_diff_dark-OFF_pointing[off_run].first,2);
                 //chi2 += 20.*pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2);
-                if (pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2)>0.1*0.1)
+                if (pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2)>0.05*0.05)
                 {
                     chi2 += 10000.;
                 }
