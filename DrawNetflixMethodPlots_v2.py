@@ -41,20 +41,21 @@ Syst_Ring = 0.
 Syst_MDM_Energy = []
 Syst_Ring_Energy = []
 
-FileFolder += ['output_test']
-FileTag += ['test']
-FileLabel += ['test']
+#FileFolder += ['output_test']
+#FileTag += ['test']
+#FileLabel += ['test']
 
 #analysis_cut = 'loose'
-analysis_cut = 'medium'
+#analysis_cut = 'medium'
+analysis_cut = 'tight'
 specialty = 'nominal'
 #specialty = 'E3bins'
 #specialty = 'alldark'
 #specialty = 'reverse'
 #specialty = 'transpose'
-#FileFolder += ['output_%s_%s'%(specialty,analysis_cut)]
-#FileTag += [specialty]
-#FileLabel += [specialty]
+FileFolder += ['output_%s_%s'%(specialty,analysis_cut)]
+FileTag += [specialty]
+FileLabel += [specialty]
 
 #FileFolder += ['output_unblind_4x4_dNSBm3_loose']
 #FileTag += ['dNSBm3']
@@ -104,7 +105,7 @@ sky_coord += ['05 34 31.97 +22 00 52.1']
 for_syst += [True]
 source_list += ['CrabV5']
 sky_coord += ['05 34 31.97 +22 00 52.1']
-for_syst += [False]
+for_syst += [True]
 source_list += ['Mrk421']
 sky_coord += ['11 04 19 +38 11 41']
 for_syst += [True]
@@ -185,10 +186,10 @@ sky_coord += ['19 07 54 +06 16 07']
 for_syst += [False]
 source_list += ['Segue1V5']
 sky_coord += ['10 07 04 +16 04 55']
-for_syst += [False]
+for_syst += [True]
 source_list += ['IC443HotSpotV5']
 sky_coord += ['06 18 2.700 +22 39 36.00']
-for_syst += [False]
+for_syst += [True]
 source_list += ['GemingaV6']
 sky_coord += ['06 32 28 +17 22 00']
 for_syst += [False]
@@ -217,10 +218,16 @@ ErecS_lower_cut = 0
 ErecS_upper_cut = 0
 
 N_bins_for_deconv = 12
-MSCW_blind_cut = 0.3
-MSCL_blind_cut = 0.3
-MSCW_plot_lower = -1.
-MSCL_plot_lower = -1.
+MSCW_blind_cut = 0.5
+MSCL_blind_cut = 0.5
+if analysis_cut=='loose':
+    MSCW_blind_cut = 1.0
+    MSCL_blind_cut = 1.0
+if analysis_cut=='tight':
+    MSCW_blind_cut = 0.3
+    MSCL_blind_cut = 0.3
+MSCW_plot_lower = -1.5
+MSCL_plot_lower = -1.5
 MSCW_plot_upper = (MSCW_blind_cut-MSCW_plot_lower)+MSCW_blind_cut
 MSCL_plot_upper = (MSCL_blind_cut-MSCL_plot_lower)+MSCL_blind_cut
 
@@ -5495,7 +5502,7 @@ SystAsFunctionOfEnergy()
 #source_of_interest = 'PKS1441V6'
 #source_of_interest = 'RBS0413V6'
 #source_of_interest = 'PG1553V6'
-source_of_interest = 'Segue1V6'
+#source_of_interest = 'Segue1V6'
 #source_of_interest = 'Segue1V5'
 #source_of_interest = '1ES1011V6'
 #source_of_interest = 'NGC1275V6'
@@ -5507,7 +5514,7 @@ source_of_interest = 'Segue1V6'
 #source_of_interest = 'CasA'
 #source_of_interest = 'M82'
 #source_of_interest = 'G079'
-#source_of_interest = 'WComaeV6'
+source_of_interest = 'WComaeV6'
 #source_of_interest = '1ES1218V6'
 #source_of_interest = 'MGRO_J1908_V6'
 #source_of_interest = 'MGRO_J1908_V5'
@@ -5537,8 +5544,8 @@ highlight_threshold = 3.0
 #PercentCrab = "_Crab0"
 #RadialAcceptance()
 
-#ONOFF = "ON"
-ONOFF = "OFF"
+ONOFF = "ON"
+#ONOFF = "OFF"
 
 PercentCrab = "_Crab0"
 #PercentCrab = "_Crab10"
@@ -5594,6 +5601,6 @@ Hist_Highlight_Skymap_Galactic_zoomin = ROOT.TH2D("Hist_Highlight_Skymap_Galacti
 Hist_Skymap_Galactic_zoomin = ROOT.TH2D("Hist_Skymap_Galactic_zoomin","",50,source_l-1,source_l+1,50,source_b-1,source_b+1)
 
 
-SingleSourceSkyMap(source_of_interest,False)
+SingleSourceSkyMap(source_of_interest,True)
 #SingleSourceSpectrum(source_of_interest)
 

@@ -1799,8 +1799,8 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
     if (isON) file_tag = "ON";
     else file_tag = "OFF";
 
-    MSCW_plot_lower = -1.;
-    MSCL_plot_lower = -1.;
+    MSCW_plot_lower = -1.5;
+    MSCL_plot_lower = -1.5;
     MSCW_plot_upper = (MSCW_cut_input-MSCW_plot_lower)+MSCW_cut_input;
     MSCL_plot_upper = (MSCL_cut_input-MSCL_plot_lower)+MSCL_cut_input;
 
