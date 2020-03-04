@@ -49,9 +49,10 @@ using namespace Eigen;
 
 int dark_vector = 1;
 bool linear = true;
-bool invert_y = false;
+bool invert_y = true;
 bool transpose = false;
-bool eigenbasis  = true;
+bool eigenbasis = true;
+bool signal_model = false;
 int cutoff_mode = 4;
 
 double MSCW_cut_lower = -1.0;
@@ -61,23 +62,23 @@ double MSCL_cut_lower = -1.0;
 double MSCL_cut_blind = 1.0;
 double MSCL_cut_upper = 1.0;
 
-int N_bins_for_deconv = 30;
-double MSCW_plot_lower = -1.;
-double MSCW_plot_upper = 2.;
-double MSCL_plot_lower = -1.;
-double MSCL_plot_upper = 2.;
 //int N_bins_for_deconv = 30;
 //double MSCW_plot_lower = -1.;
 //double MSCW_plot_upper = 2.;
 //double MSCL_plot_lower = -1.;
 //double MSCL_plot_upper = 2.;
+int N_bins_for_deconv = 12;
+double MSCW_plot_lower = -1.;
+double MSCW_plot_upper = 2.;
+double MSCL_plot_lower = -1.;
+double MSCL_plot_upper = 2.;
 
 const int N_energy_bins = 1;
 double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,4.0)};
 int N_bins_for_deconv_at_E[N_energy_bins] = {N_bins_for_deconv};
 //const int N_energy_bins = 3;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.3),pow(10,2.6),pow(10,3.0),pow(10,4.0)};
-//int N_bins_for_deconv_at_E[N_energy_bins] = {16,16,16};
+//int N_bins_for_deconv_at_E[N_energy_bins] = {N_bins_for_deconv,N_bins_for_deconv,N_bins_for_deconv};
 //const int N_energy_bins = 12;
 //double energy_bins[N_energy_bins+1] = {pow(10,2.0),pow(10,2.1),pow(10,2.2),pow(10,2.3),pow(10,2.4),pow(10,2.5),pow(10,2.6),pow(10,2.7),pow(10,2.8),pow(10,3.0),pow(10,3.2),pow(10,3.6),pow(10,4.0)};
 //int N_bins_for_deconv_at_E[N_energy_bins] = {30,30,30,30,30,30,30,30,30,30,30,30};
@@ -697,7 +698,7 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
                 if (already_used_run) continue;
                 double chi2 = pow(ON_pointing[on_run].first+Elev_diff_dark-OFF_pointing[off_run].first,2);
                 //chi2 += 20.*pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2);
-                if (pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2)>0.05*0.05)
+                if (pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2)>0.1*0.1)
                 {
                     chi2 += 10000.;
                 }
@@ -1038,6 +1039,11 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     else file_tag = "OFF";
     Elev_diff_dark = Elev_diff;
     NSB_diff_dark = NSB_diff;
+
+    MSCW_plot_lower = -1.;
+    MSCL_plot_lower = -1.;
+    MSCW_plot_upper = (MSCW_cut_input-MSCW_plot_lower)+MSCW_cut_input;
+    MSCL_plot_upper = (MSCL_cut_input-MSCL_plot_lower)+MSCL_cut_input;
 
     vector<pair<string,int>> PhotonMC_runlist = GetRunList_v2("Photon");
     vector<pair<string,int>> PhotonData_runlist = GetRunList_v2("Crab");

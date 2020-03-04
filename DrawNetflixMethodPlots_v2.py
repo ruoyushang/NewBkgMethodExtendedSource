@@ -45,7 +45,8 @@ FileFolder += ['output_test']
 FileTag += ['test']
 FileLabel += ['test']
 
-analysis_cut = 'loose'
+#analysis_cut = 'loose'
+analysis_cut = 'medium'
 specialty = 'nominal'
 #specialty = 'E3bins'
 #specialty = 'alldark'
@@ -215,18 +216,18 @@ NSB_avg_dark = 0.
 ErecS_lower_cut = 0
 ErecS_upper_cut = 0
 
-N_bins_for_deconv = 30
+N_bins_for_deconv = 12
+MSCW_blind_cut = 0.3
+MSCL_blind_cut = 0.3
 MSCW_plot_lower = -1.
-MSCW_plot_upper = 2.
 MSCL_plot_lower = -1.
-MSCL_plot_upper = 2.
+MSCW_plot_upper = (MSCW_blind_cut-MSCW_plot_lower)+MSCW_blind_cut
+MSCL_plot_upper = (MSCL_blind_cut-MSCL_plot_lower)+MSCL_blind_cut
 
 MSCW_lower_cut = -1.0
 MSCW_upper_cut = 1.0
-MSCW_blind_cut = 1.0
 MSCL_lower_cut = -1.0
 MSCL_upper_cut = 1.0
-MSCL_blind_cut = 1.0
 
 Hist_Data_ShowerDirection_Sum = ROOT.TH2D("Hist_Data_ShowerDirection_Sum","",180,0,360,90,0,90)
 
@@ -267,24 +268,24 @@ Hist_Bkgd_R2off_Raw = ROOT.TH1D("Hist_Bkgd_R2off_Raw","",50,0,10)
 Hist_Data_Eigenvalues_real = ROOT.TH1D("Hist_Data_Eigenvalues_real","",N_bins_for_deconv,0,N_bins_for_deconv)
 Hist_Dark_Eigenvalues_real = ROOT.TH1D("Hist_Dark_Eigenvalues_real","",N_bins_for_deconv,0,N_bins_for_deconv)
 Hist_Fit_Eigenvalues_real = ROOT.TH1D("Hist_Fit_Eigenvalues_real","",N_bins_for_deconv,0,N_bins_for_deconv)
-Hist_Data_Eigenvector_0_real = ROOT.TH1D("Hist_Data_Eigenvector_0_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Data_Eigenvector_1_real = ROOT.TH1D("Hist_Data_Eigenvector_1_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Data_Eigenvector_2_real = ROOT.TH1D("Hist_Data_Eigenvector_2_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Data_InvEigenvector_0_real = ROOT.TH1D("Hist_Data_InvEigenvector_0_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Data_InvEigenvector_1_real = ROOT.TH1D("Hist_Data_InvEigenvector_1_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Data_InvEigenvector_2_real = ROOT.TH1D("Hist_Data_InvEigenvector_2_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Dark_Eigenvector_0_real = ROOT.TH1D("Hist_Dark_Eigenvector_0_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Dark_Eigenvector_1_real = ROOT.TH1D("Hist_Dark_Eigenvector_1_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Dark_Eigenvector_2_real = ROOT.TH1D("Hist_Dark_Eigenvector_2_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Dark_InvEigenvector_0_real = ROOT.TH1D("Hist_Dark_InvEigenvector_0_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Dark_InvEigenvector_1_real = ROOT.TH1D("Hist_Dark_InvEigenvector_1_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Dark_InvEigenvector_2_real = ROOT.TH1D("Hist_Dark_InvEigenvector_2_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Fit_Eigenvector_0_real = ROOT.TH1D("Hist_Fit_Eigenvector_0_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Fit_Eigenvector_1_real = ROOT.TH1D("Hist_Fit_Eigenvector_1_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Fit_Eigenvector_2_real = ROOT.TH1D("Hist_Fit_Eigenvector_2_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Fit_InvEigenvector_0_real = ROOT.TH1D("Hist_Fit_InvEigenvector_0_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Fit_InvEigenvector_1_real = ROOT.TH1D("Hist_Fit_InvEigenvector_1_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Fit_InvEigenvector_2_real = ROOT.TH1D("Hist_Fit_InvEigenvector_2_real","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Data_Eigenvector_0_real = ROOT.TH1D("Hist_Data_Eigenvector_0_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Data_Eigenvector_1_real = ROOT.TH1D("Hist_Data_Eigenvector_1_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Data_Eigenvector_2_real = ROOT.TH1D("Hist_Data_Eigenvector_2_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Data_InvEigenvector_0_real = ROOT.TH1D("Hist_Data_InvEigenvector_0_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Data_InvEigenvector_1_real = ROOT.TH1D("Hist_Data_InvEigenvector_1_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Data_InvEigenvector_2_real = ROOT.TH1D("Hist_Data_InvEigenvector_2_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Dark_Eigenvector_0_real = ROOT.TH1D("Hist_Dark_Eigenvector_0_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Dark_Eigenvector_1_real = ROOT.TH1D("Hist_Dark_Eigenvector_1_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Dark_Eigenvector_2_real = ROOT.TH1D("Hist_Dark_Eigenvector_2_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Dark_InvEigenvector_0_real = ROOT.TH1D("Hist_Dark_InvEigenvector_0_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Dark_InvEigenvector_1_real = ROOT.TH1D("Hist_Dark_InvEigenvector_1_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Dark_InvEigenvector_2_real = ROOT.TH1D("Hist_Dark_InvEigenvector_2_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Fit_Eigenvector_0_real = ROOT.TH1D("Hist_Fit_Eigenvector_0_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Fit_Eigenvector_1_real = ROOT.TH1D("Hist_Fit_Eigenvector_1_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Fit_Eigenvector_2_real = ROOT.TH1D("Hist_Fit_Eigenvector_2_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Fit_InvEigenvector_0_real = ROOT.TH1D("Hist_Fit_InvEigenvector_0_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Fit_InvEigenvector_1_real = ROOT.TH1D("Hist_Fit_InvEigenvector_1_real","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Fit_InvEigenvector_2_real = ROOT.TH1D("Hist_Fit_InvEigenvector_2_real","",N_bins_for_deconv,0,N_bins_for_deconv)
 
 Hist2D_Data_SumE = ROOT.TH2D("Hist2D_Data_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
 Hist2D_Dark_SumE = ROOT.TH2D("Hist2D_Dark_SumE","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
@@ -323,24 +324,24 @@ Hist_Bkgd_R2off_Raw_SumE = ROOT.TH1D("Hist_Bkgd_R2off_Raw_SumE","",50,0,10)
 Hist_Data_Eigenvalues_real_SumE = ROOT.TH1D("Hist_Data_Eigenvalues_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
 Hist_Dark_Eigenvalues_real_SumE = ROOT.TH1D("Hist_Dark_Eigenvalues_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
 Hist_Fit_Eigenvalues_real_SumE = ROOT.TH1D("Hist_Fit_Eigenvalues_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
-Hist_Data_Eigenvector_0_real_SumE = ROOT.TH1D("Hist_Data_Eigenvector_0_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Data_Eigenvector_1_real_SumE = ROOT.TH1D("Hist_Data_Eigenvector_1_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Data_Eigenvector_2_real_SumE = ROOT.TH1D("Hist_Data_Eigenvector_2_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Data_InvEigenvector_0_real_SumE = ROOT.TH1D("Hist_Data_InvEigenvector_0_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Data_InvEigenvector_1_real_SumE = ROOT.TH1D("Hist_Data_InvEigenvector_1_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Data_InvEigenvector_2_real_SumE = ROOT.TH1D("Hist_Data_InvEigenvector_2_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Dark_Eigenvector_0_real_SumE = ROOT.TH1D("Hist_Dark_Eigenvector_0_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Dark_Eigenvector_1_real_SumE = ROOT.TH1D("Hist_Dark_Eigenvector_1_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Dark_Eigenvector_2_real_SumE = ROOT.TH1D("Hist_Dark_Eigenvector_2_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Dark_InvEigenvector_0_real_SumE = ROOT.TH1D("Hist_Dark_InvEigenvector_0_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Dark_InvEigenvector_1_real_SumE = ROOT.TH1D("Hist_Dark_InvEigenvector_1_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Dark_InvEigenvector_2_real_SumE = ROOT.TH1D("Hist_Dark_InvEigenvector_2_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Fit_Eigenvector_0_real_SumE = ROOT.TH1D("Hist_Fit_Eigenvector_0_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Fit_Eigenvector_1_real_SumE = ROOT.TH1D("Hist_Fit_Eigenvector_1_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Fit_Eigenvector_2_real_SumE = ROOT.TH1D("Hist_Fit_Eigenvector_2_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Fit_InvEigenvector_0_real_SumE = ROOT.TH1D("Hist_Fit_InvEigenvector_0_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Fit_InvEigenvector_1_real_SumE = ROOT.TH1D("Hist_Fit_InvEigenvector_1_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-Hist_Fit_InvEigenvector_2_real_SumE = ROOT.TH1D("Hist_Fit_InvEigenvector_2_real_SumE","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+Hist_Data_Eigenvector_0_real_SumE = ROOT.TH1D("Hist_Data_Eigenvector_0_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Data_Eigenvector_1_real_SumE = ROOT.TH1D("Hist_Data_Eigenvector_1_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Data_Eigenvector_2_real_SumE = ROOT.TH1D("Hist_Data_Eigenvector_2_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Data_InvEigenvector_0_real_SumE = ROOT.TH1D("Hist_Data_InvEigenvector_0_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Data_InvEigenvector_1_real_SumE = ROOT.TH1D("Hist_Data_InvEigenvector_1_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Data_InvEigenvector_2_real_SumE = ROOT.TH1D("Hist_Data_InvEigenvector_2_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Dark_Eigenvector_0_real_SumE = ROOT.TH1D("Hist_Dark_Eigenvector_0_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Dark_Eigenvector_1_real_SumE = ROOT.TH1D("Hist_Dark_Eigenvector_1_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Dark_Eigenvector_2_real_SumE = ROOT.TH1D("Hist_Dark_Eigenvector_2_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Dark_InvEigenvector_0_real_SumE = ROOT.TH1D("Hist_Dark_InvEigenvector_0_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Dark_InvEigenvector_1_real_SumE = ROOT.TH1D("Hist_Dark_InvEigenvector_1_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Dark_InvEigenvector_2_real_SumE = ROOT.TH1D("Hist_Dark_InvEigenvector_2_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Fit_Eigenvector_0_real_SumE = ROOT.TH1D("Hist_Fit_Eigenvector_0_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Fit_Eigenvector_1_real_SumE = ROOT.TH1D("Hist_Fit_Eigenvector_1_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Fit_Eigenvector_2_real_SumE = ROOT.TH1D("Hist_Fit_Eigenvector_2_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Fit_InvEigenvector_0_real_SumE = ROOT.TH1D("Hist_Fit_InvEigenvector_0_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Fit_InvEigenvector_1_real_SumE = ROOT.TH1D("Hist_Fit_InvEigenvector_1_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
+Hist_Fit_InvEigenvector_2_real_SumE = ROOT.TH1D("Hist_Fit_InvEigenvector_2_real_SumE","",N_bins_for_deconv,0,N_bins_for_deconv)
 
 Hist_Data_CameraFoV = ROOT.TH2D("Hist_Data_CameraFoV","",150,-3,3,150,-3,3)
 Hist_Bkgd_CameraFoV = ROOT.TH2D("Hist_Bkgd_CameraFoV","",150,-3,3,150,-3,3)
@@ -1534,6 +1535,21 @@ def Make2DSignificancePlotShowerShape(Hist_SR,Hist_CR,Hist_gamma,xtitle,ytitle,n
     line2.SetLineWidth(2)
     line2.Draw()
     canvas.SaveAs('output_plots/ShowerShapeTotal_%s.png'%(name))
+
+    Hist_gamma.GetYaxis().SetTitle(ytitle)
+    Hist_gamma.GetXaxis().SetTitle(xtitle)
+    Hist_gamma.Draw("COL4Z")
+    line1 = ROOT.TLine(MSCL_lower_cut,MSCW_blind_cut,MSCL_blind_cut,MSCW_blind_cut)
+    line1.SetLineStyle(1)
+    line1.SetLineColor(2)
+    line1.SetLineWidth(2)
+    line1.Draw()
+    line2 = ROOT.TLine(MSCL_blind_cut,MSCW_lower_cut,MSCL_blind_cut,MSCW_blind_cut)
+    line2.SetLineStyle(1)
+    line2.SetLineColor(2)
+    line2.SetLineWidth(2)
+    line2.Draw()
+    canvas.SaveAs('output_plots/ShowerShapeGamma_%s.png'%(name))
 
 def CalculateSystematicErrors(Hists):
 
@@ -2836,15 +2852,19 @@ def GetShowerHistogramsFromFile(FilePath):
     Hist2D_GammaRDBM.Reset()
     Hist2D_GammaRDBM.Add(InputFile.Get(HistName))
     HistName = "Hist_Rank0_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
+    #HistName = "Hist_Spectral_Rank0_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist2D_Rank0.Reset()
     Hist2D_Rank0.Add(InputFile.Get(HistName))
     HistName = "Hist_Rank1_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
+    #HistName = "Hist_Spectral_Rank1_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist2D_Rank1.Reset()
     Hist2D_Rank1.Add(InputFile.Get(HistName))
     HistName = "Hist_Rank2_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
+    #HistName = "Hist_Spectral_Rank2_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist2D_Rank2.Reset()
     Hist2D_Rank2.Add(InputFile.Get(HistName))
     HistName = "Hist_Rank3_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
+    #HistName = "Hist_Spectral_Rank3_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
     Hist2D_Rank3.Reset()
     Hist2D_Rank3.Add(InputFile.Get(HistName))
     HistName = "Hist_Bkgd_Rank0_MSCLW_ErecS%sto%s"%(ErecS_lower_cut_int,ErecS_upper_cut_int)
@@ -3405,9 +3425,9 @@ def SystAsFunctionOfSignal():
     color_S2B = []
     for flux in range(0,len(SignalFlux)):
         Hist_Eigenvalue_real_Rank += [ROOT.TH1D("Hist_Eigenvalue_real_Rank_%s"%(flux),"",N_bins_for_deconv,0,N_bins_for_deconv)]
-        Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0_%s"%(flux),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
-        Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1_%s"%(flux),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
-        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2_%s"%(flux),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0_%s"%(flux),"",N_bins_for_deconv,0,N_bins_for_deconv)]
+        Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1_%s"%(flux),"",N_bins_for_deconv,0,N_bins_for_deconv)]
+        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2_%s"%(flux),"",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Shower_MSCW += [ROOT.TH1D("Hist_Shower_MSCW_%s"%(flux),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
         legend_S2B += ['Flux %s Crab unit'%(SignalFlux_label[flux])]
         color_idx = int(flux*len(color_code)/max(1,len(SignalFlux)-1))
@@ -3643,9 +3663,9 @@ def SystAsFunctionOfElevation():
         file_elev_lower = elev_range[elev][0]
         file_elev_upper = elev_range[elev][1]
         Hist_Eigenvalue_real_Rank += [ROOT.TH1D("Hist_Eigenvalue_real_Rank_%s"%(elev),"",N_bins_for_deconv,0,N_bins_for_deconv)]
-        Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0_%s"%(elev),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
-        Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1_%s"%(elev),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
-        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2_%s"%(elev),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0_%s"%(elev),"",N_bins_for_deconv,0,N_bins_for_deconv)]
+        Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1_%s"%(elev),"",N_bins_for_deconv,0,N_bins_for_deconv)]
+        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2_%s"%(elev),"",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Shower_MSCW += [ROOT.TH1D("Hist_Shower_MSCW_%s"%(elev),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
         legend_S2B += ['Elev. %s-%s'%(file_elev_lower,file_elev_upper)]
         color_idx = int(elev*len(color_code)/max(1,len(elev_range)-1))
@@ -4414,15 +4434,15 @@ def SystDarkVsMDM():
     norm_avg_eigenvector_0 = 0.
     norm_avg_eigenvector_1 = 0.
     norm_avg_eigenvector_2 = 0.
-    Hist_Avg_Eigenvector_0 = ROOT.TH1D("Hist_Avg_Eigenvector_0","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-    Hist_Avg_Eigenvector_1 = ROOT.TH1D("Hist_Avg_Eigenvector_1","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-    Hist_Avg_Eigenvector_2 = ROOT.TH1D("Hist_Avg_Eigenvector_2","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+    Hist_Avg_Eigenvector_0 = ROOT.TH1D("Hist_Avg_Eigenvector_0","",N_bins_for_deconv,0,N_bins_for_deconv)
+    Hist_Avg_Eigenvector_1 = ROOT.TH1D("Hist_Avg_Eigenvector_1","",N_bins_for_deconv,0,N_bins_for_deconv)
+    Hist_Avg_Eigenvector_2 = ROOT.TH1D("Hist_Avg_Eigenvector_2","",N_bins_for_deconv,0,N_bins_for_deconv)
     norm_avg_inv_eigenvector_0 = 0.
     norm_avg_inv_eigenvector_1 = 0.
     norm_avg_inv_eigenvector_2 = 0.
-    Hist_Avg_InvEigenvector_0 = ROOT.TH1D("Hist_Avg_InvEigenvector_0","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-    Hist_Avg_InvEigenvector_1 = ROOT.TH1D("Hist_Avg_InvEigenvector_1","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
-    Hist_Avg_InvEigenvector_2 = ROOT.TH1D("Hist_Avg_InvEigenvector_2","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)
+    Hist_Avg_InvEigenvector_0 = ROOT.TH1D("Hist_Avg_InvEigenvector_0","",N_bins_for_deconv,0,N_bins_for_deconv)
+    Hist_Avg_InvEigenvector_1 = ROOT.TH1D("Hist_Avg_InvEigenvector_1","",N_bins_for_deconv,0,N_bins_for_deconv)
+    Hist_Avg_InvEigenvector_2 = ROOT.TH1D("Hist_Avg_InvEigenvector_2","",N_bins_for_deconv,0,N_bins_for_deconv)
     for source in range(0,len(FilePath_Folder0)):
         source_name = FilePath_Folder0[source][0]
         exposure_hours = 0.
@@ -4441,12 +4461,12 @@ def SystDarkVsMDM():
         Hist_Eigenvalue_ampl_Rank += [ROOT.TH1D("Hist_Eigenvalue_ampl_Rank_%s"%(source_name),"",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvalue_real_Rank += [ROOT.TH1D("Hist_Eigenvalue_real_Rank_%s"%(source_name),"",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvalue_real_Sigma += [ROOT.TH1D("Hist_Eigenvalue_real_Sigma_%s"%(source_name),"",N_bins_for_deconv,0,N_bins_for_deconv)]
-        Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0_%s"%(source_name),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
-        Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1_%s"%(source_name),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
-        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2_%s"%(source_name),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
-        Hist_InvEigenvector_0 += [ROOT.TH1D("Hist_InvEigenvector_0_%s"%(source_name),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
-        Hist_InvEigenvector_1 += [ROOT.TH1D("Hist_InvEigenvector_1_%s"%(source_name),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
-        Hist_InvEigenvector_2 += [ROOT.TH1D("Hist_InvEigenvector_2_%s"%(source_name),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0_%s"%(source_name),"",N_bins_for_deconv,0,N_bins_for_deconv)]
+        Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1_%s"%(source_name),"",N_bins_for_deconv,0,N_bins_for_deconv)]
+        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2_%s"%(source_name),"",N_bins_for_deconv,0,N_bins_for_deconv)]
+        Hist_InvEigenvector_0 += [ROOT.TH1D("Hist_InvEigenvector_0_%s"%(source_name),"",N_bins_for_deconv,0,N_bins_for_deconv)]
+        Hist_InvEigenvector_1 += [ROOT.TH1D("Hist_InvEigenvector_1_%s"%(source_name),"",N_bins_for_deconv,0,N_bins_for_deconv)]
+        Hist_InvEigenvector_2 += [ROOT.TH1D("Hist_InvEigenvector_2_%s"%(source_name),"",N_bins_for_deconv,0,N_bins_for_deconv)]
         legend_S2B_hours += ['%s (%0.1f hrs)'%(source_name,exposure_hours)]
         color_idx = int(source*len(color_code)/max(1,len(FilePath_Folder0)-1))
         color_idx = min(color_idx,len(color_code)-1)
@@ -5078,10 +5098,10 @@ def SingleSourceSkyMap(source_name_input,doMap):
             Hist_Fit_CountHadron2_Rank += [ROOT.TH1D("Hist_Fit_CountHadron2_Rank_%s"%(flux),"",4,0,4)]
             Hist_Fit_CountHadron3_Rank += [ROOT.TH1D("Hist_Fit_CountHadron3_Rank_%s"%(flux),"",4,0,4)]
             Hist_Eigenvalues += [ROOT.TH1D("Hist_Eigenvalues_%s"%(flux),"",N_bins_for_deconv,0,N_bins_for_deconv)]
-            Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0_%s"%(flux),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
-            Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1_%s"%(flux),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
-            Hist_InvEigenvector_0 += [ROOT.TH1D("Hist_InvEigenvector_0_%s"%(flux),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
-            Hist_InvEigenvector_1 += [ROOT.TH1D("Hist_InvEigenvector_1_%s"%(flux),"",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+            Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0_%s"%(flux),"",N_bins_for_deconv,0,N_bins_for_deconv)]
+            Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1_%s"%(flux),"",N_bins_for_deconv,0,N_bins_for_deconv)]
+            Hist_InvEigenvector_0 += [ROOT.TH1D("Hist_InvEigenvector_0_%s"%(flux),"",N_bins_for_deconv,0,N_bins_for_deconv)]
+            Hist_InvEigenvector_1 += [ROOT.TH1D("Hist_InvEigenvector_1_%s"%(flux),"",N_bins_for_deconv,0,N_bins_for_deconv)]
             legend_S2B += ['%s Crab'%(SignalFlux_label[flux])]
             color_idx = int(flux*len(color_code)/max(1,len(SignalFlux)-1))
             color_idx = min(color_idx,len(color_code)-1)
@@ -5321,17 +5341,17 @@ def SingleSourceSkyMap(source_name_input,doMap):
         NormalizeEigenvalues()
         Hist_Eigenvalue_real_Rank += [ROOT.TH1D("Hist_Eigenvalue_real_Rank_Data","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvalue_real_Rank[len(Hist_Eigenvalue_real_Rank)-1].Add(Hist_Data_Eigenvalues_real_SumE)
-        Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvector_0[len(Hist_Eigenvector_0)-1].Add(Hist_Data_Eigenvector_0_real_SumE)
-        Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvector_1[len(Hist_Eigenvector_1)-1].Add(Hist_Data_Eigenvector_1_real_SumE)
-        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvector_2[len(Hist_Eigenvector_2)-1].Add(Hist_Data_Eigenvector_2_real_SumE)
-        Hist_InvEigenvector_0 += [ROOT.TH1D("Hist_InvEigenvector_0","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_0 += [ROOT.TH1D("Hist_InvEigenvector_0","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_InvEigenvector_0[len(Hist_InvEigenvector_0)-1].Add(Hist_Data_InvEigenvector_0_real_SumE)
-        Hist_InvEigenvector_1 += [ROOT.TH1D("Hist_InvEigenvector_1","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_1 += [ROOT.TH1D("Hist_InvEigenvector_1","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_InvEigenvector_1[len(Hist_InvEigenvector_1)-1].Add(Hist_Data_InvEigenvector_1_real_SumE)
-        Hist_InvEigenvector_2 += [ROOT.TH1D("Hist_InvEigenvector_2","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_2 += [ROOT.TH1D("Hist_InvEigenvector_2","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_InvEigenvector_2[len(Hist_InvEigenvector_2)-1].Add(Hist_Data_InvEigenvector_2_real_SumE)
         legend_S2B += ['ON data']
         color_idx = int(0*len(color_code)/2)
@@ -5339,17 +5359,17 @@ def SingleSourceSkyMap(source_name_input,doMap):
         color_S2B += [color_code[color_idx]]
         Hist_Eigenvalue_real_Rank += [ROOT.TH1D("Hist_Eigenvalue_real_Rank_Dark","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvalue_real_Rank[len(Hist_Eigenvalue_real_Rank)-1].Add(Hist_Dark_Eigenvalues_real_SumE)
-        Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvector_0[len(Hist_Eigenvector_0)-1].Add(Hist_Dark_Eigenvector_0_real_SumE)
-        Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvector_1[len(Hist_Eigenvector_1)-1].Add(Hist_Dark_Eigenvector_1_real_SumE)
-        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvector_2[len(Hist_Eigenvector_2)-1].Add(Hist_Dark_Eigenvector_2_real_SumE)
-        Hist_InvEigenvector_0 += [ROOT.TH1D("Hist_InvEigenvector_0","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_0 += [ROOT.TH1D("Hist_InvEigenvector_0","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_InvEigenvector_0[len(Hist_InvEigenvector_0)-1].Add(Hist_Dark_InvEigenvector_0_real_SumE)
-        Hist_InvEigenvector_1 += [ROOT.TH1D("Hist_InvEigenvector_1","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_1 += [ROOT.TH1D("Hist_InvEigenvector_1","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_InvEigenvector_1[len(Hist_InvEigenvector_1)-1].Add(Hist_Dark_InvEigenvector_1_real_SumE)
-        Hist_InvEigenvector_2 += [ROOT.TH1D("Hist_InvEigenvector_2","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_2 += [ROOT.TH1D("Hist_InvEigenvector_2","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_InvEigenvector_2[len(Hist_InvEigenvector_2)-1].Add(Hist_Dark_InvEigenvector_2_real_SumE)
         legend_S2B += ['OFF data']
         color_idx = int(1*len(color_code)/2)
@@ -5357,17 +5377,17 @@ def SingleSourceSkyMap(source_name_input,doMap):
         color_S2B += [color_code[color_idx]]
         Hist_Eigenvalue_real_Rank += [ROOT.TH1D("Hist_Eigenvalue_real_Rank_Fit","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvalue_real_Rank[len(Hist_Eigenvalue_real_Rank)-1].Add(Hist_Fit_Eigenvalues_real_SumE)
-        Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_0 += [ROOT.TH1D("Hist_Eigenvector_0","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvector_0[len(Hist_Eigenvector_0)-1].Add(Hist_Fit_Eigenvector_0_real_SumE)
-        Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_1 += [ROOT.TH1D("Hist_Eigenvector_1","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvector_1[len(Hist_Eigenvector_1)-1].Add(Hist_Fit_Eigenvector_1_real_SumE)
-        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_Eigenvector_2 += [ROOT.TH1D("Hist_Eigenvector_2","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_Eigenvector_2[len(Hist_Eigenvector_2)-1].Add(Hist_Fit_Eigenvector_2_real_SumE)
-        Hist_InvEigenvector_0 += [ROOT.TH1D("Hist_InvEigenvector_0","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_0 += [ROOT.TH1D("Hist_InvEigenvector_0","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_InvEigenvector_0[len(Hist_InvEigenvector_0)-1].Add(Hist_Fit_InvEigenvector_0_real_SumE)
-        Hist_InvEigenvector_1 += [ROOT.TH1D("Hist_InvEigenvector_1","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_1 += [ROOT.TH1D("Hist_InvEigenvector_1","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_InvEigenvector_1[len(Hist_InvEigenvector_1)-1].Add(Hist_Fit_InvEigenvector_1_real_SumE)
-        Hist_InvEigenvector_2 += [ROOT.TH1D("Hist_InvEigenvector_2","",N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper)]
+        Hist_InvEigenvector_2 += [ROOT.TH1D("Hist_InvEigenvector_2","",N_bins_for_deconv,0,N_bins_for_deconv)]
         Hist_InvEigenvector_2[len(Hist_InvEigenvector_2)-1].Add(Hist_Fit_InvEigenvector_2_real_SumE)
         legend_S2B += ['Fit']
         color_idx = int(2*len(color_code)/2)
@@ -5449,8 +5469,8 @@ def HMS2deg(ra='', dec=''):
     else:
         return RA or DEC
 
-#SystDarkVsMDM() # run this to get method systematics
-#SystAsFunctionOfEnergy()
+SystDarkVsMDM() # run this to get method systematics
+SystAsFunctionOfEnergy()
 #SystAsFunctionOfRadius()
 #SystAsFunctionOfElevation()
 #SystAsFunctionOfNSB()
@@ -5469,13 +5489,13 @@ def HMS2deg(ra='', dec=''):
 #source_of_interest = 'PKS1424'
 #source_of_interest = '3C264'
 #source_of_interest = 'OJ287V6'
-source_of_interest = '1ES0229'
+#source_of_interest = '1ES0229'
 #source_of_interest = 'S3_1227_V6'
 #source_of_interest = 'MS1221V6'
 #source_of_interest = 'PKS1441V6'
 #source_of_interest = 'RBS0413V6'
 #source_of_interest = 'PG1553V6'
-#source_of_interest = 'Segue1V6'
+source_of_interest = 'Segue1V6'
 #source_of_interest = 'Segue1V5'
 #source_of_interest = '1ES1011V6'
 #source_of_interest = 'NGC1275V6'
