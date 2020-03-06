@@ -623,11 +623,17 @@ double BlindedChi2_v2(MatrixXcd mtx_model)
     mtx_delta_transpose = mtx_Mt2lg+mtx_Mt3lc-mtx_lambda_lc;
 
     double chi2 = 0.;
-    for (int row=0;row<mtx_model.rows();row++)
+    for (int row=0;row<mtx_delta.rows();row++)
     {
-        for (int col=0;col<mtx_model.cols();col++)
+        for (int col=0;col<mtx_delta.cols();col++)
         {
             chi2 += pow(mtx_delta(row,col).real(),2);
+        }
+    }
+    for (int row=0;row<mtx_delta_transpose.rows();row++)
+    {
+        for (int col=0;col<mtx_delta_transpose.cols();col++)
+        {
             chi2 += pow(mtx_delta_transpose(row,col).real(),2);
         }
     }
@@ -1862,18 +1868,6 @@ void MatrixFactorizationMethod()
         mtx_eigenvector_init = mtx_eigenvector;
         mtx_eigenvector_inv_init = mtx_eigenvector_inv;
     }
-    //for (int iteration=0;iteration<10;iteration++)
-    //{
-    //    std::cout << "iteration = " << iteration << std::endl;
-    //    SingleTimeMinimization(0,3);
-    //    mtx_eigenvalue_init = mtx_eigenvalue;
-    //    mtx_eigenvector_init = mtx_eigenvector;
-    //    mtx_eigenvector_inv_init = mtx_eigenvector_inv;
-    //    SingleTimeMinimization(1,3);
-    //    mtx_eigenvalue_init = mtx_eigenvalue;
-    //    mtx_eigenvector_init = mtx_eigenvector;
-    //    mtx_eigenvector_inv_init = mtx_eigenvector_inv;
-    //}
     for (int iteration=0;iteration<10;iteration++)
     {
         std::cout << "iteration = " << iteration << std::endl;
