@@ -998,6 +998,18 @@ void SetInitialEigenvectors(int binx_blind, int biny_blind)
         }
     }
 
+    for (int NthEigenvector=NumberOfEigenvectors+1;NthEigenvector<=N_bins_for_deconv;NthEigenvector++)
+    {
+        mtx_eigenvalue_init(mtx_dark.cols()-NthEigenvector,mtx_dark.cols()-NthEigenvector) = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector);
+        for (int row=0;row<N_bins_for_deconv;row++)
+        {
+            mtx_eigenvector_init.col(mtx_dark.cols()-NthEigenvector)(row) = eigensolver_dark.eigenvectors().col(mtx_dark.cols()-NthEigenvector)(row);
+        }
+        for (int col=0;col<N_bins_for_deconv;col++)
+        {
+            mtx_eigenvector_inv_init.row(mtx_dark.cols()-NthEigenvector)(col) = eigensolver_dark.eigenvectors().inverse().row(mtx_dark.rows()-NthEigenvector)(col);
+        }
+    }
 
     double first_eigenvalue_dark = eigensolver_dark.eigenvalues()(mtx_dark.cols()-1).real();
     double first_eigenvalue_data = eigensolver_data.eigenvalues()(mtx_dark.cols()-1).real();
