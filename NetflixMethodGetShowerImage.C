@@ -49,9 +49,9 @@ using namespace Eigen;
 
 int dark_vector = 1;
 bool linear = true;
-bool invert_y = true;
+bool invert_y = false;
 bool transpose = false;
-bool eigenbasis = true;
+bool eigenbasis = false;
 bool signal_model = false;
 int cutoff_mode = 4;
 
@@ -67,7 +67,7 @@ double MSCL_cut_upper = 1.0;
 //double MSCW_plot_upper = 2.;
 //double MSCL_plot_lower = -1.;
 //double MSCL_plot_upper = 2.;
-int N_bins_for_deconv = 12;
+int N_bins_for_deconv = 24;
 double MSCW_plot_lower = -1.;
 double MSCW_plot_upper = 2.;
 double MSCL_plot_lower = -1.;
@@ -698,7 +698,7 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
                 if (already_used_run) continue;
                 double chi2 = pow(ON_pointing[on_run].first+Elev_diff_dark-OFF_pointing[off_run].first,2);
                 //chi2 += 20.*pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2);
-                if (pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2)>0.1*0.1)
+                if (pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2)>0.2*0.2)
                 {
                     chi2 += 10000.;
                 }

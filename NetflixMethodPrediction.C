@@ -85,6 +85,7 @@ VectorXcd vtr_bkgd_eigenvalues(N_bins_for_deconv);
 VectorXcd vtr_data_eigenvalues(N_bins_for_deconv);
 VectorXcd vtr_dark_eigenvalues(N_bins_for_deconv);
 ComplexEigenSolver<MatrixXcd> eigensolver_bkgd;
+ComplexEigenSolver<MatrixXcd> eigensolver_bkgd_transpose;
 ComplexEigenSolver<MatrixXcd> eigensolver_dark;
 ComplexEigenSolver<MatrixXcd> eigensolver_data;
 ComplexEigenSolver<MatrixXcd> eigensolver_dark_transpose;
@@ -137,6 +138,95 @@ void fill2DHistogramAbs(TH2D* hist,MatrixXcd mtx)
             else hist->SetBinContent(binx+1,hist->GetNbinsY()-biny,max(0.,mtx(binx,biny).real()));
         }
     }
+}
+MatrixXcd GetSubEigenvectors(MatrixXcd mtx_input, int region, int row_cut)
+{
+    int start_row;
+    int start_col;
+    int size_row;
+    int size_col;
+    if (region==0 || region==-1)
+    {                
+        start_row = 0;
+        start_col = 0;
+        size_row = (row_cut+1)-start_row;
+        size_col = mtx_input.cols();
+    }                
+    if (region==1 || region==-1)
+    {                
+        start_row = row_cut+1;
+        start_col = 0;
+        size_row = mtx_input.rows()-(row_cut+1);
+        size_col = mtx_input.cols();
+    }                
+    MatrixXcd mtx_output = mtx_input.block(start_row,start_col,size_row,size_col);
+    return mtx_output;
+}
+MatrixXcd GetSubmatrix(MatrixXcd mtx_input, int region, int row_cut, int col_cut)
+{
+    // regions:
+    //   0 | 1
+    //   -----
+    //   2 | 3
+    int start_row;
+    int start_col;
+    int size_row;
+    int size_col;
+    if (region==0)
+    {
+        start_row = 0;
+        start_col = 0;
+        size_row = (row_cut+1)-start_row;
+        size_col = (col_cut+1)-start_col;
+    }
+    if (region==3)
+    {
+        start_row = row_cut+1;
+        start_col = col_cut+1;
+        size_row = mtx_input.rows()-(row_cut+1);
+        size_col = mtx_input.cols()-(col_cut+1);
+    }
+    if (region==1)
+    {
+        start_row = 0;
+        start_col = col_cut+1;
+        size_row = (row_cut+1)-start_row;
+        size_col = mtx_input.cols()-(col_cut+1);
+    }
+    if (region==2)
+    {
+        start_row = row_cut+1;
+        start_col = 0;
+        size_row = mtx_input.rows()-(row_cut+1);
+        size_col = (col_cut+1)-start_col;
+    }
+    MatrixXcd mtx_output = mtx_input.block(start_row,start_col,size_row,size_col);
+    return mtx_output;
+}
+MatrixXcd GetAlphaMatrix(MatrixXcd mtx_input, int region, int row_cut, int col_cut)
+{
+    MatrixXcd mtx_sub = GetSubmatrix(mtx_input, region, row_cut, col_cut);
+    MatrixXcd mtx_alpha = mtx_sub.transpose()*mtx_sub;
+    return mtx_alpha;
+}
+MatrixXcd GetProjectionMatrix(MatrixXcd mtx_input, int region, int row_cut, int col_cut)
+{
+    MatrixXcd mtx_sub = GetSubmatrix(mtx_input, region, row_cut, col_cut);
+    MatrixXcd mtx_alpha = GetAlphaMatrix(mtx_input,region,row_cut,col_cut);
+
+    MatrixXcd mtx_unit(mtx_sub.rows(),mtx_sub.cols());
+    for (int row=0;row<mtx_sub.rows();row++)
+    {
+        for (int col=0;col<mtx_sub.cols();col++)
+        {
+            mtx_unit(row,col) = 0.;
+            if (col==row) mtx_unit(row,col) = 1.;
+        }
+    }
+
+    MatrixXcd mtx_output(mtx_sub.rows(),mtx_sub.cols());
+    mtx_output = mtx_unit-mtx_sub*mtx_alpha.inverse()*mtx_sub.transpose();
+    return mtx_output;
 }
 void Smooth2DHistogram(TH2D* hist_origin, TH2D* hist_smooth, int size)
 {
@@ -496,6 +586,55 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
     return chi2;
 }
 
+MatrixXcd GetEigenvalueWeightedVectors(ComplexEigenSolver<MatrixXcd> eigensolver_input, MatrixXcd mtx_input)
+{
+    MatrixXcd mtx_output(mtx_input.rows(),mtx_input.cols());
+    for (int row=0;row<mtx_input.rows();row++)
+    {
+        for (int col=0;col<mtx_input.cols();col++)
+        {
+            mtx_output(row,col) = mtx_input(row,col)*eigensolver_input.eigenvalues()(col);
+        }
+    }
+    return mtx_output;
+}
+
+double BlindedChi2_v2(MatrixXcd mtx_model)
+{
+    eigensolver_bkgd = ComplexEigenSolver<MatrixXcd>(mtx_model);
+    eigensolver_bkgd_transpose = ComplexEigenSolver<MatrixXcd>(mtx_model.transpose());
+    MatrixXcd mtx_U_r(mtx_model.rows(),mtx_model.cols());
+    MatrixXcd mtx_U_l(mtx_model.rows(),mtx_model.cols());
+    mtx_U_r = eigensolver_bkgd.eigenvectors();
+    mtx_U_l = eigensolver_bkgd_transpose.eigenvectors();
+
+    MatrixXcd mtx_M2rg = GetSubmatrix(mtx_data,2,binx_blind_global-1,biny_blind_global-1)*GetSubEigenvectors(mtx_U_r,0,binx_blind_global-1);
+    MatrixXcd mtx_M3rc = GetSubmatrix(mtx_data,3,binx_blind_global-1,biny_blind_global-1)*GetSubEigenvectors(mtx_U_r,1,binx_blind_global-1);
+    MatrixXcd mtx_lambda_rc = GetEigenvalueWeightedVectors(eigensolver_bkgd,GetSubEigenvectors(mtx_U_r,1,binx_blind_global-1));
+
+    MatrixXcd mtx_Mt2lg = GetSubmatrix(mtx_data.transpose(),2,binx_blind_global-1,biny_blind_global-1)*GetSubEigenvectors(mtx_U_l,0,binx_blind_global-1);
+    MatrixXcd mtx_Mt3lc = GetSubmatrix(mtx_data.transpose(),3,binx_blind_global-1,biny_blind_global-1)*GetSubEigenvectors(mtx_U_l,1,binx_blind_global-1);
+    MatrixXcd mtx_lambda_lc = GetEigenvalueWeightedVectors(eigensolver_bkgd,GetSubEigenvectors(mtx_U_l,1,binx_blind_global-1));
+
+    MatrixXcd mtx_delta(mtx_model.rows(),mtx_model.cols());
+    mtx_delta = mtx_M2rg+mtx_M3rc-mtx_lambda_rc;
+
+    MatrixXcd mtx_delta_transpose(mtx_model.rows(),mtx_model.cols());
+    mtx_delta_transpose = mtx_Mt2lg+mtx_Mt3lc-mtx_lambda_lc;
+
+    double chi2 = 0.;
+    for (int row=0;row<mtx_model.rows();row++)
+    {
+        for (int col=0;col<mtx_model.cols();col++)
+        {
+            chi2 += pow(mtx_delta(row,col).real(),2);
+            chi2 += pow(mtx_delta_transpose(row,col).real(),2);
+        }
+    }
+    return chi2;
+
+}
+
 double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
 {
     int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
@@ -729,7 +868,8 @@ double NetflixChi2Function(const double *par)
 
     double chi2 = 0.;
     chi2 += BlindedChi2(&hist_data,&hist_dark,&hist_model);
-    if (signal_model) chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
+    //chi2 += BlindedChi2_v2(mtx_model);
+    //if (signal_model) chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
     
     //double chi2 = BlindedLogLikelihood(&hist_data,&hist_dark,&hist_model);
     //chi2 += SignalLogLikelihood(&hist_data,&hist_gamma,&hist_model);
@@ -1283,7 +1423,7 @@ void NetflixSetInitialVariablesEigenBasis(ROOT::Math::GSLMinimizer* Chi2Minimize
         {
             Chi2Minimizer->SetVariable(first_index+entry,"par["+std::to_string(int(first_index+entry))+"]",0.,0.001);
             if (fix_which==0) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
-            if (which_to_fit!=NthEigenvector) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
+            if (which_to_fit!=NthEigenvector && which_to_fit!=-1) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
             if (NthEigenvector>=cutoff_mode) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
         }
 
@@ -1293,7 +1433,7 @@ void NetflixSetInitialVariablesEigenBasis(ROOT::Math::GSLMinimizer* Chi2Minimize
         {
             Chi2Minimizer->SetVariable(first_index+entry,"par["+std::to_string(int(first_index+entry))+"]",0.,0.001);
             if (fix_which==1) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
-            if (which_to_fit!=NthEigenvector) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
+            if (which_to_fit!=NthEigenvector && which_to_fit!=-1) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
             if (NthEigenvector>=cutoff_mode) Chi2Minimizer->SetVariableLimits(first_index+entry,0.,0.);
         }
 
@@ -1340,7 +1480,7 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
         {
             Chi2Minimizer->SetVariable(first_index+row,"par["+std::to_string(int(first_index+row))+"]",0.,0.01);
             if (fix_which==0) Chi2Minimizer->SetVariableLimits(first_index+row,0.,0.);
-            if (which_to_fit!=NthEigenvector) Chi2Minimizer->SetVariableLimits(first_index+row,0.,0.);
+            if (which_to_fit!=NthEigenvector && which_to_fit!=-1) Chi2Minimizer->SetVariableLimits(first_index+row,0.,0.);
             //if (row>=biny_blind) 
             //{
             //    Chi2Minimizer->SetVariableLimits(first_index+row,0.0,0.0);
@@ -1363,7 +1503,7 @@ void NetflixSetInitialVariables(ROOT::Math::GSLMinimizer* Chi2Minimizer, int bin
         {
             Chi2Minimizer->SetVariable(first_index+col,"par["+std::to_string(int(first_index+col))+"]",0.,0.01);
             if (fix_which==1) Chi2Minimizer->SetVariableLimits(first_index+col,0.,0.);
-            if (which_to_fit!=NthEigenvector) Chi2Minimizer->SetVariableLimits(first_index+col,0.,0.);
+            if (which_to_fit!=NthEigenvector && which_to_fit!=-1) Chi2Minimizer->SetVariableLimits(first_index+col,0.,0.);
             //if (col>=binx_blind) 
             //{
             //    Chi2Minimizer->SetVariableLimits(first_index+col,0.0,0.0);
@@ -1697,7 +1837,7 @@ void MatrixFactorizationMethod()
     SetInitialEigenvectors(binx_blind_global,biny_blind_global);
     mtx_data_bkgd = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
 
-    //SingleTimeMinimization(-1);
+    //SingleTimeMinimization(-1,-1);
     for (int iteration=0;iteration<10;iteration++)
     {
         std::cout << "iteration = " << iteration << std::endl;
@@ -1722,18 +1862,18 @@ void MatrixFactorizationMethod()
         mtx_eigenvector_init = mtx_eigenvector;
         mtx_eigenvector_inv_init = mtx_eigenvector_inv;
     }
-    for (int iteration=0;iteration<10;iteration++)
-    {
-        std::cout << "iteration = " << iteration << std::endl;
-        SingleTimeMinimization(0,3);
-        mtx_eigenvalue_init = mtx_eigenvalue;
-        mtx_eigenvector_init = mtx_eigenvector;
-        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
-        SingleTimeMinimization(1,3);
-        mtx_eigenvalue_init = mtx_eigenvalue;
-        mtx_eigenvector_init = mtx_eigenvector;
-        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
-    }
+    //for (int iteration=0;iteration<10;iteration++)
+    //{
+    //    std::cout << "iteration = " << iteration << std::endl;
+    //    SingleTimeMinimization(0,3);
+    //    mtx_eigenvalue_init = mtx_eigenvalue;
+    //    mtx_eigenvector_init = mtx_eigenvector;
+    //    mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+    //    SingleTimeMinimization(1,3);
+    //    mtx_eigenvalue_init = mtx_eigenvalue;
+    //    mtx_eigenvector_init = mtx_eigenvector;
+    //    mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+    //}
     for (int iteration=0;iteration<10;iteration++)
     {
         std::cout << "iteration = " << iteration << std::endl;
@@ -1778,9 +1918,9 @@ void PrintMatrixDiffRatio(MatrixXcd mtx_a, MatrixXcd mtx_b)
         }
     }
     std::cout << "ref = " << std::endl;
-    std::cout << mtx_a_abs.format(CleanFmt) << std::endl;
+    PrintItReverselyForVVV(mtx_a_abs);
     std::cout << "diff ratio = " << std::endl;
-    std::cout << mtx_ratio.format(CleanFmt) << std::endl;
+    PrintItReverselyForVVV(mtx_ratio);
 }
 
 void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_elev_lower_input, double tel_elev_upper_input, bool isON, double MSCW_cut_input, double MSCL_cut_input, int rank)
@@ -2015,18 +2155,21 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         PrintItReverselyForVVV(mtx_R);
         std::cout << "mtx_L = " << std::endl;
         PrintItReverselyForVVV(mtx_L);
+        MatrixXcd mtx_lambda_redu(mtx_data.rows(),mtx_data.cols());
         for (int row=0;row<N_bins_for_deconv;row++)
         {
             for (int col=0;col<N_bins_for_deconv;col++)
             {
                 mtx_S(row,col) = 0.;
                 mtx_S_redu(row,col) = 0.;
+                mtx_lambda_redu(row,col) = 0.;
                 if (row==col)
                 {
                     mtx_S(row,col) = eigensolver_data.eigenvalues()(col)/mtx_H(row,col);
                     if (row>=N_bins_for_deconv-1-3)
                     {
                         mtx_S_redu(row,col) = eigensolver_data.eigenvalues()(col)/mtx_H(row,col);
+                        mtx_lambda_redu(row,col) = eigensolver_data.eigenvalues()(col);
                     }
                 }
             }
@@ -2042,6 +2185,55 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         mtx_lM = mtx_U_l.transpose().conjugate()*mtx_data.transpose();
         std::cout << "relative diff of mtx_lM - mtx_R.conjugate()*mtx_S.conjugate()*mtx_U_l.transpose() = " << std::endl;
         PrintMatrixDiffRatio(mtx_lM, mtx_L.conjugate()*mtx_S_redu.conjugate()*mtx_U_r.transpose());
+
+        std::cout << "mtx_gamma = " << std::endl;
+        std::cout << mtx_gamma << std::endl;
+        std::cout << "mtx_data = " << std::endl;
+        std::cout << mtx_data << std::endl;
+        std::cout << "mtx_data (region 1) = " << std::endl;
+        std::cout << GetSubmatrix(mtx_data, 1, binx_blind_global-1, biny_blind_global-1) << std::endl;
+        std::cout << "mtx_data (region 2) = " << std::endl;
+        std::cout << GetSubmatrix(mtx_data, 2, binx_blind_global-1, biny_blind_global-1) << std::endl;
+        std::cout << "mtx_data (region 3) = " << std::endl;
+        std::cout << GetSubmatrix(mtx_data, 3, binx_blind_global-1, biny_blind_global-1) << std::endl;
+
+        MatrixXcd mtx_M2rg = GetSubmatrix(mtx_data,2,binx_blind_global-1,biny_blind_global-1)*GetSubEigenvectors(mtx_U_r,0,binx_blind_global-1);
+        MatrixXcd mtx_M3rc = GetSubmatrix(mtx_data,3,binx_blind_global-1,biny_blind_global-1)*GetSubEigenvectors(mtx_U_r,1,binx_blind_global-1);
+        std::cout << "mtx_M2rg = " << std::endl;
+        std::cout << mtx_M2rg << std::endl;
+        std::cout << "mtx_M3rc = " << std::endl;
+        std::cout << mtx_M3rc << std::endl;
+        std::cout << "lambda*mtx_rc = " << std::endl;
+        std::cout << GetEigenvalueWeightedVectors(eigensolver_data,GetSubEigenvectors(mtx_U_r,1,binx_blind_global-1)) << std::endl;
+
+        MatrixXcd mtx_Mt2lg = GetSubmatrix(mtx_data.transpose(),2,binx_blind_global-1,biny_blind_global-1)*GetSubEigenvectors(mtx_U_l,0,binx_blind_global-1);
+        MatrixXcd mtx_Mt3lc = GetSubmatrix(mtx_data.transpose(),3,binx_blind_global-1,biny_blind_global-1)*GetSubEigenvectors(mtx_U_l,1,binx_blind_global-1);
+        std::cout << "mtx_Mt2lg = " << std::endl;
+        std::cout << mtx_Mt2lg << std::endl;
+        std::cout << "mtx_Mt3lc = " << std::endl;
+        std::cout << mtx_Mt3lc << std::endl;
+        std::cout << "lambda*mtx_lc = " << std::endl;
+        std::cout << GetEigenvalueWeightedVectors(eigensolver_data,GetSubEigenvectors(mtx_U_l,1,binx_blind_global-1)) << std::endl;
+
+        MatrixXcd mtx_alpha_1 = GetAlphaMatrix(mtx_data, 1, binx_blind_global-1, biny_blind_global-1);
+        std::cout << "mtx_alpha_1 = " << std::endl;
+        std::cout << mtx_alpha_1 << std::endl;
+        eigensolver_bkgd = ComplexEigenSolver<MatrixXcd>(mtx_alpha_1);
+        std::cout << "alpha 1 eigenvalues = " << std::endl;
+        std::cout << eigensolver_bkgd.eigenvalues() << std::endl;
+        MatrixXcd mtx_proj_1 = GetProjectionMatrix(mtx_data, 1, binx_blind_global-1, biny_blind_global-1);
+        std::cout << "mtx_proj_1 = " << std::endl;
+        std::cout << mtx_proj_1 << std::endl;
+
+        MatrixXcd mtx_alpha_2 = GetAlphaMatrix(mtx_data, 2, binx_blind_global-1, biny_blind_global-1);
+        std::cout << "mtx_alpha_2 = " << std::endl;
+        std::cout << mtx_alpha_2 << std::endl;
+        eigensolver_bkgd = ComplexEigenSolver<MatrixXcd>(mtx_alpha_2);
+        std::cout << "alpha 2 eigenvalues = " << std::endl;
+        std::cout << eigensolver_bkgd.eigenvalues() << std::endl;
+        MatrixXcd mtx_proj_2 = GetProjectionMatrix(mtx_data, 2, binx_blind_global-1, biny_blind_global-1);
+        std::cout << "mtx_proj_2 = " << std::endl;
+        std::cout << mtx_proj_2 << std::endl;
 
         double count_gamma_like = Hist_Data->Integral(binx_lower,binx_blind_global,biny_lower,biny_blind_global);
         double count_total = Hist_Data->Integral();
