@@ -601,26 +601,24 @@ MatrixXcd GetEigenvalueWeightedVectors(ComplexEigenSolver<MatrixXcd> eigensolver
 
 double BlindedChi2_v2(MatrixXcd mtx_model)
 {
-    eigensolver_bkgd = ComplexEigenSolver<MatrixXcd>(mtx_model);
-    eigensolver_bkgd_transpose = ComplexEigenSolver<MatrixXcd>(mtx_model.transpose());
-    MatrixXcd mtx_U_r(mtx_model.rows(),mtx_model.cols());
-    MatrixXcd mtx_U_l(mtx_model.rows(),mtx_model.cols());
-    mtx_U_r = eigensolver_bkgd.eigenvectors();
-    mtx_U_l = eigensolver_bkgd_transpose.eigenvectors();
+    ComplexEigenSolver<MatrixXcd> eigensolver_model;
+    ComplexEigenSolver<MatrixXcd> eigensolver_model_transpose;
+    eigensolver_model = ComplexEigenSolver<MatrixXcd>(mtx_model);
+    eigensolver_model_transpose = ComplexEigenSolver<MatrixXcd>(mtx_model.transpose());
+    MatrixXcd mtx_U_r = eigensolver_model.eigenvectors();
+    MatrixXcd mtx_U_l = eigensolver_model_transpose.eigenvectors();
 
     MatrixXcd mtx_M2rg = GetSubmatrix(mtx_data,2,binx_blind_global-1,biny_blind_global-1)*GetSubEigenvectors(mtx_U_r,0,binx_blind_global-1);
     MatrixXcd mtx_M3rc = GetSubmatrix(mtx_data,3,binx_blind_global-1,biny_blind_global-1)*GetSubEigenvectors(mtx_U_r,1,binx_blind_global-1);
-    MatrixXcd mtx_lambda_rc = GetEigenvalueWeightedVectors(eigensolver_bkgd,GetSubEigenvectors(mtx_U_r,1,binx_blind_global-1));
+    MatrixXcd mtx_lambda_rc = GetEigenvalueWeightedVectors(eigensolver_model,GetSubEigenvectors(mtx_U_r,1,binx_blind_global-1));
 
     MatrixXcd mtx_Mt2lg = GetSubmatrix(mtx_data.transpose(),2,binx_blind_global-1,biny_blind_global-1)*GetSubEigenvectors(mtx_U_l,0,binx_blind_global-1);
     MatrixXcd mtx_Mt3lc = GetSubmatrix(mtx_data.transpose(),3,binx_blind_global-1,biny_blind_global-1)*GetSubEigenvectors(mtx_U_l,1,binx_blind_global-1);
-    MatrixXcd mtx_lambda_lc = GetEigenvalueWeightedVectors(eigensolver_bkgd,GetSubEigenvectors(mtx_U_l,1,binx_blind_global-1));
+    MatrixXcd mtx_lambda_lc = GetEigenvalueWeightedVectors(eigensolver_model,GetSubEigenvectors(mtx_U_l,1,binx_blind_global-1));
 
-    MatrixXcd mtx_delta(mtx_model.rows(),mtx_model.cols());
-    mtx_delta = mtx_M2rg+mtx_M3rc-mtx_lambda_rc;
+    MatrixXcd mtx_delta = mtx_M2rg+mtx_M3rc-mtx_lambda_rc;
 
-    MatrixXcd mtx_delta_transpose(mtx_model.rows(),mtx_model.cols());
-    mtx_delta_transpose = mtx_Mt2lg+mtx_Mt3lc-mtx_lambda_lc;
+    MatrixXcd mtx_delta_transpose = mtx_Mt2lg+mtx_Mt3lc-mtx_lambda_lc;
 
     double chi2 = 0.;
     for (int row=0;row<mtx_delta.rows();row++)
@@ -628,6 +626,7 @@ double BlindedChi2_v2(MatrixXcd mtx_model)
         for (int col=0;col<mtx_delta.cols();col++)
         {
             chi2 += pow(mtx_delta(row,col).real(),2);
+            chi2 += pow(mtx_delta(row,col).imag(),2);
         }
     }
     for (int row=0;row<mtx_delta_transpose.rows();row++)
@@ -635,6 +634,7 @@ double BlindedChi2_v2(MatrixXcd mtx_model)
         for (int col=0;col<mtx_delta_transpose.cols();col++)
         {
             chi2 += pow(mtx_delta_transpose(row,col).real(),2);
+            chi2 += pow(mtx_delta_transpose(row,col).imag(),2);
         }
     }
     return chi2;
@@ -1822,7 +1822,7 @@ void SingleTimeMinimization(int fix_which, int which_to_fit)
     Chi2Minimizer_1st.SetTolerance(0.01*double(N_bins_for_deconv*N_bins_for_deconv));
     Chi2Minimizer_1st.Minimize();
     par_1st = Chi2Minimizer_1st.X();
-    std::cout << "final (1) chi2 = " << NetflixChi2Function(par_1st) << std::endl;
+    std::cout << "final chi2 = " << NetflixChi2Function(par_1st) << std::endl;
     if (eigenbasis)
     {
         NetflixParametrizeEigenvectorsEigenBasis(par_1st);
@@ -1856,7 +1856,7 @@ void MatrixFactorizationMethod()
     mtx_data_bkgd = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
 
     //SingleTimeMinimization(-1,-1);
-    for (int iteration=0;iteration<10;iteration++)
+    for (int iteration=0;iteration<20;iteration++)
     {
         std::cout << "iteration = " << iteration << std::endl;
         SingleTimeMinimization(0,1);
@@ -1868,7 +1868,7 @@ void MatrixFactorizationMethod()
         mtx_eigenvector_init = mtx_eigenvector;
         mtx_eigenvector_inv_init = mtx_eigenvector_inv;
     }
-    for (int iteration=0;iteration<10;iteration++)
+    for (int iteration=0;iteration<20;iteration++)
     {
         std::cout << "iteration = " << iteration << std::endl;
         SingleTimeMinimization(0,2);
@@ -1945,10 +1945,8 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
     if (isON) file_tag = "ON";
     else file_tag = "OFF";
 
-    MSCW_plot_lower = -1.5;
-    MSCL_plot_lower = -1.5;
-    MSCW_plot_upper = (MSCW_cut_input-MSCW_plot_lower)+MSCW_cut_input;
-    MSCL_plot_upper = (MSCL_cut_input-MSCL_plot_lower)+MSCL_cut_input;
+    MSCW_plot_upper = gamma_hadron_dim_ratio*(MSCW_cut_input-MSCW_plot_lower)+MSCW_cut_input;
+    MSCL_plot_upper = gamma_hadron_dim_ratio*(MSCL_cut_input-MSCL_plot_lower)+MSCL_cut_input;
 
     vector<TH2D> Hist_Redu_MSCLW;
     vector<TH2D> Hist_Rank0_MSCLW;
@@ -2240,6 +2238,13 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         MatrixXcd mtx_proj_2 = GetProjectionMatrix(mtx_data, 2, binx_blind_global-1, biny_blind_global-1);
         std::cout << "mtx_proj_2 = " << std::endl;
         std::cout << mtx_proj_2 << std::endl;
+
+        MatrixXcd mtx_P2M3_rc = mtx_proj_2*GetSubmatrix(mtx_data,3,binx_blind_global-1,biny_blind_global-1)*GetSubEigenvectors(mtx_U_r,1,binx_blind_global-1);
+        MatrixXcd mtx_P2_lambda_rc = mtx_proj_2*GetEigenvalueWeightedVectors(eigensolver_data,GetSubEigenvectors(mtx_U_r,1,binx_blind_global-1));
+        std::cout << "mtx_P2M3_rc = " << std::endl;
+        std::cout << mtx_P2M3_rc << std::endl;
+        std::cout << "mtx_P2_lambda_rc = " << std::endl;
+        std::cout << mtx_P2_lambda_rc << std::endl;
 
         double count_gamma_like = Hist_Data->Integral(binx_lower,binx_blind_global,biny_lower,biny_blind_global);
         double count_total = Hist_Data->Integral();

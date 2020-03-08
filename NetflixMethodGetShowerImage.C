@@ -68,9 +68,10 @@ double MSCL_cut_upper = 1.0;
 //double MSCL_plot_lower = -1.;
 //double MSCL_plot_upper = 2.;
 int N_bins_for_deconv = 12;
-double MSCW_plot_lower = -1.;
+double gamma_hadron_dim_ratio = 1.;
+double MSCW_plot_lower = -1.5;
+double MSCL_plot_lower = -1.5;
 double MSCW_plot_upper = 2.;
-double MSCL_plot_lower = -1.;
 double MSCL_plot_upper = 2.;
 
 const int N_energy_bins = 1;
@@ -1040,10 +1041,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     Elev_diff_dark = Elev_diff;
     NSB_diff_dark = NSB_diff;
 
-    MSCW_plot_lower = -1.5;
-    MSCL_plot_lower = -1.5;
-    MSCW_plot_upper = (MSCW_cut_input-MSCW_plot_lower)+MSCW_cut_input;
-    MSCL_plot_upper = (MSCL_cut_input-MSCL_plot_lower)+MSCL_cut_input;
+    MSCW_plot_upper = gamma_hadron_dim_ratio*(MSCW_cut_input-MSCW_plot_lower)+MSCW_cut_input;
+    MSCL_plot_upper = gamma_hadron_dim_ratio*(MSCL_cut_input-MSCL_plot_lower)+MSCL_cut_input;
 
     vector<pair<string,int>> PhotonMC_runlist = GetRunList_v2("Photon");
     vector<pair<string,int>> PhotonData_runlist = GetRunList_v2("Crab");
