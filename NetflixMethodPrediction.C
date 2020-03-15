@@ -280,6 +280,21 @@ MatrixXcd GetEigenvalueMatrix(MatrixXcd mtx_input)
     }
     return mtx_lambda;
 }
+MatrixXcd MakeRealEigenvectors(MatrixXcd mtx_input)
+{
+    MatrixXcd mtx_output = MatrixXcd::Zero(mtx_input.rows(),mtx_input.cols());
+    for (int row=0;row<mtx_input.rows();row++)
+    {
+        for (int col=0;col<mtx_input.cols();col++)
+        {
+            double real = mtx_input(row,col).real();
+            double imag = mtx_input(row,col).imag();
+            mtx_output(row,col) = pow(real*real+imag*imag,0.5);
+        }
+    }
+    //return mtx_output;
+    return mtx_input;
+}
 MatrixXcd GetLambdaNuMatrix(MatrixXcd mtx_input)
 {
     ComplexEigenSolver<MatrixXcd> eigensolver_input;
@@ -288,6 +303,8 @@ MatrixXcd GetLambdaNuMatrix(MatrixXcd mtx_input)
     eigensolver_input_transpose = ComplexEigenSolver<MatrixXcd>(mtx_input.transpose());
     MatrixXcd mtx_U_r = eigensolver_input.eigenvectors();
     MatrixXcd mtx_U_l = eigensolver_input_transpose.eigenvectors();
+    mtx_U_r = MakeRealEigenvectors(mtx_U_r);
+    mtx_U_l = MakeRealEigenvectors(mtx_U_l);
     MatrixXcd mtx_H = mtx_U_l.transpose()*mtx_U_r;
     MatrixXcd mtx_lambdanu(mtx_input.rows(),mtx_input.cols());
     for (int row=0;row<mtx_input.rows();row++)
@@ -342,6 +359,28 @@ void PrintItReversely(MatrixXcd mtx_input)
     //}
     //std::cout << mtx_reverse.format(CleanFmt) << std::endl;
     std::cout << mtx_input.format(CleanFmt) << std::endl;
+}
+MatrixXcd Convert_hadron_to_gamma_vector_v2(MatrixXcd mtx_input, MatrixXcd mtx_vc, MatrixXcd mtx_eigenvalue, int LeftOrRight)
+{
+    // LeftOrRight = 1, left
+    // LeftOrRight = 2, right
+    MatrixXcd mtx_sub = GetSubmatrix(mtx_input, LeftOrRight);
+    MatrixXcd mtx_M3 = GetSubmatrix(mtx_input, 3);
+    MatrixXcd mtx_alpha = GetAlphaMatrix(mtx_input, LeftOrRight);
+    MatrixXcd mtx_lambda_vc = GetEigenvalueWeightedVectors(mtx_eigenvalue,mtx_vc);
+    if (LeftOrRight==2)
+    {
+        MatrixXcd mtx_M3_vc = mtx_M3*mtx_vc;
+        MatrixXcd mtx_alpha2inv_M2t = mtx_alpha.inverse()*mtx_sub.transpose();
+        return -mtx_alpha2inv_M2t*(mtx_M3_vc-mtx_lambda_vc);
+    }
+    else
+    {
+        MatrixXcd mtx_M3t_vc = mtx_M3.transpose()*mtx_vc;
+        MatrixXcd mtx_alpha1inv_M1 = mtx_alpha.inverse()*mtx_sub;
+        return -mtx_alpha1inv_M1*(mtx_M3t_vc-mtx_lambda_vc);
+    }
+
 }
 MatrixXcd Convert_hadron_to_gamma_vector(MatrixXcd mtx_eigenvector, MatrixXcd mtx_eigenvalue, int LeftOrRight)
 {
@@ -517,107 +556,446 @@ void VerifySmallgMatrix(MatrixXcd mtx_input, int NthEigenvector)
     std::cout << "mtx_right = " << std::endl;
     PrintItReversely(mtx_right);
 }
-void VerifyLeftRightVectorCoupling(MatrixXcd mtx_input, int NthEigenvector)
+MatrixXcd CutoffEigenvalueMatrix(MatrixXcd mtx_input, int cutoff_entry)
 {
+    MatrixXcd mtx_output = mtx_input;
+    for (int entry=1;entry<=mtx_input.rows();entry++)
+    {
+        if (entry>cutoff_entry)
+        {
+            mtx_output(mtx_input.rows()-entry,mtx_input.rows()-entry) = 0.;
+        }
+    }
+    return mtx_output;
+}
+void VerifyLeftRightVectorCoupling(MatrixXcd mtx_input, int entry_cutoff)
+{
+    std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+    std::cout << "entry_cutoff = " << entry_cutoff << std::endl;
     ComplexEigenSolver<MatrixXcd> eigensolver_input;
     eigensolver_input = ComplexEigenSolver<MatrixXcd>(mtx_input);
     ComplexEigenSolver<MatrixXcd> eigensolver_input_transpose;
     eigensolver_input_transpose = ComplexEigenSolver<MatrixXcd>(mtx_input.transpose());
     MatrixXcd mtx_U_r = eigensolver_input.eigenvectors();
     MatrixXcd mtx_U_l = eigensolver_input_transpose.eigenvectors();
+    mtx_U_r = MakeRealEigenvectors(mtx_U_r);
+    mtx_U_l = MakeRealEigenvectors(mtx_U_l);
     MatrixXcd mtx_U_rc = GetSubEigenvectors(mtx_U_r,1);
     MatrixXcd mtx_U_lc = GetSubEigenvectors(mtx_U_l,1);
+    MatrixXcd mtx_U_rg = GetSubEigenvectors(mtx_U_r,0);
+    MatrixXcd mtx_U_lg = GetSubEigenvectors(mtx_U_l,0);
     MatrixXcd mtx_M1 = GetSubmatrix(mtx_input, 1);
     MatrixXcd mtx_M2 = GetSubmatrix(mtx_input, 2);
     MatrixXcd mtx_M3 = GetSubmatrix(mtx_input, 3);
-    MatrixXcd mtx_lambda = GetUnitEigenvalueMatrix(mtx_input,mtx_input.cols()-NthEigenvector,mtx_M3.rows());
-    MatrixXcd mtx_lambda_transpose = GetUnitEigenvalueMatrix(mtx_input.transpose(),mtx_input.cols()-NthEigenvector,mtx_M3.rows());
+    MatrixXcd mtx_R = mtx_U_r.transpose().conjugate()*mtx_U_r;
+    MatrixXcd mtx_L = mtx_U_l.transpose().conjugate()*mtx_U_l;
+    MatrixXcd mtx_lambda = GetEigenvalueMatrix(mtx_input);
     MatrixXcd mtx_lambdanu = GetLambdaNuMatrix(mtx_input);
-    MatrixXcd mtx_lambdanu_transpose = GetLambdaNuMatrix(mtx_input.transpose());
-
+    mtx_lambdanu = CutoffEigenvalueMatrix(mtx_lambdanu, entry_cutoff);
     MatrixXcd mtx_alpha1 = GetAlphaMatrix(mtx_input, 1);
+    MatrixXcd mtx_alpha2 = GetAlphaMatrix(mtx_input, 2);
+
     MatrixXcd mtx_Smallg1 = mtx_M2*mtx_alpha1.inverse()*mtx_M1;
     MatrixXcd mtx_BigG1 = mtx_M3-mtx_Smallg1*mtx_M3.transpose();
+    MatrixXcd mtx_G1_rc = mtx_BigG1*mtx_U_rc;
+    MatrixXcd mtx_lambda_rc = GetEigenvalueWeightedVectors(mtx_lambda,mtx_U_rc);
+    std::cout << "mtx_G1_rc-mtx_lambda_rc = " << std::endl;
+    std::cout << (mtx_G1_rc-mtx_lambda_rc).block(0,mtx_input.cols()-3,mtx_M3.rows(),3) << std::endl;
+    MatrixXcd mtx_lambdanu_lc = GetEigenvalueWeightedVectors(mtx_lambdanu,mtx_U_lc);
+    MatrixXcd mtx_lambdanu_R_lc = mtx_lambdanu_lc.conjugate()*mtx_R.transpose().conjugate();
+    std::cout << "-mtx_Smallg1*mtx_lambdanu_R_lc = " << std::endl;
+    std::cout << (-mtx_Smallg1*mtx_lambdanu_R_lc).block(0,mtx_input.cols()-3,mtx_M3.rows(),3) << std::endl;
+
+    MatrixXcd mtx_Smallg2 = mtx_M1.transpose()*mtx_alpha2.inverse()*mtx_M2.transpose();
+    MatrixXcd mtx_BigG2 = mtx_M3.transpose()-mtx_Smallg2*mtx_M3;
+    MatrixXcd mtx_G2_lc = mtx_BigG2*mtx_U_lc;
+    MatrixXcd mtx_lambda_lc = GetEigenvalueWeightedVectors(mtx_lambda,mtx_U_lc);
+    std::cout << "mtx_G2_lc-mtx_lambda_lc = " << std::endl;
+    std::cout << (mtx_G2_lc-mtx_lambda_lc).block(0,mtx_input.cols()-3,mtx_M3.rows(),3) << std::endl;
+    MatrixXcd mtx_lambdanu_rc = GetEigenvalueWeightedVectors(mtx_lambdanu,mtx_U_rc);
+    MatrixXcd mtx_lambdanu_L_rc = mtx_lambdanu_rc.conjugate()*mtx_L.transpose().conjugate();
+    std::cout << "-mtx_Smallg2*mtx_lambdanu_L_rc = " << std::endl;
+    std::cout << (-mtx_Smallg2*mtx_lambdanu_L_rc).block(0,mtx_input.cols()-3,mtx_M3.rows(),3) << std::endl;
+
+}
+MatrixXcd SolveEigenvectorsIteratively_v2(MatrixXcd mtx_input, MatrixXcd mtx_init, int entry_cutoff)
+{
+    std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+    std::cout << "entry_cutoff = " << entry_cutoff << std::endl;
+    ComplexEigenSolver<MatrixXcd> eigensolver_init;
+    eigensolver_init = ComplexEigenSolver<MatrixXcd>(mtx_init);
+    ComplexEigenSolver<MatrixXcd> eigensolver_init_transpose;
+    eigensolver_init_transpose = ComplexEigenSolver<MatrixXcd>(mtx_init.transpose());
+    MatrixXcd mtx_U_r = eigensolver_init.eigenvectors();
+    MatrixXcd mtx_U_l = eigensolver_init_transpose.eigenvectors();
+    mtx_U_r = MakeRealEigenvectors(mtx_U_r);
+    mtx_U_l = MakeRealEigenvectors(mtx_U_l);
+    MatrixXcd mtx_U_rg = GetSubEigenvectors(mtx_U_r,0);
+    MatrixXcd mtx_U_lg = GetSubEigenvectors(mtx_U_l,0);
+    MatrixXcd mtx_U_rc = GetSubEigenvectors(mtx_U_r,1);
+    MatrixXcd mtx_U_lc = GetSubEigenvectors(mtx_U_l,1);
     MatrixXcd mtx_R = mtx_U_r.transpose().conjugate()*mtx_U_r;
-    MatrixXcd mtx_left = (mtx_BigG1-mtx_lambda)*mtx_U_rc.col(mtx_input.cols()-NthEigenvector);
-    MatrixXcd mtx_right = MatrixXcd::Zero(mtx_left.rows(),1);
-    for (int col=0;col<mtx_input.cols();col++)
+    MatrixXcd mtx_L = mtx_U_l.transpose().conjugate()*mtx_U_l;
+    MatrixXcd mtx_H = mtx_U_l.transpose()*mtx_U_r;
+    MatrixXcd mtx_lambda = GetEigenvalueMatrix(mtx_init);
+    MatrixXcd mtx_lambdanu = GetLambdaNuMatrix(mtx_init);
+    mtx_lambda = CutoffEigenvalueMatrix(mtx_lambda, entry_cutoff);
+    mtx_lambdanu = CutoffEigenvalueMatrix(mtx_lambdanu, entry_cutoff);
+
+    MatrixXcd mtx_M1 = GetSubmatrix(mtx_input, 1);
+    MatrixXcd mtx_M2 = GetSubmatrix(mtx_input, 2);
+    MatrixXcd mtx_M3 = GetSubmatrix(mtx_input, 3);
+    MatrixXcd mtx_alpha1 = GetAlphaMatrix(mtx_input, 1);
+    MatrixXcd mtx_alpha2 = GetAlphaMatrix(mtx_input, 2);
+    MatrixXcd mtx_Smallg1 = mtx_M2*mtx_alpha1.inverse()*mtx_M1;
+    MatrixXcd mtx_BigG1 = mtx_M3-mtx_Smallg1*mtx_M3.transpose();
+    MatrixXcd mtx_Smallg2 = mtx_M1.transpose()*mtx_alpha2.inverse()*mtx_M2.transpose();
+    MatrixXcd mtx_BigG2 = mtx_M3.transpose()-mtx_Smallg2*mtx_M3;
+    MatrixXcd mtx_unit = GetUnitMatrix(mtx_M3.rows(),mtx_M3.cols());
+    MatrixXcd mtx_beta_11 = mtx_M1.transpose()*mtx_alpha1.inverse().transpose()*mtx_alpha1.inverse()*mtx_M1;
+    MatrixXcd mtx_beta_12 = mtx_M2*mtx_alpha2.inverse().transpose()*mtx_alpha1.inverse()*mtx_M1;
+    MatrixXcd mtx_beta_22 = mtx_M2*mtx_alpha2.inverse().transpose()*mtx_alpha2.inverse()*mtx_M2.transpose();
+
+    MatrixXcd mtx_U_rc_new = MatrixXcd::Zero(mtx_U_rc.rows(),mtx_U_rc.cols());
+    MatrixXcd mtx_U_lc_new = MatrixXcd::Zero(mtx_U_lc.rows(),mtx_U_lc.cols());
+    for (int entry_0=0;entry_0<entry_cutoff;entry_0++)
     {
-        mtx_right += -mtx_lambdanu(col,col)*mtx_R(mtx_input.cols()-NthEigenvector,col)*mtx_Smallg1*mtx_U_lc.col(col).conjugate();
+        MatrixXcd mtx_G1_lambda = mtx_BigG1-mtx_lambda(mtx_input.rows()-entry_0-1,mtx_input.rows()-entry_0-1)*mtx_unit;
+        VectorXcd mtx_lambdanu_R_g1_lc = VectorXcd::Zero(mtx_U_lc.rows());
+        //for (int entry_1=0;entry_1<mtx_input.rows();entry_1++)
+        for (int entry_1=0;entry_1<entry_cutoff;entry_1++)
+        {
+            mtx_lambdanu_R_g1_lc += -(mtx_lambdanu.conjugate()(mtx_input.rows()-entry_1-1,mtx_input.rows()-entry_1-1)*mtx_R(mtx_input.rows()-entry_0-1,mtx_input.rows()-entry_1-1)*mtx_Smallg1*mtx_U_lc.col(mtx_input.rows()-entry_1-1).conjugate()).col(0);
+        }
+        //std::cout << "mtx_G1_lambda*mtx_U_rc.col(mtx_input.rows()-entry_0-1) = " << std::endl;
+        //PrintItReversely(mtx_G1_lambda*mtx_U_rc.col(mtx_input.rows()-entry_0-1));
+        //std::cout << "mtx_lambdanu_R_g1_lc = " << std::endl;
+        //PrintItReversely(mtx_lambdanu_R_g1_lc);
+        //mtx_U_rc_new.col(mtx_input.rows()-entry_0-1) = mtx_G1_lambda.inverse()*mtx_lambdanu_R_g1_lc;
+        mtx_U_rc_new.col(mtx_input.rows()-entry_0-1) = mtx_G1_lambda.bdcSvd(ComputeThinU | ComputeThinV).solve(mtx_lambdanu_R_g1_lc);
+
+        MatrixXcd mtx_G2_lambda = mtx_BigG2-mtx_lambda(mtx_input.rows()-entry_0-1,mtx_input.rows()-entry_0-1)*mtx_unit;
+        //MatrixXcd mtx_lambdanu_L_g2_rc = MatrixXcd::Zero(mtx_U_rc.rows(),1);
+        VectorXcd mtx_lambdanu_L_g2_rc = VectorXcd::Zero(mtx_U_rc.rows());
+        for (int entry_1=0;entry_1<entry_cutoff;entry_1++)
+        {
+            mtx_lambdanu_L_g2_rc += -(mtx_lambdanu.conjugate()(mtx_input.rows()-entry_1-1,mtx_input.rows()-entry_1-1)*mtx_L.conjugate()(mtx_input.rows()-entry_1-1,mtx_input.rows()-entry_0-1)*mtx_Smallg2*mtx_U_rc.col(mtx_input.rows()-entry_1-1).conjugate()).col(0);
+        }
+        //mtx_U_lc_new.col(mtx_input.rows()-entry_0-1) = mtx_G2_lambda.inverse()*mtx_lambdanu_L_g2_rc;
+        mtx_U_lc_new.col(mtx_input.rows()-entry_0-1) = mtx_G2_lambda.bdcSvd(ComputeThinU | ComputeThinV).solve(mtx_lambdanu_L_g2_rc);
     }
-    std::cout << "mtx_left = " << std::endl;
-    PrintItReversely(mtx_left);
-    std::cout << "mtx_right = " << std::endl;
-    PrintItReversely(mtx_right);
+    mtx_U_rc_new = MakeRealEigenvectors(mtx_U_rc_new);
+    mtx_U_lc_new = MakeRealEigenvectors(mtx_U_lc_new);
+    std::cout << "mtx_U_rc = " << std::endl;
+    std::cout << mtx_U_rc.block(0,mtx_input.cols()-entry_cutoff,mtx_M3.rows(),entry_cutoff) << std::endl;
+    std::cout << "mtx_U_rc_new = " << std::endl;
+    std::cout << mtx_U_rc_new.block(0,mtx_input.cols()-entry_cutoff,mtx_M3.rows(),entry_cutoff) << std::endl;
+    std::cout << "mtx_U_lc = " << std::endl;
+    std::cout << mtx_U_lc.block(0,mtx_input.cols()-entry_cutoff,mtx_M3.rows(),entry_cutoff) << std::endl;
+    std::cout << "mtx_U_lc_new = " << std::endl;
+    std::cout << mtx_U_lc_new.block(0,mtx_input.cols()-entry_cutoff,mtx_M3.rows(),entry_cutoff) << std::endl;
+
+    ////MatrixXcd mtx_lambdanu_lc_new = GetEigenvalueWeightedVectors(mtx_lambdanu,mtx_U_lc_new);
+    ////MatrixXcd mtx_lambdanu_lc_transpose_new = GetEigenvalueWeightedVectors(mtx_lambdanu,mtx_U_lc_new).transpose();
+    //MatrixXcd mtx_lambdanu_lc = GetEigenvalueWeightedVectors(mtx_lambdanu,mtx_U_lc);
+    //MatrixXcd mtx_lambdanu_lc_transpose = GetEigenvalueWeightedVectors(mtx_lambdanu,mtx_U_lc).transpose();
+    //MatrixXcd mtx_R_predict_term1 = mtx_U_rc_new.transpose().conjugate()*mtx_U_rc_new;
+    ////MatrixXcd mtx_R_predict_term2 = (mtx_U_rc_new.transpose().conjugate()*mtx_M3-mtx_R*mtx_lambdanu_lc_transpose_new)*mtx_beta_11*(mtx_M3.transpose()*mtx_U_rc_new-mtx_lambdanu_lc_new.conjugate()*mtx_R.transpose().conjugate());
+    //MatrixXcd mtx_R_predict_term2 = (mtx_U_rc.transpose().conjugate()*mtx_M3-mtx_R*mtx_lambdanu_lc_transpose)*mtx_beta_11*(mtx_M3.transpose()*mtx_U_rc-mtx_lambdanu_lc.conjugate()*mtx_R.transpose().conjugate());
+    //MatrixXcd mtx_R_predict = mtx_R_predict_term1 + mtx_R_predict_term2;
+    //std::cout << "mtx_R = " << std::endl;
+    //PrintItReversely(mtx_R);
+    //std::cout << "mtx_R_predict = " << std::endl;
+    //PrintItReversely(mtx_R_predict);
+
+    ////MatrixXcd mtx_lambdanu_rc_new = GetEigenvalueWeightedVectors(mtx_lambdanu,mtx_U_rc_new);
+    ////MatrixXcd mtx_lambdanu_rc_transpose_new = GetEigenvalueWeightedVectors(mtx_lambdanu,mtx_U_rc_new).transpose();
+    //MatrixXcd mtx_lambdanu_rc = GetEigenvalueWeightedVectors(mtx_lambdanu,mtx_U_rc);
+    //MatrixXcd mtx_lambdanu_rc_transpose = GetEigenvalueWeightedVectors(mtx_lambdanu,mtx_U_rc).transpose();
+    //MatrixXcd mtx_L_predict_term1 = mtx_U_lc_new.transpose().conjugate()*mtx_U_lc_new;
+    ////MatrixXcd mtx_L_predict_term2 = (mtx_U_lc_new.transpose().conjugate()*mtx_M3.transpose()-mtx_L*mtx_lambdanu_rc_transpose_new)*mtx_beta_22*(mtx_M3*mtx_U_lc_new-mtx_lambdanu_rc_new.conjugate()*mtx_L.transpose().conjugate());
+    //MatrixXcd mtx_L_predict_term2 = (mtx_U_lc.transpose().conjugate()*mtx_M3.transpose()-mtx_L*mtx_lambdanu_rc_transpose)*mtx_beta_22*(mtx_M3*mtx_U_lc-mtx_lambdanu_rc.conjugate()*mtx_L.transpose().conjugate());
+    //MatrixXcd mtx_L_predict = mtx_L_predict_term1 + mtx_L_predict_term2;
+    //std::cout << "mtx_L = " << std::endl;
+    //PrintItReversely(mtx_L);
+    //std::cout << "mtx_L_predict = " << std::endl;
+    //PrintItReversely(mtx_L_predict);
+
+    //MatrixXcd mtx_H_predict_term1 = mtx_U_lc_new.transpose()*mtx_U_rc_new;
+    ////MatrixXcd mtx_H_predict_term2 = (mtx_U_lc_new.transpose()*mtx_M3.transpose()-mtx_L.conjugate()*mtx_lambdanu_rc_transpose_new.conjugate())*mtx_beta_12*(mtx_M3.transpose()*mtx_U_rc_new-mtx_lambdanu_lc_new.conjugate()*mtx_R.transpose().conjugate());
+    //MatrixXcd mtx_H_predict_term2 = (mtx_U_lc.transpose()*mtx_M3.transpose()-mtx_L.conjugate()*mtx_lambdanu_rc_transpose.conjugate())*mtx_beta_12*(mtx_M3.transpose()*mtx_U_rc-mtx_lambdanu_lc.conjugate()*mtx_R.transpose().conjugate());
+    //MatrixXcd mtx_H_predict = mtx_H_predict_term1 + mtx_H_predict_term2;
+    //std::cout << "mtx_H = " << std::endl;
+    //PrintItReversely(mtx_H);
+    //std::cout << "mtx_H_predict = " << std::endl;
+    //PrintItReversely(mtx_H_predict);
+
+    //MatrixXcd mtx_lambda_new = MatrixXcd::Zero(mtx_lambda.rows(),mtx_lambda.cols());
+    //for (int row=0;row<mtx_lambda_new.rows();row++)
+    //{
+    //    for (int col=0;col<mtx_lambda_new.cols();col++)
+    //    {
+    //        mtx_lambda_new(row,col) = 0.;
+    //        if (row==col)
+    //        {
+    //            mtx_lambda_new(row,col) = mtx_lambdanu(row,col)*mtx_H_predict(row,col);
+    //        }
+    //    }
+    //}
+    //std::cout << "mtx_lambda = " << std::endl;
+    //PrintItReversely(mtx_lambda);
+    //std::cout << "mtx_lambda_new = " << std::endl;
+    //PrintItReversely(mtx_lambda_new);
+
+    MatrixXcd mtx_rg_predict = Convert_hadron_to_gamma_vector_v2(mtx_input, mtx_U_rc_new, mtx_lambda, 2);
+    MatrixXcd mtx_lg_predict = Convert_hadron_to_gamma_vector_v2(mtx_input, mtx_U_lc_new, mtx_lambda, 1);
+    std::cout << "mtx_U_rg = " << std::endl;
+    std::cout << mtx_U_rg.block(0,mtx_input.cols()-entry_cutoff,mtx_M3.rows(),entry_cutoff) << std::endl;
+    std::cout << "mtx_rg_predict = " << std::endl;
+    std::cout << mtx_rg_predict.block(0,mtx_input.cols()-entry_cutoff,mtx_M3.rows(),entry_cutoff) << std::endl;
+    std::cout << "mtx_U_lg = " << std::endl;
+    std::cout << mtx_U_lg.block(0,mtx_input.cols()-entry_cutoff,mtx_M3.rows(),entry_cutoff) << std::endl;
+    std::cout << "mtx_lg_predict = " << std::endl;
+    std::cout << mtx_lg_predict.block(0,mtx_input.cols()-entry_cutoff,mtx_M3.rows(),entry_cutoff) << std::endl;
+    MatrixXcd mtx_U_r_new = MatrixXcd::Zero(mtx_input.rows(),mtx_input.cols());
+    MatrixXcd mtx_U_l_new = MatrixXcd::Zero(mtx_input.rows(),mtx_input.cols());
+    int start_row;
+    int start_col;
+    int size_row;
+    int size_col;
+    start_row = 0;
+    start_col = 0;
+    size_row = (binx_blind_global)-start_row;
+    size_col = mtx_input.cols();
+    mtx_U_r_new.block(start_row,start_col,size_row,size_col) = mtx_rg_predict;
+    mtx_U_l_new.block(start_row,start_col,size_row,size_col) = mtx_lg_predict;
+    start_row = binx_blind_global;
+    start_col = 0;
+    size_row = mtx_input.rows()-(binx_blind_global);
+    size_col = mtx_input.cols();
+    mtx_U_r_new.block(start_row,start_col,size_row,size_col) = mtx_U_rc_new;
+    mtx_U_l_new.block(start_row,start_col,size_row,size_col) = mtx_U_lc_new;
+
+    MatrixXcd mtx_output = mtx_U_r_new*mtx_lambdanu*mtx_U_l_new.transpose();
+    return mtx_output;
+
+}
+void SolveEigenvectorsIteratively(MatrixXcd mtx_input, MatrixXcd mtx_init, int entry_cutoff)
+{
+
+    ComplexEigenSolver<MatrixXcd> eigensolver_input;
+    eigensolver_input = ComplexEigenSolver<MatrixXcd>(mtx_input);
+    ComplexEigenSolver<MatrixXcd> eigensolver_input_transpose;
+    eigensolver_input_transpose = ComplexEigenSolver<MatrixXcd>(mtx_input.transpose());
+    MatrixXcd mtx_U_r_input = eigensolver_input.eigenvectors();
+    mtx_U_r_input = MakeRealEigenvectors(mtx_U_r_input);
+    MatrixXcd mtx_U_l_input = eigensolver_input_transpose.eigenvectors();
+    mtx_U_l_input = MakeRealEigenvectors(mtx_U_l_input);
+    MatrixXcd mtx_U_rc_input = GetSubEigenvectors(mtx_U_r_input,1);
+    MatrixXcd mtx_U_lc_input = GetSubEigenvectors(mtx_U_l_input,1);
+    MatrixXcd mtx_R_input = mtx_U_r_input.transpose().conjugate()*mtx_U_r_input;
+    MatrixXcd mtx_L_input = mtx_U_l_input.transpose().conjugate()*mtx_U_l_input;
+    MatrixXcd mtx_lambda_input = GetEigenvalueMatrix(mtx_input);
+    MatrixXcd mtx_lambdanu_input = GetLambdaNuMatrix(mtx_input);
+
+    MatrixXcd mtx_M1_init = GetSubmatrix(mtx_init, 1);
+    MatrixXcd mtx_M2_init = GetSubmatrix(mtx_init, 2);
+    MatrixXcd mtx_M3_init = GetSubmatrix(mtx_init, 3);
+    MatrixXcd mtx_alpha1_init = GetAlphaMatrix(mtx_init, 1);
+    MatrixXcd mtx_alpha2_init = GetAlphaMatrix(mtx_init, 2);
+    MatrixXcd mtx_Smallg1_init = mtx_M2_init*mtx_alpha1_init.inverse()*mtx_M1_init;
+    MatrixXcd mtx_BigG1_init = mtx_M3_init-mtx_Smallg1_init*mtx_M3_init.transpose();
+    MatrixXcd mtx_Smallg2_init = mtx_M1_init.transpose()*mtx_alpha2_init.inverse()*mtx_M2_init.transpose();
+    MatrixXcd mtx_BigG2_init = mtx_M3_init.transpose()-mtx_Smallg2_init*mtx_M3_init;
+
+    ComplexEigenSolver<MatrixXcd> eigensolver_init;
+    eigensolver_init = ComplexEigenSolver<MatrixXcd>(mtx_init);
+    ComplexEigenSolver<MatrixXcd> eigensolver_init_transpose;
+    eigensolver_init_transpose = ComplexEigenSolver<MatrixXcd>(mtx_init.transpose());
+    MatrixXcd mtx_U_r = eigensolver_init.eigenvectors();
+    mtx_U_r = MakeRealEigenvectors(mtx_U_r);
+    MatrixXcd mtx_U_l = eigensolver_init_transpose.eigenvectors();
+    mtx_U_l = MakeRealEigenvectors(mtx_U_l);
+    MatrixXcd mtx_U_rc = GetSubEigenvectors(mtx_U_r,1);
+    MatrixXcd mtx_U_lc = GetSubEigenvectors(mtx_U_l,1);
+    MatrixXcd mtx_R = mtx_U_r.transpose().conjugate()*mtx_U_r;
+    MatrixXcd mtx_L = mtx_U_l.transpose().conjugate()*mtx_U_l;
+    MatrixXcd mtx_lambda = GetEigenvalueMatrix(mtx_init);
+    MatrixXcd mtx_lambdanu = GetLambdaNuMatrix(mtx_init);
+
+    MatrixXcd mtx_M1 = GetSubmatrix(mtx_input, 1);
+    MatrixXcd mtx_M2 = GetSubmatrix(mtx_input, 2);
+    MatrixXcd mtx_M3 = GetSubmatrix(mtx_input, 3);
+    MatrixXcd mtx_alpha1 = GetAlphaMatrix(mtx_input, 1);
+    MatrixXcd mtx_alpha2 = GetAlphaMatrix(mtx_input, 2);
+    MatrixXcd mtx_Smallg1 = mtx_M2*mtx_alpha1.inverse()*mtx_M1;
+    MatrixXcd mtx_BigG1 = mtx_M3-mtx_Smallg1*mtx_M3.transpose();
+    MatrixXcd mtx_Smallg2 = mtx_M1.transpose()*mtx_alpha2.inverse()*mtx_M2.transpose();
+    MatrixXcd mtx_BigG2 = mtx_M3.transpose()-mtx_Smallg2*mtx_M3;
+    MatrixXcd mtx_unit = GetUnitMatrix(mtx_M3.rows(),mtx_M3.cols());
+    //mtx_Smallg1 = mtx_unit;
+    //mtx_Smallg2 = mtx_unit;
+
+    MatrixXcd mtx_Big = MatrixXcd::Zero(mtx_M3.rows()*2*entry_cutoff,mtx_M3.rows()*2*entry_cutoff);
+    MatrixXcd mtx_G1_lambda = MatrixXcd::Zero(mtx_M3.rows(),mtx_M3.rows());
+    MatrixXcd mtx_G2_lambda = MatrixXcd::Zero(mtx_M3.rows(),mtx_M3.rows());
+    MatrixXcd mtx_R_g1 = MatrixXcd::Zero(mtx_M3.rows(),mtx_M3.rows());
+    MatrixXcd mtx_L_g2 = MatrixXcd::Zero(mtx_M3.rows(),mtx_M3.rows());
+    int first_row;
+    int first_col;
+    for (int entry_0=0;entry_0<entry_cutoff;entry_0++)
+    {
+        for (int entry_1=0;entry_1<entry_cutoff;entry_1++)
+        {
+            mtx_G1_lambda = mtx_BigG1-mtx_lambda(mtx_input.rows()-entry_0-1,mtx_input.rows()-entry_1-1)*mtx_unit;
+            mtx_G2_lambda = mtx_BigG2-mtx_lambda(mtx_input.rows()-entry_0-1,mtx_input.rows()-entry_1-1)*mtx_unit;
+            mtx_R_g1 = mtx_lambdanu(mtx_input.rows()-entry_1-1,mtx_input.rows()-entry_1-1)*mtx_R(mtx_input.rows()-entry_0-1,mtx_input.rows()-entry_1-1)*mtx_Smallg1;
+            mtx_L_g2 = mtx_lambdanu(mtx_input.rows()-entry_1-1,mtx_input.rows()-entry_1-1)*mtx_L(mtx_input.rows()-entry_0-1,mtx_input.rows()-entry_1-1)*mtx_Smallg2;
+            if (entry_0==entry_1)
+            {
+                first_row = entry_0*mtx_M3.rows();
+                first_col = entry_1*mtx_M3.rows();
+                mtx_Big.block(first_row,first_col,mtx_M3.rows(),mtx_M3.rows()) = mtx_G1_lambda;
+                first_row = entry_0*mtx_M3.rows()+entry_cutoff*mtx_M3.rows();
+                first_col = entry_1*mtx_M3.rows()+entry_cutoff*mtx_M3.rows();
+                mtx_Big.block(first_row,first_col,mtx_M3.rows(),mtx_M3.rows()) = mtx_G2_lambda;
+            }
+            first_row = entry_0*mtx_M3.rows();
+            first_col = entry_1*mtx_M3.rows()+entry_cutoff*mtx_M3.rows();
+            mtx_Big.block(first_row,first_col,mtx_M3.rows(),mtx_M3.rows()) = mtx_R_g1;
+            first_row = entry_0*mtx_M3.rows()+entry_cutoff*mtx_M3.rows();
+            first_col = entry_1*mtx_M3.rows();
+            mtx_Big.block(first_row,first_col,mtx_M3.rows(),mtx_M3.rows()) = mtx_L_g2;
+        }
+    }
+    //std::cout << "mtx_Big = " << std::endl;
+    //PrintItReversely(mtx_Big);
+
+    mtx_lambdanu = CutoffEigenvalueMatrix(mtx_lambdanu, entry_cutoff);
+    MatrixXcd mtx_G1_rc = mtx_BigG1*mtx_U_rc;
+    MatrixXcd mtx_lambda_rc = GetEigenvalueWeightedVectors(mtx_lambda,mtx_U_rc);
+    MatrixXcd mtx_G2_lc = mtx_BigG2*mtx_U_lc;
+    MatrixXcd mtx_lambda_lc = GetEigenvalueWeightedVectors(mtx_lambda,mtx_U_lc);
+    MatrixXcd mtx_lambdanu_lc = GetEigenvalueWeightedVectors(mtx_lambdanu,mtx_U_lc);
+    MatrixXcd mtx_lambdanu_R_lc = mtx_lambdanu_lc.conjugate()*mtx_R.transpose().conjugate();
+    MatrixXcd mtx_remain_lc = mtx_G1_rc-mtx_lambda_rc+mtx_Smallg1*mtx_lambdanu_R_lc;
+    MatrixXcd mtx_lambdanu_rc = GetEigenvalueWeightedVectors(mtx_lambdanu,mtx_U_rc);
+    MatrixXcd mtx_lambdanu_L_rc = mtx_lambdanu_rc.conjugate()*mtx_L.transpose().conjugate();
+    MatrixXcd mtx_remain_rc = mtx_G2_lc-mtx_lambda_lc+mtx_Smallg2*mtx_lambdanu_L_rc;
+    //std::cout << "mtx_remain_lc = " << std::endl;
+    //PrintItReversely(mtx_remain_lc);
+    //std::cout << "mtx_remain_rc = " << std::endl;
+    //PrintItReversely(mtx_remain_rc);
+
+    VectorXcd vtx_remain = VectorXcd::Zero(mtx_M3.rows()*2*entry_cutoff);
+    VectorXcd vtx_truth = VectorXcd::Zero(mtx_M3.rows()*2*entry_cutoff);
+    for (int entry_0=0;entry_0<entry_cutoff;entry_0++)
+    {
+        first_row = entry_0*mtx_M3.rows();
+        vtx_remain.segment(first_row,mtx_M3.rows()) = mtx_remain_lc.col(mtx_input.rows()-entry_0-1).conjugate();
+        vtx_truth.segment(first_row,mtx_M3.rows()) = mtx_U_rc.col(mtx_input.rows()-entry_0-1).conjugate();
+        first_row = entry_0*mtx_M3.rows()+entry_cutoff*mtx_M3.rows();
+        vtx_remain.segment(first_row,mtx_M3.rows()) = mtx_remain_rc.col(mtx_input.rows()-entry_0-1);
+        vtx_truth.segment(first_row,mtx_M3.rows()) = mtx_U_lc.col(mtx_input.rows()-entry_0-1);
+    }
+    //std::cout << "vtx_remain = " << std::endl;
+    //std::cout << vtx_remain << std::endl;
+    //std::cout << "vtx_truth = " << std::endl;
+    //std::cout << vtx_truth << std::endl;
+    //std::cout << "mtx_Big*vtx_truth = " << std::endl;
+    //std::cout << mtx_Big*vtx_truth << std::endl;
+
+    VectorXcd vtx_solution = mtx_Big.bdcSvd(ComputeThinU | ComputeThinV).solve(vtx_remain);
+    //VectorXcd vtx_solution = (mtx_Big.transpose() * mtx_Big).ldlt().solve(mtx_Big.transpose() * vtx_remain);
+    //MatrixXcd vtx_solution = mtx_Big.fullPivLu().kernel();
+    for (int entry_0=0;entry_0<entry_cutoff;entry_0++)
+    {
+        std::cout << "vtx_solution rc = " << std::endl;
+        first_row = entry_0*mtx_M3.rows();
+        std::cout << vtx_solution.segment(first_row,mtx_M3.rows()) << std::endl;
+        std::cout << "vtx_solution lc = " << std::endl;
+        first_row = entry_0*mtx_M3.rows()+entry_cutoff*mtx_M3.rows();
+        std::cout << vtx_solution.segment(first_row,mtx_M3.rows()) << std::endl;
+    }
+    std::cout << "mtx_U_rc_input = " << std::endl;
+    std::cout << mtx_U_rc_input << std::endl;
+    std::cout << "mtx_U_lc_input = " << std::endl;
+    std::cout << mtx_U_lc_input << std::endl;
+    std::cout << "mtx_U_rc (init) = " << std::endl;
+    std::cout << mtx_U_rc << std::endl;
+    std::cout << "mtx_U_lc (init) = " << std::endl;
+    std::cout << mtx_U_lc << std::endl;
+
 }
 pair<std::complex<double>,std::complex<double>> GetIterativeMatrix(MatrixXcd mtx_input, int NthEigenvector, std::complex<double> par_R, std::complex<double> par_L)
 {
+    std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+    ComplexEigenSolver<MatrixXcd> eigensolver_input;
+    eigensolver_input = ComplexEigenSolver<MatrixXcd>(mtx_input);
+    ComplexEigenSolver<MatrixXcd> eigensolver_input_transpose;
+    eigensolver_input_transpose = ComplexEigenSolver<MatrixXcd>(mtx_input.transpose());
+    MatrixXcd mtx_U_r_input = eigensolver_input.eigenvectors();
+    mtx_U_r_input = MakeRealEigenvectors(mtx_U_r_input);
+    MatrixXcd mtx_U_l_input = eigensolver_input_transpose.eigenvectors();
+    mtx_U_l_input = MakeRealEigenvectors(mtx_U_l_input);
+    MatrixXcd mtx_U_rc_input = GetSubEigenvectors(mtx_U_r_input,1);
+    MatrixXcd mtx_U_lc_input = GetSubEigenvectors(mtx_U_l_input,1);
+
     MatrixXcd mtx_M1 = GetSubmatrix(mtx_input, 1);
     MatrixXcd mtx_M2 = GetSubmatrix(mtx_input, 2);
     MatrixXcd mtx_M3 = GetSubmatrix(mtx_input, 3);
-    //std::cout << "mtx_M1 = " << std::endl;
-    //PrintItReversely(mtx_M1);
-    //std::cout << "mtx_M2 = " << std::endl;
-    //PrintItReversely(mtx_M2);
-    //std::cout << "mtx_M3 = " << std::endl;
-    //PrintItReversely(mtx_M3);
 
     MatrixXcd mtx_alpha1 = GetAlphaMatrix(mtx_input, 1);
     MatrixXcd mtx_Smallg1 = mtx_M2*mtx_alpha1.inverse()*mtx_M1;
     MatrixXcd mtx_BigG1 = mtx_M3-mtx_Smallg1*mtx_M3.transpose();
-    //std::cout << "mtx_alpha1.inverse() = " << std::endl;
-    //PrintItReversely(mtx_alpha1.inverse());
 
     MatrixXcd mtx_alpha2 = GetAlphaMatrix(mtx_input, 2);
     MatrixXcd mtx_Smallg2 = mtx_M1.transpose()*mtx_alpha2.inverse()*mtx_M2.transpose();
     MatrixXcd mtx_BigG2 = mtx_M3.transpose()-mtx_Smallg2*mtx_M3;
-    //std::cout << "mtx_alpha2.inverse() = " << std::endl;
-    //PrintItReversely(mtx_alpha2.inverse());
+    MatrixXcd mtx_unit = GetUnitMatrix(mtx_M3.rows(),mtx_M3.cols());
 
     MatrixXcd mtx_result = MatrixXcd::Zero(mtx_M3.rows()+mtx_M3.rows(),mtx_M3.rows()+mtx_M3.rows());
     mtx_result.block(0,0,mtx_M3.rows(),mtx_M3.rows()) = mtx_BigG1;
-    mtx_result.block(mtx_M3.rows(),mtx_M3.rows(),mtx_M3.rows(),mtx_M3.rows()) = mtx_BigG1;
+    mtx_result.block(mtx_M3.rows(),mtx_M3.rows(),mtx_M3.rows(),mtx_M3.rows()) = mtx_BigG2;
     mtx_result.block(0,mtx_M3.rows(),mtx_M3.rows(),mtx_M3.rows()) = par_R*mtx_Smallg1;
     mtx_result.block(mtx_M3.rows(),0,mtx_M3.rows(),mtx_M3.rows()) = par_L*mtx_Smallg2;
+    //std::cout << "the big matrix = " << std::endl;
+    //PrintItReversely(mtx_result);
 
     ComplexEigenSolver<MatrixXcd> eigensolver_iterative;
     eigensolver_iterative = ComplexEigenSolver<MatrixXcd>(mtx_result);
-    std::cout << "lambda = " << eigensolver_iterative.eigenvalues()(mtx_result.rows()-1) << std::endl;
+    std::cout << "new lambda = " << eigensolver_iterative.eigenvalues()(mtx_result.rows()-1) << std::endl;
+    //std::cout << "new eigenvector = " << std::endl;
+    //std::cout << eigensolver_iterative.eigenvectors().block(0,mtx_result.cols()-1,mtx_result.rows(),1) << std::endl;
     std::complex<double> lambda_new = eigensolver_iterative.eigenvalues()(mtx_result.rows()-1);
-    MatrixXcd mtx_U_rc_new = eigensolver_iterative.eigenvectors().block(0,mtx_result.rows()-1,mtx_M3.rows(),1);
-    MatrixXcd mtx_U_lc_new = eigensolver_iterative.eigenvectors().block(mtx_M3.rows(),mtx_result.rows()-1,mtx_M3.rows(),1);
+    MatrixXcd mtx_U_rc_new = eigensolver_iterative.eigenvectors().block(0,mtx_result.cols()-1,mtx_M3.rows(),1);
+    mtx_U_rc_new = MakeRealEigenvectors(mtx_U_rc_new);
+    MatrixXcd mtx_U_lc_new = eigensolver_iterative.eigenvectors().block(mtx_M3.rows(),mtx_result.cols()-1,mtx_M3.rows(),1);
+    mtx_U_lc_new = MakeRealEigenvectors(mtx_U_lc_new);
     MatrixXcd mtx_beta_11 = mtx_M1.transpose()*mtx_alpha1.inverse().transpose()*mtx_alpha1.inverse()*mtx_M1;
     MatrixXcd mtx_beta_12 = mtx_M2*mtx_alpha2.inverse().transpose()*mtx_alpha1.inverse()*mtx_M1;
     MatrixXcd mtx_beta_22 = mtx_M2*mtx_alpha2.inverse().transpose()*mtx_alpha2.inverse()*mtx_M2.transpose();
-    //std::cout << "mtx_beta_11 = " << std::endl;
-    //PrintItReversely(mtx_beta_11);
-    //std::cout << "mtx_beta_12 = " << std::endl;
-    //PrintItReversely(mtx_beta_12);
-    //std::cout << "mtx_beta_22 = " << std::endl;
-    //PrintItReversely(mtx_beta_22);
+    std::cout << "mtx_U_lc_new = " << std::endl;
+    std::cout << mtx_U_lc_new << std::endl;
+    std::cout << "mtx_U_rc_new = " << std::endl;
+    std::cout << mtx_U_rc_new << std::endl;
 
-    MatrixXcd R_11 = mtx_U_rc_new.transpose().conjugate()*mtx_U_rc_new;
-    //std::cout << "mtx_U_rc_new.transpose().conjugate()*mtx_U_rc_new = " << std::endl;
-    //std::cout << mtx_U_rc_new.transpose().conjugate()*mtx_U_rc_new << std::endl;
-    R_11 += (mtx_U_rc_new.transpose().conjugate()*mtx_M3-par_R*mtx_U_lc_new.transpose())*mtx_beta_11*(mtx_M3.transpose()*mtx_U_rc_new-par_R*mtx_U_lc_new);
-    //std::cout << "(par_R*mtx_U_lc_new.transpose())*mtx_beta_11*(par_R*mtx_U_lc_new) = " << std::endl;
-    //std::cout << (par_R*mtx_U_lc_new.transpose())*mtx_beta_11*(par_R*mtx_U_lc_new) << std::endl;
-    //std::cout << "R_11 = " << std::endl;
-    //std::cout << R_11 << std::endl;
-    MatrixXcd L_11 = mtx_U_lc_new.transpose().conjugate()*mtx_U_lc_new;
-    //std::cout << "mtx_U_lc_new.transpose().conjugate()*mtx_U_lc_new = " << std::endl;
-    //std::cout << mtx_U_lc_new.transpose().conjugate()*mtx_U_lc_new << std::endl;
-    L_11 += (mtx_U_lc_new.transpose().conjugate()*mtx_M3.transpose()-par_L*mtx_U_rc_new.transpose())*mtx_beta_22*(mtx_M3*mtx_U_lc_new-par_L*mtx_U_rc_new);
-    //std::cout << "(par_L*mtx_U_rc_new.transpose())*mtx_beta_22*(par_L*mtx_U_rc_new) = " << std::endl;
-    //std::cout << (par_L*mtx_U_rc_new.transpose())*mtx_beta_22*(par_L*mtx_U_rc_new) << std::endl;
-    //std::cout << "L_11 = " << std::endl;
-    //std::cout << L_11 << std::endl;
-    MatrixXcd nu_11 = mtx_U_lc_new.transpose()*mtx_U_rc_new;
-    nu_11 += (mtx_U_lc_new.transpose()*mtx_M3.transpose()-par_L*mtx_U_rc_new.transpose().conjugate())*mtx_beta_12*(mtx_M3.transpose()*mtx_U_rc_new-par_R*mtx_U_lc_new);
-    //std::cout << "nu_11 = " << std::endl;
-    //std::cout << nu_11 << std::endl;
+    MatrixXcd mtx_R_new = mtx_U_rc_new.transpose().conjugate()*mtx_U_rc_new;
+    mtx_R_new += (mtx_U_rc_new.transpose().conjugate()*mtx_M3-par_R*mtx_U_lc_new.transpose())*mtx_beta_11*(mtx_M3.transpose()*mtx_U_rc_new-std::conj(par_R)*mtx_U_lc_new.conjugate());
+    std::cout << "mtx_R_new = " << std::endl;
+    PrintItReversely(mtx_R_new);
 
-    return std::make_pair(R_11(0,0)*lambda_new/nu_11(0,0),L_11(0,0)*lambda_new/nu_11(0,0));
+    MatrixXcd mtx_L_new = mtx_U_lc_new.transpose().conjugate()*mtx_U_lc_new;
+    mtx_L_new += (mtx_U_lc_new.transpose().conjugate()*mtx_M3.transpose()-par_L*mtx_U_rc_new.transpose())*mtx_beta_22*(mtx_M3*mtx_U_lc_new-std::conj(par_L)*mtx_U_rc_new.conjugate());
+    std::cout << "mtx_L_new = " << std::endl;
+    PrintItReversely(mtx_L_new);
+
+    MatrixXcd mtx_H_new = mtx_U_lc_new.transpose()*mtx_U_rc_new;
+    mtx_H_new += (mtx_U_lc_new.transpose()*mtx_M3.transpose()-std::conj(par_L)*mtx_U_rc_new.transpose().conjugate())*mtx_beta_12*(mtx_M3.transpose()*mtx_U_rc_new-std::conj(par_R)*mtx_U_lc_new.conjugate());
+    std::cout << "mtx_H_new = " << std::endl;
+    PrintItReversely(mtx_H_new);
+
+    return std::make_pair(mtx_R_new(0,0)*lambda_new/mtx_H_new(0,0),mtx_L_new(0,0)*lambda_new/mtx_H_new(0,0));
 }
 void Smooth2DHistogram(TH2D* hist_origin, TH2D* hist_smooth, int size)
 {
@@ -2173,6 +2551,113 @@ void SingleTimeMinimization(int fix_which, int which_to_fit)
     mtx_data_bkgd = BuildModelMatrix();
 
 }
+MatrixXcd SpectralDecompositionMethod(MatrixXcd mtx_input, int LeftOrRight, int entry_cutoff, int nth_entry)
+{
+    // LeftOrRight = 1, left
+    // LeftOrRight = 2, right
+
+    MatrixXcd mtx_output = MatrixXcd::Zero(mtx_input.rows(),mtx_input.cols());
+    ComplexEigenSolver<MatrixXcd> eigensolver_input = ComplexEigenSolver<MatrixXcd>(mtx_input);
+    ComplexEigenSolver<MatrixXcd> eigensolver_input_transpose = ComplexEigenSolver<MatrixXcd>(mtx_input.transpose());
+    MatrixXcd mtx_r_init = eigensolver_input.eigenvectors();
+    MatrixXcd mtx_l_init = eigensolver_input_transpose.eigenvectors();
+    mtx_r_init = MakeRealEigenvectors(mtx_r_init);
+    mtx_l_init = MakeRealEigenvectors(mtx_l_init);
+    MatrixXcd mtx_rc_init = GetSubEigenvectors(mtx_r_init,1);
+    MatrixXcd mtx_lc_init = GetSubEigenvectors(mtx_l_init,1);
+    MatrixXcd mtx_R = mtx_r_init.transpose().conjugate()*mtx_r_init;
+    MatrixXcd mtx_L = mtx_l_init.transpose().conjugate()*mtx_l_init;
+    MatrixXcd mtx_H = mtx_l_init.transpose()*mtx_r_init;
+    MatrixXcd mtx_lambda(mtx_input.rows(),mtx_input.cols());
+    for (int row=0;row<mtx_input.rows();row++)
+    {
+        for (int col=0;col<mtx_input.cols();col++)
+        {
+            mtx_lambda(row,col) = 0.;
+            if (row==col)
+            {
+                mtx_lambda(row,col) = eigensolver_input.eigenvalues()(col);
+            }
+        }
+    }
+    mtx_lambda = CutoffEigenvalueMatrix(mtx_lambda, entry_cutoff);
+    MatrixXcd mtx_S(mtx_input.rows(),mtx_input.cols());
+    for (int row=0;row<mtx_input.rows();row++)
+    {
+        for (int col=0;col<mtx_input.cols();col++)
+        {
+            mtx_S(row,col) = 0.;
+            if (row==col)
+            {
+                mtx_S(row,col) = eigensolver_input.eigenvalues()(col)/mtx_H(row,col);
+            }
+        }
+    }
+    mtx_S = CutoffEigenvalueMatrix(mtx_S, entry_cutoff);
+
+    MatrixXcd mtx_remain = mtx_input - mtx_r_init*mtx_S*mtx_l_init.transpose();
+
+    MatrixXcd mtx_M1 = GetSubmatrix(mtx_data, 1);
+    MatrixXcd mtx_M2 = GetSubmatrix(mtx_data, 2);
+    MatrixXcd mtx_M3 = GetSubmatrix(mtx_data, 3);
+    MatrixXcd mtx_M1_init = GetSubmatrix(mtx_input-mtx_remain, 1);
+    MatrixXcd mtx_M2_init = GetSubmatrix(mtx_input-mtx_remain, 2);
+    MatrixXcd mtx_M3_init = GetSubmatrix(mtx_input-mtx_remain, 3);
+
+    VectorXcd vtr_Delta = VectorXcd::Zero((mtx_M2.cols()+mtx_M3.cols())*mtx_M3.rows());
+    MatrixXcd mtx_Big = MatrixXcd::Zero((mtx_M2.cols()+mtx_M3.cols())*mtx_M3.rows(),mtx_input.cols());
+    MatrixXcd mtx_unit = GetUnitMatrix(mtx_input.rows(),mtx_input.cols());
+    MatrixXcd mtx_l_vari = MatrixXcd::Zero(mtx_l_init.rows(),mtx_l_init.cols());
+    MatrixXcd mtx_r_vari = MatrixXcd::Zero(mtx_r_init.rows(),mtx_r_init.cols());
+    MatrixXcd mtx_l_final = mtx_l_init;
+    MatrixXcd mtx_r_final = mtx_r_init;
+    // LeftOrRight = 1, left
+    // LeftOrRight = 2, right
+    if (LeftOrRight==1)
+    {
+        for (int row=0;row<mtx_M3.rows();row++)
+        {
+            int first_idx = row*(mtx_M2.cols()+mtx_M3.cols());
+            vtr_Delta.segment(first_idx,mtx_M2.cols()) = (mtx_M2-mtx_M2_init).transpose().col(mtx_M2.rows()-row-1);
+            vtr_Delta.segment(first_idx+mtx_M2.cols(),mtx_M3.cols()) = (mtx_M3-mtx_M3_init).transpose().col(mtx_M2.rows()-row-1);
+        }
+        for (int row=0;row<mtx_M3.rows();row++)
+        {
+            int first_idx = row*(mtx_input.cols());
+            mtx_Big.block(first_idx,0,mtx_input.rows(),mtx_input.cols()) = mtx_unit*mtx_S(mtx_input.rows()-nth_entry,mtx_input.cols()-nth_entry)*mtx_rc_init(mtx_M3.rows()-row-1,mtx_input.cols()-nth_entry);
+        }
+        mtx_l_vari.col(mtx_l_vari.cols()-nth_entry) = mtx_Big.bdcSvd(ComputeThinU | ComputeThinV).solve(vtr_Delta);
+        mtx_l_final += mtx_l_vari;
+        //MatrixXcd mtx_S_l_transpose = GetEigenvalueWeightedVectors(mtx_S,mtx_l_final).transpose();
+        //mtx_r_final.col(mtx_r_final.cols()-nth_entry) = ((mtx_R*mtx_S_l_transpose)*mtx_input.inverse()).transpose().conjugate().col(mtx_r_final.cols()-nth_entry);
+        //std::cout << "mtx_r_init = " << std::endl;
+        //PrintItReversely(mtx_r_init);
+        //std::cout << "mtx_r_final = " << std::endl;
+        //PrintItReversely(mtx_r_final);
+    }
+    else
+    {
+        for (int col=0;col<mtx_M3.cols();col++)
+        {
+            int first_idx = col*(mtx_M1.rows()+mtx_M3.rows());
+            vtr_Delta.segment(first_idx,mtx_M1.rows()) = (mtx_M1-mtx_M1_init).col(mtx_M1.cols()-col-1);
+            vtr_Delta.segment(first_idx+mtx_M1.rows(),mtx_M3.rows()) = (mtx_M3-mtx_M3_init).col(mtx_M1.cols()-col-1);
+        }
+        for (int col=0;col<mtx_M3.cols();col++)
+        {
+            int first_idx = col*(mtx_input.rows());
+            mtx_Big.block(first_idx,0,mtx_input.cols(),mtx_input.rows()) = mtx_unit*mtx_S(mtx_input.rows()-nth_entry,mtx_input.cols()-nth_entry)*mtx_lc_init(mtx_M3.cols()-col-1,mtx_input.rows()-nth_entry);
+        }
+        mtx_r_vari.col(mtx_r_vari.cols()-nth_entry) = mtx_Big.bdcSvd(ComputeThinU | ComputeThinV).solve(vtr_Delta);
+        mtx_r_final += mtx_r_vari;
+        //MatrixXcd mtx_S_r_transpose = GetEigenvalueWeightedVectors(mtx_S,mtx_r_final).transpose();
+        //mtx_l_final.col(mtx_l_final.cols()-nth_entry) = ((mtx_L*mtx_S_r_transpose)*(mtx_input.transpose()).inverse()).transpose().conjugate().col(mtx_l_final.cols()-nth_entry);
+    }
+    mtx_output = mtx_r_final*mtx_S*mtx_l_final.transpose() + mtx_remain;
+
+
+    return mtx_output;
+}
 void MatrixFactorizationMethod()
 {
 
@@ -2416,8 +2901,8 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         Hist_Dark_InvEigenvectorReal_2.push_back(TH1D("Hist_Dark_InvEigenvectorReal_2_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,0,N_bins_for_deconv));
 
 
-        Hist_Data->Scale(1./double(Hist_Data->Integral()));
-        Hist_Dark->Scale(1./double(Hist_Dark->Integral()));
+        //Hist_Data->Scale(1./double(Hist_Data->Integral()));
+        //Hist_Dark->Scale(1./double(Hist_Dark->Integral()));
         mtx_gamma = fillMatrix(Hist_GammaMC);
         mtx_data = fillMatrix(Hist_Data);
         mtx_dark = fillMatrix(Hist_Dark);
@@ -2522,40 +3007,31 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         MatrixXcd mtx_lg_predict = Convert_hadron_to_gamma_vector(mtx_U_l, mtx_lambda, 1);
         //VerifyHMatrix(mtx_data);
         //VerifySmallgMatrix(mtx_data,1);
-        VerifyBetaMatrix(mtx_data);
+        //VerifyBetaMatrix(mtx_data);
+        //VerifyLeftRightVectorCoupling(mtx_data,mtx_data.rows());
+        //VerifyLeftRightVectorCoupling(mtx_data,3);
         //VerifyLeftRightVectorCoupling(mtx_data,1);
-        //VerifyLeftRightVectorCoupling(mtx_data,2);
+        //SolveEigenvectorsIteratively(mtx_data, mtx_dark, 3);
+        //MatrixXcd mtx_predict = SolveEigenvectorsIteratively_v2(mtx_data,mtx_data,1);
+        //mtx_predict = SolveEigenvectorsIteratively_v2(mtx_data,mtx_data,3);
+        //mtx_predict = SolveEigenvectorsIteratively_v2(mtx_data,mtx_data,6);
         
         //MatrixXcd mtx_lambdanu = GetLambdaNuMatrix(mtx_data);
         //std::complex<double> par_R = mtx_lambdanu(mtx_data.rows()-1,mtx_data.cols()-1);
         //std::complex<double> par_L = mtx_lambdanu(mtx_data.rows()-1,mtx_data.cols()-1);
+        ////par_R += 0.1*par_R;
+        ////par_L += 0.1*par_L;
         //std::cout << "inital par_R = " << par_R << std::endl;
         //std::cout << "inital par_L = " << par_L << std::endl;
         //pair<std::complex<double>,std::complex<double>> pars = GetIterativeMatrix(mtx_data,1,par_R,par_L);
-        //pars = GetIterativeMatrix(mtx_data,1,pars.first,pars.second);
         //std::cout << "new par_R = " << pars.first << std::endl;
         //std::cout << "new par_L = " << pars.second << std::endl;
-        //pars = GetIterativeMatrix(mtx_data,1,pars.first,pars.second);
-        //std::cout << "new par_R = " << pars.first << std::endl;
-        //std::cout << "new par_L = " << pars.second << std::endl;
-        //pars = GetIterativeMatrix(mtx_data,1,pars.first,pars.second);
-        //std::cout << "new par_R = " << pars.first << std::endl;
-        //std::cout << "new par_L = " << pars.second << std::endl;
-        //pars = GetIterativeMatrix(mtx_data,1,pars.first,pars.second);
-        //std::cout << "new par_R = " << pars.first << std::endl;
-        //std::cout << "new par_L = " << pars.second << std::endl;
-        //pars = GetIterativeMatrix(mtx_data,1,pars.first,pars.second);
-        //std::cout << "new par_R = " << pars.first << std::endl;
-        //std::cout << "new par_L = " << pars.second << std::endl;
-        //pars = GetIterativeMatrix(mtx_data,1,pars.first,pars.second);
-        //std::cout << "new par_R = " << pars.first << std::endl;
-        //std::cout << "new par_L = " << pars.second << std::endl;
-        //pars = GetIterativeMatrix(mtx_data,1,pars.first,pars.second);
-        //std::cout << "new par_R = " << pars.first << std::endl;
-        //std::cout << "new par_L = " << pars.second << std::endl;
-        //pars = GetIterativeMatrix(mtx_data,1,pars.first,pars.second);
-        //std::cout << "new par_R = " << pars.first << std::endl;
-        //std::cout << "new par_L = " << pars.second << std::endl;
+        //for (int iteration=1;iteration<=100;iteration++)
+        //{
+        //    pars = GetIterativeMatrix(mtx_data,1,pars.first,pars.second);
+        //    std::cout << "new par_R = " << pars.first << std::endl;
+        //    std::cout << "new par_L = " << pars.second << std::endl;
+        //}
 
         double count_gamma_like = Hist_Data->Integral(binx_lower,binx_blind_global,biny_lower,biny_blind_global);
         double count_total = Hist_Data->Integral();
@@ -2788,7 +3264,16 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         int row_fix = 0;
         int first_index = 0;
 
-        MatrixFactorizationMethod();
+        mtx_data_bkgd = SpectralDecompositionMethod(mtx_dark, 1, 3, 1);
+        mtx_data_bkgd = SpectralDecompositionMethod(mtx_data_bkgd, 2, 3, 1);
+        mtx_data_bkgd = SpectralDecompositionMethod(mtx_data_bkgd, 1, 3, 2);
+        mtx_data_bkgd = SpectralDecompositionMethod(mtx_data_bkgd, 2, 3, 2);
+        mtx_data_bkgd = SpectralDecompositionMethod(mtx_data_bkgd, 1, 3, 1);
+        mtx_data_bkgd = SpectralDecompositionMethod(mtx_data_bkgd, 2, 3, 1);
+        mtx_data_bkgd = SpectralDecompositionMethod(mtx_data_bkgd, 1, 3, 2);
+        mtx_data_bkgd = SpectralDecompositionMethod(mtx_data_bkgd, 2, 3, 2);
+
+        //MatrixFactorizationMethod();
         //NuclearNormMinimizationMethod(binx_blind_global,biny_blind_global);
         fill2DHistogramAbs(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
         std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,15,1,15) << std::endl;

@@ -67,10 +67,10 @@ double MSCL_cut_upper = 1.0;
 //double MSCW_plot_upper = 2.;
 //double MSCL_plot_lower = -1.;
 //double MSCL_plot_upper = 2.;
-int N_bins_for_deconv = 12;
+int N_bins_for_deconv = 12; // 12 should be the lowest bin number
 double gamma_hadron_dim_ratio = 1.;
-double MSCW_plot_lower = -1.5;
-double MSCL_plot_lower = -1.5;
+double MSCW_plot_lower = -1.0;
+double MSCL_plot_lower = -1.0;
 double MSCW_plot_upper = 2.;
 double MSCL_plot_upper = 2.;
 
