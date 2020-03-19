@@ -48,7 +48,6 @@ using namespace Eigen;
 //using Eigen::MatrixXd;
 
 int dark_vector = 1;
-bool linear = true;
 bool invert_y = false;
 bool transpose = false;
 bool eigenbasis = false;
