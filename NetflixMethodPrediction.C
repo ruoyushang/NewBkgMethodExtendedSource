@@ -1510,6 +1510,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
                 //weight = 1./(data*data+model*model);
                 //weight = 1./(data_err*data_err);
                 //if (data-model<0.) weight = 2.;
+                if (bx>=binx_blind && by>=biny_blind) weight = 0.5;
                 double chi2_this = weight*pow(data-model,2);
                 if (isnan(chi2_this))
                 {
