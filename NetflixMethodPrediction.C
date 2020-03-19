@@ -1157,59 +1157,34 @@ MatrixXcd BuildModelMatrix()
     //MatrixXcd mtx_Smallg2 = mtx_M1.transpose()*mtx_alpha2.inverse()*mtx_M2.transpose();
     //MatrixXcd mtx_BigG2 = mtx_M3.transpose()-mtx_Smallg2*mtx_M3;
 
-    //MatrixXcd mtx_U_r = mtx_eigenvector_init;
-    //MatrixXcd mtx_U_l = mtx_eigenvector_inv_init.transpose();
+    MatrixXcd mtx_U_r = mtx_eigenvector_init;
+    MatrixXcd mtx_U_l = mtx_eigenvector_inv_init.transpose();
     ////std::cout << "mtx_U_r (init) = " << std::endl;
     ////std::cout << mtx_U_r.block(0,mtx_data_bkgd.cols()-3,mtx_data_bkgd.rows(),3) << std::endl;
     ////std::cout << "mtx_U_l (init) = " << std::endl;
     ////std::cout << mtx_U_l.block(0,mtx_data_bkgd.cols()-3,mtx_data_bkgd.rows(),3) << std::endl;
-    //MatrixXcd mtx_U_rc = GetSubEigenvectors(mtx_U_r,1);
-    //MatrixXcd mtx_U_lc = GetSubEigenvectors(mtx_U_l,1);
-    //MatrixXcd mtx_R = mtx_U_r.transpose().conjugate()*mtx_U_r;
-    //MatrixXcd mtx_L = mtx_U_l.transpose().conjugate()*mtx_U_l;
-    //MatrixXcd mtx_lambda = GetEigenvalueMatrix(mtx_dark);
-    //mtx_lambda = CutoffEigenvalueMatrix(mtx_lambda, NumberOfEigenvectors);
-    //MatrixXcd mtx_lambdanu = mtx_eigenvalue_init;
+    MatrixXcd mtx_H = mtx_U_l.transpose()*mtx_U_r;
 
-    //MatrixXcd mtx_lambdanu_lc = GetEigenvalueWeightedVectors(mtx_lambdanu,mtx_U_lc);
-    //MatrixXcd mtx_lambdanu_R_lc = mtx_lambdanu_lc.conjugate()*mtx_R.transpose().conjugate();
-    //MatrixXcd mtx_lambdanu_rc = GetEigenvalueWeightedVectors(mtx_lambdanu,mtx_U_rc);
-    //MatrixXcd mtx_lambdanu_L_rc = mtx_lambdanu_rc.conjugate()*mtx_L.transpose().conjugate();
-
-    //if (VaryLeftOrRightVector==0) // fix right-hand vector
-    //{
-    //    mtx_U_l = mtx_eigenvector_inv.transpose();
-    //    //std::cout << "mtx_U_l (new) = " << std::endl;
-    //    //std::cout << mtx_U_l.block(0,mtx_data_bkgd.cols()-3,mtx_data_bkgd.rows(),3) << std::endl;
-    //    mtx_U_lc = GetSubEigenvectors(mtx_U_l,1);
-    //    mtx_lambdanu_lc = GetEigenvalueWeightedVectors(mtx_lambdanu,mtx_U_lc);
-    //    mtx_lambdanu_R_lc = mtx_lambdanu_lc.conjugate()*mtx_R.transpose().conjugate();
-    //    MatrixXcd mtx_U_rc_new = (mtx_BigG1-mtx_lambda(mtx_data.cols()-VaryNthVector,mtx_data.cols()-VaryNthVector)*mtx_unit).inverse()*(-mtx_Smallg1*mtx_lambdanu_R_lc).col(mtx_data.cols()-VaryNthVector);
-    //    //std::cout << "mtx_U_r (init) = " << std::endl;
-    //    //std::cout << mtx_U_r.block(0,mtx_data_bkgd.cols()-3,mtx_data_bkgd.rows(),3) << std::endl;
-    //    //std::cout << "mtx_U_rc_new = " << std::endl;
-    //    //std::cout << mtx_U_rc_new << std::endl;
-    //    mtx_eigenvector.block(binx_blind_global,mtx_data.cols()-VaryNthVector,mtx_data.rows()-binx_blind_global,1) = mtx_U_rc_new;
-    //    //std::cout << "mtx_eigenvector = " << std::endl;
-    //    //std::cout << mtx_eigenvector.block(0,mtx_data_bkgd.cols()-3,mtx_data_bkgd.rows(),3) << std::endl;
-    //}
-    //else
-    //{
-    //    mtx_U_r = mtx_eigenvector;
-    //    //std::cout << "mtx_U_r (new) = " << std::endl;
-    //    //std::cout << mtx_U_r.block(0,mtx_data_bkgd.cols()-3,mtx_data_bkgd.rows(),3) << std::endl;
-    //    mtx_U_rc = GetSubEigenvectors(mtx_U_r,1);
-    //    mtx_lambdanu_rc = GetEigenvalueWeightedVectors(mtx_lambdanu,mtx_U_rc);
-    //    mtx_lambdanu_L_rc = mtx_lambdanu_rc.conjugate()*mtx_L.transpose().conjugate();
-    //    MatrixXcd mtx_U_lc_new = (mtx_BigG2-mtx_lambda(mtx_data.cols()-VaryNthVector,mtx_data.cols()-VaryNthVector)*mtx_unit).inverse()*(-mtx_Smallg2*mtx_lambdanu_L_rc).col(mtx_data.cols()-VaryNthVector);
-    //    //std::cout << "mtx_U_l (init) = " << std::endl;
-    //    //std::cout << mtx_U_l.block(0,mtx_data_bkgd.cols()-3,mtx_data_bkgd.rows(),3) << std::endl;
-    //    //std::cout << "mtx_U_lc_new = " << std::endl;
-    //    //std::cout << mtx_U_lc_new << std::endl;
-    //    mtx_eigenvector_inv.block(mtx_data.rows()-VaryNthVector,biny_blind_global,1,mtx_data.cols()-biny_blind_global) = mtx_U_lc_new.transpose();
-    //    //std::cout << "mtx_eigenvector_inv = " << std::endl;
-    //    //std::cout << mtx_eigenvector_inv.block(mtx_data_bkgd.rows()-3,0,3,mtx_data_bkgd.cols()) << std::endl;
-    //}
+    if (VaryLeftOrRightVector==0) // fix right-hand vector
+    {
+        mtx_U_l = mtx_eigenvector_inv.transpose();
+        //std::cout << "mtx_U_l (new) = " << std::endl;
+        //std::cout << mtx_U_l.block(0,mtx_data_bkgd.cols()-3,mtx_data_bkgd.rows(),3) << std::endl;
+        MatrixXcd mtx_U_r_new = mtx_U_l.transpose().inverse()*mtx_H;
+        mtx_eigenvector = mtx_U_r_new;
+        //std::cout << "mtx_eigenvector = " << std::endl;
+        //std::cout << mtx_eigenvector.block(0,mtx_data_bkgd.cols()-3,mtx_data_bkgd.rows(),3) << std::endl;
+    }
+    else
+    {
+        mtx_U_r = mtx_eigenvector;
+        //std::cout << "mtx_U_r (new) = " << std::endl;
+        //std::cout << mtx_U_r.block(0,mtx_data_bkgd.cols()-3,mtx_data_bkgd.rows(),3) << std::endl;
+        MatrixXcd mtx_U_l_new = (mtx_H*mtx_U_r.inverse()).transpose();
+        mtx_eigenvector_inv = mtx_U_l_new.transpose();
+        //std::cout << "mtx_eigenvector_inv = " << std::endl;
+        //std::cout << mtx_eigenvector_inv.block(mtx_data_bkgd.rows()-3,0,3,mtx_data_bkgd.cols()) << std::endl;
+    }
 
     mtx_model = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
 
@@ -1510,7 +1485,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
                 //weight = 1./(data*data+model*model);
                 //weight = 1./(data_err*data_err);
                 //if (data-model<0.) weight = 2.;
-                if (bx>=binx_blind && by>=biny_blind) weight = 0.5;
+                //if (bx>=binx_blind && by>=biny_blind) weight = 0.5;
                 double chi2_this = weight*pow(data-model,2);
                 if (isnan(chi2_this))
                 {
