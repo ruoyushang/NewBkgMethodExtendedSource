@@ -289,6 +289,7 @@ MatrixXcd MakeRealEigenvectors(MatrixXcd mtx_input)
     {
         for (int col=0;col<mtx_input.cols();col++)
         {
+            if (col<mtx_input.cols()-NumberOfEigenvectors) continue;
             double real = mtx_input(row,col).real();
             double imag = mtx_input(row,col).imag();
             mtx_output(row,col) = pow(real*real+imag*imag,0.5);
@@ -1157,33 +1158,24 @@ MatrixXcd BuildModelMatrix()
     //MatrixXcd mtx_Smallg2 = mtx_M1.transpose()*mtx_alpha2.inverse()*mtx_M2.transpose();
     //MatrixXcd mtx_BigG2 = mtx_M3.transpose()-mtx_Smallg2*mtx_M3;
 
-    MatrixXcd mtx_U_r = mtx_eigenvector_init;
-    MatrixXcd mtx_U_l = mtx_eigenvector_inv_init.transpose();
-    ////std::cout << "mtx_U_r (init) = " << std::endl;
-    ////std::cout << mtx_U_r.block(0,mtx_data_bkgd.cols()-3,mtx_data_bkgd.rows(),3) << std::endl;
-    ////std::cout << "mtx_U_l (init) = " << std::endl;
-    ////std::cout << mtx_U_l.block(0,mtx_data_bkgd.cols()-3,mtx_data_bkgd.rows(),3) << std::endl;
-    MatrixXcd mtx_H = mtx_U_l.transpose()*mtx_U_r;
+    if (correlate_left_right)
+    {
+        MatrixXcd mtx_U_r = mtx_eigenvector_dark;
+        MatrixXcd mtx_U_l = mtx_eigenvector_inv_dark.transpose();
+        MatrixXcd mtx_H = mtx_U_l.transpose()*mtx_U_r;
 
-    if (VaryLeftOrRightVector==0) // fix right-hand vector
-    {
-        mtx_U_l = mtx_eigenvector_inv.transpose();
-        //std::cout << "mtx_U_l (new) = " << std::endl;
-        //std::cout << mtx_U_l.block(0,mtx_data_bkgd.cols()-3,mtx_data_bkgd.rows(),3) << std::endl;
-        MatrixXcd mtx_U_r_new = mtx_U_l.transpose().inverse()*mtx_H;
-        mtx_eigenvector = mtx_U_r_new;
-        //std::cout << "mtx_eigenvector = " << std::endl;
-        //std::cout << mtx_eigenvector.block(0,mtx_data_bkgd.cols()-3,mtx_data_bkgd.rows(),3) << std::endl;
-    }
-    else
-    {
-        mtx_U_r = mtx_eigenvector;
-        //std::cout << "mtx_U_r (new) = " << std::endl;
-        //std::cout << mtx_U_r.block(0,mtx_data_bkgd.cols()-3,mtx_data_bkgd.rows(),3) << std::endl;
-        MatrixXcd mtx_U_l_new = (mtx_H*mtx_U_r.inverse()).transpose();
-        mtx_eigenvector_inv = mtx_U_l_new.transpose();
-        //std::cout << "mtx_eigenvector_inv = " << std::endl;
-        //std::cout << mtx_eigenvector_inv.block(mtx_data_bkgd.rows()-3,0,3,mtx_data_bkgd.cols()) << std::endl;
+        if (VaryLeftOrRightVector==0) // fix right-hand vector
+        {
+            mtx_U_l = mtx_eigenvector_inv.transpose();
+            MatrixXcd mtx_U_r_new = mtx_U_l.transpose().inverse()*mtx_H;
+            mtx_eigenvector = mtx_U_r_new;
+        }
+        else
+        {
+            mtx_U_r = mtx_eigenvector;
+            MatrixXcd mtx_U_l_new = (mtx_H*mtx_U_r.inverse()).transpose();
+            mtx_eigenvector_inv = mtx_U_l_new.transpose();
+        }
     }
 
     mtx_model = mtx_eigenvector*mtx_eigenvalue*mtx_eigenvector_inv;
@@ -1806,20 +1798,38 @@ double RatioEmptyBins(MatrixXcd mtx, int binx_blind, int biny_blind)
     }
     return n_empty_bins/(n_empty_bins+n_filled_bins);
 }
-void SetInitialSpectralvectors(int binx_blind, int biny_blind)
+void PrintRLHMatrices(MatrixXcd mtx_input, MatrixXcd mtx_input_inv)
 {
-    //eigensolver_dark = ComplexEigenSolver<MatrixXcd>(mtx_data);
-    //eigensolver_dark_transpose = ComplexEigenSolver<MatrixXcd>(mtx_data.transpose());
-    eigensolver_dark = ComplexEigenSolver<MatrixXcd>(mtx_dark);
-    eigensolver_dark_transpose = ComplexEigenSolver<MatrixXcd>(mtx_dark.transpose());
-    MatrixXcd mtx_U_r = eigensolver_dark.eigenvectors();
-    MatrixXcd mtx_U_l = eigensolver_dark_transpose.eigenvectors();
+    MatrixXcd mtx_U_r = mtx_input;
+    MatrixXcd mtx_U_l = mtx_input_inv.transpose();
     mtx_U_r = MakeRealEigenvectors(mtx_U_r);
     mtx_U_l = MakeRealEigenvectors(mtx_U_l);
     MatrixXcd mtx_R = mtx_U_r.transpose().conjugate()*mtx_U_r;
     MatrixXcd mtx_L = mtx_U_l.transpose().conjugate()*mtx_U_l;
-    //MatrixXcd mtx_lambda = GetEigenvalueMatrix(mtx_data);
-    //MatrixXcd mtx_lambdanu = GetLambdaNuMatrix(mtx_data);
+    MatrixXcd mtx_H = mtx_U_l.transpose()*mtx_U_r;
+    std::cout << "mtx_R = " << std::endl;
+    PrintItReversely(mtx_R.block(mtx_R.rows()-3,mtx_R.cols()-3,3,3));
+    std::cout << "mtx_L = " << std::endl;
+    PrintItReversely(mtx_L.block(mtx_L.rows()-3,mtx_L.cols()-3,3,3));
+    std::cout << "mtx_H = " << std::endl;
+    PrintItReversely(mtx_H.block(mtx_H.rows()-3,mtx_H.cols()-3,3,3));
+}
+void SetInitialSpectralvectors(int binx_blind, int biny_blind)
+{
+
+    ComplexEigenSolver<MatrixXcd> eigensolver_init = ComplexEigenSolver<MatrixXcd>(mtx_dark);
+    ComplexEigenSolver<MatrixXcd> eigensolver_init_transpose = ComplexEigenSolver<MatrixXcd>(mtx_dark.transpose());
+    MatrixXcd mtx_U_r_init = eigensolver_init.eigenvectors();
+    MatrixXcd mtx_U_l_init = eigensolver_init_transpose.eigenvectors();
+    mtx_U_r_init = MakeRealEigenvectors(mtx_U_r_init);
+    mtx_U_l_init = MakeRealEigenvectors(mtx_U_l_init);
+
+    eigensolver_dark = ComplexEigenSolver<MatrixXcd>(mtx_dark);
+    eigensolver_dark_transpose = ComplexEigenSolver<MatrixXcd>(mtx_dark.transpose());
+    MatrixXcd mtx_U_r_dark = eigensolver_dark.eigenvectors();
+    MatrixXcd mtx_U_l_dark = eigensolver_dark_transpose.eigenvectors();
+    mtx_U_r_dark = MakeRealEigenvectors(mtx_U_r_dark);
+    mtx_U_l_dark = MakeRealEigenvectors(mtx_U_l_dark);
     MatrixXcd mtx_lambda = GetEigenvalueMatrix(mtx_dark);
     MatrixXcd mtx_lambdanu = GetLambdaNuMatrix(mtx_dark);
     mtx_lambda = CutoffEigenvalueMatrix(mtx_lambda, NumberOfEigenvectors);
@@ -1834,14 +1844,14 @@ void SetInitialSpectralvectors(int binx_blind, int biny_blind)
     {
         for (int row=0;row<N_bins_for_deconv;row++)
         {
-            mtx_eigenvector_init(row,col) = mtx_U_r(row,col);
+            mtx_eigenvector_init(row,col) = mtx_U_r_init(row,col);
+            mtx_eigenvector_inv_init(row,col) = mtx_U_l_init.transpose()(row,col);
             mtx_eigenvector_vari(row,col) = 0.;
-            mtx_eigenvector_inv_init(row,col) = mtx_U_l.transpose()(row,col);
             mtx_eigenvector_inv_vari(row,col) = 0.;
             mtx_eigenvalue_init(row,col) = mtx_lambdanu(row,col);
             mtx_eigenvalue_vari(row,col) = 0.;
-            mtx_eigenvector_dark(row,col) = mtx_U_r(row,col);
-            mtx_eigenvector_inv_dark(row,col) = mtx_U_l.transpose()(row,col);
+            mtx_eigenvector_dark(row,col) = mtx_U_r_dark(row,col);
+            mtx_eigenvector_inv_dark(row,col) = mtx_U_l_dark.transpose()(row,col);
         }
     }
 
@@ -2961,30 +2971,30 @@ void MatrixFactorizationMethod()
         mtx_eigenvector_init = mtx_eigenvector;
         mtx_eigenvector_inv_init = mtx_eigenvector_inv;
     }
-    for (int iteration=0;iteration<20;iteration++)
-    {
-        std::cout << "iteration = " << iteration << std::endl;
-        SingleTimeMinimization(0,3);
-        mtx_eigenvalue_init = mtx_eigenvalue;
-        mtx_eigenvector_init = mtx_eigenvector;
-        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
-        SingleTimeMinimization(1,3);
-        mtx_eigenvalue_init = mtx_eigenvalue;
-        mtx_eigenvector_init = mtx_eigenvector;
-        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
-    }
-    for (int iteration=0;iteration<20;iteration++)
-    {
-        std::cout << "iteration = " << iteration << std::endl;
-        SingleTimeMinimization(0,1);
-        mtx_eigenvalue_init = mtx_eigenvalue;
-        mtx_eigenvector_init = mtx_eigenvector;
-        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
-        SingleTimeMinimization(1,1);
-        mtx_eigenvalue_init = mtx_eigenvalue;
-        mtx_eigenvector_init = mtx_eigenvector;
-        mtx_eigenvector_inv_init = mtx_eigenvector_inv;
-    }
+    //for (int iteration=0;iteration<20;iteration++)
+    //{
+    //    std::cout << "iteration = " << iteration << std::endl;
+    //    SingleTimeMinimization(0,3);
+    //    mtx_eigenvalue_init = mtx_eigenvalue;
+    //    mtx_eigenvector_init = mtx_eigenvector;
+    //    mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+    //    SingleTimeMinimization(1,3);
+    //    mtx_eigenvalue_init = mtx_eigenvalue;
+    //    mtx_eigenvector_init = mtx_eigenvector;
+    //    mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+    //}
+    //for (int iteration=0;iteration<20;iteration++)
+    //{
+    //    std::cout << "iteration = " << iteration << std::endl;
+    //    SingleTimeMinimization(0,1);
+    //    mtx_eigenvalue_init = mtx_eigenvalue;
+    //    mtx_eigenvector_init = mtx_eigenvector;
+    //    mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+    //    SingleTimeMinimization(1,1);
+    //    mtx_eigenvalue_init = mtx_eigenvalue;
+    //    mtx_eigenvector_init = mtx_eigenvector;
+    //    mtx_eigenvector_inv_init = mtx_eigenvector_inv;
+    //}
 
 }
 
@@ -3574,6 +3584,11 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         fill2DHistogramAbs(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
         std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,15,1,15) << std::endl;
         eigensolver_bkgd = ComplexEigenSolver<MatrixXcd>(mtx_data_bkgd);
+
+        std::cout << "R, L, H of mtx_dark:" << std::endl;
+        PrintRLHMatrices(mtx_eigenvector_dark,mtx_eigenvector_inv_dark);
+        std::cout << "R, L, H of mtx_data_bkgd:" << std::endl;
+        PrintRLHMatrices(mtx_eigenvector,mtx_eigenvector_inv);
 
         for (int col=0;col<N_bins_for_deconv;col++)
         {
