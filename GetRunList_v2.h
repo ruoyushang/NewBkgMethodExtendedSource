@@ -68,6 +68,9 @@ vector<std::pair<string,int>> GetRunList_v2(string source) {
         if (source=="ComaV4") {
             list = GetRunListFromFile("ComaV4");
         }
+        if (source=="ComaV6") {
+            list = GetRunListFromFile("ComaV6");
+        }
         if (source=="Ton599") {
             list = GetRunListFromFile("Ton599");
         }

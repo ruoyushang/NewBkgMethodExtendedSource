@@ -284,6 +284,11 @@ pair<double,double> GetSourceRaDec(TString source_name)
             Source_RA = 151.767;
                 Source_Dec = 16.082;
     }
+    if (source_name=="ComaV6")
+    {
+            Source_RA = 194.953;
+                Source_Dec = 27.981;
+    }
     if (source_name=="1ES1011V6")
     {
             Source_RA = 153.767;
