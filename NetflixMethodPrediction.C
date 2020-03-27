@@ -3053,6 +3053,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
     vector<TH2D> Hist_Bkgd_Rank3_MSCLW;
     vector<TH2D> Hist_Bkgd_MSCLW;
     vector<TH2D> Hist_GammaRDBM_MSCLW;
+    vector<TH1D> Hist_Data_Etavalues_real;
     vector<TH1D> Hist_Data_Eigenvalues_real;
     vector<TH1D> Hist_Dark_Eigenvalues_real;
     vector<TH1D> Hist_Fit_Eigenvalues_real;
@@ -3161,6 +3162,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         Hist_Bkgd_Rank3_MSCLW.push_back(TH2D("Hist_Bkgd_Rank3_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_Bkgd_MSCLW.push_back(TH2D("Hist_Bkgd_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
         Hist_GammaRDBM_MSCLW.push_back(TH2D("Hist_GammaRDBM_MSCLW_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper));
+        Hist_Data_Etavalues_real.push_back(TH1D("Hist_Data_Etavalues_real_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,0,N_bins_for_deconv));
         Hist_Data_Eigenvalues_real.push_back(TH1D("Hist_Data_Eigenvalues_real_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,0,N_bins_for_deconv));
         Hist_Dark_Eigenvalues_real.push_back(TH1D("Hist_Dark_Eigenvalues_real_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,0,N_bins_for_deconv));
         Hist_Fit_Eigenvalues_real.push_back(TH1D("Hist_Fit_Eigenvalues_real_ErecS"+TString(e_low)+TString("to")+TString(e_up),"",N_bins_for_deconv,0,N_bins_for_deconv));
@@ -3209,6 +3211,8 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
 
         MatrixXcd mtx_U_r = eigensolver_data.eigenvectors();
         MatrixXcd mtx_U_l = eigensolver_data_transpose.eigenvectors();
+        mtx_U_r = MakeRealEigenvectors(mtx_U_r);
+        mtx_U_l = MakeRealEigenvectors(mtx_U_l);
         MatrixXcd mtx_H = mtx_U_l.transpose()*mtx_U_r;
         MatrixXcd mtx_R = mtx_U_r.transpose().conjugate()*mtx_U_r;
         MatrixXcd mtx_L = mtx_U_l.transpose().conjugate()*mtx_U_l;
@@ -3525,6 +3529,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
 
         for (int NthEigenvalue=1;NthEigenvalue<=N_bins_for_deconv;NthEigenvalue++)
         {
+            Hist_Data_Etavalues_real.at(e).SetBinContent(NthEigenvalue,mtx_H(N_bins_for_deconv-NthEigenvalue,N_bins_for_deconv-NthEigenvalue).real());
             Hist_Data_Eigenvalues_real.at(e).SetBinContent(NthEigenvalue,eigensolver_data.eigenvalues()(N_bins_for_deconv-NthEigenvalue).real());
             Hist_Dark_Eigenvalues_real.at(e).SetBinContent(NthEigenvalue,eigensolver_dark.eigenvalues()(N_bins_for_deconv-NthEigenvalue).real());
         }
@@ -3713,6 +3718,7 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         Hist_Bkgd_Rank2_MSCLW.at(e).Write();
         Hist_Bkgd_Rank3_MSCLW.at(e).Write();
         Hist_Bkgd_MSCLW.at(e).Write();
+        Hist_Data_Etavalues_real.at(e).Write();
         Hist_Data_Eigenvalues_real.at(e).Write();
         Hist_Dark_Eigenvalues_real.at(e).Write();
         Hist_Fit_Eigenvalues_real.at(e).Write();
