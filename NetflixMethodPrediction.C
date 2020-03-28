@@ -1444,8 +1444,10 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
 
 double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
 {
-    int binx_blind = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
-    int biny_blind = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
+    int binx_blind_upper = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
+    int biny_blind_upper = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
+    int binx_blind_lower = hist_data->GetXaxis()->FindBin(-MSCL_cut_blind);
+    int biny_blind_lower = hist_data->GetYaxis()->FindBin(-MSCW_cut_blind);
     //int binx_upper = hist_data->GetXaxis()->FindBin(MSCL_cut_blind+1.);
     //int biny_upper = hist_data->GetXaxis()->FindBin(MSCW_cut_blind+1.);
     //int binx_blind = hist_data->GetXaxis()->FindBin(1.);
@@ -1460,48 +1462,37 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
     {
         for (int by=1;by<=hist_data->GetNbinsY();by++)
         {
-            if (bx>=binx_blind || by>=biny_blind)
+            if (bx<binx_blind_upper && by<biny_blind_upper && bx>=binx_blind_lower && by>=biny_blind_lower)
             {
-                if (bx>=binx_upper || by>=biny_upper) continue;
-                double data = hist_data->GetBinContent(bx,by);
-                double dark = hist_dark->GetBinContent(bx,by);
-                double model = hist_model->GetBinContent(bx,by);
-                //model = model*dark;
-                double weight = 1.;
-                double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
-                double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
-                double width = 0.1;
-                double data_err = max(1.0,pow(data,0.5));
-                double model_err = max(1.0,pow(abs(model),0.5));
-                //weight = 1./(data_err*data_err+model_err*model_err);
-                //weight = 1./(data*data+model*model);
-                //weight = 1./(data_err*data_err);
-                //if (data-model<0.) weight = 2.;
-                //if (bx>=binx_blind && by>=biny_blind) weight = 0.5;
-                double chi2_this = weight*pow(data-model,2);
-                if (isnan(chi2_this))
-                {
-                    if (isnan(weight)) std::cout << "weight==nan!!!" << std::endl;
-                    if (isnan(pow(data-model,2))) std::cout << "pow(data-model,2)==nan!!!" << std::endl;
-                    std::cout << "model = " << model << std::endl;
-                    std::cout << "data = " << data << std::endl;
-                    continue;
-                }
-                if (bx>=binx_blind && by>=biny_blind)
-                {
-                    //continue;
-                    chi2 += chi2_this;
-                }
-                else if (bx>=binx_blind && by<biny_blind)
-                {
-                    chi2 += chi2_this;
-                }
-                else
-                {
-                    chi2 += chi2_this;
-                }
-                nbins += 1.;
+                continue;
             }
+            if (bx>=binx_upper || by>=biny_upper) continue;
+            double data = hist_data->GetBinContent(bx,by);
+            double dark = hist_dark->GetBinContent(bx,by);
+            double model = hist_model->GetBinContent(bx,by);
+            //model = model*dark;
+            double weight = 1.;
+            double dx = hist_data->GetXaxis()->GetBinCenter(bx)-(1.);
+            double dy = hist_data->GetYaxis()->GetBinCenter(by)-(1.);
+            double width = 0.1;
+            double data_err = max(1.0,pow(data,0.5));
+            double model_err = max(1.0,pow(abs(model),0.5));
+            //weight = 1./(data_err*data_err+model_err*model_err);
+            //weight = 1./(data*data+model*model);
+            //weight = 1./(data_err*data_err);
+            //if (data-model<0.) weight = 2.;
+            //if (bx>=binx_blind && by>=biny_blind) weight = 0.5;
+            double chi2_this = weight*pow(data-model,2);
+            if (isnan(chi2_this))
+            {
+                if (isnan(weight)) std::cout << "weight==nan!!!" << std::endl;
+                if (isnan(pow(data-model,2))) std::cout << "pow(data-model,2)==nan!!!" << std::endl;
+                std::cout << "model = " << model << std::endl;
+                std::cout << "data = " << data << std::endl;
+                continue;
+            }
+            chi2 += chi2_this;
+            nbins += 1.;
         }
     }
 
@@ -3553,10 +3544,10 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         int row_fix = 0;
         int first_index = 0;
 
-        //std::cout << "initial chi2 = " << GetChi2Function(mtx_dark) << std::endl;
-        //mtx_data_bkgd = SpectralDecompositionMethod(mtx_dark, 1, 3, 1);
-        //std::cout << "chi2 = " << GetChi2Function(mtx_data_bkgd) << std::endl;
-        //mtx_data_bkgd = SpectralDecompositionMethod(mtx_data_bkgd, 2, 3, 1);
+        std::cout << "initial chi2 = " << GetChi2Function(mtx_dark) << std::endl;
+        mtx_data_bkgd = SpectralDecompositionMethod(mtx_dark, 1, 3, 1);
+        std::cout << "chi2 = " << GetChi2Function(mtx_data_bkgd) << std::endl;
+        mtx_data_bkgd = SpectralDecompositionMethod(mtx_data_bkgd, 2, 3, 1);
         //std::cout << "chi2 = " << GetChi2Function(mtx_data_bkgd) << std::endl;
         //mtx_data_bkgd = SpectralDecompositionMethod(mtx_data_bkgd, 1, 3, 1);
         //std::cout << "chi2 = " << GetChi2Function(mtx_data_bkgd) << std::endl;
@@ -3584,8 +3575,9 @@ void NetflixMethodPrediction(string target_data, double PercentCrab, double tel_
         //mtx_data_bkgd = EigenDecompositionMethod(mtx_data_bkgd, 1, 2);
         //mtx_data_bkgd = EigenDecompositionMethod(mtx_data_bkgd, 2, 2);
         
-        MatrixFactorizationMethod();
+        //MatrixFactorizationMethod();
         //NuclearNormMinimizationMethod(binx_blind_global,biny_blind_global);
+        
         fill2DHistogramAbs(&Hist_Bkgd_MSCLW.at(e),mtx_data_bkgd);
         std::cout << "Hist_Bkgd_MSCLW.at(e).Integral() = " << Hist_Bkgd_MSCLW.at(e).Integral(1,15,1,15) << std::endl;
         eigensolver_bkgd = ComplexEigenSolver<MatrixXcd>(mtx_data_bkgd);
