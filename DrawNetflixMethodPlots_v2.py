@@ -18,7 +18,7 @@ ROOT.gStyle.SetPaintTextFormat("0.3f")
 #isBlind = True
 isBlind = False
 
-energy_fine_bin_cut_low = 10
+energy_fine_bin_cut_low = 3
 energy_fine_bin_cut_up = 20
 
 #ONOFF = "ON"
@@ -46,13 +46,14 @@ Syst_Ring_Energy = []
 #FileLabel += ['test']
 
 #analysis_cut = 'loose'
-#analysis_cut = 'medium'
-analysis_cut = 'tight'
+analysis_cut = 'medium'
+#analysis_cut = 'tight'
 specialty = 'nominal'
 #specialty = 'indep'
 #specialty = 'E3bins'
+
 FileFolder += ['output_%s_%s'%(specialty,analysis_cut)]
-FileTag += [specialty+'_E%s'%(energy_fine_bin_cut_low)]
+FileTag += [analysis_cut+'_E%s'%(energy_fine_bin_cut_low)]
 FileLabel += [specialty]
 
 #FileFolder += ['output_unblind_4x4_dNSBm3_loose']
@@ -203,6 +204,12 @@ sky_coord += ['06 32 28 +17 22 00']
 for_syst += [False]
 source_list += ['SgrAV6']
 sky_coord += ['17 45 39.6 -29 00 22']
+for_syst += [False]
+source_list += ['TychoV6']
+sky_coord += ['00 25 21.6 +64 07 48']
+for_syst += [True]
+source_list += ['CTA1V5']
+sky_coord += ['00 06 26 +72 59 01.0']
 for_syst += [False]
 
 gal_coord = SkyCoord(sky_coord[:], unit=(u.hourangle, u.deg))
@@ -5623,7 +5630,7 @@ SystAsFunctionOfEnergy()
 #source_of_interest = 'PKS1424'
 #source_of_interest = '3C264'
 #source_of_interest = 'OJ287V6'
-#source_of_interest = '1ES0229'
+source_of_interest = '1ES0229'
 #source_of_interest = 'S3_1227_V6'
 #source_of_interest = 'MS1221V6'
 #source_of_interest = 'PKS1441V6'
@@ -5644,13 +5651,14 @@ SystAsFunctionOfEnergy()
 #source_of_interest = 'WComaeV6'
 #source_of_interest = '1ES1218V6'
 #source_of_interest = 'MGRO_J1908_V6'
-source_of_interest = 'MGRO_J1908_V5'
+#source_of_interest = 'MGRO_J1908_V5'
 #source_of_interest = 'IC443HotSpotV5'
 #source_of_interest = 'ComaV6'
 #source_of_interest = 'GemingaV6'
 #source_of_interest = 'GemingaV5'
 #source_of_interest = 'SgrAV6'
-#source_of_interest = 'Everything'
+#source_of_interest = 'TychoV6'
+#source_of_interest = 'CTA1V5'
 
 #n_rebin = 8
 #smooth_size = 0.1
@@ -5672,7 +5680,7 @@ highlight_threshold = 3.0
 #PercentCrab = "_Crab0"
 #RadialAcceptance()
 
-ONOFF = "ON"
+#ONOFF = "ON"
 #ONOFF = "OFF"
 
 #PercentCrab = "_Crab0"
@@ -5729,6 +5737,6 @@ Hist_Highlight_Skymap_Galactic_zoomin = ROOT.TH2D("Hist_Highlight_Skymap_Galacti
 Hist_Skymap_Galactic_zoomin = ROOT.TH2D("Hist_Skymap_Galactic_zoomin","",50,source_l-1,source_l+1,50,source_b-1,source_b+1)
 
 
-SingleSourceSkyMap(source_of_interest,True)
+SingleSourceSkyMap(source_of_interest,False)
 #SingleSourceSpectrum(source_of_interest)
 

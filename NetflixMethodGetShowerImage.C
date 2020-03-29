@@ -152,6 +152,9 @@ double DarkRun_theta2_upper = 10.;
 
 vector<pair<double,double>> ON_pointing_radec_for_DarkRun;
 vector<vector<double>> BrightStars_Data;
+vector<double> OnRunWeight;
+vector<double> OffRunWeight;
+vector<double> MatchedOffRunWeight;
 
 bool CoincideWithBrightStars(double ra, double dec)
 {
@@ -229,6 +232,16 @@ pair<double,double> GetSourceRaDec(TString source_name)
     {
             Source_RA = 186.101;
                 Source_Dec = 24.607;
+    }
+    if (source_name=="TychoV6")
+    {
+            Source_RA = 6.340;
+                Source_Dec = 64.130;
+    }
+    if (source_name=="CTA1V5")
+    {
+            Source_RA = 1.608;
+                Source_Dec = 72.984;
     }
     if (source_name=="S3_1227_V6")
     {
@@ -657,6 +670,11 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
         if (TString(ON_observation).Contains("NSB750")) NSB_thisrun = 10.18;
         if (TString(ON_observation).Contains("NSB1000")) NSB_thisrun = 11.77;
         ON_NSB.push_back(NSB_thisrun);
+        TFile*  input_file = TFile::Open(ON_filename.c_str());
+        TString root_file = "run_"+TString(ON_runnumber)+"/stereo/data_on";
+        TTree* Data_tree = (TTree*) input_file->Get(root_file);
+        OnRunWeight.push_back(double(Data_tree->GetEntries()));
+        input_file->Close();
     }
 
     vector<pair<double,double>> OFF_pointing;
@@ -684,6 +702,11 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
         if (TString(OFF_observation).Contains("NSB750")) NSB_thisrun = 10.18;
         if (TString(OFF_observation).Contains("NSB1000")) NSB_thisrun = 11.77;
         OFF_NSB.push_back(NSB_thisrun);
+        TFile*  input_file = TFile::Open(OFF_filename.c_str());
+        TString root_file = "run_"+TString(OFF_runnumber)+"/stereo/data_on";
+        TTree* Dark_tree = (TTree*) input_file->Get(root_file);
+        OffRunWeight.push_back(double(Dark_tree->GetEntries()));
+        input_file->Close();
     }
 
     vector<pair<string,int>> new_list;
@@ -696,6 +719,7 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
             pair<string,int> best_match;
             pair<double,double> best_pointing;
             double best_chi2 = 10000.;
+            int best_off_run = 0;
             for (int off_run=0;off_run<OFF_runlist.size();off_run++)
             {
                 if (ON_runlist[on_run].first.find("Proton")==std::string::npos)
@@ -723,6 +747,7 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
                     best_chi2 = chi2;
                     best_match = OFF_runlist[off_run];
                     best_pointing = OFF_pointing[off_run];
+                    best_off_run = off_run;
                 }
             }
             if (best_chi2<10000.) 
@@ -732,6 +757,7 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
                 std::cout << "add run:" << std::endl;
                 std::cout << best_match.first << " " << best_match.second << std::endl;
                 std::cout << best_pointing.first << " " << best_pointing.second << std::endl;
+                MatchedOffRunWeight.push_back(OnRunWeight.at(on_run)/OffRunWeight.at(best_off_run));
             }
         }
     }
@@ -1393,6 +1419,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
         NSB_avg_dark += (time_1-time_0)/3600.*NSB_thisrun;
         Hist_Dark_NSB.Fill(NSB_thisrun);
 
+        //double run_weight = MatchedOffRunWeight.at(run);
+        double run_weight = 1.;
         for (int entry=0;entry<Dark_tree->GetEntries();entry++) 
         {
             ErecS = 0;
@@ -1420,21 +1448,21 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
                 //if (Data_runlist[0].first.find("NSB")==std::string::npos && abs(Shower_Az-180.)<90.) continue;
                 if (abs(Shower_Az-180.)<90.) continue;
             }
-            Hist_Dark_ShowerDirection.Fill(Shower_Az,Shower_Ze);
+            Hist_Dark_ShowerDirection.Fill(Shower_Az,Shower_Ze,run_weight);
             if (DarkFoV() || Dark_runlist[run].first.find("Proton")!=std::string::npos)
             {
-                Hist_Dark_MSCLW.at(energy).Fill(MSCL,MSCW);
+                Hist_Dark_MSCLW.at(energy).Fill(MSCL,MSCW,run_weight);
                 if (SignalSelectionTheta2())
                 {
-                    Hist_Dark_SR_CameraFoV.at(energy_fine).Fill(R2off,Phioff);
-                    Hist_Dark_SR_Theta2.at(energy_fine).Fill(Xoff*Xoff+Yoff*Yoff);
-                    Hist_Dark_SR_Energy.at(energy).Fill(ErecS*1000.);
+                    Hist_Dark_SR_CameraFoV.at(energy_fine).Fill(R2off,Phioff,run_weight);
+                    Hist_Dark_SR_Theta2.at(energy_fine).Fill(Xoff*Xoff+Yoff*Yoff,run_weight);
+                    Hist_Dark_SR_Energy.at(energy).Fill(ErecS*1000.,run_weight);
                 }
                 if (ControlSelectionTheta2())
                 {
-                    Hist_Dark_CR_CameraFoV.at(energy_fine).Fill(R2off,Phioff);
-                    Hist_Dark_CR_Theta2.at(energy_fine).Fill(Xoff*Xoff+Yoff*Yoff);
-                    Hist_Dark_CR_Energy.at(energy).Fill(ErecS*1000.);
+                    Hist_Dark_CR_CameraFoV.at(energy_fine).Fill(R2off,Phioff,run_weight);
+                    Hist_Dark_CR_Theta2.at(energy_fine).Fill(Xoff*Xoff+Yoff*Yoff,run_weight);
+                    Hist_Dark_CR_Energy.at(energy).Fill(ErecS*1000.,run_weight);
                 }
             }
         }
