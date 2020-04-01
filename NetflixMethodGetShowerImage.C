@@ -52,7 +52,7 @@ bool invert_y = false;
 bool transpose = false;
 bool eigenbasis = false;
 bool signal_model = false;
-bool correlate_left_right = false;
+bool correlate_left_right = true;
 int cutoff_mode = 4;
 
 double MSCW_cut_lower = -1.0;

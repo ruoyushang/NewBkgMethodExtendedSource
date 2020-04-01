@@ -2794,30 +2794,30 @@ void MatrixFactorizationMethod()
     SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_dark);
     mtx_data_bkgd = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
 
-    for (int iteration=0;iteration<20;iteration++)
-    {
-        std::cout << "iteration = " << iteration << std::endl;
-        SingleTimeMinimization(0,1);
-        SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
-        SingleTimeMinimization(1,1);
-        SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
-    }
-    for (int iteration=0;iteration<20;iteration++)
-    {
-        std::cout << "iteration = " << iteration << std::endl;
-        SingleTimeMinimization(0,2);
-        SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
-        SingleTimeMinimization(1,2);
-        SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
-    }
     //for (int iteration=0;iteration<20;iteration++)
     //{
     //    std::cout << "iteration = " << iteration << std::endl;
-    //    SingleTimeMinimization(0,-1);
+    //    SingleTimeMinimization(0,1);
     //    SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
-    //    SingleTimeMinimization(1,-1);
+    //    SingleTimeMinimization(1,1);
     //    SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
     //}
+    //for (int iteration=0;iteration<20;iteration++)
+    //{
+    //    std::cout << "iteration = " << iteration << std::endl;
+    //    SingleTimeMinimization(0,2);
+    //    SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
+    //    SingleTimeMinimization(1,2);
+    //    SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
+    //}
+    for (int iteration=0;iteration<20;iteration++)
+    {
+        std::cout << "iteration = " << iteration << std::endl;
+        SingleTimeMinimization(-1,1);
+        SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
+        SingleTimeMinimization(-1,2);
+        SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
+    }
 
 }
 
