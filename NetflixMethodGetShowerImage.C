@@ -69,8 +69,8 @@ double MSCL_cut_upper = 0.5;
 //double MSCL_plot_upper = 2.;
 int N_bins_for_deconv = 12; // 12 should be the lowest bin number
 double gamma_hadron_dim_ratio = 1.;
-double MSCW_plot_lower = -1.0;
-double MSCL_plot_lower = -1.0;
+double MSCW_plot_lower = -1.;
+double MSCL_plot_lower = -1.;
 double MSCW_plot_upper = 2.;
 double MSCL_plot_upper = 2.;
 
@@ -1095,6 +1095,8 @@ void NetflixMethodGetShowerImage(string target_data, double PercentCrab, double 
     Elev_diff_dark = Elev_diff;
     NSB_diff_dark = NSB_diff;
 
+    //MSCW_plot_lower = -MSCW_cut_input;
+    //MSCL_plot_lower = -MSCL_cut_input;
     MSCW_plot_upper = gamma_hadron_dim_ratio*(MSCW_cut_input-MSCW_plot_lower)+MSCW_cut_input;
     MSCL_plot_upper = gamma_hadron_dim_ratio*(MSCL_cut_input-MSCL_plot_lower)+MSCL_cut_input;
 

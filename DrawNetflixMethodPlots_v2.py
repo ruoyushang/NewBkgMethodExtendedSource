@@ -41,10 +41,6 @@ Syst_Ring = 0.
 Syst_MDM_Energy = []
 Syst_Ring_Energy = []
 
-#FileFolder += ['output_test']
-#FileTag += ['test']
-#FileLabel += ['test']
-
 #analysis_cut = 'loose'
 analysis_cut = 'medium'
 #analysis_cut = 'tight'
@@ -55,6 +51,9 @@ specialty = 'nominal'
 FileFolder += ['output_%s_%s'%(specialty,analysis_cut)]
 FileTag += [analysis_cut+'_E%s'%(energy_fine_bin_cut_low)]
 FileLabel += [specialty]
+#FileFolder += ['output_test']
+#FileTag += ['test']
+#FileLabel += ['test']
 
 #FileFolder += ['output_unblind_4x4_dNSBm3_loose']
 #FileTag += ['dNSBm3']
@@ -244,8 +243,6 @@ ErecS_upper_cut = 0
 
 N_bins_for_deconv = 12
 gamma_hadron_dim_ratio = 1.
-MSCW_plot_lower = -1.
-MSCL_plot_lower = -1.
 MSCW_blind_cut = 0.5
 MSCL_blind_cut = 0.5
 if analysis_cut=='loose':
@@ -254,6 +251,8 @@ if analysis_cut=='loose':
 if analysis_cut=='tight':
     MSCW_blind_cut = 0.3
     MSCL_blind_cut = 0.3
+MSCW_plot_lower = -1.
+MSCL_plot_lower = -1.
 MSCW_plot_upper = gamma_hadron_dim_ratio*(MSCW_blind_cut-MSCW_plot_lower)+MSCW_blind_cut
 MSCL_plot_upper = gamma_hadron_dim_ratio*(MSCL_blind_cut-MSCL_plot_lower)+MSCL_blind_cut
 
@@ -3010,7 +3009,7 @@ def GetShowerHistogramsFromFile(FilePath):
     Hist2D_Bkgd.Add(InputFile.Get(HistName))
     for bx in range(1,Hist2D_Bkgd.GetNbinsX()+1):
         for by in range(1,Hist2D_Bkgd.GetNbinsY()+1):
-            data_err = pow(Hist2D_Bkgd.GetBinContent(bx,by),0.5)
+            data_err = pow(abs(Hist2D_Bkgd.GetBinContent(bx,by)),0.5)
             Hist2D_Bkgd.SetBinError(bx,by,data_err)
 
     if Hist2D_Data.Integral()<1600.:
@@ -5630,7 +5629,7 @@ SystAsFunctionOfEnergy()
 #source_of_interest = 'PKS1424'
 #source_of_interest = '3C264'
 #source_of_interest = 'OJ287V6'
-source_of_interest = '1ES0229'
+#source_of_interest = '1ES0229'
 #source_of_interest = 'S3_1227_V6'
 #source_of_interest = 'MS1221V6'
 #source_of_interest = 'PKS1441V6'
@@ -5651,7 +5650,7 @@ source_of_interest = '1ES0229'
 #source_of_interest = 'WComaeV6'
 #source_of_interest = '1ES1218V6'
 #source_of_interest = 'MGRO_J1908_V6'
-#source_of_interest = 'MGRO_J1908_V5'
+source_of_interest = 'MGRO_J1908_V5'
 #source_of_interest = 'IC443HotSpotV5'
 #source_of_interest = 'ComaV6'
 #source_of_interest = 'GemingaV6'
@@ -5680,7 +5679,7 @@ highlight_threshold = 3.0
 #PercentCrab = "_Crab0"
 #RadialAcceptance()
 
-#ONOFF = "ON"
+ONOFF = "ON"
 #ONOFF = "OFF"
 
 #PercentCrab = "_Crab0"
