@@ -68,6 +68,7 @@ MatrixXcd mtx_data(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_dark(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_data_redu(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_data_bkgd(N_bins_for_deconv,N_bins_for_deconv);
+MatrixXcd mtx_eigenvalue_dark(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvalue_init(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvalue_vari(N_bins_for_deconv,N_bins_for_deconv);
 MatrixXcd mtx_eigenvector_dark(N_bins_for_deconv,N_bins_for_deconv);
@@ -1072,6 +1073,12 @@ MatrixXcd BuildModelMatrix()
 
     return mtx_model;
 }
+MatrixXcd GetErrorMap()
+{
+    MatrixXcd mtx_error(N_bins_for_deconv,N_bins_for_deconv);
+    mtx_error = mtx_dark-mtx_eigenvector_dark*mtx_eigenvalue_dark*mtx_eigenvector_inv_dark;
+    return mtx_error;
+}
 double SmoothEigenvectors(MatrixXcd* mtx, MatrixXcd* mtx_inv)
 {
     TH1D hist_ref = TH1D("hist_ref","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper);
@@ -1332,7 +1339,7 @@ double SignalChi2(TH2D* hist_data, TH2D* hist_gamma, TH2D* hist_model)
     return chi2;
 }
 
-double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
+double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model, TH2D* hist_error)
 {
     int binx_blind_upper = hist_data->GetXaxis()->FindBin(MSCL_cut_blind);
     int biny_blind_upper = hist_data->GetYaxis()->FindBin(MSCW_cut_blind);
@@ -1352,8 +1359,8 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
     {
         for (int by=1;by<=hist_data->GetNbinsY();by++)
         {
-            if (bx<binx_blind_upper && by<biny_blind_upper)
-            //if (bx<binx_blind_upper && by<biny_blind_upper && bx>=binx_blind_lower && by>=biny_blind_lower)
+            //if (bx<binx_blind_upper && by<biny_blind_upper)
+            if (bx<binx_blind_upper && by<biny_blind_upper && bx>=binx_blind_lower && by>=biny_blind_lower)
             {
                 continue;
             }
@@ -1361,6 +1368,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
             //if (bx>=binx_upper || by>=biny_upper) continue;
             double data = hist_data->GetBinContent(bx,by);
             double dark = hist_dark->GetBinContent(bx,by);
+            double dark_err = abs(hist_error->GetBinContent(bx,by));
             double model = hist_model->GetBinContent(bx,by);
             //model = model*dark;
             double weight = 1.;
@@ -1372,6 +1380,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model)
             //weight = 1./(data_err*data_err+model_err*model_err);
             //weight = 1./(data*data+model*model);
             //weight = 1./(data_err*data_err);
+            //weight = 1./(dark_err*dark_err);
             //if (data-model<0.) weight = 2.;
             //if (bx>=binx_blind && by>=biny_blind) weight = 0.5;
             double chi2_this = weight*pow(data-model,2);
@@ -1514,16 +1523,20 @@ void NetflixParametrizeEigenvectors(const double *par)
 double GetChi2Function(MatrixXcd mtx_model)
 {
 
+    MatrixXcd mtx_error = GetErrorMap();
+
     TH2D hist_gamma = TH2D("hist_gamma","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_diff = TH2D("hist_diff","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_data = TH2D("hist_data","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_dark = TH2D("hist_dark","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_model = TH2D("hist_model","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
+    TH2D hist_error = TH2D("hist_error","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
 
     fill2DHistogramAbs(&hist_gamma,mtx_gamma);
     fill2DHistogram(&hist_data,mtx_data);
     fill2DHistogram(&hist_dark,mtx_dark);
     fill2DHistogram(&hist_model,mtx_model);
+    fill2DHistogram(&hist_error,mtx_error);
 
     int binx_lower = hist_diff.GetXaxis()->FindBin(MSCL_cut_lower);
     int binx_blind = hist_diff.GetXaxis()->FindBin(MSCL_cut_blind)-1;
@@ -1541,7 +1554,7 @@ double GetChi2Function(MatrixXcd mtx_model)
     hist_gamma.Scale(scale);
 
     double chi2 = 0.;
-    chi2 += BlindedChi2(&hist_data,&hist_dark,&hist_model);
+    chi2 += BlindedChi2(&hist_data,&hist_dark,&hist_model,&hist_error);
     //if (signal_model) chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
     
     //double chi2 = BlindedLogLikelihood(&hist_data,&hist_dark,&hist_model);
@@ -1568,16 +1581,20 @@ double NetflixChi2Function(const double *par)
     MatrixXcd mtx_model(N_bins_for_deconv,N_bins_for_deconv);
     mtx_model = BuildModelMatrix();
 
+    MatrixXcd mtx_error = GetErrorMap();
+
     TH2D hist_gamma = TH2D("hist_gamma","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_diff = TH2D("hist_diff","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_data = TH2D("hist_data","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_dark = TH2D("hist_dark","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
     TH2D hist_model = TH2D("hist_model","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
+    TH2D hist_error = TH2D("hist_error","",N_bins_for_deconv,MSCL_plot_lower,MSCL_plot_upper,N_bins_for_deconv,MSCW_plot_lower,MSCW_plot_upper);
 
     fill2DHistogramAbs(&hist_gamma,mtx_gamma);
     fill2DHistogram(&hist_data,mtx_data);
     fill2DHistogram(&hist_dark,mtx_dark);
     fill2DHistogram(&hist_model,mtx_model);
+    fill2DHistogram(&hist_error,mtx_error);
 
     int binx_lower = hist_diff.GetXaxis()->FindBin(MSCL_cut_lower);
     int binx_blind = hist_diff.GetXaxis()->FindBin(MSCL_cut_blind)-1;
@@ -1595,7 +1612,7 @@ double NetflixChi2Function(const double *par)
     hist_gamma.Scale(scale);
 
     double chi2 = 0.;
-    chi2 += BlindedChi2(&hist_data,&hist_dark,&hist_model);
+    chi2 += BlindedChi2(&hist_data,&hist_dark,&hist_model,&hist_error);
     //if (signal_model) chi2 += SignalChi2(&hist_data,&hist_gamma,&hist_model);
     
     //double chi2 = BlindedLogLikelihood(&hist_data,&hist_dark,&hist_model);
@@ -1717,6 +1734,9 @@ void SetInitialSpectralvectors(int binx_blind, int biny_blind, MatrixXcd mtx_inp
     MatrixXcd mtx_lambdanu = GetLambdaNuMatrix_v2(mtx_input,mtx_input);
     mtx_lambdanu = CutoffEigenvalueMatrix(mtx_lambdanu, NumberOfEigenvectors);
 
+    MatrixXcd mtx_lambdanu_dark = GetLambdaNuMatrix_v2(mtx_dark,mtx_dark);
+    mtx_lambdanu_dark = CutoffEigenvalueMatrix(mtx_lambdanu_dark, NumberOfEigenvectors);
+
     const std::complex<double> If(0.0, 1.0);
     int col_fix = 0;
     int row_fix = 0;
@@ -1734,6 +1754,7 @@ void SetInitialSpectralvectors(int binx_blind, int biny_blind, MatrixXcd mtx_inp
             mtx_eigenvalue_vari(row,col) = 0.;
             mtx_eigenvector_dark(row,col) = mtx_U_r_dark(row,col);
             mtx_eigenvector_inv_dark(row,col) = mtx_U_l_dark.transpose()(row,col);
+            mtx_eigenvalue_dark(row,col) = mtx_lambdanu_dark(row,col);
         }
     }
 
@@ -2794,29 +2815,35 @@ void MatrixFactorizationMethod()
     SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_dark);
     mtx_data_bkgd = mtx_eigenvector_init*mtx_eigenvalue_init*mtx_eigenvector_inv_init;
 
-    //for (int iteration=0;iteration<20;iteration++)
-    //{
-    //    std::cout << "iteration = " << iteration << std::endl;
-    //    SingleTimeMinimization(0,1);
-    //    SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
-    //    SingleTimeMinimization(1,1);
-    //    SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
-    //}
-    //for (int iteration=0;iteration<20;iteration++)
-    //{
-    //    std::cout << "iteration = " << iteration << std::endl;
-    //    SingleTimeMinimization(0,2);
-    //    SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
-    //    SingleTimeMinimization(1,2);
-    //    SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
-    //}
-    for (int iteration=0;iteration<20;iteration++)
+    if (correlate_left_right)
     {
-        std::cout << "iteration = " << iteration << std::endl;
-        SingleTimeMinimization(-1,1);
-        SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
-        SingleTimeMinimization(-1,2);
-        SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
+        for (int iteration=0;iteration<20;iteration++)
+        {
+            std::cout << "iteration = " << iteration << std::endl;
+            SingleTimeMinimization(-1,1);
+            SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
+            SingleTimeMinimization(-1,2);
+            SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
+        }
+    }
+    else
+    {
+        for (int iteration=0;iteration<20;iteration++)
+        {
+            std::cout << "iteration = " << iteration << std::endl;
+            SingleTimeMinimization(0,1);
+            SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
+            SingleTimeMinimization(1,1);
+            SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
+        }
+        for (int iteration=0;iteration<20;iteration++)
+        {
+            std::cout << "iteration = " << iteration << std::endl;
+            SingleTimeMinimization(0,2);
+            SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
+            SingleTimeMinimization(1,2);
+            SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
+        }
     }
 
 }

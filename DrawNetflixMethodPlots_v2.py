@@ -1322,6 +1322,22 @@ def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_
                     local_sig = min(local_sig,highlight_threshold)
                 Hist_Highlight_zoomin.SetBinContent(bx2+1,by2+1,local_sig)
 
+    Hist_Excess_sigma = Hist_SR_smooth.Clone()
+    Hist_Excess_sigma.Add(Hist_Bkg_smooth,-1.)
+    for bx in range(0,Hist_SR.GetNbinsX()):
+        for by in range(0,Hist_SR.GetNbinsY()):
+            if not Hist_Skymap_smooth.GetBinContent(bx+1,by+1)>=highlight_threshold: 
+                Hist_Excess_sigma.SetBinContent(bx+1,by+1,0.)
+    excess_center_x = Hist_Excess_sigma.GetMean(1)
+    excess_center_y = Hist_Excess_sigma.GetMean(2)
+    excess_radius = pow(pow(Hist_Excess_sigma.GetRMS(1),2)+pow(Hist_Excess_sigma.GetRMS(2),2),0.5)
+    excess_markers = ROOT.TMarker(excess_center_x,excess_center_y,2)
+    excess_markers.SetMarkerSize(1.5)
+    excess_markers.SetMarkerColor(2)
+    excess_labels = ROOT.TLatex(0.2,0.8,'Radius = %0.2f'%(excess_radius))
+    excess_labels.SetNDC()
+    excess_labels.SetTextSize(0.04)
+
     total_bins = 0.
     sum_bins = 0.
     sum_data = 0.
@@ -1345,9 +1361,12 @@ def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_
             #global_sum_bkg += Hist_Bkg.GetBinContent(bx+1,by+1)
             #global_sum_bkg_err += pow(Hist_Bkg.GetBinError(bx+1,by+1),2)+Hist_Bkg.GetBinContent(bx+1,by+1)
             total_bins += 1.
-            bin_delta_ra = Hist_SR.GetXaxis().GetBinCenter(bx+1)-source_ra
-            bin_delta_dec = Hist_SR.GetYaxis().GetBinCenter(by+1)-source_dec
-            if (bin_delta_ra*bin_delta_ra+bin_delta_dec*bin_delta_dec)<theta2_threshold:
+            #bin_delta_ra = Hist_SR.GetXaxis().GetBinCenter(bx+1)-source_ra
+            #bin_delta_dec = Hist_SR.GetYaxis().GetBinCenter(by+1)-source_dec
+            #if (bin_delta_ra*bin_delta_ra+bin_delta_dec*bin_delta_dec)<theta2_threshold:
+            bin_delta_ra = Hist_SR.GetXaxis().GetBinCenter(bx+1)-excess_center_x
+            bin_delta_dec = Hist_SR.GetYaxis().GetBinCenter(by+1)-excess_center_y
+            if (bin_delta_ra*bin_delta_ra+bin_delta_dec*bin_delta_dec)<excess_radius:
             #if Hist_Skymap_smooth.GetBinContent(bx+1,by+1)>=highlight_threshold: 
                 local_sig = Hist_Skymap_smooth.GetBinContent(bx+1,by+1);
                 Hist_Highlight_bias.SetBinContent(bx+1,by+1,1.)
@@ -1365,6 +1384,7 @@ def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_
                 sum_bkg_err += pow(Hist_Bkg.GetBinError(bx+1,by+1),2)+Hist_Bkg.GetBinContent(bx+1,by+1)
             if Hist_Bkg_smooth.GetBinContent(bx+1,by+1)<100: 
                 Hist_Ratio.SetBinContent(bx+1,by+1,0.)
+
     #sum_bkg_err = pow(sum_bkg_err+pow(syst_method*sum_bkg,2),0.5)
     sum_bkg_err = syst_method*sum_bkg
     sum_sig = 1.*CalculateSignificance(sum_data-sum_bkg,sum_bkg,sum_bkg_err)
@@ -1405,6 +1425,8 @@ def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_
     #Hist_Skymap.SetMinimum(-5)
     Hist_Skymap.Draw("COL4Z")
     Hist_Highlight_bias.Draw("CONT3 same")
+    excess_markers.Draw("same")
+    excess_labels.Draw("same")
     lumilab1 = ROOT.TLatex(0.2,0.85,'local %0.1f#sigma (syst = %0.1f%%)'%(bias_sum_sig,syst_method*100.) )
     lumilab1.SetNDC()
     lumilab1.SetTextSize(0.04)
@@ -1443,6 +1465,9 @@ def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_
     for star in range(0,len(other_star_markers)):
         other_star_markers[star].Draw("same")
         other_star_labels[star].Draw("same")
+    Hist_Highlight_bias.Draw("CONT3 same")
+    excess_markers.Draw("same")
+    excess_labels.Draw("same")
     canvas.SaveAs('output_plots/SkymapSmoothSig_%s.png'%(name))
 
     Hist_Sig_zoomin.GetYaxis().SetTitle(ytitle)
@@ -1474,42 +1499,26 @@ def Make2DSignificancePlot(syst_method,Hist_SR,Hist_Bkg,Hist_SR_smooth,Hist_Bkg_
     Hist_Ratio.SetMinimum(z_min)
     Hist_Ratio.Draw("COL4Z")
     Hist_Highlight_bias.Draw("CONT3 same")
+    excess_markers.Draw("same")
+    excess_labels.Draw("same")
     canvas.SaveAs('output_plots/SkymapRatio_%s.png'%(name))
-
-    #Hist_Excess = Hist_SR.Clone()
-    #Hist_Excess.GetYaxis().SetTitle(ytitle)
-    #Hist_Excess.GetXaxis().SetTitle(xtitle)
-    #Hist_Excess.Draw("COL4Z")
-    #lumilab1 = ROOT.TLatex(0.15,0.90,'Integral = %0.1f'%(Hist_Excess.Integral()) )
-    #lumilab1.SetNDC()
-    #lumilab1.SetTextSize(0.05)
-    #lumilab1.Draw()
-    #canvas.SaveAs('output_plots/SkymapTotal_%s_%s_%s.png'%(name,target,tag))
-
-    #Hist_Excess = Hist_Bkg.Clone()
-    #Hist_Excess.GetYaxis().SetTitle(ytitle)
-    #Hist_Excess.GetXaxis().SetTitle(xtitle)
-    #Hist_Excess.Draw("COL4Z")
-    #lumilab2 = ROOT.TLatex(0.15,0.90,'Integral = %0.1f'%(Hist_Excess.Integral()) )
-    #lumilab2.SetNDC()
-    #lumilab2.SetTextSize(0.05)
-    #lumilab2.Draw()
-    #canvas.SaveAs('output_plots/SkymapBkg_%s_%s_%s.png'%(name,target,tag))
 
     Hist_Excess = Hist_SR_smooth.Clone()
     Hist_Excess.Add(Hist_Bkg_smooth,-1.)
     Hist_Excess.GetYaxis().SetTitle(ytitle)
     Hist_Excess.GetXaxis().SetTitle(xtitle)
-    z_max = Hist_Excess.GetMaximum()
-    z_min = Hist_Excess.GetMinimum()
-    if (z_min<0.): z_max = -1.*z_min
-    Hist_Excess.SetMaximum(z_max)
-    Hist_Excess.SetMinimum(z_min)
+    #z_max = Hist_Excess.GetMaximum()
+    #z_min = Hist_Excess.GetMinimum()
+    #if (z_min<0.): z_max = -1.*z_min
+    #Hist_Excess.SetMaximum(z_max)
+    #Hist_Excess.SetMinimum(z_min)
     Hist_Excess.Draw("COL4Z")
     Hist_Highlight_bias.Draw("CONT3 same")
     for star in range(0,len(other_star_markers)):
         other_star_markers[star].Draw("same")
         other_star_labels[star].Draw("same")
+    excess_markers.Draw("same")
+    excess_labels.Draw("same")
     canvas.SaveAs('output_plots/SkymapSmoothExcess_%s.png'%(name))
 
     func = ROOT.TF1("func","gaus", -5, 8)
@@ -1659,8 +1668,8 @@ def CalculateSystematicErrors(Hists):
         syst_err_this_bin = 0.
         for h in range(0,len(Hists)):
             if Hists[h].GetBinContent(binx+1)==0.: continue
-            weight = 1./pow(Hists[h].GetBinError(binx+1),2)
-            #weight = 1.
+            #weight = 1./pow(Hists[h].GetBinError(binx+1),2)
+            weight = 1.
             stat_this_bin += 1.
             syst_this_bin += weight*max(0.,pow(1.-Hists[h].GetBinContent(binx+1),2)-pow(Hists[h].GetBinError(binx+1),2))
             weight_this_bin += weight
@@ -1673,7 +1682,7 @@ def CalculateSystematicErrors(Hists):
             stat_this_bin = stat_this_bin/weight_this_bin
             syst_this_bin = syst_this_bin/weight_this_bin
             syst_err_this_bin = syst_this_bin/pow(raw_weight_this_bin,0.5)
-        syst_this_bin = max(syst_this_bin-stat_this_bin,0.)
+        #syst_this_bin = max(syst_this_bin-stat_this_bin,0.)
         syst_this_bin = pow(syst_this_bin,0.5)
         syst += [syst_this_bin]
         syst_err += [syst_err_this_bin]
@@ -5622,7 +5631,7 @@ SystAsFunctionOfEnergy()
 
 #source_of_interest = 'Proton_NSB200'
 #source_of_interest = 'Proton_NSB750'
-#source_of_interest = 'Crab'
+source_of_interest = 'Crab'
 #source_of_interest = 'CrabV5'
 #source_of_interest = 'Mrk421'
 #source_of_interest = 'H1426'
@@ -5643,6 +5652,7 @@ SystAsFunctionOfEnergy()
 #source_of_interest = '1ES1440V6'
 #source_of_interest = '1ES1741V6'
 #source_of_interest = 'IC443HotSpot'
+#source_of_interest = 'IC443HotSpotV5'
 #source_of_interest = 'RGBJ0710'
 #source_of_interest = 'CasA'
 #source_of_interest = 'M82'
@@ -5650,8 +5660,7 @@ SystAsFunctionOfEnergy()
 #source_of_interest = 'WComaeV6'
 #source_of_interest = '1ES1218V6'
 #source_of_interest = 'MGRO_J1908_V6'
-source_of_interest = 'MGRO_J1908_V5'
-#source_of_interest = 'IC443HotSpotV5'
+#source_of_interest = 'MGRO_J1908_V5'
 #source_of_interest = 'ComaV6'
 #source_of_interest = 'GemingaV6'
 #source_of_interest = 'GemingaV5'
@@ -5663,10 +5672,10 @@ source_of_interest = 'MGRO_J1908_V5'
 #smooth_size = 0.1
 #n_rebin = 4
 #smooth_size = 0.1
-#n_rebin = 2
-#smooth_size = 0.1
-n_rebin = 1
-smooth_size = 0.05
+n_rebin = 2
+smooth_size = 0.1
+#n_rebin = 1
+#smooth_size = 0.05
 
 theta2_range = 2.0
 theta2_threshold = 1.6
@@ -5736,6 +5745,6 @@ Hist_Highlight_Skymap_Galactic_zoomin = ROOT.TH2D("Hist_Highlight_Skymap_Galacti
 Hist_Skymap_Galactic_zoomin = ROOT.TH2D("Hist_Skymap_Galactic_zoomin","",50,source_l-1,source_l+1,50,source_b-1,source_b+1)
 
 
-SingleSourceSkyMap(source_of_interest,False)
+SingleSourceSkyMap(source_of_interest,True)
 #SingleSourceSpectrum(source_of_interest)
 
