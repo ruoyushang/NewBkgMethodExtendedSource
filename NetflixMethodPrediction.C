@@ -1378,7 +1378,7 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model, TH2D* his
             double model_err = max(1.0,pow(abs(model),0.5));
             //weight = 1./(data_err*data_err+model_err*model_err);
             //weight = 1./(data*data+model*model);
-            //weight = 1./(data_err*data_err);
+            weight = 1./(data_err*data_err);
             //weight = 1./(dark_err*dark_err);
             //if (data-model<0.) weight = 2.;
             //if (bx>=binx_blind && by>=biny_blind) weight = 0.5;
@@ -1400,10 +1400,13 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model, TH2D* his
     //eigensolver_bkgd = ComplexEigenSolver<MatrixXcd>(mtx_data_bkgd);
     //for (int NthEigenvector=2;NthEigenvector<=NumberOfEigenvectors;NthEigenvector++)
     //{
-    //    double eigenvalue_ratio_bkgd = eigensolver_bkgd.eigenvalues()(mtx_dark.cols()-NthEigenvector).real()-eigensolver_bkgd.eigenvalues()(mtx_dark.cols()-1).real();
-    //    double eigenvalue_ratio_dark = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector).real()-eigensolver_dark.eigenvalues()(mtx_dark.cols()-1).real();
-    //    double eigenvalue_diff = (eigenvalue_ratio_bkgd-eigenvalue_ratio_dark)*eigensolver_dark.eigenvalues()(mtx_dark.cols()-1).real();
-    //    chi2 += pow(eigenvalue_diff,2);
+    //    double eigenvalue_ratio_bkgd = eigensolver_bkgd.eigenvalues()(mtx_dark.cols()-NthEigenvector).real()/eigensolver_bkgd.eigenvalues()(mtx_dark.cols()-1).real();
+    //    double eigenvalue_ratio_dark = eigensolver_dark.eigenvalues()(mtx_dark.cols()-NthEigenvector).real()/eigensolver_dark.eigenvalues()(mtx_dark.cols()-1).real();
+    //    double eigenvalue_diff = eigenvalue_ratio_bkgd-eigenvalue_ratio_dark;
+    //    if (abs(eigenvalue_diff)>0.01)
+    //    {
+    //        chi2 += nbins*10000.;
+    //    }
     //}
     
     return chi2;

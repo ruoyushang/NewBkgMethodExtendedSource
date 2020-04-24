@@ -364,6 +364,11 @@ pair<double,double> GetSourceRaDec(TString source_name)
             Source_RA = 185.382;
                 Source_Dec = 28.233;
     }
+    if (source_name=="WComaeV5")
+    {
+            Source_RA = 185.382;
+                Source_Dec = 28.233;
+    }
     if (source_name=="1ES1218V6")
     {
             Source_RA = 185.360;
@@ -383,6 +388,11 @@ pair<double,double> GetSourceRaDec(TString source_name)
     {
             Source_RA = 286.975;
                 Source_Dec = 6.269;
+    }
+    if (source_name=="CygnusV6")
+    {
+            Source_RA = 304.646;
+                Source_Dec = 36.833;
     }
     if (source_name=="Segue1V5")
     {
@@ -732,7 +742,7 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
 
     vector<pair<string,int>> new_list;
     vector<pair<double,double>> ON_pointing_radec_new;
-    for (int n=0;n<2;n++)
+    for (int n=0;n<1;n++)
     {
         for (int on_run=0;on_run<ON_runlist.size();on_run++)
         {
@@ -756,7 +766,7 @@ vector<pair<string,int>> SelectOFFRunList(vector<pair<string,int>> ON_runlist, v
                 //double chi2 = pow(ON_pointing[on_run].first+Elev_diff_dark-OFF_pointing[off_run].first,2);
                 double chi2 = pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2);
                 //if (pow(ON_NSB[on_run]+NSB_diff_dark-OFF_NSB[off_run],2)>0.2*0.2)
-                if (pow(ON_pointing[on_run].first+Elev_diff_dark-OFF_pointing[off_run].first,2)>5.0*5.0)
+                if (pow(ON_pointing[on_run].first+Elev_diff_dark-OFF_pointing[off_run].first,2)>4.0*4.0)
                 {
                     chi2 += 10000.;
                 }
