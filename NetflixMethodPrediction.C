@@ -1048,7 +1048,7 @@ MatrixXcd BuildModelMatrix()
 
     if (correlate_left_right)
     {
-        for (int nth_entry=2;nth_entry<=NumberOfEigenvectors;nth_entry++)
+        for (int nth_entry=1;nth_entry<=NumberOfEigenvectors;nth_entry++)
         {
             double lambda_largest_dark = eigensolver_dark.eigenvalues()(mtx_dark.cols()-1).real();
             double lambda_dark = eigensolver_dark.eigenvalues()(mtx_dark.cols()-nth_entry).real();
@@ -1062,9 +1062,8 @@ MatrixXcd BuildModelMatrix()
             MatrixXcd mtx_U_l = mtx_eigenvector_inv.transpose();
             MatrixXcd mtx_H = mtx_U_l.transpose()*mtx_U_r;
             double eta = mtx_H(mtx_dark.cols()-nth_entry,mtx_dark.cols()-nth_entry).real();
-            //double old_S = mtx_eigenvalue(mtx_dark.cols()-nth_entry,mtx_dark.cols()-nth_entry).real();
-            //double new_S = old_S*eta_init/eta*(lambda_largest_init/lambda_init*lambda_dark/lambda_largest_dark);
-            double new_S = (lambda_dark/lambda_largest_dark*lambda_largest_init)/eta;
+            double old_S = mtx_eigenvalue(mtx_dark.cols()-nth_entry,mtx_dark.cols()-nth_entry).real();
+            double new_S = old_S*eta/eta_init;
             mtx_eigenvalue(mtx_dark.cols()-nth_entry,mtx_dark.cols()-nth_entry) = new_S;
         }
     }
@@ -1359,8 +1358,8 @@ double BlindedChi2(TH2D* hist_data, TH2D* hist_dark, TH2D* hist_model, TH2D* his
     {
         for (int by=1;by<=hist_data->GetNbinsY();by++)
         {
-            //if (bx<binx_blind_upper && by<biny_blind_upper)
-            if (bx<binx_blind_upper && by<biny_blind_upper && bx>=binx_blind_lower && by>=biny_blind_lower)
+            if (bx<binx_blind_upper && by<biny_blind_upper)
+            //if (bx<binx_blind_upper && by<biny_blind_upper && bx>=binx_blind_lower && by>=biny_blind_lower)
             {
                 continue;
             }
@@ -2817,12 +2816,28 @@ void MatrixFactorizationMethod()
 
     if (correlate_left_right)
     {
+        //for (int iteration=0;iteration<20;iteration++)
+        //{
+        //    std::cout << "iteration = " << iteration << std::endl;
+        //    SingleTimeMinimization(-1,1);
+        //    SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
+        //    SingleTimeMinimization(-1,2);
+        //    SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
+        //}
         for (int iteration=0;iteration<20;iteration++)
         {
             std::cout << "iteration = " << iteration << std::endl;
-            SingleTimeMinimization(-1,1);
+            SingleTimeMinimization(0,1);
             SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
-            SingleTimeMinimization(-1,2);
+            SingleTimeMinimization(1,1);
+            SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
+        }
+        for (int iteration=0;iteration<20;iteration++)
+        {
+            std::cout << "iteration = " << iteration << std::endl;
+            SingleTimeMinimization(0,2);
+            SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
+            SingleTimeMinimization(1,2);
             SetInitialSpectralvectors(binx_blind_global,biny_blind_global,mtx_data_bkgd);
         }
     }
